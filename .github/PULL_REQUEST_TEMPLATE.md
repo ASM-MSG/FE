@@ -1,4 +1,6 @@
-## 🔥 PR 제목
+## 🎫 관련 티켓
+
+- Closes [MM-XXX](https://[your-jira].atlassian.net/browse/MM-XXX)
 
 ## 📌 작업 내용
 
