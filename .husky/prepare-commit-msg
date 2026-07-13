@@ -1,0 +1,16 @@
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# merge, squash, amend(commit) 커밋은 건드리지 않음
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ] || [ "$COMMIT_SOURCE" = "commit" ]; then
+  exit 0
+fi
+
+# 브랜치 이름에서 지라 티켓 번호 추출 (예: chore/MSG-105-apply-design-tokens -> MSG-105)
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+TICKET=$(echo "$BRANCH_NAME" | grep -oE 'MSG-[0-9]+' | head -1)
+
+# 티켓 번호가 있고, 메시지에 아직 안 붙어 있으면 맨 앞에 자동으로 붙임
+if [ -n "$TICKET" ] && ! grep -qE "^$TICKET" "$COMMIT_MSG_FILE"; then
+  sed -i.bak -e "1s/^/$TICKET /" "$COMMIT_MSG_FILE" && rm -f "$COMMIT_MSG_FILE.bak"
+fi
