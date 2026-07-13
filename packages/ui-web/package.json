@@ -8,6 +8,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
   "dependencies": {
     "@fillmap/design-tokens": "workspace:*",
     "class-variance-authority": "^0.7.1",
@@ -18,7 +22,17 @@
     "react": ">=19"
   },
   "devDependencies": {
+    "@fillmap/tailwind-preset": "workspace:*",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@storybook/react-vite": "^10.5.0",
+    "@tailwindcss/vite": "^4.3.2",
     "@types/react": "^19.2.17",
-    "typescript": "~6.0.2"
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "storybook": "^10.5.0",
+    "tailwindcss": "^4.3.2",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.4"
   }
 }
