@@ -1,13 +1,13 @@
 {
-  "name": "FE",
+  "name": "fillmap-fe",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "FillMap 모노레포 — 웹(React) + 앱(React Native, 추후) 디자인 시스템 기반",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.17.1"
 }
