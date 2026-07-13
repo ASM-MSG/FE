@@ -1,13 +1,19 @@
+/* SOURCE OF TRUTH: packages/design-tokens/src/colors.ts — 수정 시 양쪽 동기화 */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/inter";
+
+/* design-tokens 기반 preset (원시 색상·타이포·spacing·radius·shadow) */
+@config "../../tailwind.config.ts";
+/* ui 패키지 안에서 쓴 클래스가 빌드에 포함되도록 소스 경로 등록 */
+@source "../../../../packages/ui-web/src";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,50 +45,53 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+    /* radius는 design-tokens/src/radius.ts (Figma FeelMap Radius)와 1:1 */
+    --radius-none: 0px;
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 9999px;
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    /* 값은 design-tokens semantic 토큰과 1:1 (Figma FeelMap Color) */
+    --background: #FFFFFF;            /* canvas */
+    --foreground: #1D1D1F;            /* text-primary */
+    --card: #FFFFFF;                  /* surface-elevated */
+    --card-foreground: #1D1D1F;       /* text-primary */
+    --popover: #FFFFFF;               /* surface-elevated */
+    --popover-foreground: #1D1D1F;    /* text-primary */
+    --primary: #0066CC;               /* primary */
+    --primary-foreground: #FFFFFF;    /* on-primary */
+    --secondary: #0071E3;             /* secondary */
+    --secondary-foreground: #FFFFFF;  /* text-inverse */
+    --muted: #F5F5F7;                 /* surface */
+    --muted-foreground: #7A7A7A;      /* muted */
+    --accent: #2997FF;                /* accent */
+    --accent-foreground: #FFFFFF;     /* text-inverse */
+    --destructive: #EF4444;           /* error */
+    --border: #E0E0E0;                /* border */
+    --input: #E0E0E0;                 /* border */
+    --ring: #0066CC;                  /* primary */
+    --chart-1: #0066CC;               /* primary */
+    --chart-2: #0071E3;               /* secondary */
+    --chart-3: #2997FF;               /* accent */
+    --chart-4: #22C55E;               /* success */
+    --chart-5: #F59E0B;               /* warning */
+    --radius: 12px;                   /* radius md */
+    --sidebar: #FAFAFC;               /* surface-soft */
+    --sidebar-foreground: #1D1D1F;    /* text-primary */
+    --sidebar-primary: #0066CC;       /* primary */
+    --sidebar-primary-foreground: #FFFFFF; /* on-primary */
+    --sidebar-accent: #F5F5F7;        /* surface */
+    --sidebar-accent-foreground: #1D1D1F;  /* text-primary */
+    --sidebar-border: #E0E0E0;        /* border */
+    --sidebar-ring: #0066CC;          /* primary */
 }
 
+/* 다크 모드는 Figma에 미정의 — shadcn 기본값 유지. Figma에 다크 토큰이 추가되면 동기화한다. */
 .dark {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);

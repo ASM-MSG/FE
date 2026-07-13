@@ -1,0 +1,18 @@
+COMMIT_MSG_FILE=$1
+
+# merge 커밋 등은 검증 제외
+FIRST_LINE=$(head -1 "$COMMIT_MSG_FILE")
+case "$FIRST_LINE" in
+  Merge*|Revert*) exit 0 ;;
+esac
+
+# MSG-숫자 타입: 형식 강제
+if ! grep -qE "^MSG-[0-9]+ (feat|fix|refactor|docs|test|chore|style|setting):" "$COMMIT_MSG_FILE"; then
+  echo "❌ 커밋 메시지 형식 위반"
+  echo ""
+  echo "✅ 올바른 형식: MSG-123 feat: 요약"
+  echo "   타입 후보: feat, fix, refactor, docs, test, chore, style, setting"
+  echo ""
+  echo "ℹ️  브랜치 이름에 MSG-숫자가 포함되어 있으면 티켓 번호는 자동으로 붙습니다."
+  exit 1
+fi
