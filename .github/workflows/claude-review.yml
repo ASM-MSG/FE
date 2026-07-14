@@ -1,0 +1,48 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+jobs:
+  claude-review:
+    # 드래프트 PR은 리뷰하지 않음
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            이 PR을 꼼꼼하게 코드 리뷰해줘. 모든 리뷰는 한국어로 작성해줘.
+
+            리뷰 관점:
+            1. **버그 및 로직 오류** - 잘못된 조건문, 엣지 케이스 누락, null/undefined 처리 누락
+            2. **React/TypeScript 베스트 프랙티스** - 불필요한 리렌더링, 잘못된 훅 사용, any 타입 남용, 타입 안정성
+            3. **성능** - 무거운 연산의 메모이제이션 누락, 불필요한 의존성, 번들 크기 영향
+            4. **가독성 및 유지보수성** - 네이밍, 중복 코드, 컴포넌트 분리
+            5. **보안** - XSS 가능성, 민감 정보 노출
+
+            리뷰 방법:
+            - 구체적인 문제가 있는 라인에는 인라인 코멘트를 남겨줘
+            - 심각도를 표시해줘 (🔴 반드시 수정 / 🟡 권장 / 🟢 사소한 제안)
+            - 문제 지적 시 가능하면 수정 예시 코드를 함께 제시해줘
+            - 마지막에 전체 요약 코멘트를 남겨줘 (잘한 점 + 주요 이슈 정리)
+            - 확실하지 않은 부분은 추측이라고 명시해줘
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
