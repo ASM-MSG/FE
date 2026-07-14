@@ -6,15 +6,7 @@ import {
   type ButtonVariant,
 } from "@fillmap/design-tokens";
 
-const buttonVariants: ButtonVariant[] = [
-  "default",
-  "default-active",
-  "primary",
-  "secondary",
-  "danger",
-  "chip",
-  "chip-active",
-];
+const buttonVariants: ButtonVariant[] = ["primary", "secondary", "danger"];
 
 /** 디자인 시스템 동작 확인용 데모 페이지 — 실제 화면 구현 시 pages/로 대체 */
 function App() {
@@ -32,6 +24,9 @@ function App() {
         <div className="flex flex-wrap items-center gap-sm">
           {buttonVariants.map((v) => (
             <Button key={v} text={v} variant={v} />
+          ))}
+          {buttonVariants.map((v) => (
+            <Button key={`${v}-sm`} text={v} variant={v} size="sm" />
           ))}
           <Button text="disabled" variant="primary" disabled />
         </div>
