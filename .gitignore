@@ -3,3 +3,6 @@ dist/
 storybook-static/
 *.log
 .DS_Store
+
+# harness workspace (ticket pipeline artifacts)
+_workspace*/
