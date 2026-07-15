@@ -12,3 +12,4 @@ pnpm 모노레포 — apps/web(React 19 + Vite) + packages(design-tokens · tail
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
 | 2026-07-15 | 초기 구성 (에이전트 3 + 스킬 4 + vitest 셋업) | 전체 | - |
+| 2026-07-15 | 티켓 description 템플릿 추가, 스펙 변환 시 템플릿 구조 활용 | docs/TICKET_TEMPLATE.md, skills/ticket-to-spec | 티켓 작성 표준화로 스펙 승인 질문 최소화 |
