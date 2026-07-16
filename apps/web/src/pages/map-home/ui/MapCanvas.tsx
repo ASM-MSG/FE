@@ -29,6 +29,9 @@ const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_APP_KEY as
   | undefined;
 
 const DEFAULT_LEVEL = 5;
+// 카카오맵 level 유효 범위 — SDK 내부 클램핑에 기대지 않고 명시한다
+const MIN_LEVEL = 1;
+const MAX_LEVEL = 14;
 
 /** 카카오맵 Map → 플랫폼 중립 Viewport 추출 */
 const toViewport = (map: kakao.maps.Map): Viewport => {
@@ -108,12 +111,16 @@ const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
         zoomIn: () => {
           const map = mapRef.current;
           if (!map) return;
-          map.setLevel(map.getLevel() - 1, { animate: true });
+          map.setLevel(Math.max(MIN_LEVEL, map.getLevel() - 1), {
+            animate: true,
+          });
         },
         zoomOut: () => {
           const map = mapRef.current;
           if (!map) return;
-          map.setLevel(map.getLevel() + 1, { animate: true });
+          map.setLevel(Math.min(MAX_LEVEL, map.getLevel() + 1), {
+            animate: true,
+          });
         },
       }),
       [],
