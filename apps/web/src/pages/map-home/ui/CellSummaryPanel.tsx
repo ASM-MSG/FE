@@ -54,16 +54,7 @@ export const CellSummaryPanel = ({
   const bounds = useViewportStore((s) => s.bounds);
   const { data, isLoading, isError, refetch } = useCellsQuery();
 
-  if (isLoading || !bounds) {
-    return (
-      <BottomSheet handle={false} className="rounded-lg">
-        <p className="py-sm text-fm-body text-foreground-muted">
-          이 지역 정보를 불러오는 중이에요…
-        </p>
-      </BottomSheet>
-    );
-  }
-
+  // 에러를 로딩보다 먼저 체크 — 지도 로드 실패로 bounds가 null에 머물러도 S13 에러 상태에 도달해야 한다
   if (isError) {
     return (
       <BottomSheet handle={false} className="rounded-lg">
@@ -78,6 +69,16 @@ export const CellSummaryPanel = ({
             onClick={() => refetch()}
           />
         </div>
+      </BottomSheet>
+    );
+  }
+
+  if (isLoading || !bounds) {
+    return (
+      <BottomSheet handle={false} className="rounded-lg">
+        <p className="py-sm text-fm-body text-foreground-muted">
+          이 지역 정보를 불러오는 중이에요…
+        </p>
       </BottomSheet>
     );
   }
