@@ -6,6 +6,8 @@ interface BottomSheetProps {
   /** 타이틀 우측 액션 텍스트 (예: "전체 보기") */
   actionLabel?: string;
   onAction?: () => void;
+  /** 드래그 핸들 표시 여부 — 웹 도킹 패널은 false (기본 true) */
+  handle?: boolean;
   /** 콘텐츠 슬롯 */
   children?: ReactNode;
   className?: string;
@@ -24,18 +26,22 @@ export const BottomSheet = ({
   title,
   actionLabel,
   onAction,
+  handle = true,
   children,
   className,
 }: BottomSheetProps) => (
   <div
     className={cn(
-      "flex w-full flex-col gap-sm rounded-t-xl bg-surface-elevated px-md pb-md pt-[10px] shadow-sheet",
+      "flex w-full flex-col gap-sm rounded-t-xl bg-surface-elevated px-md pb-md shadow-sheet",
+      handle ? "pt-[10px]" : "pt-md",
       className,
     )}
   >
-    <div className="flex justify-center">
-      <span className="h-[4px] w-[36px] rounded-full bg-hairline-strong" />
-    </div>
+    {handle && (
+      <div className="flex justify-center">
+        <span className="h-[4px] w-[36px] rounded-full bg-hairline-strong" />
+      </div>
+    )}
     {(title || actionLabel) && (
       <div className="flex items-center gap-xs">
         <p className="min-w-0 flex-1 text-fm-title text-foreground">{title}</p>

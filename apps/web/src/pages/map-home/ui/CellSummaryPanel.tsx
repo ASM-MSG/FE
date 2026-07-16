@@ -1,5 +1,5 @@
 import { Play } from "lucide-react";
-import { BottomSheet, Button, CellBadge } from "@fillmap/ui-web";
+import { BottomSheet, Button } from "@fillmap/ui-web";
 import type { Cell, LatLng } from "@/entities/cell";
 import {
   filterCellsInBounds,
@@ -27,12 +27,16 @@ const CellCard = ({
   <button
     type="button"
     onClick={() => onSelect(cell.center)}
-    className="flex w-[104px] shrink-0 flex-col gap-xxs text-left transition-colors active:opacity-80"
+    className="flex w-[100px] shrink-0 flex-col gap-xxs text-left transition-colors active:opacity-80"
   >
-    <span className="flex h-[64px] w-full items-center justify-center rounded-sm bg-surface text-icon">
-      <Play className="size-[20px]" />
+    <span className="flex h-[64px] w-full items-center justify-center rounded-sm bg-surface">
+      <span className="flex size-[28px] items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <Play className="size-[12px] fill-current" />
+      </span>
     </span>
-    <CellBadge label={cell.label} className="max-w-full truncate" />
+    <span className="max-w-full truncate text-fm-body-strong text-foreground">
+      {cell.label}
+    </span>
     <span className="text-fm-caption text-foreground-muted">
       {cell.videoCount}개 영상
     </span>
@@ -52,7 +56,7 @@ export const CellSummaryPanel = ({
 
   if (isLoading || !bounds) {
     return (
-      <BottomSheet className="rounded-xl">
+      <BottomSheet handle={false} className="rounded-lg">
         <p className="py-sm text-fm-body text-foreground-muted">
           이 지역 정보를 불러오는 중이에요…
         </p>
@@ -62,7 +66,7 @@ export const CellSummaryPanel = ({
 
   if (isError) {
     return (
-      <BottomSheet className="rounded-xl">
+      <BottomSheet handle={false} className="rounded-lg">
         <div className="flex items-center justify-between gap-sm py-xs">
           <p className="text-fm-body text-foreground-muted">
             정보를 불러오지 못했어요
@@ -84,7 +88,8 @@ export const CellSummaryPanel = ({
 
   return (
     <BottomSheet
-      className="rounded-xl"
+      handle={false}
+      className="rounded-lg"
       title={`이 지역 격자 ${cellCount}개 · 영상 ${videoCount}개`}
       actionLabel="전체 보기"
       onAction={onViewAll}
@@ -94,7 +99,7 @@ export const CellSummaryPanel = ({
           이 지역에는 아직 격자가 없어요. 지도를 움직여 다른 지역을 둘러보세요.
         </p>
       ) : (
-        <div className="flex gap-sm overflow-x-auto">
+        <div className="flex gap-xs overflow-x-auto">
           {topCells.map((cell) => (
             <CellCard key={cell.id} cell={cell} onSelect={onCellSelect} />
           ))}

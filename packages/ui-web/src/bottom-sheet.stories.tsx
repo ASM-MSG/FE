@@ -24,3 +24,15 @@ export const Playground: Story = {
     </div>
   ),
 };
+
+/** 웹 도킹 패널 — 핸들 없이 지도 위에 뜨는 형태 (지도 홈 요약 패널) */
+export const Docked: Story = {
+  args: { handle: false },
+  render: (args) => (
+    <div className="w-[390px] bg-surface p-md">
+      <BottomSheet {...args} className="rounded-lg">
+        <VideoRow title="홍대 거리 야경 감성" meta="조회 214 · 어제" />
+      </BottomSheet>
+    </div>
+  ),
+};
