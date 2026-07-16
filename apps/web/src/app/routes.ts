@@ -9,6 +9,9 @@ export const ROUTES = {
 
 export type NavKey = keyof typeof ROUTES;
 
+/** 외부에서 넘어온 문자열 key가 네비 키인지 좁히는 타입 가드 */
+export const isNavKey = (key: string): key is NavKey => key in ROUTES;
+
 /** 현재 pathname이 속한 네비 섹션 키를 반환한다. 매칭되는 섹션이 없으면 undefined */
 export const getActiveNavKey = (pathname: string): NavKey | undefined => {
   if (pathname === ROUTES.home) return "home";

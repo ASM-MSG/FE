@@ -1,7 +1,7 @@
 import { Compass, Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
-import { ROUTES, getActiveNavKey, type NavKey } from "@/app/routes";
+import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
 
 const items: (SideRailItem & { key: NavKey })[] = [
   { key: "home", label: "홈", icon: <Home className="size-full" /> },
@@ -25,7 +25,9 @@ export const SideRailNav = () => {
       }
       items={items}
       activeKey={getActiveNavKey(pathname)}
-      onSelect={(key) => navigate(ROUTES[key as NavKey])}
+      onSelect={(key) => {
+        if (isNavKey(key)) navigate(ROUTES[key]);
+      }}
     />
   );
 };
