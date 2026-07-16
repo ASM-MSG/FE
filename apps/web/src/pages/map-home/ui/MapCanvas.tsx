@@ -46,19 +46,38 @@ const toViewport = (map: kakao.maps.Map): Viewport => {
   };
 };
 
+/** SDK 로드 실패/키 미설정 공용 폴백 — 에러 상태 + 재시도(S3) */
+const MapFallback = ({ onRetry }: { onRetry: () => void }) => (
+  <div className="flex h-full w-full flex-col items-center justify-center gap-md bg-surface px-lg text-center">
+    <div className="flex flex-col gap-xxs">
+      <p className="text-fm-title text-foreground">지도를 불러오지 못했어요</p>
+      <p className="text-fm-body text-foreground-muted">
+        네트워크 상태를 확인하고 다시 시도해 주세요
+      </p>
+    </div>
+    <Button text="다시 시도" variant="primary" size="sm" onClick={onRetry} />
+  </div>
+);
+
 /**
  * 카카오맵 경계 컴포넌트 — `react-kakao-maps-sdk` import는 이 파일에만 둔다(RN 경계).
  * SDK 로드 실패 시 에러 상태 + 재시도(S3), 이동/줌 이벤트를 onViewportChange로 밀어낸다.
+ * 키 미설정 시에는 로더를 마운트하지 않아 빈 키로 SDK 요청이 나가지 않는다.
  */
 export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
   ({ center, onViewportChange }, ref) => {
     // 재시도 시 로더 훅을 다시 태우기 위해 하위 뷰를 remount
     const [attempt, setAttempt] = useState(0);
 
+    if (!KAKAO_APP_KEY) {
+      return <MapFallback onRetry={() => setAttempt((n) => n + 1)} />;
+    }
+
     return (
       <KakaoMapView
         key={attempt}
         ref={ref}
+        appkey={KAKAO_APP_KEY}
         center={center}
         onViewportChange={onViewportChange}
         onRetry={() => setAttempt((n) => n + 1)}
@@ -69,12 +88,13 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
 MapCanvas.displayName = "MapCanvas";
 
 interface KakaoMapViewProps extends MapCanvasProps {
+  appkey: string;
   onRetry: () => void;
 }
 
 const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
-  ({ center, onViewportChange, onRetry }, ref) => {
-    const [loading, error] = useKakaoLoader({ appkey: KAKAO_APP_KEY ?? "" });
+  ({ appkey, center, onViewportChange, onRetry }, ref) => {
+    const [loading, error] = useKakaoLoader({ appkey });
     const mapRef = useRef<kakao.maps.Map | null>(null);
 
     useImperativeHandle(
@@ -99,20 +119,8 @@ const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
       [],
     );
 
-    if (error || !KAKAO_APP_KEY) {
-      return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-md bg-surface px-lg text-center">
-          <div className="flex flex-col gap-xxs">
-            <p className="text-fm-title text-foreground">
-              지도를 불러오지 못했어요
-            </p>
-            <p className="text-fm-body text-foreground-muted">
-              네트워크 상태를 확인하고 다시 시도해 주세요
-            </p>
-          </div>
-          <Button text="다시 시도" variant="primary" size="sm" onClick={onRetry} />
-        </div>
-      );
+    if (error) {
+      return <MapFallback onRetry={onRetry} />;
     }
 
     return (
