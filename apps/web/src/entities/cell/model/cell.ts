@@ -15,6 +15,8 @@ export interface Cell {
   id: string;
   /** 지역명 + 코드 (예: "홍대입구 A-14") */
   label: string;
+  /** 행정구(區) 이름 (예: "마포구") — 지역 필터 매칭 키 (MSG-114 D1) */
+  district: string;
   /** 격자 중심 좌표 */
   center: LatLng;
   /** 격자에 속한 영상 수 */

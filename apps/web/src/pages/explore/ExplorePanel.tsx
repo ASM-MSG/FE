@@ -5,6 +5,7 @@ import {
   selectExploreCells,
   type SortOrder,
 } from "@/features/explore/model/explore-cells";
+import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
 import {
   filterCellsInBounds,
   summarizeCells,
@@ -13,6 +14,7 @@ import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { ExploreCellCard } from "./ui/ExploreCellCard";
+import { SearchPanel } from "./ui/SearchPanel";
 import { SortChip } from "./ui/SortChip";
 
 /** S4 지역명 — 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시(D4) */
@@ -28,42 +30,53 @@ export const ExplorePanel = () => {
   const bounds = useViewportStore((s) => s.bounds);
   const { data, isLoading, isError, refetch } = useCellsQuery();
 
-  const [query, setQuery] = useState("");
+  // 검색어·선택 지역은 공유 필터 스토어로 승격(MSG-114) — 정렬은 이 화면 로컬 유지(MSG-113)
+  const query = useExploreFilterStore((s) => s.query);
+  const selectedRegion = useExploreFilterStore((s) => s.selectedRegion);
   const [order, setOrder] = useState<SortOrder>("popular");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[388px] flex-col bg-background shadow-raised">
-      <div className="flex flex-col gap-sm p-md">
-        <SearchBar
-          placeholder="격자, 장소 검색"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <div className="flex gap-xs">
-          <SortChip
-            label="인기순"
-            active={order === "popular"}
-            onClick={() => setOrder("popular")}
+    <>
+      <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
+        <div className="flex flex-col gap-sm p-md">
+          {/* SearchBar는 검색 패널을 여는 트리거 — 타이핑은 패널 입력창에서(D2) */}
+          <SearchBar
+            placeholder="격자, 장소 검색"
+            value={selectedRegion ?? query}
+            readOnly
+            onClick={() => setSearchOpen(true)}
+            onFocus={() => setSearchOpen(true)}
           />
-          <SortChip
-            label="최신순"
-            active={order === "recent"}
-            onClick={() => setOrder("recent")}
-          />
+          <div className="flex gap-xs">
+            <SortChip
+              label="인기순"
+              active={order === "popular"}
+              onClick={() => setOrder("popular")}
+            />
+            <SortChip
+              label="최신순"
+              active={order === "recent"}
+              onClick={() => setOrder("recent")}
+            />
+          </div>
         </div>
-      </div>
 
-      <ExploreBody
-        bounds={bounds}
-        cells={data ?? []}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={() => refetch()}
-        query={query}
-        order={order}
-        onCellSelect={moveTo}
-      />
-    </aside>
+        <ExploreBody
+          bounds={bounds}
+          cells={data ?? []}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={() => refetch()}
+          query={query}
+          order={order}
+          district={selectedRegion}
+          onCellSelect={moveTo}
+        />
+      </aside>
+
+      {searchOpen && <SearchPanel onClose={() => setSearchOpen(false)} />}
+    </>
   );
 };
 
@@ -75,6 +88,8 @@ interface ExploreBodyProps {
   onRetry: () => void;
   query: string;
   order: SortOrder;
+  /** 선택된 지역 필터 — null이면 지역 필터 미적용 (MSG-114) */
+  district: string | null;
   onCellSelect: (center: LatLng) => void;
 }
 
@@ -87,6 +102,7 @@ const ExploreBody = ({
   onRetry,
   query,
   order,
+  district,
   onCellSelect,
 }: ExploreBodyProps) => {
   // early return(isError·isLoading) 아래에 두면 렌더마다 훅 호출 여부가 달라져
@@ -97,8 +113,8 @@ const ExploreBody = ({
   );
   const { cellCount } = useMemo(() => summarizeCells(visibleCells), [visibleCells]);
   const displayCells = useMemo(
-    () => selectExploreCells(visibleCells, { query, order }),
-    [visibleCells, query, order],
+    () => selectExploreCells(visibleCells, { query, order, district }),
+    [visibleCells, query, order, district],
   );
 
   if (isError) {
@@ -129,11 +145,13 @@ const ExploreBody = ({
   return (
     <>
       <div className="flex items-baseline gap-xs px-md pb-sm">
-        <span className="text-fm-title text-foreground">{REGION_LABEL}</span>
+        <span className="text-fm-title text-foreground">
+          {district ? `서울 ${district} 격자` : REGION_LABEL}
+        </span>
         <span className="text-fm-body text-foreground-muted">{cellCount}개</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-md pb-md [scrollbar-gutter:stable]">
+      <div className="flex-1 overflow-y-auto px-md pb-md scrollbar-gutter-stable">
         {displayCells.length === 0 ? (
           <p className="pt-lg text-center text-fm-body text-foreground-muted">
             {query.trim()

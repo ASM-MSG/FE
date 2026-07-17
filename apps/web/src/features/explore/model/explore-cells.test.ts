@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Cell } from "@/entities/cell";
 import {
+  filterByDistrict,
   formatDuration,
   searchCells,
   selectExploreCells,
@@ -12,9 +13,11 @@ const cell = (
   label: string,
   videoCount: number,
   createdAt: string,
+  district = "마포구",
 ): Cell => ({
   id,
   label,
+  district,
   center: { lat: 0, lng: 0 },
   videoCount,
   createdAt,
@@ -115,6 +118,62 @@ describe("formatDuration (L3)", () => {
 
   it("undefined이면 null을 반환한다(배지 미표시 신호)", () => {
     expect(formatDuration(undefined)).toBeNull();
+  });
+});
+
+describe("filterByDistrict 지역 필터 (AC 16)", () => {
+  const cells = [
+    cell("A", "홍대입구 A-14", 10, "2026-01-01T00:00:00.000Z", "마포구"),
+    cell("B", "합정 A-15", 20, "2026-01-02T00:00:00.000Z", "마포구"),
+    cell("C", "성수 C-02", 30, "2026-01-03T00:00:00.000Z", "성동구"),
+    cell("D", "강남역 E-05", 40, "2026-01-04T00:00:00.000Z", "강남구"),
+  ];
+
+  it("지정한 구(district)에 속한 격자만 반환한다", () => {
+    expect(filterByDistrict(cells, "마포구").map((c) => c.id)).toEqual([
+      "A",
+      "B",
+    ]);
+  });
+
+  it("매칭되는 격자가 없는 구는 빈 배열을 반환한다(범위 밖 셀 제거)", () => {
+    expect(filterByDistrict(cells, "관악구")).toEqual([]);
+  });
+
+  it("district가 null이거나 undefined면 입력 목록을 그대로 반환한다", () => {
+    expect(filterByDistrict(cells, null)).toEqual(cells);
+    expect(filterByDistrict(cells, undefined)).toEqual(cells);
+  });
+});
+
+describe("selectExploreCells 지역 필터 통합 (AC 16)", () => {
+  const cells = [
+    cell("A", "홍대입구 A-14", 10, "2026-01-01T00:00:00.000Z", "마포구"),
+    cell("B", "합정 A-15", 50, "2026-01-02T00:00:00.000Z", "마포구"),
+    cell("C", "성수 C-02", 30, "2026-01-03T00:00:00.000Z", "성동구"),
+  ];
+
+  it("설정된 지역 필터가 결과 집합을 해당 구로 좁힌다", () => {
+    const result = selectExploreCells(cells, {
+      query: "",
+      order: "popular",
+      district: "마포구",
+    });
+    expect(result.map((c) => c.id)).toEqual(["B", "A"]);
+  });
+
+  it("district 미지정 시 기존 동작(전체 대상)을 유지한다 — 시그니처 호환", () => {
+    const result = selectExploreCells(cells, { query: "", order: "popular" });
+    expect(result.map((c) => c.id)).toEqual(["B", "C", "A"]);
+  });
+
+  it("지역 필터와 검색어 필터가 함께 적용된다(교집합)", () => {
+    const result = selectExploreCells(cells, {
+      query: "합정",
+      order: "popular",
+      district: "마포구",
+    });
+    expect(result.map((c) => c.id)).toEqual(["B"]);
   });
 });
 
