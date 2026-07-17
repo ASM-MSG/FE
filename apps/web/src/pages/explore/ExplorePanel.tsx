@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Chip, SearchBar } from "@fillmap/ui-web";
+import { SearchBar } from "@fillmap/ui-web";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
   selectExploreCells,
@@ -13,6 +13,7 @@ import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { ExploreCellCard } from "./ui/ExploreCellCard";
+import { SortChip } from "./ui/SortChip";
 
 /** S4 지역명 — 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시(D4) */
 const REGION_LABEL = "서울 마포구 격자";
@@ -39,13 +40,13 @@ export const ExplorePanel = () => {
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="flex gap-xs">
-          <Chip
-            text="인기순"
+          <SortChip
+            label="인기순"
             active={order === "popular"}
             onClick={() => setOrder("popular")}
           />
-          <Chip
-            text="최신순"
+          <SortChip
+            label="최신순"
             active={order === "recent"}
             onClick={() => setOrder("recent")}
           />
