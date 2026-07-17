@@ -19,4 +19,8 @@ export interface Cell {
   center: LatLng;
   /** 격자에 속한 영상 수 */
   videoCount: number;
+  /** 격자 생성 시각 (ISO 8601) — "최신순" 정렬 기준 (D3) */
+  createdAt: string;
+  /** 대표 영상 길이(초) — 카드 길이 배지용. 없으면 배지 미표시 (S6) */
+  durationSec?: number;
 }

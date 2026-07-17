@@ -11,6 +11,7 @@ const cell = (id: string, lat: number, lng: number, videoCount: number): Cell =>
   label: id,
   center: { lat, lng },
   videoCount,
+  createdAt: "2026-01-01T00:00:00.000Z",
 });
 
 // 서울 도심을 감싸는 예시 bounds

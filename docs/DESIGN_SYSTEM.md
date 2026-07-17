@@ -23,7 +23,7 @@ apps/web (tailwind.config.ts)  →  @fillmap/tailwind-preset  →  @fillmap/desi
 
 ## 반드시 지킬 규칙 (6개조)
 
-1. **색상·크기·타이포 값의 유일한 출처는 `design-tokens`.** 컴포넌트/앱 코드에 hex, px 리터럴 금지. Tailwind 임의값(`bg-[#fff]`) 금지 — 단, 컴포넌트 고유 치수(`min-w-[60px]` 등)는 variant 정의 안에서만 허용.
+1. **색상·크기·타이포 값의 유일한 출처는 `design-tokens`.** 컴포넌트/앱 코드에 hex, px 리터럴 금지. Tailwind 임의값(`bg-[#fff]`) 금지 — 단, 컴포넌트 고유 치수(`min-w-[60px]` 등)는 variant 정의 안에서만 허용. 이 예외 안에서도 Tailwind 기본 스케일(4px 단위)로 정확히 표현되는 값은 임의값 대신 스케일 클래스를 쓴다 — 예: `min-w-[40px]` 대신 `min-w-10`, `p-[16px]` 대신 `p-4`. 스케일에 없는 값(예: 6px, 14px)에서만 임의값이 남는다.
 2. **원시 토큰(`blue-500` 등)보다 시맨틱 토큰(`primary`, `background` 등) 우선 사용.** 시맨틱으로 표현 안 되는 경우에만 원시 토큰 직접 사용.
 3. **`ui-web`(추후 `ui-native`)에는 도메인 무관 컴포넌트만.** API 호출·비즈니스 로직은 각 앱의 `features/`로.
 4. **variant API는 `design-tokens/src/variants.ts`의 공용 타입에서 시작.** 웹/앱 컴포넌트가 같은 union 타입을 import한다. 한쪽에만 variant를 추가하지 않는다.
