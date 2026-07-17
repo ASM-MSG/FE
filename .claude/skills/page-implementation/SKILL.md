@@ -50,6 +50,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 
 - 색상·크기·타이포는 토큰 클래스만: `bg-primary`, `gap-md`, `text-fm-body` 등. hex/px 리터럴과 Tailwind 임의값(`bg-[#fff]`) 금지
 - 시맨틱 토큰(`primary`, `background`) 우선, 원시 토큰(`blue-500`)은 시맨틱으로 표현 불가할 때만
+- 컴포넌트 고유 치수(`min-w-[60px]` 등)로 임의값이 불가피할 때도, Tailwind 기본 스케일(4px 단위)로 정확히 나오는 값이면 스케일 클래스를 쓴다 — `min-w-[40px]`이 아니라 `min-w-10`. 스케일에 없는 값에서만 임의값 유지
 - 사용 가능한 토큰 클래스 목록: `docs/DESIGN_SYSTEM.md` 참조
 
 ## RN 대비 경계 규칙

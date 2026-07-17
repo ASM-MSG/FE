@@ -16,8 +16,8 @@ export const SortChip = ({ label, active, onClick }: SortChipProps) => (
     onClick={onClick}
     className={
       active
-        ? "min-w-[40px] rounded-full bg-primary px-[12px] py-[6px] text-fm-body-strong text-primary-foreground"
-        : "min-w-[40px] rounded-full border border-border bg-surface-soft px-[12px] py-[6px] text-fm-body-strong text-foreground-body"
+        ? "min-w-10 rounded-full bg-primary px-3 py-1.5 text-fm-body-strong text-primary-foreground"
+        : "min-w-10 rounded-full border border-border bg-surface-soft px-3 py-1.5 text-fm-body-strong text-foreground-body"
     }
   >
     {label}
