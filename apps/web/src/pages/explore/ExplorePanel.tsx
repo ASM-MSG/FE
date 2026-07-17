@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SearchBar } from "@fillmap/ui-web";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
@@ -89,6 +89,18 @@ const ExploreBody = ({
   order,
   onCellSelect,
 }: ExploreBodyProps) => {
+  // early return(isError·isLoading) 아래에 두면 렌더마다 훅 호출 여부가 달라져
+  // Rules of Hooks를 어기므로, 분기 위에서 무조건 호출하고 null 처리는 내부에서 한다.
+  const visibleCells = useMemo(
+    () => (bounds ? filterCellsInBounds(cells, bounds) : []),
+    [cells, bounds],
+  );
+  const { cellCount } = useMemo(() => summarizeCells(visibleCells), [visibleCells]);
+  const displayCells = useMemo(
+    () => selectExploreCells(visibleCells, { query, order }),
+    [visibleCells, query, order],
+  );
+
   if (isError) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-sm px-md text-center">
@@ -113,10 +125,6 @@ const ExploreBody = ({
       </p>
     );
   }
-
-  const visibleCells = filterCellsInBounds(cells, bounds);
-  const { cellCount } = summarizeCells(visibleCells);
-  const displayCells = selectExploreCells(visibleCells, { query, order });
 
   return (
     <>
