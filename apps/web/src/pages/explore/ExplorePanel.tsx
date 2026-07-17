@@ -124,7 +124,7 @@ const ExploreBody = ({
         <span className="text-fm-body text-foreground-muted">{cellCount}개</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-md pb-md">
+      <div className="flex-1 overflow-y-auto px-md pb-md [scrollbar-gutter:stable]">
         {displayCells.length === 0 ? (
           <p className="pt-lg text-center text-fm-body text-foreground-muted">
             {query.trim()
