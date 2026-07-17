@@ -32,7 +32,10 @@ export const ExploreCellCard = ({ cell, onSelect }: ExploreCellCardProps) => {
           </span>
         )}
       </span>
-      <span className="max-w-full truncate text-fm-body-strong text-foreground">
+      <span
+        title={cell.label}
+        className="max-w-full truncate text-fm-body-strong text-foreground"
+      >
         {cell.label}
       </span>
       <span className="text-fm-caption text-foreground-muted">
