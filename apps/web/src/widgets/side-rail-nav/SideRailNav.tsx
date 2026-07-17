@@ -26,7 +26,13 @@ export const SideRailNav = () => {
       items={items}
       activeKey={getActiveNavKey(pathname)}
       onSelect={(key) => {
-        if (isNavKey(key)) navigate(ROUTES[key]);
+        if (!isNavKey(key)) return;
+        // 탐색을 다시 누르면 패널을 닫는다 — 홈으로 복귀(S10)
+        if (key === "explore" && getActiveNavKey(pathname) === "explore") {
+          navigate(ROUTES.home);
+          return;
+        }
+        navigate(ROUTES[key]);
       }}
     />
   );
