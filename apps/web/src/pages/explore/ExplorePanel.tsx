@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { SearchBar } from "@fillmap/ui-web";
-import { ROUTES } from "@/app/routes";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
   selectExploreCells,
@@ -15,7 +14,6 @@ import {
 import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
-import { SidebarCloseHandle } from "@/widgets/section-panel/SidebarCloseHandle";
 import { ExploreCellCard } from "./ui/ExploreCellCard";
 import { SearchPanel } from "./ui/SearchPanel";
 import { SortChip } from "./ui/SortChip";
@@ -29,7 +27,6 @@ const REGION_LABEL = "서울 마포구 격자";
  * 검색·정렬 상태는 로컬로 관리하고, 목록 파생은 순수 셀렉터(selectExploreCells)에 위임한다.
  */
 export const ExplorePanel = () => {
-  const navigate = useNavigate();
   const { moveTo } = useMapShell();
   const bounds = useViewportStore((s) => s.bounds);
   const { data, isLoading, isError, refetch } = useCellsQuery();
@@ -91,8 +88,6 @@ export const ExplorePanel = () => {
           />
         </>
       )}
-
-      <SidebarCloseHandle onClose={() => navigate(ROUTES.home)} />
     </aside>
   );
 };

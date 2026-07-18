@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
+import { ROUTES } from "@/app/routes";
 import type { LatLng } from "@/entities/cell";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
+import { MapControls } from "@/pages/map-home/ui/MapControls";
 import { SEOUL_CITY_HALL, getCurrentPosition } from "@/shared/geolocation";
+import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
+import { useSidebarStore } from "./sidebar-store";
 import type { MapShellContext } from "./use-map-shell";
 
 /**
@@ -12,7 +16,10 @@ import type { MapShellContext } from "./use-map-shell";
  * 지도 SDK import는 MapCanvas 경계 안에만 두고, 셸은 배치와 명령 주입만 담당한다.
  */
 export const MapShell = () => {
+  const navigate = useNavigate();
   const setViewport = useViewportStore((s) => s.setViewport);
+  const collapsed = useSidebarStore((s) => s.collapsed);
+  const setCollapsed = useSidebarStore((s) => s.setCollapsed);
   const mapRef = useRef<MapCanvasHandle>(null);
   const [initialCenter, setInitialCenter] = useState<LatLng>(SEOUL_CITY_HALL);
 
@@ -49,7 +56,27 @@ export const MapShell = () => {
         />
       </div>
 
-      <Outlet context={context} />
+      {/* 접힘 시 패널을 숨기되(display:none) 언마운트하지 않아 검색·필터 상태가 유지된다 */}
+      <div className={collapsed ? "hidden" : "contents"}>
+        <Outlet context={context} />
+      </div>
+
+      <SidebarCollapseHandle />
+
+      {/* 지도 컨트롤은 어떤 섹션에서도 항상 지도 위에 유지된다 */}
+      <div className="pointer-events-none absolute bottom-md right-md z-20">
+        <div className="pointer-events-auto">
+          <MapControls
+            onUpload={() => {
+              setCollapsed(false);
+              navigate(ROUTES.upload);
+            }}
+            onLocate={context.locate}
+            onZoomIn={context.zoomIn}
+            onZoomOut={context.zoomOut}
+          />
+        </div>
+      </div>
     </div>
   );
 };
