@@ -16,7 +16,7 @@ export const SidebarCollapseHandle = () => {
       onClick={toggle}
       aria-label={collapsed ? "사이드바 열기" : "사이드바 닫기"}
       aria-expanded={!collapsed}
-      className={`absolute top-1/2 z-30 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border bg-background text-icon shadow-raised transition-[left] duration-200 active:bg-surface ${
+      className={`absolute top-1/2 z-30 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border bg-background text-icon shadow-raised active:bg-surface ${
         collapsed ? "left-0" : "left-97"
       }`}
     >
