@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { SearchBar } from "@fillmap/ui-web";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
@@ -35,7 +36,11 @@ export const ExplorePanel = () => {
   const selectedRegion = useExploreFilterStore((s) => s.selectedRegion);
   const clearFilters = useExploreFilterStore((s) => s.clearFilters);
   const [order, setOrder] = useState<SortOrder>("popular");
-  const [searchOpen, setSearchOpen] = useState(false);
+  // 홈 검색바에서 진입하면(openSearch state) 검색 패널이 바로 열린 채 시작한다
+  const location = useLocation();
+  const [searchOpen, setSearchOpen] = useState(
+    () => Boolean((location.state as { openSearch?: boolean } | null)?.openSearch),
+  );
 
   // 탐색 진입 시마다 이전 검색어·지역 필터 초기화 — 최근 기록은 유지
   useEffect(() => clearFilters(), [clearFilters]);

@@ -13,8 +13,10 @@ interface SearchPanelProps {
 }
 
 /**
- * 검색 패널 오버레이 — SearchBar 클릭 시 탐색 패널 위에 뜨는 떠 있는 카드(Figma 13399-1795).
- * 뒤로가기 + 입력창 + 최근 방문 칩 + 최근 검색 리스트 + 전체 지역 목록으로 구성된다.
+ * 검색 패널 오버레이 — SearchBar 클릭 시 탐색 패널 위를 같은 폭(388px)으로 덮는다.
+ * 검색창(입력 필)이 탐색 패널 SearchBar와 같은 자리에 오도록 배치해 전환 시 위치가
+ * 튀지 않는다 — 이 제약 때문에 뒤로가기(‹)는 Figma(13399-1795)의 필 바깥이 아닌
+ * 필 안쪽 좌측에 둔다. 내용은 최근 방문 칩 + 최근 검색 리스트 + 전체 지역 목록.
  * 타이핑 후 엔터/검색 아이콘으로 검색을 커밋하고 필터가 적용된 탐색 패널로 복귀한다(D2).
  * 바깥 영역 클릭으로 닫힌다(모달 시맨틱, AC 10).
  */
@@ -51,10 +53,10 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
         role="dialog"
         aria-label="검색"
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-md left-md top-md flex w-100 flex-col gap-md rounded-lg bg-background p-md shadow-raised"
+        className="absolute inset-y-0 left-0 flex w-97 flex-col gap-md bg-background p-md shadow-raised"
       >
-        {/* 검색 행: 뒤로가기 + 입력 필 */}
-        <div className="flex shrink-0 items-center gap-sm">
+        {/* 검색 필 — 탐색 패널 SearchBar와 같은 자리(h-12 풀폭), 뒤로가기는 필 안쪽 좌측 */}
+        <div className="flex h-12 shrink-0 items-center gap-xs rounded-full bg-surface pl-sm pr-md">
           <button
             type="button"
             aria-label="뒤로가기"
@@ -63,27 +65,25 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
           >
             <ChevronLeft className="size-6" />
           </button>
-          <div className="flex flex-1 items-center gap-xs rounded-full bg-surface px-md py-sm">
-            <input
-              autoFocus
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitSearch(input);
-              }}
-              placeholder="장소, 격자, 영상 검색"
-              className="min-w-0 flex-1 bg-transparent text-fm-base text-foreground outline-none placeholder:text-foreground-muted"
-            />
-            <button
-              type="button"
-              aria-label="검색"
-              onClick={() => commitSearch(input)}
-              className="shrink-0 text-icon transition-opacity active:opacity-60"
-            >
-              <Search className="size-5" />
-            </button>
-          </div>
+          <input
+            autoFocus
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitSearch(input);
+            }}
+            placeholder="장소, 격자, 영상 검색"
+            className="min-w-0 flex-1 bg-transparent text-fm-base text-foreground outline-none placeholder:text-foreground-muted"
+          />
+          <button
+            type="button"
+            aria-label="검색"
+            onClick={() => commitSearch(input)}
+            className="shrink-0 text-icon transition-opacity active:opacity-60"
+          >
+            <Search className="size-5" />
+          </button>
         </div>
 
         <div className="flex flex-1 flex-col gap-md overflow-y-auto scrollbar-gutter-stable">

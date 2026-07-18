@@ -16,7 +16,13 @@ export const MapHomePage = () => {
   return (
     <div className="pointer-events-none absolute inset-0 z-10">
       <div className="pointer-events-auto absolute left-md top-md flex w-[360px] flex-col gap-sm">
-        <SearchBar placeholder="장소, 격자, 영상 검색" />
+        {/* 홈 검색바는 탐색 검색 패널로 가는 트리거 — 입력은 검색 패널에서 */}
+        <SearchBar
+          placeholder="장소, 격자, 영상 검색"
+          readOnly
+          onClick={() => navigate(ROUTES.explore, { state: { openSearch: true } })}
+          onFocus={() => navigate(ROUTES.explore, { state: { openSearch: true } })}
+        />
         <CellSummaryPanel
           onViewAll={() => navigate(ROUTES.explore)}
           onCellSelect={moveTo}
