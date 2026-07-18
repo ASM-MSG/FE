@@ -69,6 +69,7 @@ export const SearchBox = () => {
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
           if (e.key === "Enter") goSearch(input);
+          else if (e.key === "Escape") setOpen(false);
         }}
         onSearch={() => goSearch(input)}
       />
