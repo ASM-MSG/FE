@@ -27,8 +27,8 @@ export const SideRailNav = () => {
       activeKey={getActiveNavKey(pathname)}
       onSelect={(key) => {
         if (!isNavKey(key)) return;
-        // 탐색을 다시 누르면 패널을 닫는다 — 홈으로 복귀(S10)
-        if (key === "explore" && getActiveNavKey(pathname) === "explore") {
+        // 활성 섹션 아이콘을 다시 누르면 사이드바를 닫고 홈(지도)으로 복귀 — 열고 닫기 토글
+        if (key !== "home" && key === getActiveNavKey(pathname)) {
           navigate(ROUTES.home);
           return;
         }
