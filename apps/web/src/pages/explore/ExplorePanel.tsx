@@ -46,46 +46,49 @@ export const ExplorePanel = () => {
   useEffect(() => clearFilters(), [clearFilters]);
 
   return (
-    <>
-      <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
-        <div className="flex flex-col gap-sm p-md">
-          {/* SearchBar는 검색 패널을 여는 트리거 — 타이핑은 패널 입력창에서(D2) */}
-          <SearchBar
-            placeholder="격자, 장소 검색"
-            value={selectedRegion ?? query}
-            readOnly
-            onClick={() => setSearchOpen(true)}
-            onFocus={() => setSearchOpen(true)}
-          />
-          <div className="flex gap-xs">
-            <SortChip
-              label="인기순"
-              active={order === "popular"}
-              onClick={() => setOrder("popular")}
+    <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
+      {searchOpen ? (
+        // 검색 모드 — 검색바를 그 자리에 유지하고 아래 영역만 최근/전체 지역으로 전개(인라인)
+        <SearchPanel onClose={() => setSearchOpen(false)} />
+      ) : (
+        <>
+          <div className="flex flex-col gap-sm p-md">
+            {/* SearchBar는 검색 모드를 여는 트리거 — 타이핑은 검색 필에서(D2) */}
+            <SearchBar
+              placeholder="격자, 장소 검색"
+              value={selectedRegion ?? query}
+              readOnly
+              onClick={() => setSearchOpen(true)}
+              onFocus={() => setSearchOpen(true)}
             />
-            <SortChip
-              label="최신순"
-              active={order === "recent"}
-              onClick={() => setOrder("recent")}
-            />
+            <div className="flex gap-xs">
+              <SortChip
+                label="인기순"
+                active={order === "popular"}
+                onClick={() => setOrder("popular")}
+              />
+              <SortChip
+                label="최신순"
+                active={order === "recent"}
+                onClick={() => setOrder("recent")}
+              />
+            </div>
           </div>
-        </div>
 
-        <ExploreBody
-          bounds={bounds}
-          cells={data ?? []}
-          isLoading={isLoading}
-          isError={isError}
-          onRetry={() => refetch()}
-          query={query}
-          order={order}
-          district={selectedRegion}
-          onCellSelect={moveTo}
-        />
-      </aside>
-
-      {searchOpen && <SearchPanel onClose={() => setSearchOpen(false)} />}
-    </>
+          <ExploreBody
+            bounds={bounds}
+            cells={data ?? []}
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={() => refetch()}
+            query={query}
+            order={order}
+            district={selectedRegion}
+            onCellSelect={moveTo}
+          />
+        </>
+      )}
+    </aside>
   );
 };
 
