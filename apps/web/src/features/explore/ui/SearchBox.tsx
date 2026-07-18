@@ -18,6 +18,8 @@ export const SearchBox = () => {
   const navigate = useNavigate();
   const recentVisits = useExploreFilterStore((s) => s.recentVisits);
   const recentSearches = useExploreFilterStore((s) => s.recentSearches);
+  const applySearch = useExploreFilterStore((s) => s.applySearch);
+  const selectRegion = useExploreFilterStore((s) => s.selectRegion);
   const removeRecentSearch = useExploreFilterStore((s) => s.removeRecentSearch);
   const clearRecentSearches = useExploreFilterStore(
     (s) => s.clearRecentSearches,
@@ -39,13 +41,20 @@ export const SearchBox = () => {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  // 검색 확정 → 필터를 실어 탐색 그리드로 이동(결과 표시는 탐색이 담당)
+  // 검색 확정 → 필터를 스토어에 적용하고 탐색 그리드로 이동(이미 탐색이면 그대로 갱신).
+  // 스토어 구동이라 같은 경로 재이동(리마운트 없음)에도 결과가 바뀐다.
   const goSearch = (term: string) => {
     if (!term.trim()) return;
-    navigate(ROUTES.explore, { state: { searchQuery: term.trim() } });
+    applySearch(term.trim());
+    setInput("");
+    setOpen(false);
+    navigate(ROUTES.explore);
   };
   const goRegion = (name: string) => {
-    navigate(ROUTES.explore, { state: { searchRegion: name } });
+    selectRegion(name);
+    setInput("");
+    setOpen(false);
+    navigate(ROUTES.explore);
   };
 
   const visitsEmpty = isHistoryEmpty(recentVisits);

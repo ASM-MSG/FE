@@ -2,6 +2,7 @@ import { Compass, Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
 import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
+import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 
 const items: (SideRailItem & { key: NavKey })[] = [
@@ -21,6 +22,7 @@ export const SideRailNav = () => {
   const navigate = useNavigate();
   const setCollapsed = useSidebarStore((s) => s.setCollapsed);
   const toggle = useSidebarStore((s) => s.toggle);
+  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
 
   return (
     <SideRail
@@ -39,6 +41,8 @@ export const SideRailNav = () => {
           return;
         }
         setCollapsed(false);
+        // 탐색은 네비로 진입하면 브라우즈(전체 조회) — 이전 검색/지역 필터를 비운다
+        if (key === "explore") clearFilters();
         navigate(ROUTES[key]);
       }}
     />

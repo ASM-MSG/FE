@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useMemo, useState } from "react";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
   selectExploreCells,
   type SortOrder,
 } from "@/features/explore/model/explore-cells";
 import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
+import { SearchBox } from "@/features/explore/ui/SearchBox";
 import {
   filterCellsInBounds,
   summarizeCells,
@@ -19,17 +19,10 @@ import { SortChip } from "./ui/SortChip";
 /** 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시 */
 const REGION_LABEL = "서울 마포구 격자";
 
-interface ExploreNavState {
-  /** 검색으로 진입 시 적용할 검색어 */
-  searchQuery?: string;
-  /** 지역 선택으로 진입 시 적용할 구 */
-  searchRegion?: string;
-}
-
 /**
  * 탐색 패널(`/explore`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 오버레이.
- * 정렬 칩(인기순/최신순) + 뷰포트 요약 헤더 + 2열 카드 그리드로 결과를 보여준다.
- * 검색 입력은 SearchBox(드롭다운)가 담당하고, 이 패널은 진입 시 넘어온 필터를 반영해 조회만 한다.
+ * 홈과 동일한 검색 박스(드롭다운) + 정렬 칩(인기순/최신순) + 요약 헤더 + 2열 카드 그리드.
+ * 검색/지역 필터는 SearchBox가 스토어에 적용하고, 이 패널은 스토어를 반영해 조회한다.
  */
 export const ExplorePanel = () => {
   const { moveTo } = useMapShell();
@@ -38,35 +31,24 @@ export const ExplorePanel = () => {
 
   const query = useExploreFilterStore((s) => s.query);
   const selectedRegion = useExploreFilterStore((s) => s.selectedRegion);
-  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
-  const applySearch = useExploreFilterStore((s) => s.applySearch);
-  const selectRegion = useExploreFilterStore((s) => s.selectRegion);
   const [order, setOrder] = useState<SortOrder>("popular");
-  const location = useLocation();
-
-  // 진입 시 필터 초기화 후, 검색/지역으로 넘어왔으면 그 필터만 적용한다.
-  // (네비 아이콘·"전체 보기"로 진입하면 state가 없어 전체 조회) — 마운트 1회.
-  useEffect(() => {
-    clearFilters();
-    const nav = location.state as ExploreNavState | null;
-    if (nav?.searchQuery) applySearch(nav.searchQuery);
-    else if (nav?.searchRegion) selectRegion(nav.searchRegion);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
-      <div className="flex gap-xs p-md">
-        <SortChip
-          label="인기순"
-          active={order === "popular"}
-          onClick={() => setOrder("popular")}
-        />
-        <SortChip
-          label="최신순"
-          active={order === "recent"}
-          onClick={() => setOrder("recent")}
-        />
+      <div className="flex flex-col gap-sm p-md">
+        <SearchBox />
+        <div className="flex gap-xs">
+          <SortChip
+            label="인기순"
+            active={order === "popular"}
+            onClick={() => setOrder("popular")}
+          />
+          <SortChip
+            label="최신순"
+            active={order === "recent"}
+            onClick={() => setOrder("recent")}
+          />
+        </div>
       </div>
 
       <ExploreBody
