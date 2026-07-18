@@ -97,10 +97,14 @@ const ExploreBody = ({
     () => (bounds ? filterCellsInBounds(cells, bounds) : []),
     [cells, bounds],
   );
-  const { cellCount } = useMemo(() => summarizeCells(visibleCells), [visibleCells]);
   const displayCells = useMemo(
     () => selectExploreCells(visibleCells, { query, order, district }),
     [visibleCells, query, order, district],
+  );
+  // 헤더 개수는 실제 렌더되는 목록(필터 적용 후) 기준 — 라벨과 개수가 어긋나지 않게
+  const { cellCount } = useMemo(
+    () => summarizeCells(displayCells),
+    [displayCells],
   );
 
   if (isError) {
