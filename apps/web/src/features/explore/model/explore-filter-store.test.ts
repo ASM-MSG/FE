@@ -42,6 +42,15 @@ describe("explore-filter-store 액션", () => {
     state().clearRecentSearches();
     expect(state().recentSearches).toEqual([]);
   });
+
+  it("clearFilters: 검색어·지역 필터만 초기화하고 최근 기록은 유지한다 (탐색 재진입 시맨틱)", () => {
+    state().applySearch("성수");
+    state().selectRegion("마포구");
+    state().clearFilters();
+    expect(state().query).toBe("");
+    expect(state().selectedRegion).toBeNull();
+    expect(state().recentSearches[0]).toBe("성수");
+  });
 });
 
 describe("지역/검색 필터가 selectExploreCells 입력에 반영된다 (AC 16)", () => {

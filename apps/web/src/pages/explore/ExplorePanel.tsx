@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SearchBar } from "@fillmap/ui-web";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
@@ -33,8 +33,12 @@ export const ExplorePanel = () => {
   // 검색어·선택 지역은 공유 필터 스토어로 승격(MSG-114) — 정렬은 이 화면 로컬 유지(MSG-113)
   const query = useExploreFilterStore((s) => s.query);
   const selectedRegion = useExploreFilterStore((s) => s.selectedRegion);
+  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
   const [order, setOrder] = useState<SortOrder>("popular");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // 탐색 진입 시마다 이전 검색어·지역 필터 초기화 — 최근 기록은 유지
+  useEffect(() => clearFilters(), [clearFilters]);
 
   return (
     <>

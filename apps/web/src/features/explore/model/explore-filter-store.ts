@@ -25,6 +25,8 @@ interface ExploreFilterState {
   removeRecentSearch: (term: string) => void;
   /** 최근 검색을 모두 비운다 (AC 8) */
   clearRecentSearches: () => void;
+  /** 검색어·지역 필터만 초기화한다 — 최근 기록은 유지 (탐색 재진입 시맨틱) */
+  clearFilters: () => void;
   /** 초기 목데이터 상태로 되돌린다 (테스트/새로고침 시맨틱) */
   reset: () => void;
 }
@@ -56,5 +58,6 @@ export const useExploreFilterStore = create<ExploreFilterState>((set) => ({
     })),
   clearRecentSearches: () =>
     set({ recentSearches: history.clearRecentSearches() }),
+  clearFilters: () => set({ query: "", selectedRegion: null }),
   reset: () => set(initialState),
 }));

@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, Search } from "lucide-react";
-import { Chip } from "@fillmap/ui-web";
 import { selectRegions } from "@/entities/region";
 import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
 import { isHistoryEmpty } from "@/features/explore/model/recent-history";
 import { RecentSearchRow } from "./RecentSearchRow";
 import { RegionRow } from "./RegionRow";
+import { SortChip } from "./SortChip";
 
 interface SearchPanelProps {
   /** 패널 닫기(뒤로가기·바깥 클릭·필터 선택 후 복귀) (AC 10) */
@@ -97,9 +97,10 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
             ) : (
               <div className="flex flex-wrap gap-xs">
                 {recentVisits.map((visit) => (
-                  <Chip
+                  <SortChip
                     key={visit}
-                    text={visit}
+                    label={visit}
+                    active={false}
                     onClick={() => chooseRegion(visit)}
                   />
                 ))}
