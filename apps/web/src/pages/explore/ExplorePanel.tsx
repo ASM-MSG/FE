@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { SearchBar } from "@fillmap/ui-web";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
   selectExploreCells,
   type SortOrder,
 } from "@/features/explore/model/explore-cells";
+import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
+import { SearchBox } from "@/features/explore/ui/SearchBox";
 import {
   filterCellsInBounds,
   summarizeCells,
@@ -15,30 +16,27 @@ import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { ExploreCellCard } from "./ui/ExploreCellCard";
 import { SortChip } from "./ui/SortChip";
 
-/** S4 지역명 — 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시(D4) */
+/** 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시 */
 const REGION_LABEL = "서울 마포구 격자";
 
 /**
- * 탐색 패널(`/explore`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 오버레이(S1).
- * 검색창(S2)+정렬 칩(S3)+뷰포트 요약 헤더(S4)+2열 카드 그리드(S5)+빈 상태(S9)로 구성된다.
- * 검색·정렬 상태는 로컬로 관리하고, 목록 파생은 순수 셀렉터(selectExploreCells)에 위임한다.
+ * 탐색 패널(`/explore`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 오버레이.
+ * 홈과 동일한 검색 박스(드롭다운) + 정렬 칩(인기순/최신순) + 요약 헤더 + 2열 카드 그리드.
+ * 검색/지역 필터는 SearchBox가 스토어에 적용하고, 이 패널은 스토어를 반영해 조회한다.
  */
 export const ExplorePanel = () => {
   const { moveTo } = useMapShell();
   const bounds = useViewportStore((s) => s.bounds);
   const { data, isLoading, isError, refetch } = useCellsQuery();
 
-  const [query, setQuery] = useState("");
+  const query = useExploreFilterStore((s) => s.query);
+  const selectedRegion = useExploreFilterStore((s) => s.selectedRegion);
   const [order, setOrder] = useState<SortOrder>("popular");
 
   return (
-    <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[388px] flex-col bg-background shadow-raised">
+    <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
       <div className="flex flex-col gap-sm p-md">
-        <SearchBar
-          placeholder="격자, 장소 검색"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <SearchBox />
         <div className="flex gap-xs">
           <SortChip
             label="인기순"
@@ -61,6 +59,7 @@ export const ExplorePanel = () => {
         onRetry={() => refetch()}
         query={query}
         order={order}
+        district={selectedRegion}
         onCellSelect={moveTo}
       />
     </aside>
@@ -75,6 +74,8 @@ interface ExploreBodyProps {
   onRetry: () => void;
   query: string;
   order: SortOrder;
+  /** 선택된 지역 필터 — null이면 지역 필터 미적용 (MSG-114) */
+  district: string | null;
   onCellSelect: (center: LatLng) => void;
 }
 
@@ -87,6 +88,7 @@ const ExploreBody = ({
   onRetry,
   query,
   order,
+  district,
   onCellSelect,
 }: ExploreBodyProps) => {
   // early return(isError·isLoading) 아래에 두면 렌더마다 훅 호출 여부가 달라져
@@ -95,10 +97,14 @@ const ExploreBody = ({
     () => (bounds ? filterCellsInBounds(cells, bounds) : []),
     [cells, bounds],
   );
-  const { cellCount } = useMemo(() => summarizeCells(visibleCells), [visibleCells]);
   const displayCells = useMemo(
-    () => selectExploreCells(visibleCells, { query, order }),
-    [visibleCells, query, order],
+    () => selectExploreCells(visibleCells, { query, order, district }),
+    [visibleCells, query, order, district],
+  );
+  // 헤더 개수는 실제 렌더되는 목록(필터 적용 후) 기준 — 라벨과 개수가 어긋나지 않게
+  const { cellCount } = useMemo(
+    () => summarizeCells(displayCells),
+    [displayCells],
   );
 
   if (isError) {
@@ -129,11 +135,17 @@ const ExploreBody = ({
   return (
     <>
       <div className="flex items-baseline gap-xs px-md pb-sm">
-        <span className="text-fm-title text-foreground">{REGION_LABEL}</span>
+        <span className="text-fm-title text-foreground">
+          {query.trim()
+            ? `'${query.trim()}' 검색 결과`
+            : district
+              ? `서울 ${district} 격자`
+              : REGION_LABEL}
+        </span>
         <span className="text-fm-body text-foreground-muted">{cellCount}개</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-md pb-md [scrollbar-gutter:stable]">
+      <div className="flex-1 overflow-y-auto px-md pb-md scrollbar-gutter-stable">
         {displayCells.length === 0 ? (
           <p className="pt-lg text-center text-fm-body text-foreground-muted">
             {query.trim()

@@ -9,6 +9,7 @@ import {
 const cell = (id: string, lat: number, lng: number, videoCount: number): Cell => ({
   id,
   label: id,
+  district: "마포구",
   center: { lat, lng },
   videoCount,
   createdAt: "2026-01-01T00:00:00.000Z",

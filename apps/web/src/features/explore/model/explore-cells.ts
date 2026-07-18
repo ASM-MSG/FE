@@ -7,7 +7,22 @@ export type SortOrder = "popular" | "recent";
 export interface ExploreQuery {
   query: string;
   order: SortOrder;
+  /** 선택된 행정구 필터 — null/undefined면 지역 필터 미적용 (MSG-114 D1/AC 16) */
+  district?: string | null;
 }
+
+/**
+ * 선택된 구(district)에 속한 격자만 반환한다. [AC 16]
+ * district가 없으면(null/undefined) 입력 목록을 그대로 반환한다 — 지역 필터는 결과 "집합"만 좁힌다.
+ * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
+ */
+export const filterByDistrict = (
+  cells: Cell[],
+  district?: string | null,
+): Cell[] => {
+  if (!district) return cells;
+  return cells.filter((cell) => cell.district === district);
+};
 
 /**
  * 검색어를 label(동네명+코드)의 부분 문자열로 매칭한다(대소문자 무시). [L1]
@@ -44,11 +59,13 @@ export const formatDuration = (sec?: number): string | null => {
 };
 
 /**
- * 검색 → 정렬 파이프라인. [L4]
- * 정렬 상태를 바꿔도 동일 검색어의 결과 집합(원소)은 동일하다 —
- * 검색은 집합만, 정렬은 순서만 결정한다.
+ * 지역 → 검색 → 정렬 파이프라인. [L4 + AC 16]
+ * 지역 필터(집합)와 검색 필터(집합)를 순차 교집합으로 좁힌 뒤 정렬(순서)한다.
+ * 정렬 상태를 바꿔도 동일 필터의 결과 집합(원소)은 동일하다.
+ * district 미지정 시 기존 검색+정렬 동작과 동일하다(시그니처 호환).
  */
 export const selectExploreCells = (
   cells: Cell[],
-  { query, order }: ExploreQuery,
-): Cell[] => sortCells(searchCells(cells, query), order);
+  { query, order, district }: ExploreQuery,
+): Cell[] =>
+  sortCells(searchCells(filterByDistrict(cells, district), query), order);

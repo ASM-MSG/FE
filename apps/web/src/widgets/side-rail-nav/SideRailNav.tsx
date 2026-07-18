@@ -2,6 +2,8 @@ import { Compass, Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
 import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
+import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
+import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 
 const items: (SideRailItem & { key: NavKey })[] = [
   { key: "home", label: "홈", icon: <Home className="size-full" /> },
@@ -11,10 +13,16 @@ const items: (SideRailItem & { key: NavKey })[] = [
   { key: "profile", label: "프로필", icon: <User className="size-full" /> },
 ];
 
-/** SideRail(ui-web)에 라우터를 연결한 조립 위젯 — 경로 기준 활성 표시 + 클릭 시 이동 */
+/**
+ * SideRail(ui-web)에 라우터를 연결한 조립 위젯 — 경로 기준 활성 표시 + 클릭 시 이동.
+ * 활성 탭 아이콘을 다시 누르면 사이드바를 접고(지도 전체), 다른 탭은 이동하며 펼친다(구글맵식).
+ */
 export const SideRailNav = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const setCollapsed = useSidebarStore((s) => s.setCollapsed);
+  const toggle = useSidebarStore((s) => s.toggle);
+  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
 
   return (
     <SideRail
@@ -27,11 +35,14 @@ export const SideRailNav = () => {
       activeKey={getActiveNavKey(pathname)}
       onSelect={(key) => {
         if (!isNavKey(key)) return;
-        // 탐색을 다시 누르면 패널을 닫는다 — 홈으로 복귀(S10)
-        if (key === "explore" && getActiveNavKey(pathname) === "explore") {
-          navigate(ROUTES.home);
+        // 활성 탭 재클릭 → 접기/펼치기 토글, 다른 탭 → 이동하며 펼침
+        if (key === getActiveNavKey(pathname)) {
+          toggle();
           return;
         }
+        setCollapsed(false);
+        // 탐색은 네비로 진입하면 브라우즈(전체 조회) — 이전 검색/지역 필터를 비운다
+        if (key === "explore") clearFilters();
         navigate(ROUTES[key]);
       }}
     />
