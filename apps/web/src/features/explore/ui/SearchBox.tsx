@@ -70,6 +70,7 @@ export const SearchBox = () => {
         onKeyDown={(e) => {
           if (e.key === "Enter") goSearch(input);
         }}
+        onSearch={() => goSearch(input)}
       />
 
       {open && (

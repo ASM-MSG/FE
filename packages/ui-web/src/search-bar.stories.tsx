@@ -18,3 +18,13 @@ export const Playground: Story = {
     </div>
   ),
 };
+
+/** onSearch 지정 시 검색 아이콘이 클릭 가능한 버튼이 된다 */
+export const ClickableIcon: Story = {
+  args: { onSearch: () => alert("검색") },
+  render: (args) => (
+    <div className="w-[356px] bg-surface p-md">
+      <SearchBar {...args} />
+    </div>
+  ),
+};
