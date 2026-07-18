@@ -5,13 +5,12 @@ interface RegionRowProps {
   name: string;
   /** 격자 수 (목값) */
   count: number;
-  /** 행 클릭 시 해당 지역 필터 적용 (AC 5) */
+  /** 행 클릭 시 해당 지역 필터 적용 */
   onSelect: (name: string) => void;
 }
 
 /**
- * 전체 지역 행 — 구 이름 + "격자 N" 개수 + 오른쪽 화살표(›). (AC 4)
- * 이 화면 전용 조합이라 로컬로 둔다(승격 후보 아님).
+ * 전체 지역 행 — 구 이름 + "격자 N" 개수 + 오른쪽 화살표(›).
  */
 export const RegionRow = ({ name, count, onSelect }: RegionRowProps) => (
   <button

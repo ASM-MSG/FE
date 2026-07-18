@@ -3,14 +3,14 @@ import { Clock, X } from "lucide-react";
 interface RecentSearchRowProps {
   /** 최근 검색어 */
   term: string;
-  /** 검색어 클릭 시 그 검색어로 필터 적용 (AC 6) */
+  /** 검색어 클릭 시 그 검색어로 필터 적용 */
   onSelect: (term: string) => void;
-  /** ✕ 클릭 시 해당 항목만 제거 (AC 7) */
+  /** ✕ 클릭 시 해당 항목만 제거 */
   onRemove: (term: string) => void;
 }
 
 /**
- * 최근 검색 행 — 원형 아이콘 + 검색어 + 개별 삭제(✕). (AC 3/6/7)
+ * 최근 검색 행 — 원형 아이콘 + 검색어 + 개별 삭제(✕).
  * 검색(행 클릭)과 삭제(✕)를 형제 버튼으로 분리해 이벤트 버블링 충돌을 피한다.
  */
 export const RecentSearchRow = ({

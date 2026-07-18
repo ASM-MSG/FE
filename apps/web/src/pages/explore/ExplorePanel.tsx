@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { SearchBar } from "@fillmap/ui-web";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
 import {
   selectExploreCells,
@@ -15,79 +14,72 @@ import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { ExploreCellCard } from "./ui/ExploreCellCard";
-import { SearchPanel } from "./ui/SearchPanel";
 import { SortChip } from "./ui/SortChip";
 
-/** S4 지역명 — 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시(D4) */
+/** 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시 */
 const REGION_LABEL = "서울 마포구 격자";
 
+interface ExploreNavState {
+  /** 검색으로 진입 시 적용할 검색어 */
+  searchQuery?: string;
+  /** 지역 선택으로 진입 시 적용할 구 */
+  searchRegion?: string;
+}
+
 /**
- * 탐색 패널(`/explore`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 오버레이(S1).
- * 검색창(S2)+정렬 칩(S3)+뷰포트 요약 헤더(S4)+2열 카드 그리드(S5)+빈 상태(S9)로 구성된다.
- * 검색·정렬 상태는 로컬로 관리하고, 목록 파생은 순수 셀렉터(selectExploreCells)에 위임한다.
+ * 탐색 패널(`/explore`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 오버레이.
+ * 정렬 칩(인기순/최신순) + 뷰포트 요약 헤더 + 2열 카드 그리드로 결과를 보여준다.
+ * 검색 입력은 SearchBox(드롭다운)가 담당하고, 이 패널은 진입 시 넘어온 필터를 반영해 조회만 한다.
  */
 export const ExplorePanel = () => {
   const { moveTo } = useMapShell();
   const bounds = useViewportStore((s) => s.bounds);
   const { data, isLoading, isError, refetch } = useCellsQuery();
 
-  // 검색어·선택 지역은 공유 필터 스토어로 승격(MSG-114) — 정렬은 이 화면 로컬 유지(MSG-113)
   const query = useExploreFilterStore((s) => s.query);
   const selectedRegion = useExploreFilterStore((s) => s.selectedRegion);
   const clearFilters = useExploreFilterStore((s) => s.clearFilters);
+  const applySearch = useExploreFilterStore((s) => s.applySearch);
+  const selectRegion = useExploreFilterStore((s) => s.selectRegion);
   const [order, setOrder] = useState<SortOrder>("popular");
-  // 홈 검색바에서 진입하면(openSearch state) 검색 패널이 바로 열린 채 시작한다
   const location = useLocation();
-  const [searchOpen, setSearchOpen] = useState(
-    () => Boolean((location.state as { openSearch?: boolean } | null)?.openSearch),
-  );
 
-  // 탐색 진입 시마다 이전 검색어·지역 필터 초기화 — 최근 기록은 유지
-  useEffect(() => clearFilters(), [clearFilters]);
+  // 진입 시 필터 초기화 후, 검색/지역으로 넘어왔으면 그 필터만 적용한다.
+  // (네비 아이콘·"전체 보기"로 진입하면 state가 없어 전체 조회) — 마운트 1회.
+  useEffect(() => {
+    clearFilters();
+    const nav = location.state as ExploreNavState | null;
+    if (nav?.searchQuery) applySearch(nav.searchQuery);
+    else if (nav?.searchRegion) selectRegion(nav.searchRegion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
-      {searchOpen ? (
-        // 검색 모드 — 검색바를 그 자리에 유지하고 아래 영역만 최근/전체 지역으로 전개(인라인)
-        <SearchPanel onClose={() => setSearchOpen(false)} />
-      ) : (
-        <>
-          <div className="flex flex-col gap-sm p-md">
-            {/* SearchBar는 검색 모드를 여는 트리거 — 타이핑은 검색 필에서(D2) */}
-            <SearchBar
-              placeholder="격자, 장소 검색"
-              value={selectedRegion ?? query}
-              readOnly
-              onClick={() => setSearchOpen(true)}
-              onFocus={() => setSearchOpen(true)}
-            />
-            <div className="flex gap-xs">
-              <SortChip
-                label="인기순"
-                active={order === "popular"}
-                onClick={() => setOrder("popular")}
-              />
-              <SortChip
-                label="최신순"
-                active={order === "recent"}
-                onClick={() => setOrder("recent")}
-              />
-            </div>
-          </div>
+      <div className="flex gap-xs p-md">
+        <SortChip
+          label="인기순"
+          active={order === "popular"}
+          onClick={() => setOrder("popular")}
+        />
+        <SortChip
+          label="최신순"
+          active={order === "recent"}
+          onClick={() => setOrder("recent")}
+        />
+      </div>
 
-          <ExploreBody
-            bounds={bounds}
-            cells={data ?? []}
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => refetch()}
-            query={query}
-            order={order}
-            district={selectedRegion}
-            onCellSelect={moveTo}
-          />
-        </>
-      )}
+      <ExploreBody
+        bounds={bounds}
+        cells={data ?? []}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => refetch()}
+        query={query}
+        order={order}
+        district={selectedRegion}
+        onCellSelect={moveTo}
+      />
     </aside>
   );
 };
@@ -158,7 +150,11 @@ const ExploreBody = ({
     <>
       <div className="flex items-baseline gap-xs px-md pb-sm">
         <span className="text-fm-title text-foreground">
-          {district ? `서울 ${district} 격자` : REGION_LABEL}
+          {query.trim()
+            ? `'${query.trim()}' 검색 결과`
+            : district
+              ? `서울 ${district} 격자`
+              : REGION_LABEL}
         </span>
         <span className="text-fm-body text-foreground-muted">{cellCount}개</span>
       </div>

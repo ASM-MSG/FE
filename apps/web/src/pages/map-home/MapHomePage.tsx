@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { SearchBar } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
+import { SearchBox } from "@/features/explore/ui/SearchBox";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
 
@@ -15,13 +15,8 @@ export const MapHomePage = () => {
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
-      {/* 홈 검색바는 탐색 검색 패널로 가는 트리거 — 입력은 검색 패널에서 */}
-      <SearchBar
-        placeholder="장소, 격자, 영상 검색"
-        readOnly
-        onClick={() => navigate(ROUTES.explore, { state: { openSearch: true } })}
-        onFocus={() => navigate(ROUTES.explore, { state: { openSearch: true } })}
-      />
+      {/* 검색은 드롭다운으로 그 자리에서 — 확정 시 탐색 그리드로 이동해 결과 표시 */}
+      <SearchBox />
       <CellSummaryPanel
         onViewAll={() => navigate(ROUTES.explore)}
         onCellSelect={moveTo}
