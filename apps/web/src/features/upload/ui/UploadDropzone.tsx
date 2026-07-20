@@ -48,20 +48,7 @@ export const UploadDropzone = ({
   };
 
   return (
-    <button
-      type="button"
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(event) => {
-        event.preventDefault();
-        setDragActive(true);
-      }}
-      onDragLeave={() => setDragActive(false)}
-      onDrop={handleDrop}
-      className={cn(
-        "flex h-[200px] w-full flex-col items-center justify-center gap-[10px] rounded-lg border-[1.5px] border-dashed bg-surface-soft px-md text-center transition-colors",
-        dragActive ? "border-primary bg-primary/5" : "border-primary/50",
-      )}
-    >
+    <>
       <input
         ref={inputRef}
         type="file"
@@ -69,19 +56,34 @@ export const UploadDropzone = ({
         className="hidden"
         onChange={(event) => handleFile(event.target.files?.[0])}
       />
-      <span className="flex size-[52px] items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Upload className="size-6" />
-      </span>
-      <span className="max-w-full truncate text-fm-title text-foreground">
-        {selectedName ?? "영상을 드래그하거나 클릭해서 선택"}
-      </span>
-      {/* 제약 안내는 선택·거부 여부와 무관하게 항상 노출 (AC5) */}
-      <span className="text-fm-label text-foreground-muted">
-        {CONSTRAINT_TEXT}
-      </span>
-      {rejected && (
-        <span className="text-fm-label text-error">{REJECT_TEXT}</span>
-      )}
-    </button>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragActive(true);
+        }}
+        onDragLeave={() => setDragActive(false)}
+        onDrop={handleDrop}
+        className={cn(
+          "flex h-[200px] w-full flex-col items-center justify-center gap-[10px] rounded-lg border-[1.5px] border-dashed bg-surface-soft px-md text-center transition-colors",
+          dragActive ? "border-primary bg-primary/5" : "border-primary/50",
+        )}
+      >
+        <span className="flex size-[52px] items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Upload className="size-6" />
+        </span>
+        <span className="max-w-full truncate text-fm-title text-foreground">
+          {selectedName ?? "영상을 드래그하거나 클릭해서 선택"}
+        </span>
+        {/* 제약 안내는 선택·거부 여부와 무관하게 항상 노출 (AC5) */}
+        <span className="text-fm-label text-foreground-muted">
+          {CONSTRAINT_TEXT}
+        </span>
+        {rejected && (
+          <span className="text-fm-label text-error">{REJECT_TEXT}</span>
+        )}
+      </button>
+    </>
   );
 };
