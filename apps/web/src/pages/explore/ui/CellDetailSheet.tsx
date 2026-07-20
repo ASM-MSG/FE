@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { MoreHorizontal, Play, Share2, X } from "lucide-react";
 import { Button, cn, VideoRow } from "@fillmap/ui-web";
 import type { Cell } from "@/entities/cell";
@@ -27,6 +28,15 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
   const activeVideo =
     cell.videos.find((v) => v.id === activeVideoId) ?? cell.videos[0];
   const duration = formatDuration(activeVideo?.durationSec);
+
+  // 우측 컬럼이 목록을 상당 부분 덮으므로 Escape로도 닫을 수 있게 한다 (키보드 접근성)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [close]);
 
   return (
     <section
