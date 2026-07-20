@@ -3,12 +3,15 @@ import { MapPin } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { cn, Input, ModalCard } from "@fillmap/ui-web";
 import { MOCK_CELLS } from "@/entities/cell";
+import { shouldOfferHighlight } from "@/features/upload/model/highlight-selection";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import {
   canSubmitUpload,
   type UploadCandidate,
 } from "@/features/upload/model/upload-validation";
+import { HighlightStep } from "./HighlightStep";
 import { UploadDropzone } from "./UploadDropzone";
+import { useVideoDuration } from "./use-video-duration";
 
 const MODAL_SUBTITLE = "지금 위치의 격자에 순간을 기록하세요";
 
@@ -16,40 +19,66 @@ const MODAL_SUBTITLE = "지금 위치의 격자에 순간을 기록하세요";
 const CURRENT_CELL = MOCK_CELLS.find((cell) => cell.id === "A-14");
 const LOCATION_LABEL = `${CURRENT_CELL?.label ?? "현재 격자"} (현재 위치)`;
 
-/** AI 안내 / 최종 확인 박스 — 정적 프레젠테이션 (AC8·AC9) */
+/**
+ * AI 안내 / 최종 확인 박스 — 정적 프레젠테이션 (AC8·AC9).
+ * onClick이 주어지면 클릭 가능한 카드(커서 pointer / hover 반응)로 렌더한다 — MSG-118 S1.
+ */
 const InfoBox = ({
   title,
   body,
   tone,
+  onClick,
 }: {
   title: string;
   body: ReactNode;
   tone: "soft" | "dark";
-}) => (
-  <div
-    className={cn(
-      "flex w-full flex-col gap-xxs rounded-md px-md py-sm",
-      tone === "dark" ? "bg-foreground" : "bg-surface-soft",
-    )}
-  >
-    <span
-      className={cn(
-        "text-fm-body-strong",
-        tone === "dark" ? "text-foreground-inverse" : "text-foreground",
-      )}
-    >
-      {title}
-    </span>
-    <span
-      className={cn(
-        "text-fm-label",
-        tone === "dark" ? "text-foreground-inverse/70" : "text-foreground-muted",
-      )}
-    >
-      {body}
-    </span>
-  </div>
-);
+  onClick?: () => void;
+}) => {
+  const content = (
+    <>
+      <span
+        className={cn(
+          "text-fm-body-strong",
+          tone === "dark" ? "text-foreground-inverse" : "text-foreground",
+        )}
+      >
+        {title}
+      </span>
+      <span
+        className={cn(
+          "text-fm-label",
+          tone === "dark"
+            ? "text-foreground-inverse/70"
+            : "text-foreground-muted",
+        )}
+      >
+        {body}
+      </span>
+    </>
+  );
+
+  const base = cn(
+    "flex w-full flex-col gap-xxs rounded-md px-md py-sm text-left",
+    tone === "dark" ? "bg-foreground" : "bg-surface-soft",
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          base,
+          "cursor-pointer border border-transparent transition-colors hover:border-primary hover:bg-primary/5",
+        )}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className={base}>{content}</div>;
+};
 
 /**
  * 영상 업로드 모달 — Radix Dialog(오버레이·포털·포커스 트랩·Esc·scrim)로 ModalCard를 감싼다.
@@ -62,11 +91,26 @@ export const UploadModal = () => {
   const closeModal = useUploadModalStore((s) => s.closeModal);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<UploadCandidate | null>(null);
+  // 원본 File — duration 캡처·미리보기용(플랫폼 경계). candidate와 별도로 보관 (MSG-118)
+  const [rawFile, setRawFile] = useState<File | null>(null);
+  // 모달 내부 스텝 전환 — 위젯 경계를 넘지 않으므로 전역 스토어가 아닌 로컬 state (스펙 계획)
+  const [step, setStep] = useState<"select" | "highlight">("select");
 
-  // 닫힐 때마다 입력을 초기화해 다시 열면 이전 제목·파일이 남지 않는다 (AC10)
+  const { duration, objectUrl, error: videoLoadError } = useVideoDuration(rawFile);
+  // 5초 초과 영상에서만 AI 추천 카드/스텝을 제공한다 (L1·S1·S12)
+  const offerHighlight = duration !== null && shouldOfferHighlight(duration);
+
+  const handleSelectFile = (candidate: UploadCandidate, source: File) => {
+    setFile(candidate);
+    setRawFile(source);
+  };
+
+  // 닫힐 때마다 입력을 초기화해 다시 열면 이전 제목·파일·스텝이 남지 않는다 (AC10)
   const close = () => {
     setTitle("");
     setFile(null);
+    setRawFile(null);
+    setStep("select");
     closeModal();
   };
 
@@ -84,20 +128,27 @@ export const UploadModal = () => {
           className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none"
         >
           <Dialog.Title className="sr-only">영상 업로드</Dialog.Title>
-          <ModalCard
-            title="영상 업로드"
-            description={MODAL_SUBTITLE}
-            cancelText="취소"
-            confirmText="업로드"
-            confirmDisabled={!canSubmitUpload(file)}
-            onCancel={close}
-            onConfirm={close}
-            onClose={close}
-          >
-            <UploadDropzone
-              selectedName={file?.name ?? null}
-              onSelectFile={setFile}
+          {step === "highlight" && duration !== null ? (
+            <HighlightStep
+              objectUrl={objectUrl}
+              duration={duration}
+              onClose={close}
             />
+          ) : (
+            <ModalCard
+              title="영상 업로드"
+              description={MODAL_SUBTITLE}
+              cancelText="취소"
+              confirmText="업로드"
+              confirmDisabled={!canSubmitUpload(file)}
+              onCancel={close}
+              onConfirm={close}
+              onClose={close}
+            >
+              <UploadDropzone
+                selectedName={file?.name ?? null}
+                onSelectFile={handleSelectFile}
+              />
 
             <div className="flex w-full flex-col gap-xs">
               <label
@@ -133,22 +184,32 @@ export const UploadModal = () => {
               </button>
             </div>
 
-            <InfoBox
-              tone="soft"
-              title="AI 하이라이트 자동 추천"
-              body="5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
-            />
-            <InfoBox
-              tone="soft"
-              title="AI 자동 블러 처리"
-              body="업로드 전 얼굴과 번호판을 자동 감지해 블러 처리합니다"
-            />
-            <InfoBox
-              tone="dark"
-              title="업로드 전 최종 확인"
-              body="AI 처리가 끝나면 미리보기에서 확인한 뒤 지도에 게시돼요"
-            />
-          </ModalCard>
+            {/* 5초 초과 영상이면 클릭 가능한 카드(→ 2단계), 아니면 정적 안내 유지 (S1·S12) */}
+            {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 */}
+              <InfoBox
+                tone="soft"
+                title="AI 하이라이트 자동 추천"
+                body={
+                  videoLoadError
+                    ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
+                    : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
+                }
+                onClick={
+                  offerHighlight ? () => setStep("highlight") : undefined
+                }
+              />
+              <InfoBox
+                tone="soft"
+                title="AI 자동 블러 처리"
+                body="업로드 전 얼굴과 번호판을 자동 감지해 블러 처리합니다"
+              />
+              <InfoBox
+                tone="dark"
+                title="업로드 전 최종 확인"
+                body="AI 처리가 끝나면 미리보기에서 확인한 뒤 지도에 게시돼요"
+              />
+            </ModalCard>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
