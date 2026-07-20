@@ -26,6 +26,7 @@ const TOAST_DURATION_MS = 3000;
 export const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
   const [reasonId, setReasonId] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 닫힐 때 선택 상태를 초기화해 다시 열면 제출 버튼이 비활성으로 돌아온다 (S9)
   const handleOpenChange = (next: boolean) => {
@@ -34,10 +35,15 @@ export const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
   };
 
   const handleSubmit = async () => {
-    if (!canSubmitReport(reasonId)) return;
-    await submitReport(reasonId as string);
-    handleOpenChange(false);
-    setToastVisible(true);
+    if (!canSubmitReport(reasonId) || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await submitReport(reasonId);
+      handleOpenChange(false);
+      setToastVisible(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // 토스트 자동 소멸
@@ -62,7 +68,7 @@ export const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
               description={REPORT_GUIDE}
               cancelText="취소"
               confirmText="신고"
-              confirmDisabled={!canSubmitReport(reasonId)}
+              confirmDisabled={!canSubmitReport(reasonId) || isSubmitting}
               confirmVariant="danger"
               onCancel={() => handleOpenChange(false)}
               onConfirm={handleSubmit}
