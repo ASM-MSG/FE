@@ -16,9 +16,12 @@ const compact = (value: number): string => {
  * - 천 단위: 소수 첫째 자리 K (1400 → "1.4K")
  * - 만 단위 이상: 소수 없이 K (12000 → "12K")
  */
+/** 반올림 시 1000K로 넘어가는 경계값 — 이 이상은 M 단위로 표기해야 "1000K" 오표기가 안 생긴다 */
+const K_TO_M_THRESHOLD = 999_500;
+
 export const formatViewCount = (count: number): string => {
   if (count < 1_000) return String(count);
-  if (count < 1_000_000) return `${compact(count / 1_000)}K`;
+  if (count < K_TO_M_THRESHOLD) return `${compact(count / 1_000)}K`;
   return `${compact(count / 1_000_000)}M`;
 };
 

@@ -17,6 +17,14 @@ describe("formatViewCount — 조회수 축약 (AC 13)", () => {
   it("0을 그대로 표시한다", () => {
     expect(formatViewCount(0)).toBe("0");
   });
+
+  it("반올림 시 1000K로 넘어가는 경계값은 M 단위로 표기한다 (999999 → '1M', '1000K' 아님)", () => {
+    expect(formatViewCount(999_999)).toBe("1M");
+  });
+
+  it("100만은 '1M'로 표시한다", () => {
+    expect(formatViewCount(1_000_000)).toBe("1M");
+  });
 });
 
 describe("formatRelativeTime — 상대 시간 (AC 14)", () => {
