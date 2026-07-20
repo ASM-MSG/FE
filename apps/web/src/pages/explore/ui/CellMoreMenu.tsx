@@ -25,7 +25,7 @@ export const CellMoreMenu = ({ children, onReport }: CellMoreMenuProps) => (
         <DropdownMenu.Item className="cursor-pointer rounded-sm px-sm py-2 text-fm-base text-foreground outline-none data-[highlighted]:bg-surface">
           수정하기
         </DropdownMenu.Item>
-        <DropdownMenu.Item className="cursor-pointer rounded-sm px-sm py-2 text-fm-base text-foreground outline-none data-[highlighted]:bg-surface">
+        <DropdownMenu.Item className="cursor-pointer rounded-sm px-sm py-2 text-fm-base text-error outline-none data-[highlighted]:bg-surface">
           삭제하기
         </DropdownMenu.Item>
         <DropdownMenu.Item
