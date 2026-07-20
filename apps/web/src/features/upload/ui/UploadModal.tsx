@@ -100,8 +100,14 @@ export const UploadModal = () => {
             />
 
             <div className="flex w-full flex-col gap-xs">
-              <span className="text-fm-body-strong text-foreground">제목</span>
+              <label
+                htmlFor="upload-title"
+                className="text-fm-body-strong text-foreground"
+              >
+                제목
+              </label>
               <Input
+                id="upload-title"
                 placeholder="영상 제목을 입력해주세요"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
