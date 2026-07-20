@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { cn } from "@fillmap/ui-web";
 import type { Bounds, Cell, LatLng } from "@/entities/cell";
+import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
 import {
   selectExploreCells,
   type SortOrder,
@@ -13,6 +15,7 @@ import {
 import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
+import { CellDetailSheet } from "./ui/CellDetailSheet";
 import { ExploreCellCard } from "./ui/ExploreCellCard";
 import { SortChip } from "./ui/SortChip";
 
@@ -33,36 +36,54 @@ export const ExplorePanel = () => {
   const selectedRegion = useExploreFilterStore((s) => s.selectedRegion);
   const [order, setOrder] = useState<SortOrder>("popular");
 
-  return (
-    <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
-      <div className="flex flex-col gap-sm p-md">
-        <SearchBox />
-        <div className="flex gap-xs">
-          <SortChip
-            label="인기순"
-            active={order === "popular"}
-            onClick={() => setOrder("popular")}
-          />
-          <SortChip
-            label="최신순"
-            active={order === "recent"}
-            onClick={() => setOrder("recent")}
-          />
-        </div>
-      </div>
+  const selectedCellId = useCellDetailStore((s) => s.selectedCellId);
+  const select = useCellDetailStore((s) => s.select);
+  // 선택 격자는 필터 적용 전 전체 데이터에서 찾는다 — 필터가 선택 격자를 걸러도 시트는 유지(AC 8·9).
+  const selectedCell = (data ?? []).find((c) => c.id === selectedCellId);
 
-      <ExploreBody
-        bounds={bounds}
-        cells={data ?? []}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={() => refetch()}
-        query={query}
-        order={order}
-        district={selectedRegion}
-        onCellSelect={moveTo}
-      />
-    </aside>
+  return (
+    <div
+      className={cn(
+        "pointer-events-auto absolute inset-y-0 left-0 z-10 flex",
+        selectedCell && "right-0",
+      )}
+    >
+      <aside className="flex w-97 shrink-0 flex-col bg-background shadow-raised">
+        <div className="flex flex-col gap-sm p-md">
+          <SearchBox />
+          <div className="flex gap-xs">
+            <SortChip
+              label="인기순"
+              active={order === "popular"}
+              onClick={() => setOrder("popular")}
+            />
+            <SortChip
+              label="최신순"
+              active={order === "recent"}
+              onClick={() => setOrder("recent")}
+            />
+          </div>
+        </div>
+
+        <ExploreBody
+          bounds={bounds}
+          cells={data ?? []}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={() => refetch()}
+          query={query}
+          order={order}
+          district={selectedRegion}
+          selectedCellId={selectedCellId}
+          onCellSelect={moveTo}
+          onCellDetailSelect={select}
+        />
+      </aside>
+
+      {selectedCell && (
+        <CellDetailSheet cell={selectedCell} className="min-w-0 flex-1" />
+      )}
+    </div>
   );
 };
 
@@ -76,7 +97,10 @@ interface ExploreBodyProps {
   order: SortOrder;
   /** 선택된 지역 필터 — null이면 지역 필터 미적용 (MSG-114) */
   district: string | null;
+  /** 상세가 열린 격자 id — 카드 선택 강조 (MSG-115) */
+  selectedCellId: string | null;
   onCellSelect: (center: LatLng) => void;
+  onCellDetailSelect: (cell: Cell) => void;
 }
 
 /** 요약 헤더 + 카드 그리드 / 로딩 · 에러 · 빈 상태 분기 */
@@ -89,7 +113,9 @@ const ExploreBody = ({
   query,
   order,
   district,
+  selectedCellId,
   onCellSelect,
+  onCellDetailSelect,
 }: ExploreBodyProps) => {
   // early return(isError·isLoading) 아래에 두면 렌더마다 훅 호출 여부가 달라져
   // Rules of Hooks를 어기므로, 분기 위에서 무조건 호출하고 null 처리는 내부에서 한다.
@@ -158,7 +184,9 @@ const ExploreBody = ({
               <ExploreCellCard
                 key={cell.id}
                 cell={cell}
+                selected={cell.id === selectedCellId}
                 onSelect={onCellSelect}
+                onDetailSelect={onCellDetailSelect}
               />
             ))}
           </div>
