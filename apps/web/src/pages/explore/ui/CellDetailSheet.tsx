@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MoreHorizontal, Play, Share2, X } from "lucide-react";
 import { Button, cn, VideoRow } from "@fillmap/ui-web";
 import type { Cell } from "@/entities/cell";
@@ -8,6 +8,8 @@ import {
 } from "@/features/explore/model/cell-detail";
 import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
 import { formatDuration } from "@/features/explore/model/explore-cells";
+import { CellMoreMenu } from "./CellMoreMenu";
+import { ReportDialog } from "./ReportDialog";
 
 interface CellDetailSheetProps {
   cell: Cell;
@@ -25,18 +27,22 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
   const selectVideo = useCellDetailStore((s) => s.selectVideo);
   const close = useCellDetailStore((s) => s.close);
 
+  const [reportOpen, setReportOpen] = useState(false);
+
   const activeVideo =
     cell.videos.find((v) => v.id === activeVideoId) ?? cell.videos[0];
   const duration = formatDuration(activeVideo?.durationSec);
 
   // 우측 컬럼이 목록을 상당 부분 덮으므로 Escape로도 닫을 수 있게 한다 (키보드 접근성)
+  // 신고 모달이 열려 있을 때는 Radix Dialog가 자체적으로 Escape를 처리하므로
+  // 이 리스너가 상세 시트까지 함께 닫지 않도록 가드한다.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape" && !reportOpen) close();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [close]);
+  }, [close, reportOpen]);
 
   return (
     <section
@@ -91,11 +97,15 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
           <IconButton label="공유">
             <Share2 className="size-5" />
           </IconButton>
-          <IconButton label="더보기">
-            <MoreHorizontal className="size-5" />
-          </IconButton>
+          <CellMoreMenu onReport={() => setReportOpen(true)}>
+            <IconButton label="더보기">
+              <MoreHorizontal className="size-5" />
+            </IconButton>
+          </CellMoreMenu>
         </div>
       </div>
+
+      <ReportDialog open={reportOpen} onOpenChange={setReportOpen} />
 
       {/* 이 격자의 영상 (AC 16·17·18) */}
       <div className="flex flex-col gap-sm px-md pb-md">
@@ -132,14 +142,16 @@ const Stat = ({ value, label }: { value: string; label: string }) => (
 const IconButton = ({
   label,
   children,
+  ...props
 }: {
   label: string;
   children: React.ReactNode;
-}) => (
+} & React.ComponentPropsWithRef<"button">) => (
   <button
     type="button"
     aria-label={label}
     className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-background text-foreground transition-[filter] active:brightness-[0.86]"
+    {...props}
   >
     {children}
   </button>
