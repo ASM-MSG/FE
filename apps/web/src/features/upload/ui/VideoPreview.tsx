@@ -32,7 +32,8 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
         if (!video) return;
         video.currentTime = segment.start;
         stopAtRef.current = segment.end;
-        void video.play();
+        // autoplay 정책/소스 미준비로 실패해도 unhandled rejection을 남기지 않는다 — UI는 재생 안 됨으로 자연히 드러남
+        video.play().catch(() => {});
       },
     }));
 
