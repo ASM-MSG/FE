@@ -11,6 +11,8 @@ interface ModalCardProps {
   confirmText?: string;
   /** true면 확인 버튼을 비활성(클릭 차단 + 비활성 시각)한다 */
   confirmDisabled?: boolean;
+  /** 확인 버튼 색상 — danger는 삭제·신고 등 파괴적 액션용 (기본 primary) */
+  confirmVariant?: "primary" | "danger";
   onCancel?: () => void;
   onConfirm?: () => void;
   /** 지정하면 우측 상단 닫기 버튼 표시 */
@@ -32,6 +34,7 @@ export const ModalCard = ({
   cancelText,
   confirmText,
   confirmDisabled,
+  confirmVariant = "primary",
   onCancel,
   onConfirm,
   onClose,
@@ -80,7 +83,10 @@ export const ModalCard = ({
             type="button"
             onClick={onConfirm}
             disabled={confirmDisabled}
-            className="h-[48px] min-w-0 flex-1 rounded-full bg-primary text-fm-title leading-none text-primary-foreground transition-[filter] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50"
+            className={cn(
+              "h-[48px] min-w-0 flex-1 rounded-full text-fm-title leading-none text-primary-foreground transition-[filter] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50",
+              confirmVariant === "danger" ? "bg-error" : "bg-primary",
+            )}
           >
             {confirmText}
           </button>

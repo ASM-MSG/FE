@@ -41,3 +41,17 @@ export const ConfirmDisabled: Story = {
     </div>
   ),
 };
+
+/** confirmVariant="danger" — 삭제·신고 등 파괴적 액션용 확인 버튼. */
+export const ConfirmDanger: Story = {
+  args: { confirmVariant: "danger", confirmText: "삭제" },
+  render: (args) => (
+    <div className="bg-surface p-lg">
+      <ModalCard {...args}>
+        <div className="flex h-[80px] w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
+          콘텐츠 영역
+        </div>
+      </ModalCard>
+    </div>
+  ),
+};

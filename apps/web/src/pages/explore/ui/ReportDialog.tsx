@@ -63,6 +63,7 @@ export const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
               cancelText="취소"
               confirmText="신고"
               confirmDisabled={!canSubmitReport(reasonId)}
+              confirmVariant="danger"
               onCancel={() => handleOpenChange(false)}
               onConfirm={handleSubmit}
               onClose={() => handleOpenChange(false)}
