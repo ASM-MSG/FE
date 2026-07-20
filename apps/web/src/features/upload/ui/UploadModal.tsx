@@ -123,10 +123,11 @@ export const UploadModal = () => {
                 <MapPin className="size-3" />
                 {LOCATION_LABEL}
               </span>
-              {/* 격자 재선택은 범위 밖 — 노출만, 비동작 (AC7) */}
+              {/* 격자 재선택은 범위 밖 — disabled로 비활성 표시해 클릭 오인 방지 (AC7) */}
               <button
                 type="button"
-                className="shrink-0 text-fm-label text-foreground-muted"
+                disabled
+                className="shrink-0 text-fm-label text-foreground-muted disabled:cursor-not-allowed disabled:opacity-50"
               >
                 변경
               </button>
