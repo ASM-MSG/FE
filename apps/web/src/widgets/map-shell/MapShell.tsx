@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import { ROUTES } from "@/app/routes";
+import { Outlet } from "react-router-dom";
 import type { LatLng } from "@/entities/cell";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
 import { MapControls } from "@/pages/map-home/ui/MapControls";
@@ -16,10 +16,9 @@ import type { MapShellContext } from "./use-map-shell";
  * 지도 SDK import는 MapCanvas 경계 안에만 두고, 셸은 배치와 명령 주입만 담당한다.
  */
 export const MapShell = () => {
-  const navigate = useNavigate();
   const setViewport = useViewportStore((s) => s.setViewport);
   const collapsed = useSidebarStore((s) => s.collapsed);
-  const setCollapsed = useSidebarStore((s) => s.setCollapsed);
+  const openUploadModal = useUploadModalStore((s) => s.openModal);
   const mapRef = useRef<MapCanvasHandle>(null);
   const [initialCenter, setInitialCenter] = useState<LatLng>(SEOUL_CITY_HALL);
 
@@ -67,10 +66,7 @@ export const MapShell = () => {
       <div className="pointer-events-none absolute bottom-md right-md z-20">
         <div className="pointer-events-auto">
           <MapControls
-            onUpload={() => {
-              setCollapsed(false);
-              navigate(ROUTES.upload);
-            }}
+            onUpload={openUploadModal}
             onLocate={context.locate}
             onZoomIn={context.zoomIn}
             onZoomOut={context.zoomOut}

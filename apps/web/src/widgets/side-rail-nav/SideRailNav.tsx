@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
 import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
 import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 
 const items: (SideRailItem & { key: NavKey })[] = [
@@ -23,6 +24,7 @@ export const SideRailNav = () => {
   const setCollapsed = useSidebarStore((s) => s.setCollapsed);
   const toggle = useSidebarStore((s) => s.toggle);
   const clearFilters = useExploreFilterStore((s) => s.clearFilters);
+  const openUploadModal = useUploadModalStore((s) => s.openModal);
 
   return (
     <SideRail
@@ -35,6 +37,11 @@ export const SideRailNav = () => {
       activeKey={getActiveNavKey(pathname)}
       onSelect={(key) => {
         if (!isNavKey(key)) return;
+        // 업로드는 페이지 이동 대신 모달을 연다 (URL 불변) — AC1
+        if (key === "upload") {
+          openUploadModal();
+          return;
+        }
         // 활성 탭 재클릭 → 접기/펼치기 토글, 다른 탭 → 이동하며 펼침
         if (key === getActiveNavKey(pathname)) {
           toggle();

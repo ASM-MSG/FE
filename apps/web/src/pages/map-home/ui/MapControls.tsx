@@ -2,7 +2,7 @@ import { Upload } from "lucide-react";
 import { Fab, MapIconButton, ZoomControl } from "@fillmap/ui-web";
 
 interface MapControlsProps {
-  /** 업로드 라우트로 이동 (콜백 주입 — RN 경계) */
+  /** 업로드 모달 열기 (콜백 주입 — RN 경계) */
   onUpload: () => void;
   /** 현재 위치(폴백 시 서울 시청)로 재이동 */
   onLocate: () => void;
