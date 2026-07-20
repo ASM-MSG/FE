@@ -34,13 +34,15 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
   const duration = formatDuration(activeVideo?.durationSec);
 
   // 우측 컬럼이 목록을 상당 부분 덮으므로 Escape로도 닫을 수 있게 한다 (키보드 접근성)
+  // 신고 모달이 열려 있을 때는 Radix Dialog가 자체적으로 Escape를 처리하므로
+  // 이 리스너가 상세 시트까지 함께 닫지 않도록 가드한다.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape" && !reportOpen) close();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [close]);
+  }, [close, reportOpen]);
 
   return (
     <section
