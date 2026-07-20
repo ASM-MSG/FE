@@ -21,6 +21,11 @@ const cell = (
   center: { lat: 0, lng: 0 },
   videoCount,
   createdAt,
+  location: label,
+  recentUploadedAt: createdAt,
+  fillRate: 0,
+  viewCount: 0,
+  videos: [],
 });
 
 describe("searchCells (L1)", () => {
