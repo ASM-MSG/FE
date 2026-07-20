@@ -9,8 +9,12 @@ import {
 interface UploadDropzoneProps {
   /** 현재 선택된 파일명 (없으면 null) — 표시는 부모 state 기준 */
   selectedName: string | null;
-  /** 유효한 파일이 선택되면 호출 (무효 파일은 거부되어 호출되지 않음) */
-  onSelectFile: (file: UploadCandidate) => void;
+  /**
+   * 유효한 파일이 선택되면 호출 (무효 파일은 거부되어 호출되지 않음).
+   * 판정용 중립 candidate와 함께 원본 File을 전달한다 — duration 캡처·미리보기(MSG-118)는
+   * 플랫폼 File이 필요하므로 UI 경계인 부모에서 받는다(candidate는 RN-safe 형태 유지).
+   */
+  onSelectFile: (file: UploadCandidate, source: File) => void;
 }
 
 const CONSTRAINT_TEXT = "최대 60초 · MP4, MOV · 500MB 이하";
@@ -38,7 +42,7 @@ export const UploadDropzone = ({
       return;
     }
     setRejected(false);
-    onSelectFile(candidate);
+    onSelectFile(candidate, file);
   };
 
   const handleDrop = (event: DragEvent<HTMLButtonElement>) => {
