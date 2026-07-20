@@ -72,6 +72,14 @@ describe("cell-detail-store 선택/영상 액션", () => {
     state().select(cellB);
     expect(state().activeVideoId).toBe("B-v1");
   });
+
+  it("이미 열린 같은 격자를 재선택하면 no-op이다 — 선택해둔 영상이 대표 영상으로 리셋되지 않는다", () => {
+    state().select(cellA);
+    state().selectVideo("A-v3");
+    state().select(cellA);
+    expect(state().activeVideoId).toBe("A-v3");
+    expect(state().selectedCellId).toBe("A");
+  });
 });
 
 describe("필터 스토어 변경과 선택 상태의 독립성 (AC 8)", () => {
