@@ -165,6 +165,15 @@ describe("buildMockHighlights", () => {
     const ids = new Set(highlights.map((h) => h.id));
     expect(ids.size).toBe(highlights.length);
   });
+
+  it.each([5.5, 6, 7, 7.5, 9])(
+    "duration=%d초(5초 초과 경계 근처): 구간끼리 시작 시각이 겹치지 않는다",
+    (duration) => {
+      const highlights = buildMockHighlights(duration);
+      const starts = new Set(highlights.map((h) => h.start));
+      expect(starts.size).toBe(highlights.length);
+    },
+  );
 });
 
 describe("toSelectionResult", () => {

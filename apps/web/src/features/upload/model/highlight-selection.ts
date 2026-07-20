@@ -190,24 +190,22 @@ export const formatTimecode = (seconds: number): string => {
  */
 export const buildMockHighlights = (duration: number): HighlightSuggestion[] => {
   const count = Math.max(3, Math.min(5, Math.floor(duration / 10) + 1));
-  const spacing = duration / count;
   const desiredLength = clamp(
-    Math.round(spacing),
+    Math.round(duration / count),
     SEGMENT_MIN_SEC,
-    SEGMENT_MAX_SEC,
+    Math.min(SEGMENT_MAX_SEC, duration),
   );
+  // 구간 길이가 고정이므로 시작점이 겹치지 않도록 [0, duration - length]를 균등 분할한다.
+  const maxStart = Math.max(0, duration - desiredLength);
+  const step = count > 1 ? maxStart / (count - 1) : 0;
 
   return Array.from({ length: count }, (_, i) => {
-    const seed: Segment = {
-      start: spacing * i,
-      end: spacing * i + desiredLength,
-    };
-    const seg = clampSegment(seed, duration);
+    const start = clamp(step * i, 0, maxStart);
     return {
       id: `mock-${i + 1}`,
       reason: HIGHLIGHT_REASONS[i % HIGHLIGHT_REASONS.length],
-      start: seg.start,
-      end: seg.end,
+      start,
+      end: start + desiredLength,
     };
   });
 };
