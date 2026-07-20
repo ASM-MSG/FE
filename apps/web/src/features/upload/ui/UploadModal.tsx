@@ -96,7 +96,7 @@ export const UploadModal = () => {
   // 모달 내부 스텝 전환 — 위젯 경계를 넘지 않으므로 전역 스토어가 아닌 로컬 state (스펙 계획)
   const [step, setStep] = useState<"select" | "highlight">("select");
 
-  const { duration, objectUrl } = useVideoDuration(rawFile);
+  const { duration, objectUrl, error: videoLoadError } = useVideoDuration(rawFile);
   // 5초 초과 영상에서만 AI 추천 카드/스텝을 제공한다 (L1·S1·S12)
   const offerHighlight = duration !== null && shouldOfferHighlight(duration);
 
@@ -185,10 +185,15 @@ export const UploadModal = () => {
             </div>
 
             {/* 5초 초과 영상이면 클릭 가능한 카드(→ 2단계), 아니면 정적 안내 유지 (S1·S12) */}
+            {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 */}
               <InfoBox
                 tone="soft"
                 title="AI 하이라이트 자동 추천"
-                body="5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
+                body={
+                  videoLoadError
+                    ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
+                    : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
+                }
                 onClick={
                   offerHighlight ? () => setStep("highlight") : undefined
                 }

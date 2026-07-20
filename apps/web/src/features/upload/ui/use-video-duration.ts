@@ -5,9 +5,11 @@ interface VideoMeta {
   duration: number | null;
   /** 미리보기 <video>에 물릴 objectURL. 로딩 전/파일 없으면 null */
   objectUrl: string | null;
+  /** 메타데이터 로드 실패(손상/디코딩 불가 파일) 여부 — true면 duration은 영구히 null로 남지 않고 이 값으로 원인을 구분한다 */
+  error: boolean;
 }
 
-const EMPTY_META: VideoMeta = { duration: null, objectUrl: null };
+const EMPTY_META: VideoMeta = { duration: null, objectUrl: null, error: false };
 
 /**
  * 선택한 File에서 실제 duration과 미리보기 objectURL을 얻는 UI 훅. (MSG-118 추정 1·2)
@@ -34,11 +36,18 @@ export const useVideoDuration = (file: File | null): VideoMeta => {
     const probe = document.createElement("video");
     probe.preload = "metadata";
     probe.src = url;
-    const handleLoaded = () => setMeta({ duration: probe.duration, objectUrl: url });
+    const handleLoaded = () =>
+      setMeta({ duration: probe.duration, objectUrl: url, error: false });
+    // 손상되었거나 디코딩 불가한 파일은 loadedmetadata가 오지 않고 error만 발생한다 —
+    // 리스너가 없으면 duration이 영구히 null로 남아 AI 추천 카드가 원인 불명으로 비활성화된다.
+    const handleError = () =>
+      setMeta({ duration: null, objectUrl: null, error: true });
     probe.addEventListener("loadedmetadata", handleLoaded);
+    probe.addEventListener("error", handleError);
 
     return () => {
       probe.removeEventListener("loadedmetadata", handleLoaded);
+      probe.removeEventListener("error", handleError);
       probe.src = "";
       URL.revokeObjectURL(url);
     };
