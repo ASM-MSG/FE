@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, type ReactNode, useImperativeHandle, useRef } from "react";
 import { Film } from "lucide-react";
 import { cn } from "@fillmap/ui-web";
 import type { Segment } from "@/features/upload/model/highlight-selection";
@@ -13,6 +13,11 @@ interface VideoPreviewProps {
   objectUrl: string | null;
   /** 재생 위치(초) 변경 통보 — 트리머 playhead 갱신용 */
   onTimeUpdate?: (currentTime: number) => void;
+  /**
+   * 영상 위에 얹을 오버레이 슬롯 — relative 컨테이너 내부에 렌더한다.
+   * 블러 감지 박스·타임코드 등 표시용(MSG-119 S9·S10). 미지정이면 아무것도 얹지 않는다(하위 호환).
+   */
+  overlay?: ReactNode;
   className?: string;
 }
 
@@ -22,7 +27,7 @@ interface VideoPreviewProps {
  * playSegment는 imperative handle로 노출 — 리스트/트리머의 재생 버튼이 호출한다.
  */
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  ({ objectUrl, onTimeUpdate, className }, ref) => {
+  ({ objectUrl, onTimeUpdate, overlay, className }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const stopAtRef = useRef<number | null>(null);
 
@@ -65,6 +70,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
         ) : (
           <Film className="size-8 text-foreground-inverse/40" />
         )}
+        {overlay}
       </div>
     );
   },

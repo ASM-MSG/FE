@@ -7,7 +7,6 @@ import {
   getSelectedSegment,
   type HighlightSuggestion,
   type Segment,
-  toSelectionResult,
 } from "@/features/upload/model/highlight-selection";
 import { useHighlightSelection } from "@/features/upload/model/use-highlight-selection";
 import { SegmentList } from "./SegmentList";
@@ -21,6 +20,8 @@ interface HighlightStepProps {
   duration: number;
   /** 모달 전체 닫기 (✕) */
   onClose: () => void;
+  /** 다음 단계(블러 확인)로 전환 — 선택 결과 전달은 4/4 최종 화면 티켓 소관 (MSG-119 S6) */
+  onNext: () => void;
 }
 
 const STEP_DESCRIPTION =
@@ -36,6 +37,7 @@ export const HighlightStep = ({
   objectUrl,
   duration,
   onClose,
+  onNext,
 }: HighlightStepProps) => {
   const suggestions = useMemo(
     () => buildMockHighlights(duration),
@@ -56,12 +58,10 @@ export const HighlightStep = ({
     playSegment({ start: suggestion.start, end: suggestion.end });
   };
 
+  // "이 구간으로 다음 단계" → 블러 확인(3/4)으로 전환 (MSG-119 S6, MSG-118 콘솔 로그 대체).
+  // 선택 결과 payload 전달은 이번 티켓 범위 아님 — 스텝 전환만 수행한다.
   const handleConfirm = () => {
-    const result = toSelectionResult(state);
-    if (result) {
-      // 실제 AI 분석·다음 화면 전환은 범위 밖 — 선택 결과 로그가 임시 완료 지점 (S11·L9)
-      console.log("[MSG-118] 선택 구간", result);
-    }
+    onNext();
   };
 
   return (
