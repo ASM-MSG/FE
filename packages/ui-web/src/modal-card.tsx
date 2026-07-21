@@ -44,7 +44,7 @@ export const ModalCard = ({
     role="dialog"
     aria-label={title}
     className={cn(
-      "flex w-full max-w-[480px] flex-col gap-md rounded-[20px] bg-surface-elevated p-[28px] shadow-modal",
+      "flex w-full max-w-120 flex-col gap-md rounded-[20px] bg-surface-elevated p-7 shadow-modal",
       className,
     )}
   >
@@ -59,7 +59,7 @@ export const ModalCard = ({
           onClick={onClose}
           className="shrink-0 text-foreground-muted transition-colors hover:text-foreground"
         >
-          <X className="size-[16px]" />
+          <X className="size-4" />
         </button>
       )}
     </div>
@@ -68,12 +68,12 @@ export const ModalCard = ({
     )}
     {children}
     {(cancelText || confirmText) && (
-      <div className="flex gap-[10px]">
+      <div className="flex gap-2.5">
         {cancelText && (
           <button
             type="button"
             onClick={onCancel}
-            className="h-[48px] min-w-0 flex-1 rounded-full border border-border text-fm-title leading-none text-foreground-body transition-[filter] active:brightness-[0.86]"
+            className="h-12 min-w-0 flex-1 rounded-full border border-border text-fm-title leading-none text-foreground-body transition-[filter] active:brightness-[0.86]"
           >
             {cancelText}
           </button>
@@ -84,7 +84,7 @@ export const ModalCard = ({
             onClick={onConfirm}
             disabled={confirmDisabled}
             className={cn(
-              "h-[48px] min-w-0 flex-1 rounded-full text-fm-title leading-none text-primary-foreground transition-[filter] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50",
+              "h-12 min-w-0 flex-1 rounded-full text-fm-title leading-none text-primary-foreground transition-[filter] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50",
               confirmVariant === "danger" ? "bg-error" : "bg-primary",
             )}
           >

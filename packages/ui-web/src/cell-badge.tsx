@@ -15,7 +15,7 @@ interface CellBadgeProps {
 export const CellBadge = ({ label, className }: CellBadgeProps) => (
   <span
     className={cn(
-      "inline-flex items-center justify-center rounded-sm bg-primary px-sm py-[5px] text-fm-body-strong text-primary-foreground shadow-raised",
+      "inline-flex items-center justify-center rounded-sm bg-primary px-sm py-1.25 text-fm-body-strong text-primary-foreground shadow-raised",
       className,
     )}
   >

@@ -16,7 +16,7 @@ interface ZoomControlProps {
 export const ZoomControl = ({ onZoomIn, onZoomOut, className }: ZoomControlProps) => (
   <div
     className={cn(
-      "flex w-[40px] flex-col items-center overflow-hidden rounded-md bg-background shadow-raised",
+      "flex w-10 flex-col items-center overflow-hidden rounded-md bg-background shadow-raised",
       className,
     )}
   >
@@ -24,18 +24,18 @@ export const ZoomControl = ({ onZoomIn, onZoomOut, className }: ZoomControlProps
       type="button"
       aria-label="확대"
       onClick={onZoomIn}
-      className="flex h-[44px] w-full items-center justify-center text-icon transition-colors active:bg-surface"
+      className="flex h-11 w-full items-center justify-center text-icon transition-colors active:bg-surface"
     >
-      <Plus className="size-[16px]" />
+      <Plus className="size-4" />
     </button>
-    <span className="h-px w-[24px] shrink-0 bg-border" />
+    <span className="h-px w-6 shrink-0 bg-border" />
     <button
       type="button"
       aria-label="축소"
       onClick={onZoomOut}
-      className="flex h-[44px] w-full items-center justify-center text-icon transition-colors active:bg-surface"
+      className="flex h-11 w-full items-center justify-center text-icon transition-colors active:bg-surface"
     >
-      <Minus className="size-[16px]" />
+      <Minus className="size-4" />
     </button>
   </div>
 );

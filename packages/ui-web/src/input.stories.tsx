@@ -15,7 +15,7 @@ export const Playground: Story = {};
 /** default / focus(클릭해서 확인) / filled / error — Figma State와 1:1 */
 export const AllStates: Story = {
   render: () => (
-    <div className="flex w-[320px] flex-col gap-md bg-surface p-md">
+    <div className="flex w-80 flex-col gap-md bg-surface p-md">
       <Input placeholder="내용을 입력하세요" />
       <Input defaultValue="동작구 상도동" />
       <Input defaultValue="동작구 상도동" error />

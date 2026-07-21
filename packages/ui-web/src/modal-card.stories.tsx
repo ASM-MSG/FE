@@ -20,7 +20,7 @@ export const Playground: Story = {
   render: (args) => (
     <div className="bg-surface p-lg">
       <ModalCard {...args}>
-        <div className="flex h-[80px] w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
+        <div className="flex h-20 w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
           콘텐츠 영역
         </div>
       </ModalCard>
@@ -34,7 +34,7 @@ export const ConfirmDisabled: Story = {
   render: (args) => (
     <div className="bg-surface p-lg">
       <ModalCard {...args}>
-        <div className="flex h-[80px] w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
+        <div className="flex h-20 w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
           콘텐츠 영역
         </div>
       </ModalCard>
@@ -48,7 +48,7 @@ export const ConfirmDanger: Story = {
   render: (args) => (
     <div className="bg-surface p-lg">
       <ModalCard {...args}>
-        <div className="flex h-[80px] w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
+        <div className="flex h-20 w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
           콘텐츠 영역
         </div>
       </ModalCard>

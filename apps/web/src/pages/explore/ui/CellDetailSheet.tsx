@@ -133,7 +133,7 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
 };
 
 const Stat = ({ value, label }: { value: string; label: string }) => (
-  <div className="flex flex-1 flex-col items-center gap-[2px] rounded-sm bg-surface py-sm">
+  <div className="flex flex-1 flex-col items-center gap-0.5 rounded-sm bg-surface py-sm">
     <dt className="text-fm-caption text-foreground-muted">{label}</dt>
     <dd className="text-fm-body-strong text-foreground">{value}</dd>
   </div>

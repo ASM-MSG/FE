@@ -15,12 +15,12 @@ interface DotsProps {
  * <Dots count={5} activeIndex={page} />
  */
 export const Dots = ({ count = 3, activeIndex = 0, className }: DotsProps) => (
-  <div className={cn("flex h-[20px] items-center gap-[6px]", className)}>
+  <div className={cn("flex h-5 items-center gap-1.5", className)}>
     {Array.from({ length: count }, (_, i) => (
       <span
         key={i}
         className={cn(
-          "size-[6px] rounded-full",
+          "size-1.5 rounded-full",
           i === activeIndex ? "bg-primary" : "bg-border",
         )}
       />

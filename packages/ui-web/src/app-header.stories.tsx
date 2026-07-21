@@ -12,7 +12,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <div className="w-[390px] bg-surface pb-lg">
+    <div className="w-97.5 bg-surface pb-lg">
       <AppHeader {...args} />
     </div>
   ),

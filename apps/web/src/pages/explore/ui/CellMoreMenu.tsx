@@ -20,7 +20,7 @@ export const CellMoreMenu = ({ children, onReport }: CellMoreMenuProps) => (
       <DropdownMenu.Content
         align="end"
         sideOffset={4}
-        className="z-50 flex min-w-[140px] flex-col gap-xxs rounded-md border border-border bg-surface-elevated p-xs shadow-modal"
+        className="z-50 flex min-w-35 flex-col gap-xxs rounded-md border border-border bg-surface-elevated p-xs shadow-modal"
       >
         <DropdownMenu.Item className="cursor-pointer rounded-sm px-sm py-2 text-fm-base text-foreground outline-none data-[highlighted]:bg-surface">
           수정하기

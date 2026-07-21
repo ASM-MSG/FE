@@ -10,7 +10,7 @@ import { cn } from "./lib/utils";
  * 라디오의 그룹 배타 선택은 사용하는 쪽에서 조합한다.
  */
 const selectorVariants = cva(
-  "inline-flex size-[20px] shrink-0 items-center justify-center border-[1.5px] border-border bg-surface transition-colors disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex size-5 shrink-0 items-center justify-center border-[1.5px] border-border bg-surface transition-colors disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       type: {
@@ -55,7 +55,7 @@ export const Selector = ({
   >
     {type === "checkbox" && (
       <CheckboxPrimitive.Indicator className="text-primary-foreground">
-        <Check className="size-[14px]" strokeWidth={3} />
+        <Check className="size-3.5" strokeWidth={3} />
       </CheckboxPrimitive.Indicator>
     )}
   </CheckboxPrimitive.Root>

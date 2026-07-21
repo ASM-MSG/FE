@@ -20,7 +20,7 @@ export const ReportReasonSelect = ({
   <Select.Root value={value ?? undefined} onValueChange={onValueChange}>
     <Select.Trigger
       aria-label="신고 사유"
-      className="flex h-[48px] w-full items-center justify-between rounded-md border border-border bg-background px-md text-fm-base text-foreground outline-none transition-colors focus:border-primary data-[placeholder]:text-foreground-muted"
+      className="flex h-12 w-full items-center justify-between rounded-md border border-border bg-background px-md text-fm-base text-foreground outline-none transition-colors focus:border-primary data-[placeholder]:text-foreground-muted"
     >
       <Select.Value placeholder="신고 사유를 선택해주세요" />
       <Select.Icon className="text-foreground-muted">

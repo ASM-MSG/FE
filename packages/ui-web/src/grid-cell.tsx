@@ -25,7 +25,7 @@ interface GridCellProps
 
 /**
  * @example
- * <GridCell state="collected" className="size-[130px]" onClick={onSelectCell} />
+ * <GridCell state="collected" className="size-32.5" onClick={onSelectCell} />
  */
 export const GridCell = ({
   state,

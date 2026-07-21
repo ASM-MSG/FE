@@ -17,11 +17,11 @@ export const Fab = ({ icon, className, type = "button", ...props }: FabProps) =>
   <button
     type={type}
     className={cn(
-      "flex size-[56px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-fab transition-[filter] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50",
+      "flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-fab transition-[filter] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
     {...props}
   >
-    {icon ?? <Plus className="size-[20px]" strokeWidth={3} />}
+    {icon ?? <Plus className="size-5" strokeWidth={3} />}
   </button>
 );

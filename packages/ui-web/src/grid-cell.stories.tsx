@@ -4,7 +4,7 @@ import { GridCell } from "./grid-cell";
 const meta = {
   title: "Components/GridCell",
   component: GridCell,
-  args: { state: "default", className: "size-[130px]" },
+  args: { state: "default", className: "size-32.5" },
   argTypes: {
     state: { control: "select", options: ["default", "collected", "selected"] },
   },
@@ -19,9 +19,9 @@ export const Playground: Story = {};
 export const AllStates: Story = {
   render: () => (
     <div className="flex gap-md bg-surface-soft p-md">
-      <GridCell className="size-[130px]" />
-      <GridCell state="collected" className="size-[130px]" />
-      <GridCell state="selected" className="size-[130px]" />
+      <GridCell className="size-32.5" />
+      <GridCell state="collected" className="size-32.5" />
+      <GridCell state="selected" className="size-32.5" />
     </div>
   ),
 };

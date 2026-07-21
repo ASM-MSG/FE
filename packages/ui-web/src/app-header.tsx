@@ -20,7 +20,7 @@ interface AppHeaderProps {
 export const AppHeader = ({ title, onBack, right, className }: AppHeaderProps) => (
   <header
     className={cn(
-      "flex h-[48px] w-full items-center gap-md border-b border-border bg-background px-lg",
+      "flex h-12 w-full items-center gap-md border-b border-border bg-background px-lg",
       className,
     )}
   >
@@ -29,17 +29,17 @@ export const AppHeader = ({ title, onBack, right, className }: AppHeaderProps) =
         type="button"
         aria-label="뒤로 가기"
         onClick={onBack}
-        className="flex size-[16px] shrink-0 items-center justify-center text-foreground"
+        className="flex size-4 shrink-0 items-center justify-center text-foreground"
       >
-        <ChevronLeft className="size-[16px]" />
+        <ChevronLeft className="size-4" />
       </button>
     ) : (
-      <span aria-hidden className="size-[16px] shrink-0" />
+      <span aria-hidden className="size-4 shrink-0" />
     )}
     <h1 className="min-w-0 flex-1 text-center text-fm-heading text-foreground">
       {title}
     </h1>
-    <span className="flex size-[16px] shrink-0 items-center justify-center">
+    <span className="flex size-4 shrink-0 items-center justify-center">
       {right}
     </span>
   </header>
