@@ -50,7 +50,7 @@ export const BottomNav = ({
           isActive ? "text-primary" : "text-foreground-muted",
         )}
       >
-        <span className="flex size-[22px] items-center justify-center">
+        <span className="flex size-5.5 items-center justify-center">
           {item.icon}
         </span>
         <span
@@ -66,19 +66,19 @@ export const BottomNav = ({
   };
 
   return (
-    <nav className={cn("relative h-[84px] w-full", className)}>
-      <div className="absolute inset-x-0 bottom-0 flex h-[64px] border-t border-border bg-background">
+    <nav className={cn("relative h-21 w-full", className)}>
+      <div className="absolute inset-x-0 bottom-0 flex h-16 border-t border-border bg-background">
         {items.slice(0, mid).map(renderTab)}
-        <span aria-hidden className="w-[78px] shrink-0" />
+        <span aria-hidden className="w-19.5 shrink-0" />
         {items.slice(mid).map(renderTab)}
       </div>
       <button
         type="button"
         aria-label="카메라"
         onClick={onCamera}
-        className="absolute left-1/2 top-0 flex size-[60px] -translate-x-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-fab ring-4 ring-background transition-[filter] active:brightness-[0.86]"
+        className="absolute left-1/2 top-0 flex size-15 -translate-x-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-fab ring-4 ring-background transition-[filter] active:brightness-[0.86]"
       >
-        <Camera className="size-[24px]" />
+        <Camera className="size-6" />
       </button>
     </nav>
   );

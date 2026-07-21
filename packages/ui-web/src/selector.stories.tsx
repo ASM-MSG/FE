@@ -18,7 +18,7 @@ export const Playground: Story = {};
 /** checkbox/radio × off/on — Figma variant와 1:1 */
 export const AllVariants: Story = {
   render: () => (
-    <div className="grid w-[60px] grid-cols-2 gap-md">
+    <div className="grid w-15 grid-cols-2 gap-md">
       <Selector />
       <Selector defaultChecked />
       <Selector type="radio" />

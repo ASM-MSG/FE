@@ -19,7 +19,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <div className="w-[342px]">
+    <div className="w-85.5">
       <Toast {...args} />
     </div>
   ),
@@ -28,7 +28,7 @@ export const Playground: Story = {
 /** 다크/라이트 — Figma Style과 1:1 */
 export const AllVariants: Story = {
   render: () => (
-    <div className="flex w-[342px] flex-col gap-md bg-surface p-md">
+    <div className="flex w-85.5 flex-col gap-md bg-surface p-md">
       <Toast
         title="업로드 전 최종 확인"
         description="AI 처리가 끝나면 미리보기에서 확인한 뒤 지도에 게시돼요"

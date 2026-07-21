@@ -34,12 +34,12 @@ export const VideoRow = ({
       <img
         src={thumbnailSrc}
         alt=""
-        className="h-[56px] w-[88px] shrink-0 rounded-sm bg-surface object-cover"
+        className="h-14 w-22 shrink-0 rounded-sm bg-surface object-cover"
       />
     ) : (
-      <span className="h-[56px] w-[88px] shrink-0 rounded-sm bg-surface" />
+      <span className="h-14 w-22 shrink-0 rounded-sm bg-surface" />
     )}
-    <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+    <span className="flex min-w-0 flex-1 flex-col gap-0.75">
       <span className="truncate text-fm-body-strong text-foreground">
         {title}
       </span>

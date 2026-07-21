@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <div className="w-[390px] bg-surface pt-xl">
+    <div className="w-97.5 bg-surface pt-xl">
       <BottomSheet {...args}>
         <VideoRow title="홍대 거리 야경 감성" meta="조회 214 · 어제" />
         <VideoRow title="성수동 카페거리 브이로그" meta="조회 87 · 2일 전" />
@@ -29,7 +29,7 @@ export const Playground: Story = {
 export const Docked: Story = {
   args: { handle: false },
   render: (args) => (
-    <div className="w-[390px] bg-surface p-md">
+    <div className="w-97.5 bg-surface p-md">
       <BottomSheet {...args} className="rounded-lg">
         <VideoRow title="홍대 거리 야경 감성" meta="조회 214 · 어제" />
       </BottomSheet>

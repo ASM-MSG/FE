@@ -24,7 +24,7 @@ export const SearchBar = ({
 }: SearchBarProps) => (
   <div
     className={cn(
-      "flex h-[48px] w-full items-center gap-xs rounded-md border-[1.5px] border-transparent bg-background pl-md pr-sm shadow-raised transition-colors focus-within:border-primary",
+      "flex h-12 w-full items-center gap-xs rounded-md border-[1.5px] border-transparent bg-background pl-md pr-sm shadow-raised transition-colors focus-within:border-primary",
       className,
     )}
   >
@@ -40,10 +40,10 @@ export const SearchBar = ({
         onClick={onSearch}
         className="shrink-0 text-icon transition-opacity active:opacity-60"
       >
-        <Search className="size-[20px]" />
+        <Search className="size-5" />
       </button>
     ) : (
-      <Search className="size-[20px] shrink-0 text-icon" />
+      <Search className="size-5 shrink-0 text-icon" />
     )}
   </div>
 );

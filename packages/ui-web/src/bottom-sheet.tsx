@@ -33,13 +33,13 @@ export const BottomSheet = ({
   <div
     className={cn(
       "flex w-full flex-col gap-sm rounded-t-xl bg-surface-elevated px-md pb-md shadow-sheet",
-      handle ? "pt-[10px]" : "pt-md",
+      handle ? "pt-2.5" : "pt-md",
       className,
     )}
   >
     {handle && (
       <div className="flex justify-center">
-        <span className="h-[4px] w-[36px] rounded-full bg-hairline-strong" />
+        <span className="h-1 w-9 rounded-full bg-hairline-strong" />
       </div>
     )}
     {(title || actionLabel) && (

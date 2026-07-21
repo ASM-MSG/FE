@@ -49,7 +49,7 @@ Git Flow를 기반으로 하되, `main`(배포) / `develop`(기본 브랜치) / 
 
 - 기능명에는 kebab-case 사용
 - 번호는 지라 이슈 키(MSG-xxx)와 연동
-- 브랜치 유형은 티켓의 주 목적 기준으로 3종만 사용합니다. 리팩토링·설정성 작업은 별도 브랜치 유형 없이 `feat/`로 진행하고, 커밋 prefix(`refactor`, `chore`)로 구분합니다.
+- 브랜치 유형은 티켓의 주 목적 기준으로 3종만 사용합니다. 리팩토링·설정성 작업은 별도 브랜치 유형 없이 `feat/`로 진행하고, 커밋 prefix(`refactor`, `chore`, `setting`)로 구분합니다.
 
 ## 커밋 컨벤션
 
@@ -62,13 +62,15 @@ Git Flow를 기반으로 하되, `main`(배포) / `develop`(기본 브랜치) / 
 | prefix | 설명 |
 |--------|------|
 | `feat` | 새로운 기능 추가 |
-| `fix` | 버그 수정 |
+| `fix` | 버그 수정 (`hotfix/` 브랜치의 커밋도 `fix` 사용) |
 | `docs` | 문서 수정 (README 등) |
-| `design` | UI/스타일 변경 |
+| `style` | UI/스타일 변경 (기능 변경 없음) |
 | `refactor` | 기능 변경 없이 코드 리팩토링 |
 | `test` | 테스트 코드 추가, 변경 |
-| `chore` | 설정, 빌드, 패키지 등 작업 (프로덕션 코드 영향 없음) |
-| `hotfix` | 배포 후 긴급 수정 |
+| `chore` | 빌드, 패키지, 결정 기록 등 작업 (프로덕션 코드 영향 없음) |
+| `setting` | 개발 환경·설정 파일 구성 (tsconfig, CI, 훅 등) |
+
+이 목록은 `.husky/commit-msg` 훅이 강제하는 목록과 1:1로 일치한다. prefix를 추가/삭제할 때는 이 표와 훅을 함께 수정한다.
 
 ```
 MSG-118 feat: AI 하이라이트 자동 추천 구간 선택 UI 구현
@@ -106,4 +108,4 @@ MSG-120 docs: README에 브랜치 전략 설명 추가
 ### 스타일
 
 - Tailwind + 디자인 토큰 사용 — 임의 색상·수치 하드코딩 대신 토큰 사용 ([docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) 준수)
-- 길이 단위는 rem 기준
+- 컴포넌트 고유 치수는 Tailwind 숫자 스케일 클래스(rem 기반, 사용자 폰트 설정 추종) 사용 — px 임의값(`w-[40px]`)은 eslint가 금지. 시맨틱 토큰(`p-md` 등)은 px 고정

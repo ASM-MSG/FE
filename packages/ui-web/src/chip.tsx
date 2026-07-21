@@ -27,7 +27,7 @@ export const Chip = ({
     type={type}
     aria-pressed={active}
     className={cn(
-      "inline-flex h-[32px] items-center gap-xxs rounded-full px-[14px] text-fm-label transition-[filter,background-color] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex h-8 items-center gap-xxs rounded-full px-3.5 text-fm-label transition-[filter,background-color] active:brightness-[0.86] disabled:pointer-events-none disabled:opacity-50",
       active
         ? "bg-primary text-primary-foreground"
         : "bg-background text-foreground",
@@ -35,7 +35,7 @@ export const Chip = ({
     )}
     {...props}
   >
-    {active && <Check className="size-[12px]" strokeWidth={3} />}
+    {active && <Check className="size-3" strokeWidth={3} />}
     {text}
   </button>
 );

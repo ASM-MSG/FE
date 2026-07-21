@@ -31,10 +31,10 @@ export const Switch = ({
     disabled={disabled}
     onCheckedChange={onCheckedChange}
     className={cn(
-      "inline-flex h-[20px] w-[36px] shrink-0 items-center rounded-full bg-border p-[2px] transition-colors data-[state=checked]:bg-primary disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-border p-0.5 transition-colors data-[state=checked]:bg-primary disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
   >
-    <SwitchPrimitive.Thumb className="block size-[16px] rounded-full bg-background shadow-raised transition-transform data-[state=checked]:translate-x-[16px]" />
+    <SwitchPrimitive.Thumb className="block size-4 rounded-full bg-background shadow-raised transition-transform data-[state=checked]:translate-x-4" />
   </SwitchPrimitive.Root>
 );

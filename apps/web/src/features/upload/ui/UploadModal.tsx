@@ -133,7 +133,7 @@ export const UploadModal = () => {
         <Dialog.Overlay className="fixed inset-0 z-40 bg-navy-900/40" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none"
+          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-120 -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none"
         >
           <Dialog.Title className="sr-only">영상 업로드</Dialog.Title>
           {step === "highlight" && duration !== null ? (
@@ -201,7 +201,7 @@ export const UploadModal = () => {
               <span className="shrink-0 text-fm-body-strong text-foreground">
                 위치 태그
               </span>
-              <span className="inline-flex items-center gap-[6px] rounded-full bg-primary/10 px-sm py-[7px] text-fm-label text-primary">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-sm py-1.75 text-fm-label text-primary">
                 <MapPin className="size-3" />
                 {LOCATION_LABEL}
               </span>

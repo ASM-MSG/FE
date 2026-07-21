@@ -29,14 +29,14 @@ export const Toast = ({
     <div
       role="status"
       className={cn(
-        "flex w-full items-start gap-sm rounded-lg bg-foreground py-[14px] pl-[14px] pr-md shadow-toast",
+        "flex w-full items-start gap-sm rounded-lg bg-foreground py-3.5 pl-3.5 pr-md shadow-toast",
         className,
       )}
     >
-      <span className="flex size-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-fm-base font-semibold text-primary-foreground">
+      <span className="flex size-7.5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-fm-base font-semibold text-primary-foreground">
         {icon ?? "i"}
       </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.75">
         <p className="text-fm-base font-semibold text-foreground-inverse">
           {title}
         </p>

@@ -32,7 +32,7 @@ export const AllVariants: Story = {
     <div className="flex flex-col gap-md">
       {variants.map((variant) => (
         <div key={variant} className="flex items-center gap-md">
-          <span className="w-[100px] text-fm-caption text-muted-foreground">
+          <span className="w-25 text-fm-caption text-muted-foreground">
             {variant}
           </span>
           {sizes.map((size) => (

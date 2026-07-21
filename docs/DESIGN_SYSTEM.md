@@ -23,7 +23,8 @@ apps/web (tailwind.config.ts)  →  @fillmap/tailwind-preset  →  @fillmap/desi
 
 ## 반드시 지킬 규칙 (6개조)
 
-1. **색상·크기·타이포 값의 유일한 출처는 `design-tokens`.** 컴포넌트/앱 코드에 hex, px 리터럴 금지. Tailwind 임의값(`bg-[#fff]`) 금지 — 단, 컴포넌트 고유 치수(`min-w-[60px]` 등)는 variant 정의 안에서만 허용. 이 예외 안에서도 Tailwind 기본 스케일(4px 단위)로 정확히 표현되는 값은 임의값 대신 스케일 클래스를 쓴다 — 예: `min-w-[40px]` 대신 `min-w-10`, `p-[16px]` 대신 `p-4`. 스케일에 없는 값(예: 6px, 14px)에서만 임의값이 남는다.
+1. **색상·크기·타이포 값의 유일한 출처는 `design-tokens`.** 컴포넌트/앱 코드에 hex 리터럴과 색상 임의값(`bg-[#fff]`) 금지. 간격·치수는 시맨틱 토큰(`p-md`, `gap-xs`)을 우선하고, 토큰에 없는 컴포넌트 고유 치수는 **Tailwind 숫자 스케일 클래스**로 쓴다 — `w-[40px]`이 아니라 `w-10`. Tailwind v4는 0.25 단위 배수를 전부 동적 생성하므로 정수 px 값은 모두 스케일로 표현된다(6px=`1.5`, 7px=`1.75`, 10px=`2.5`, 14px=`3.5`, 1px=`px`). **px 임의값(`w-[40px]` 등)은 전면 금지** — 스페이싱·사이징 계열(p/m/w/h/size/gap 등)은 eslint(better-tailwindcss)가 기계 강제하고, 린트 범위 밖 계열(타이포 `text-[14px]`·`leading-*`, `border-*`, `ring-*`)은 검증 단계의 수동 감사 대상이다(타이포는 `text-fm-*` 토큰을 쓴다). 임의값이 남는 곳은 스케일·토큰으로 표현 불가한 값(vh·%·`calc()`, radius 비토큰 값 `rounded-[20px]`, 소수 px `border-[1.5px]`)뿐이고, 스케일 ± 보정이 필요하면 `py-[calc(--spacing(4)-1px)]`처럼 `--spacing()` 함수를 쓴다.
+   - **단위 의미 주의**: 시맨틱 토큰(`p-md`=16px)은 px 고정, 숫자 스케일(`p-4`=1rem)은 rem 기반이라 사용자 브라우저 폰트 설정을 따라 확대된다. 후자가 접근성상 의도된 동작이다 (2026-07-21 MSG-163에서 px 임의값 119건을 스케일로 전환하며 확정).
 2. **원시 토큰(`blue-500` 등)보다 시맨틱 토큰(`primary`, `background` 등) 우선 사용.** 시맨틱으로 표현 안 되는 경우에만 원시 토큰 직접 사용.
 3. **`ui-web`(추후 `ui-native`)에는 도메인 무관 컴포넌트만.** API 호출·비즈니스 로직은 각 앱의 `features/`로.
 4. **variant API는 `design-tokens/src/variants.ts`의 공용 타입에서 시작.** 웹/앱 컴포넌트가 같은 union 타입을 import한다. 한쪽에만 variant를 추가하지 않는다.

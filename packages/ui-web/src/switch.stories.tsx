@@ -15,7 +15,7 @@ export const Playground: Story = {};
 /** off/on × default/disabled — Figma variant와 1:1 */
 export const AllVariants: Story = {
   render: () => (
-    <div className="grid w-[100px] grid-cols-2 gap-md">
+    <div className="grid w-25 grid-cols-2 gap-md">
       <Switch />
       <Switch defaultChecked />
       <Switch disabled />

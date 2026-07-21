@@ -23,7 +23,7 @@ export const MapControls = ({
   <div className="flex flex-col items-center gap-sm">
     <Fab
       aria-label="업로드"
-      icon={<Upload className="size-[20px]" />}
+      icon={<Upload className="size-5" />}
       onClick={onUpload}
     />
     <MapIconButton icon="locate" onClick={onLocate} />

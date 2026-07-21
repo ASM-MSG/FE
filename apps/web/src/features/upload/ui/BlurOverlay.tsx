@@ -24,7 +24,7 @@ export const BlurOverlay = ({ regions }: BlurOverlayProps) => (
           height: `${region.box.h}%`,
         }}
       >
-        <span className="absolute left-0 top-0 rounded-sm bg-primary px-xxs py-[1px] text-fm-caption text-primary-foreground">
+        <span className="absolute left-0 top-0 rounded-sm bg-primary px-xxs py-px text-fm-caption text-primary-foreground">
           {region.label}
         </span>
       </div>

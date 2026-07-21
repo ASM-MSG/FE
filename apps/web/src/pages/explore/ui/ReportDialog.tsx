@@ -60,7 +60,7 @@ export const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
           <Dialog.Overlay className="fixed inset-0 z-40 bg-navy-900/40" />
           <Dialog.Content
             aria-describedby={undefined}
-            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 outline-none"
+            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-120 -translate-x-1/2 -translate-y-1/2 outline-none"
           >
             <Dialog.Title className="sr-only">영상 신고</Dialog.Title>
             <ModalCard
@@ -81,7 +81,7 @@ export const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
       </Dialog.Root>
 
       {toastVisible && (
-        <div className="fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-[480px] px-md">
+        <div className="fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-120 px-md">
           <Toast title={TOAST_MESSAGE} />
         </div>
       )}

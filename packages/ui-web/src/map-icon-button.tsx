@@ -9,7 +9,7 @@ import { cn } from "./lib/utils";
  * back은 배경 없는 아이콘, locate는 흰 원형 + Raised 그림자.
  */
 const mapIconButtonVariants = cva(
-  "flex size-[40px] items-center justify-center rounded-full transition-[filter,background-color] disabled:pointer-events-none disabled:opacity-50",
+  "flex size-10 items-center justify-center rounded-full transition-[filter,background-color] disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       icon: {
@@ -43,9 +43,9 @@ export const MapIconButton = ({
     {...props}
   >
     {icon === "back" ? (
-      <ChevronLeft className="size-[22px]" />
+      <ChevronLeft className="size-5.5" />
     ) : (
-      <Locate className="size-[20px]" />
+      <Locate className="size-5" />
     )}
   </button>
 );

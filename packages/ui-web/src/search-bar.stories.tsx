@@ -13,7 +13,7 @@ type Story = StoryObj<typeof meta>;
 /** focused 상태는 입력창 클릭으로 확인 */
 export const Playground: Story = {
   render: (args) => (
-    <div className="w-[356px] bg-surface p-md">
+    <div className="w-89 bg-surface p-md">
       <SearchBar {...args} />
     </div>
   ),
@@ -23,7 +23,7 @@ export const Playground: Story = {
 export const ClickableIcon: Story = {
   args: { onSearch: () => alert("검색") },
   render: (args) => (
-    <div className="w-[356px] bg-surface p-md">
+    <div className="w-89 bg-surface p-md">
       <SearchBar {...args} />
     </div>
   ),

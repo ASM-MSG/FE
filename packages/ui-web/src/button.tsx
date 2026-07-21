@@ -18,8 +18,8 @@ const buttonVariants = cva(
         danger: "bg-error text-primary-foreground",
       },
       size: {
-        lg: "h-[48px] min-w-[140px] rounded-md px-lg text-fm-title leading-none",
-        sm: "h-[36px] min-w-[104px] rounded-sm px-md text-fm-body-strong",
+        lg: "h-12 min-w-35 rounded-md px-lg text-fm-title leading-none",
+        sm: "h-9 min-w-26 rounded-sm px-md text-fm-body-strong",
       },
     },
     defaultVariants: { variant: "primary", size: "lg" },

@@ -27,11 +27,11 @@ const CellCard = ({
   <button
     type="button"
     onClick={() => onSelect(cell.center)}
-    className="flex w-[100px] shrink-0 flex-col gap-xxs text-left transition-colors active:opacity-80"
+    className="flex w-25 shrink-0 flex-col gap-xxs text-left transition-colors active:opacity-80"
   >
-    <span className="flex h-[64px] w-full items-center justify-center rounded-sm bg-surface">
-      <span className="flex size-[28px] items-center justify-center rounded-full bg-primary text-primary-foreground">
-        <Play className="size-[12px] fill-current" />
+    <span className="flex h-16 w-full items-center justify-center rounded-sm bg-surface">
+      <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <Play className="size-3 fill-current" />
       </span>
     </span>
     <span className="max-w-full truncate text-fm-body-strong text-foreground">

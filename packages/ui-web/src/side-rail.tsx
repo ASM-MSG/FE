@@ -37,12 +37,12 @@ export const SideRail = ({
 }: SideRailProps) => (
   <nav
     className={cn(
-      "flex h-full w-[72px] flex-col items-center gap-xs border-r border-border bg-background py-md",
+      "flex h-full w-18 flex-col items-center gap-xs border-r border-border bg-background py-md",
       className,
     )}
   >
     {logo && (
-      <div className="mb-sm flex size-[40px] shrink-0 items-center justify-center overflow-hidden rounded-md">
+      <div className="mb-sm flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md">
         {logo}
       </div>
     )}
@@ -54,13 +54,13 @@ export const SideRail = ({
           type="button"
           onClick={() => onSelect?.(item.key)}
           className={cn(
-            "flex size-[56px] shrink-0 flex-col items-center justify-center gap-xxs rounded-md transition-colors",
+            "flex size-14 shrink-0 flex-col items-center justify-center gap-xxs rounded-md transition-colors",
             isActive
               ? "bg-surface text-primary"
               : "text-foreground-body active:bg-surface",
           )}
         >
-          <span className="flex size-[22px] items-center justify-center">
+          <span className="flex size-5.5 items-center justify-center">
             {item.icon}
           </span>
           <span className="text-fm-caption font-medium">{item.label}</span>

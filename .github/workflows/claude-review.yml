@@ -4,6 +4,11 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
 
+# 같은 PR에 연속 push 시 낡은 diff 기준 리뷰가 중복 완주하지 않도록 이전 실행을 취소
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   claude-review:
     # 드래프트 PR은 리뷰하지 않음
