@@ -13,7 +13,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 
 ### 1단계: 로직 레이어 (test-first)
 
-대상: 훅, zustand 스토어, zod 스키마, 유틸, TanStack Query 옵션.
+대상: 훅, zustand 스토어, 스키마, 유틸, TanStack Query 옵션. (검증 라이브러리(zod 등)는 아직 미도입 — 첫 폼/스키마 티켓에서 도입을 스펙에 명시하고 추가한다)
 
 1. 스펙의 로직형 수용 기준을 실패하는 vitest 테스트로 옮긴다. 테스트 이름은 수용 기준 문장을 반영한다 — 테스트가 곧 기획의 번역이다
 2. 테스트를 통과하는 최소 구현을 작성한다
@@ -29,7 +29,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 
 ### 3단계: 연결 및 전체 확인
 
-라우트 등록, 로직-뷰 연결 후 `pnpm --filter web test run`, `pnpm --filter web typecheck`, `pnpm lint` 전부 통과 확인.
+라우트 등록, 로직-뷰 연결 후 루트에서 `pnpm test`, `pnpm typecheck`, `pnpm lint` 전부 통과 확인 — 루트 명령이어야 ui-web 승격 산출물(컴포넌트·스토리)까지 검사된다.
 
 ## 디렉토리 구조 (FSD)
 
@@ -39,19 +39,20 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 |------|--------|------|
 | `app/` | 라우팅·프로바이더 | 라우터 설정, QueryClientProvider |
 | `pages/` | 페이지 조립(얇은 뷰) | `pages/map/MapPage.tsx` |
+| `pages/{페이지}/ui/` | 그 페이지에서만 쓰는 하위 조립 컴포넌트 | `pages/explore/ui/CellDetailSheet.tsx` |
 | `widgets/` | 페이지 간 공유 조합 블록 | Header, BottomNav 조립체 |
 | `features/` | 도메인 기능 (api + model + ui) | `features/cell-record/` |
 | `entities/` | 도메인 모델·타입 | `entities/cell/` |
 | `shared/` | 웹 전용 훅·유틸·어댑터 | storage 어댑터. **재사용 UI 컴포넌트 금지** |
 
-디렉토리가 아직 없으면 이 구조대로 생성한다. 페이지 컴포넌트는 조립만 담당하는 얇은 층으로 유지하고, 상태·데이터 로직은 features/entities의 model로 내린다.
+디렉토리가 아직 없으면 이 구조대로 생성한다. 페이지 컴포넌트는 조립만 담당하는 얇은 층으로 유지하고, 상태·데이터 로직은 features/entities의 model로 내린다. `pages/{페이지}/ui/`와 `features/{도메인}/ui/`의 구분: 해당 도메인의 model과 짝을 이루는 UI는 features에, 특정 페이지의 화면 조립 단위일 뿐인 것은 pages/ui에 둔다 — 애매하면 features 우선(같은 도메인 UI가 pages와 features로 갈라지는 것을 피한다).
 
 ## 토큰 규칙
 
-- 색상·크기·타이포는 토큰 클래스만: `bg-primary`, `gap-md`, `text-fm-body` 등. hex/px 리터럴과 Tailwind 임의값(`bg-[#fff]`) 금지
+- 색상·크기·타이포는 토큰 클래스만: `bg-primary`, `gap-md`, `text-fm-body` 등. hex와 색상 임의값(`bg-[#fff]`) 금지
 - 시맨틱 토큰(`primary`, `background`) 우선, 원시 토큰(`blue-500`)은 시맨틱으로 표현 불가할 때만
-- 컴포넌트 고유 치수(`min-w-[60px]` 등)로 임의값이 불가피할 때도, Tailwind 기본 스케일(4px 단위)로 정확히 나오는 값이면 스케일 클래스를 쓴다 — `min-w-[40px]`이 아니라 `min-w-10`. 스케일에 없는 값에서만 임의값 유지
-- 사용 가능한 토큰 클래스 목록: `docs/DESIGN_SYSTEM.md` 참조
+- 토큰에 없는 컴포넌트 고유 치수는 Tailwind 숫자 스케일 클래스로 쓴다 — `w-[40px]`이 아니라 `w-10`. v4는 0.25 배수를 전부 지원하므로 정수 px는 모두 표현 가능(6px=`1.5`, 7px=`1.75`, 1px=`px`). 정수 px 임의값은 eslint(better-tailwindcss)가 거부하며, 임의값은 vh·%·`calc()` 등 스케일 표현 불가 값에만 남긴다
+- 단위 의미: 시맨틱 토큰은 px 고정, 숫자 스케일은 rem(사용자 폰트 설정 추종). 목록과 상세는 `docs/DESIGN_SYSTEM.md` 참조
 
 ## RN 대비 경계 규칙
 
@@ -59,6 +60,8 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 
 - **웹 전용 API 직접 참조 금지**: `window`, `document`, `localStorage`를 로직에서 직접 쓰지 않는다. 필요하면 `shared/`에 어댑터(예: `storage.ts`)를 만들어 경유한다 — RN에서는 어댑터 구현만 교체
 - **라우터 격리**: 훅·스토어가 `react-router`를 직접 import하지 않는다. 네비게이션이 필요한 로직은 콜백을 주입받는다
+- **뷰-레이어 훅 예외**: widgets/pages의 조립 전용 훅(예: `widgets/map-shell/use-map-shell.ts` — Outlet context로 지도 명령을 전달)은 라우터를 import할 수 있다. RN 재사용 대상이 아니므로 파일 상단 JSDoc에 뷰-레이어 훅임을 선언하고, model/스토어 파일과 물리적으로 분리한다
+- 이 중 기계 판별 가능한 부분(model·스토어의 라우터 import, window/document/localStorage 참조)은 eslint(no-restricted-imports/globals)가 강제한다 — 위반 시 lint가 대안을 안내하므로 억지로 우회(eslint-disable)하지 말고 어댑터/콜백 설계로 푼다
 - **지도 격리**: `react-kakao-maps-sdk`는 웹 전용이다. 지도 관련 코드는 지도 컴포넌트 경계 안에만 두고, 지도 상태(중심좌표·줌 등)는 플랫폼 중립 스토어로 분리한다
 - **선제적 패키지 생성 금지**: `ui-native`, `packages/core` 등을 미리 만들지 않는다. 경계만 지키면 분리는 필요해질 때 싸게 할 수 있다
 
@@ -85,5 +88,5 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 ## 완료 조건
 
 - 로직형 수용 기준마다 대응하는 테스트가 존재하고 통과
-- `pnpm --filter web test run`, `pnpm --filter web typecheck`, `pnpm lint` 모두 통과
+- 루트에서 `pnpm test`, `pnpm typecheck`, `pnpm lint` 모두 통과
 - `_workspace/MSG-{번호}/02_build_report.md` 작성: 변경 파일 목록, 기준별 테스트 매핑, 스펙 이슈, 결정 기록 여부

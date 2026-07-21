@@ -44,4 +44,45 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // RN 대비 경계 규칙(page-implementation 스킬) 기계 강제 — 로직 레이어는 플랫폼 중립.
+    // widgets/pages의 뷰-레이어 훅(라우터 연결용)은 이 glob에 안 걸리므로 예외가 자동 성립한다.
+    files: [
+      'src/features/*/model/**',
+      'src/entities/*/model/**',
+      'src/widgets/**/*-store.*',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['react-router*'],
+              message:
+                'model 레이어는 라우터를 몰라야 합니다(RN 재사용 대상). 네비게이션은 콜백 주입 또는 뷰-레이어 훅에서 처리하세요.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'window',
+          message:
+            'model 레이어에서 window 직접 접근 금지 — shared/ 어댑터를 경유하세요 (RN 경계 규칙)',
+        },
+        {
+          name: 'document',
+          message:
+            'model 레이어에서 document 직접 접근 금지 — shared/ 어댑터를 경유하세요 (RN 경계 규칙)',
+        },
+        {
+          name: 'localStorage',
+          message:
+            'localStorage 직접 접근 금지 — shared/의 storage 어댑터를 사용하세요 (RN 경계 규칙)',
+        },
+      ],
+    },
+  },
 ])
