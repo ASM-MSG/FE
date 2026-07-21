@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
@@ -25,8 +26,13 @@
     "react": ">=19"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@fillmap/tailwind-preset": "workspace:*",
     "@fontsource-variable/inter": "^5.2.8",
+    "eslint": "^10.6.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
+    "typescript-eslint": "^8.62.0",
     "@storybook/react-vite": "^10.5.0",
     "@tailwindcss/vite": "^4.3.2",
     "@types/react": "^19.2.17",

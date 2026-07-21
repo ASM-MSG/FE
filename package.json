@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
-    "lint": "pnpm --filter web lint",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm --filter web test run",
     "storybook": "pnpm --filter @fillmap/ui-web storybook",
     "build-storybook": "pnpm --filter @fillmap/ui-web build-storybook",
     "prepare": "husky"

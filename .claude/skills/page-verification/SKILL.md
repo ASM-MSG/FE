@@ -12,12 +12,12 @@ description: "구현된 페이지를 스펙의 수용 기준으로 검증하는 
 ### 1. 자동 검증
 
 ```
-pnpm --filter web test run
-pnpm --filter web typecheck
-pnpm lint
+pnpm test        # apps/web vitest (run 모드)
+pnpm typecheck   # 전 패키지 — web(tsc -b) + ui-web(stories 포함 strict) + design-tokens + tailwind-preset
+pnpm lint        # 전 패키지 — apps/web + packages/ui-web
 ```
 
-셋 중 하나라도 실패하면 이후 단계를 진행하되, 리포트 최상단에 실패를 명시한다.
+반드시 루트에서 실행한다 — `--filter web`으로 좁히면 ui-web 승격 산출물(컴포넌트·스토리)이 검사에서 빠진다. 셋 중 하나라도 실패하면 이후 단계를 진행하되, 리포트 최상단에 실패를 명시한다.
 
 ### 2. 규칙 감사 (코드 직접 확인)
 
