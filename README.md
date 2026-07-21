@@ -108,4 +108,4 @@ MSG-120 docs: README에 브랜치 전략 설명 추가
 ### 스타일
 
 - Tailwind + 디자인 토큰 사용 — 임의 색상·수치 하드코딩 대신 토큰 사용 ([docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) 준수)
-- 길이 단위는 rem 기준
+- 컴포넌트 고유 치수는 Tailwind 숫자 스케일 클래스(rem 기반, 사용자 폰트 설정 추종) 사용 — px 임의값(`w-[40px]`)은 eslint가 금지. 시맨틱 토큰(`p-md` 등)은 px 고정
