@@ -78,6 +78,12 @@ export const summarizeBlurRegions = (regions: BlurRegion[]): BlurSummary => ({
 export const formatBlurCompletion = (summary: BlurSummary): string =>
   `AI 자동 블러 완료 — 얼굴 ${summary.faces}개, 번호판 ${summary.plates}개를 자동으로 가렸어요`;
 
+/**
+ * 4/4 미리보기 블러 카드용 처리 개수 라벨. [MSG-120 L2]
+ * "{count}개 처리됨" — 0도 항목을 숨기지 않고 "0개 처리됨"으로 표기한다(처리 개수 0 표시).
+ */
+export const formatBlurCount = (count: number): string => `${count}개 처리됨`;
+
 /** 확인 결과 payload — 감지 요약과 영상 길이(초)를 담는다. [L7·Q4] */
 export const toBlurConfirmResult = (
   summary: BlurSummary,

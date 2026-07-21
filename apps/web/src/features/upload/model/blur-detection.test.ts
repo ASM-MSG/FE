@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMockBlurRegions,
   formatBlurCompletion,
+  formatBlurCount,
   summarizeBlurRegions,
   toBlurConfirmResult,
 } from "./blur-detection";
@@ -71,6 +72,18 @@ describe("formatBlurCompletion", () => {
     expect(formatBlurCompletion({ faces: 3, plates: 0 })).toBe(
       "AI 자동 블러 완료 — 얼굴 3개, 번호판 0개를 자동으로 가렸어요",
     );
+  });
+});
+
+describe("formatBlurCount", () => {
+  // L2 (MSG-120): "{count}개 처리됨" — 0도 항목을 숨기지 않고 "0개 처리됨"을 반환한다
+  it("처리 개수를 'N개 처리됨' 형식으로 반환한다", () => {
+    expect(formatBlurCount(2)).toBe("2개 처리됨");
+    expect(formatBlurCount(1)).toBe("1개 처리됨");
+  });
+
+  it("0개도 항목을 숨기지 않고 '0개 처리됨'을 반환한다", () => {
+    expect(formatBlurCount(0)).toBe("0개 처리됨");
   });
 });
 

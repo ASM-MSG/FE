@@ -7,6 +7,8 @@ import {
   getSelectedSegment,
   type HighlightSuggestion,
   type Segment,
+  type SelectionResult,
+  toSelectionResult,
 } from "@/features/upload/model/highlight-selection";
 import { useHighlightSelection } from "@/features/upload/model/use-highlight-selection";
 import { SegmentList } from "./SegmentList";
@@ -20,8 +22,8 @@ interface HighlightStepProps {
   duration: number;
   /** 모달 전체 닫기 (✕) */
   onClose: () => void;
-  /** 다음 단계(블러 확인)로 전환 — 선택 결과 전달은 4/4 최종 화면 티켓 소관 (MSG-119 S6) */
-  onNext: () => void;
+  /** 다음 단계(블러 확인)로 전환 — 선택 결과(SelectionResult|null)를 상위로 전달 (MSG-120 S11, MSG-118 배선 완성) */
+  onNext: (result: SelectionResult | null) => void;
 }
 
 const STEP_DESCRIPTION =
@@ -31,8 +33,8 @@ const STEP_DESCRIPTION =
  * 2단계 "AI 하이라이트 추천" 화면 본체. [S2~S11]
  * 미리보기 + AI 추천 리스트(목업) + 직접 구간 트리머 + 선택 요약을 ModalCard 안에 조립한다.
  * 선택 상태·트리머 드래그는 모달 로컬(useHighlightSelection) — 전역 스토어에 추가하지 않는다.
- * "이 구간으로 다음 단계"를 누르면 블러 확인(3/4) 스텝으로 전환한다(MSG-119 S6) —
- * 선택 결과 payload 전달은 범위 밖.
+ * "이 구간으로 다음 단계"를 누르면 블러 확인(3/4) 스텝으로 전환하며(MSG-119 S6),
+ * 선택 결과(toSelectionResult)를 상위로 전달해 4/4 미리보기가 사용한다(MSG-120 S11).
  */
 export const HighlightStep = ({
   objectUrl,
@@ -60,9 +62,9 @@ export const HighlightStep = ({
   };
 
   // "이 구간으로 다음 단계" → 블러 확인(3/4)으로 전환 (MSG-119 S6, MSG-118 콘솔 로그 대체).
-  // 선택 결과 payload 전달은 이번 티켓 범위 아님 — 스텝 전환만 수행한다.
+  // 선택 결과(SelectionResult|null)를 상위로 전달 — 4/4 미리보기 하이라이트 카드가 사용한다 (MSG-120 S11).
   const handleConfirm = () => {
-    onNext();
+    onNext(toSelectionResult(state));
   };
 
   return (

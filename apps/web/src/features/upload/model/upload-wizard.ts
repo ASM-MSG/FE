@@ -7,8 +7,8 @@
 
 import { shouldOfferHighlight } from "./highlight-selection";
 
-/** 업로드 위저드 스텝 — 정보 입력 → (하이라이트) → 블러 확인. */
-export type UploadStep = "select" | "highlight" | "blur";
+/** 업로드 위저드 스텝 — 정보 입력 → (하이라이트) → 블러 확인 → 미리보기(4/4). */
+export type UploadStep = "select" | "highlight" | "blur" | "preview";
 
 /**
  * 현재 스텝과 영상 길이로 다음 스텝을 판정한다. [L1·L2]
