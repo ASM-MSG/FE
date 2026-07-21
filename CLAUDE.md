@@ -6,7 +6,7 @@ pnpm 모노레포 — apps/web(React 19 + Vite) + packages(design-tokens · tail
 
 **목표:** 지라 티켓(MSG-xxx) 기획을 스펙 → 구현 → 검증 → 커밋으로 완주시킨다.
 
-**트리거:** 티켓 번호 언급, 페이지/화면/기능 개발·수정·검증 요청 시 `fillmap-page-dev` 스킬을 사용하라. 단순 질문은 직접 응답 가능.
+**트리거:** 티켓 번호 언급, 페이지/화면/기능 개발·수정·검증·리뷰 반영·PR/푸시 요청 시 `fillmap-page-dev` 스킬을 사용하라 — 이 트리거 범위에서는 외부 플러그인 스킬(브레인스토밍·PR 마무리류)보다 이 하네스가 우선한다. 단순 질문은 직접 응답 가능.
 
 **변경 이력:**
 | 날짜 | 변경 내용 | 대상 | 사유 |
@@ -25,3 +25,4 @@ pnpm 모노레포 — apps/web(React 19 + Vite) + packages(design-tokens · tail
 | 2026-07-21 | 스펙 스킬에 Figma 분석 단계 신설(플레이스홀더 판별·오탐 방지 목록 작성) + 00_ticket.md 산출 주체를 analyst로 명시(주체 모순 해소) | skills/ticket-to-spec, agents/ticket-analyst | MSG-163 — MSG-120 스펙에서 실증된 우수 실무를 규칙화, 세션이 바뀌어도 유지되게 |
 | 2026-07-21 | 오케스트레이터 보강 — 에이전트 모델 opus→fable(사용자 지시 "개발은 fable로만", revfactory 원칙 문구 일탈 기록), Phase 4에 PR 생성(검증 요약을 본문에)·잔여 항목 지라 코멘트 환류 추가. 에이전트 3종에 skills 프론트매터(스킬 기동 시 주입), verifier에 과잉 지적 억제·수정 금지 원칙 | skills/fillmap-page-dev, agents/* | MSG-163 — 파이프라인이 커밋에서 끝나 PR 인프라(템플릿·리뷰봇)와 단절, 후속 항목이 결정 기록에만 남아 유실되던 문제 해소 |
 | 2026-07-21 | 업로드 위저드 흐름 스모크 4케이스 커밋 (7/15 뷰 테스트 비보존 결정의 부분 수정 — DECISIONS 기록) | apps/web features/upload | MSG-163 — 4연속 재작성·폐기되던 검증 하네스의 자산화, CI 회귀 보호 |
+| 2026-07-21 | 최종 검증(warn 7) 반영 — 린트 강제 범위 정밀화(스페이싱·사이징만 기계 강제, 나머지 계열은 수동 감사 명시)·치환 건수 정정(119), 스모크 승격=코드 수정 금지의 명시적 예외·기록처를 검증 리포트로 정정, 에이전트 스킬 읽기 지시를 주입 전제로 완화, CLAUDE.md 트리거에 리뷰·PR 키워드+플러그인 우선순위, page-implementation 진입점 아님 명문화, README setting 누락 보완 | CLAUDE.md, README, docs/DESIGN_SYSTEM.md, skills 3종, agents 3종 | MSG-163 — 구조·트리거·적대 리뷰 3중 검증에서 발견된 문서 간 불일치 해소 (blocker 0) |

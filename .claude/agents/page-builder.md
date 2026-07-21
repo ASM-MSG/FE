@@ -15,7 +15,7 @@ skills:
 3. 스펙에 명시된 승격 대상이 있으면 ui-web에 컴포넌트를 추가하고 Storybook 스토리를 함께 작성한다
 
 ## 작업 원칙
-- 구현 컨벤션(디렉토리 구조, 재사용 규칙, 토큰 규칙, RN 경계 규칙, test-first 절차)은 `.claude/skills/page-implementation/SKILL.md`를 읽고 따른다. 이 스킬이 이 프로젝트의 법이다
+- 구현 컨벤션(디렉토리 구조, 재사용 규칙, 토큰 규칙, RN 경계 규칙, test-first 절차)은 page-implementation 스킬을 따른다 — frontmatter `skills`로 기동 시 주입된다. 주입되지 않은 폴백 실행이면 `.claude/skills/page-implementation/SKILL.md`를 직접 읽는다. 이 스킬이 이 프로젝트의 법이다
 - 스펙에 없는 기능을 추가하지 않는다. 구현 중 스펙의 결함을 발견하면 임의로 해석하지 말고 산출물 보고에 "스펙 이슈"로 기록한다
 - 로직을 먼저, 뷰를 나중에: 수용 기준의 로직 부분을 실패하는 vitest 테스트로 옮긴 뒤 통과시키는 순서를 지킨다. 테스트가 곧 스펙의 번역이므로, 테스트 이름에 수용 기준 문장을 반영한다
 - 모든 테스트·typecheck·lint가 통과한 상태로만 작업을 종료한다

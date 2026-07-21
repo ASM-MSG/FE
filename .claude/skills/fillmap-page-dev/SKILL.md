@@ -19,7 +19,7 @@ description: "FillMap 페이지 개발 파이프라인 오케스트레이터 —
 | page-builder | page-builder | 스펙 구현 (test-first) | page-implementation | 코드 + `02_build_report.md` |
 | page-verifier | page-verifier | 수용 기준 검증 | page-verification | `03_verify_report.md` |
 
-각 에이전트 호출 시 `model: "fable"`을 명시한다 (2026-07-21 사용자 지시 — "개발은 fable로만". 이전의 opus 고정을 대체). 커스텀 타입이 세션에 등록되지 않았으면 `general-purpose`로 대체하되, 프롬프트에 해당 에이전트 정의 파일(`.claude/agents/{name}.md`)을 읽고 따르도록 지시한다. 어느 경우든 프롬프트에 담당 스킬(`.claude/skills/{skill}/SKILL.md`) 준수 지시를 포함한다.
+각 에이전트 호출 시 `model: "fable"`을 명시한다 (2026-07-21 사용자 지시 — "개발은 fable로만". 이전의 opus 고정을 대체). 커스텀 타입 경로에서는 담당 스킬이 에이전트 frontmatter `skills`로 기동 시 주입되므로 별도 지시가 불필요하다. 커스텀 타입이 세션에 등록되지 않아 `general-purpose`로 대체할 때만, 프롬프트에 해당 에이전트 정의 파일(`.claude/agents/{name}.md`)과 담당 스킬(`.claude/skills/{skill}/SKILL.md`)을 읽고 따르도록 지시한다.
 
 > **경량 실행:** 티켓이 아주 작을 때(파일 1-2개, 로직 없음 — 예: 문구 수정, 스타일 조정)는 에이전트 위임 없이 메인 스레드가 스킬 절차를 직접 따라도 된다. 단, 수용 기준 정의와 검증 절차는 생략하지 않는다.
 
