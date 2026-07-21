@@ -83,6 +83,8 @@ export const UploadModal = () => {
   const { duration, objectUrl, error: videoLoadError } = useVideoDuration(rawFile);
 
   // "다음" 활성 조건 = 유효 파일 && 메타데이터 로드 완료(duration 확정) && 로드 실패 아님 (Q1·S2·S7)
+  // 현재 훅 구현에선 error면 duration이 항상 null이라 !videoLoadError가 중복이지만,
+  // 훅 불변식이 바뀌어도 로드 실패 시 진행을 막도록 방어적으로 유지한다.
   const canProceed =
     canSubmitUpload(file) && duration !== null && !videoLoadError;
 

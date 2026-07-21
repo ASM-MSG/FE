@@ -31,7 +31,8 @@ const STEP_DESCRIPTION =
  * 2단계 "AI 하이라이트 추천" 화면 본체. [S2~S11]
  * 미리보기 + AI 추천 리스트(목업) + 직접 구간 트리머 + 선택 요약을 ModalCard 안에 조립한다.
  * 선택 상태·트리머 드래그는 모달 로컬(useHighlightSelection) — 전역 스토어에 추가하지 않는다.
- * "다음 단계"는 선택 결과를 콘솔에 로그할 뿐 실제 화면 이동은 없다(범위 밖).
+ * "이 구간으로 다음 단계"를 누르면 블러 확인(3/4) 스텝으로 전환한다(MSG-119 S6) —
+ * 선택 결과 payload 전달은 범위 밖.
  */
 export const HighlightStep = ({
   objectUrl,
