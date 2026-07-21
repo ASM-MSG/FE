@@ -1,6 +1,6 @@
 ---
 name: fillmap-page-dev
-description: "FillMap 페이지 개발 파이프라인 오케스트레이터 — 지라 티켓(MSG-xxx) 해석 → 스펙 승인 → 구현 → 검증 → 커밋을 조율. 티켓 번호 언급(예: 'MSG-123 진행해줘'), 페이지/화면/기능 개발·구현 요청, 기획 텍스트 전달 시 반드시 사용. 후속 작업에도 사용: 페이지 수정·보완·재검증, 스펙만 다시, 검증만 다시, 이전 티켓 결과 개선, 리뷰 반영 등."
+description: "FillMap 페이지 개발 파이프라인 오케스트레이터 — 지라 티켓(MSG-xxx) 해석 → 스펙 승인 → 구현 → 검증 → 커밋·PR·환류를 조율. 티켓 번호 언급(예: 'MSG-123 진행해줘'), 페이지/화면/기능 개발·구현 요청, 기획 텍스트 전달 시 반드시 사용. 후속 작업에도 사용: 페이지 수정·보완·재검증, 스펙만 다시, 검증만 다시, 이전 티켓 결과 개선, 리뷰 반영, PR 생성·푸시 요청 등."
 ---
 
 # FillMap Page Dev — 티켓 파이프라인 오케스트레이터
@@ -19,7 +19,7 @@ description: "FillMap 페이지 개발 파이프라인 오케스트레이터 —
 | page-builder | page-builder | 스펙 구현 (test-first) | page-implementation | 코드 + `02_build_report.md` |
 | page-verifier | page-verifier | 수용 기준 검증 | page-verification | `03_verify_report.md` |
 
-각 에이전트 호출 시 `model: "opus"`를 명시한다. 커스텀 타입이 세션에 등록되지 않았으면 `general-purpose`로 대체하되, 프롬프트에 해당 에이전트 정의 파일(`.claude/agents/{name}.md`)을 읽고 따르도록 지시한다. 어느 경우든 프롬프트에 담당 스킬(`.claude/skills/{skill}/SKILL.md`) 준수 지시를 포함한다.
+각 에이전트 호출 시 `model: "fable"`을 명시한다 (2026-07-21 사용자 지시 — "개발은 fable로만". 이전의 opus 고정을 대체). 커스텀 타입이 세션에 등록되지 않았으면 `general-purpose`로 대체하되, 프롬프트에 해당 에이전트 정의 파일(`.claude/agents/{name}.md`)을 읽고 따르도록 지시한다. 어느 경우든 프롬프트에 담당 스킬(`.claude/skills/{skill}/SKILL.md`) 준수 지시를 포함한다.
 
 > **경량 실행:** 티켓이 아주 작을 때(파일 1-2개, 로직 없음 — 예: 문구 수정, 스타일 조정)는 에이전트 위임 없이 메인 스레드가 스킬 절차를 직접 따라도 된다. 단, 수용 기준 정의와 검증 절차는 생략하지 않는다.
 
@@ -35,8 +35,8 @@ description: "FillMap 페이지 개발 파이프라인 오케스트레이터 —
 
 ### Phase 1: 스펙 (ticket-analyst)
 
-1. `_workspace/MSG-{번호}/` 생성, 티켓 원문을 `00_ticket.md`로 저장
-2. ticket-analyst 호출 → `01_spec.md` 생성
+1. `_workspace/MSG-{번호}/` 생성. 사용자가 기획 텍스트를 직접 준 경우 오케스트레이터가 `00_ticket.md`로 저장하고, 번호만 온 경우는 ticket-analyst가 MCP 조회 후 직접 저장한다(스킬 절차 1)
+2. ticket-analyst 호출 → `01_spec.md` 생성 (+ MCP 조회 경로면 `00_ticket.md`)
 3. **사용자 승인 게이트**: 수용 기준·추정·질문을 요약 보고하고 승인을 받는다. 추정/질문에 대한 답을 스펙에 반영한 뒤 다음 단계로. 이 게이트는 생략 불가 — 잘못 해석된 기획으로 구현하면 전체 파이프라인이 재작업이 된다
 4. 승인 후: 티켓 브랜치(`타입/MSG-{번호}-{설명}`)가 없으면 생성하고 체크아웃
 
@@ -55,11 +55,13 @@ description: "FillMap 페이지 개발 파이프라인 오케스트레이터 —
    - **실패 존재** → 실패 항목을 입력으로 page-builder 재호출(Phase 2) → 재검증. **재작업 루프는 최대 2회** — 2회 후에도 실패하면 사용자에게 현황을 보고하고 판단을 받는다
    - **확인불가 존재** → 사유와 함께 사용자에게 보고, 진행 여부 확인
 
-### Phase 4: 커밋
+### Phase 4: 커밋 · PR · 환류
 
 1. 검증 리포트 요약과 함께 사용자에게 커밋 의사 확인
 2. 커밋 메시지: `MSG-{번호} {타입}: {설명}` (기존 이력 컨벤션: `MSG-107 feat: 공통 컴포넌트 추가`)
-3. 결정 기록 대상(트레이드오프 판단, 테스트가 잡은 버그)이 있으면 `docs/decisions/DECISIONS.md` 갱신을 커밋에 포함
+3. 결정 기록 대상(트레이드오프 판단, 테스트가 잡은 버그, WAIVED 판정)이 있으면 `docs/decisions/DECISIONS.md` 갱신을 커밋에 포함
+4. **PR**: 사용자에게 push + PR 생성 여부를 확인한다. 진행 시 `gh pr create`(base: develop)로 생성하고, PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 따르되 "검증 요약" 섹션에 `03_verify_report.md`의 자동 검증 표 + 기준별 판정 요약을 붙여넣는다 — `_workspace/`는 gitignore라 리뷰어가 리포트를 볼 수 없으므로 PR 본문이 검증 증거의 유일한 공유 경로다
+5. **잔여 항목 환류**: 리포트의 "승격 필요"·"확인불가"·"후속 티켓 권장"·WAIVED 항목을 모아 atlassian MCP로 해당 지라 티켓에 코멘트로 남긴다 (신규 티켓 생성은 하지 않는다 — 티켓은 팀이 만든다). 결정 기록에만 남고 티켓화되지 않아 유실되는 후속 작업을 막는 단계다
 
 ## 데이터 흐름
 
@@ -68,7 +70,7 @@ description: "FillMap 페이지 개발 파이프라인 오케스트레이터 —
   → [ticket-analyst] → 01_spec.md → (사용자 승인)
   → [page-builder]   → 코드 + 02_build_report.md
   → [page-verifier]  → 03_verify_report.md
-  → (실패 시 builder로 루프, 최대 2회) → 커밋
+  → (실패 시 builder로 루프, 최대 2회) → 커밋 → PR(검증 요약 첨부) → 지라 코멘트 환류
 ```
 
 `_workspace/`는 커밋하지 않는다(.gitignore). 삭제도 하지 않는다 — 후속 요청("MSG-123 보완해줘")의 컨텍스트다.

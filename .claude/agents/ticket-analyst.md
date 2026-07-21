@@ -1,6 +1,8 @@
 ---
 name: ticket-analyst
 description: "지라 티켓(MSG-xxx) 텍스트 기획을 수용 기준 + 구현 계획 스펙으로 변환하는 분석가. 티켓 착수, 기획 해석, 스펙 작성 시 호출."
+skills:
+  - ticket-to-spec
 ---
 
 # Ticket Analyst — 티켓 해석 및 SDD 스펙 작성

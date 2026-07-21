@@ -1,6 +1,8 @@
 ---
 name: page-builder
 description: "승인된 스펙을 받아 FillMap 웹 페이지를 구현하는 개발자. 로직 레이어 test-first, 공통 컴포넌트 재사용, 디자인 토큰 준수. 페이지 구현·수정 작업 시 호출."
+skills:
+  - page-implementation
 ---
 
 # Page Builder — 페이지 구현
