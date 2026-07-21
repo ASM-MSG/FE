@@ -3,12 +3,16 @@ import { MapPin } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { cn, Input, ModalCard } from "@fillmap/ui-web";
 import { MOCK_CELLS } from "@/entities/cell";
-import { shouldOfferHighlight } from "@/features/upload/model/highlight-selection";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
+import {
+  getNextStep,
+  type UploadStep,
+} from "@/features/upload/model/upload-wizard";
 import {
   canSubmitUpload,
   type UploadCandidate,
 } from "@/features/upload/model/upload-validation";
+import { BlurStep } from "./BlurStep";
 import { HighlightStep } from "./HighlightStep";
 import { UploadDropzone } from "./UploadDropzone";
 import { useVideoDuration } from "./use-video-duration";
@@ -21,70 +25,50 @@ const LOCATION_LABEL = `${CURRENT_CELL?.label ?? "현재 격자"} (현재 위치
 
 /**
  * AI 안내 / 최종 확인 박스 — 정적 프레젠테이션 (AC8·AC9).
- * onClick이 주어지면 클릭 가능한 카드(커서 pointer / hover 반응)로 렌더한다 — MSG-118 S1.
+ * 하이라이트 진입은 1단계 "다음" 버튼이 담당하므로 카드는 클릭 불가한 정적 안내다 (MSG-119 S5).
  */
 const InfoBox = ({
   title,
   body,
   tone,
-  onClick,
 }: {
   title: string;
   body: ReactNode;
   tone: "soft" | "dark";
-  onClick?: () => void;
-}) => {
-  const content = (
-    <>
-      <span
-        className={cn(
-          "text-fm-body-strong",
-          tone === "dark" ? "text-foreground-inverse" : "text-foreground",
-        )}
-      >
-        {title}
-      </span>
-      <span
-        className={cn(
-          "text-fm-label",
-          tone === "dark"
-            ? "text-foreground-inverse/70"
-            : "text-foreground-muted",
-        )}
-      >
-        {body}
-      </span>
-    </>
-  );
-
-  const base = cn(
-    "flex w-full flex-col gap-xxs rounded-md px-md py-sm text-left",
-    tone === "dark" ? "bg-foreground" : "bg-surface-soft",
-  );
-
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          base,
-          "cursor-pointer border border-transparent transition-colors hover:border-primary hover:bg-primary/5",
-        )}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return <div className={base}>{content}</div>;
-};
+}) => (
+  <div
+    className={cn(
+      "flex w-full flex-col gap-xxs rounded-md px-md py-sm text-left",
+      tone === "dark" ? "bg-foreground" : "bg-surface-soft",
+    )}
+  >
+    <span
+      className={cn(
+        "text-fm-body-strong",
+        tone === "dark" ? "text-foreground-inverse" : "text-foreground",
+      )}
+    >
+      {title}
+    </span>
+    <span
+      className={cn(
+        "text-fm-label",
+        tone === "dark"
+          ? "text-foreground-inverse/70"
+          : "text-foreground-muted",
+      )}
+    >
+      {body}
+    </span>
+  </div>
+);
 
 /**
  * 영상 업로드 모달 — Radix Dialog(오버레이·포털·포커스 트랩·Esc·scrim)로 ModalCard를 감싼다.
  * 두 진입점 공통 조상(AppLayout)에 1회 마운트되고 열림 상태는 전역 스토어가 관리한다(Q1·Q2).
- * 제목·선택 파일은 로컬 state이며 닫힐 때 초기화된다(AC10).
- * 취소/✕/scrim/Esc/업로드 모두 닫기만 한다 — 실제 업로드 연동은 범위 밖(Q5, 목업).
+ * 제목·선택 파일·스텝은 로컬 state이며 닫힐 때 초기화된다(AC10·S14).
+ * 정보 입력 → (하이라이트) → 블러 확인 선형 위저드다 — "다음"은 스텝을 전환하고,
+ * 취소/✕/scrim/Esc만 모달을 닫는다. 실제 업로드 연동은 범위 밖(목업).
  */
 export const UploadModal = () => {
   const open = useUploadModalStore((s) => s.open);
@@ -94,11 +78,22 @@ export const UploadModal = () => {
   // 원본 File — duration 캡처·미리보기용(플랫폼 경계). candidate와 별도로 보관 (MSG-118)
   const [rawFile, setRawFile] = useState<File | null>(null);
   // 모달 내부 스텝 전환 — 위젯 경계를 넘지 않으므로 전역 스토어가 아닌 로컬 state (스펙 계획)
-  const [step, setStep] = useState<"select" | "highlight">("select");
+  const [step, setStep] = useState<UploadStep>("select");
 
   const { duration, objectUrl, error: videoLoadError } = useVideoDuration(rawFile);
-  // 5초 초과 영상에서만 AI 추천 카드/스텝을 제공한다 (L1·S1·S12)
-  const offerHighlight = duration !== null && shouldOfferHighlight(duration);
+
+  // "다음" 활성 조건 = 유효 파일 && 메타데이터 로드 완료(duration 확정) && 로드 실패 아님 (Q1·S2·S7)
+  // 현재 훅 구현에선 error면 duration이 항상 null이라 !videoLoadError가 중복이지만,
+  // 훅 불변식이 바뀌어도 로드 실패 시 진행을 막도록 방어적으로 유지한다.
+  const canProceed =
+    canSubmitUpload(file) && duration !== null && !videoLoadError;
+
+  // "다음" — 5초 초과면 하이라이트(2/4), 이하면 블러 확인(3/4)으로 전환 (S3·S4).
+  // duration 확정 전에는 canProceed가 false라 이 경로가 열리지 않는다.
+  const goNext = () => {
+    if (duration === null) return;
+    setStep(getNextStep("select", duration));
+  };
 
   const handleSelectFile = (candidate: UploadCandidate, source: File) => {
     setFile(candidate);
@@ -133,16 +128,27 @@ export const UploadModal = () => {
               objectUrl={objectUrl}
               duration={duration}
               onClose={close}
+              onNext={() => setStep("blur")}
+            />
+          ) : step === "blur" && duration !== null ? (
+            <BlurStep
+              objectUrl={objectUrl}
+              duration={duration}
+              onClose={close}
+              onConfirm={(result) =>
+                // 4/4 최종 화면은 다음 티켓 — 확인 결과 로그가 임시 완료 지점 (S13)
+                console.log("[MSG-119] 블러 확인", result)
+              }
             />
           ) : (
             <ModalCard
               title="영상 업로드"
               description={MODAL_SUBTITLE}
               cancelText="취소"
-              confirmText="업로드"
-              confirmDisabled={!canSubmitUpload(file)}
+              confirmText="다음"
+              confirmDisabled={!canProceed}
               onCancel={close}
-              onConfirm={close}
+              onConfirm={goNext}
               onClose={close}
             >
               <UploadDropzone
@@ -184,8 +190,8 @@ export const UploadModal = () => {
               </button>
             </div>
 
-            {/* 5초 초과 영상이면 클릭 가능한 카드(→ 2단계), 아니면 정적 안내 유지 (S1·S12) */}
-            {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 */}
+            {/* 하이라이트 진입은 "다음" 버튼이 담당 — 카드는 정적 안내 (S5) */}
+            {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 (S7) */}
               <InfoBox
                 tone="soft"
                 title="AI 하이라이트 자동 추천"
@@ -193,9 +199,6 @@ export const UploadModal = () => {
                   videoLoadError
                     ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
                     : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
-                }
-                onClick={
-                  offerHighlight ? () => setStep("highlight") : undefined
                 }
               />
               <InfoBox
