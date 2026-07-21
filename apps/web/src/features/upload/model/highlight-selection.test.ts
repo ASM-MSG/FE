@@ -6,6 +6,7 @@ import {
   canProceedToNextStep,
   clampSegment,
   createInitialSelection,
+  formatSelectionRange,
   formatTimecode,
   getSelectedSegment,
   moveSegment,
@@ -202,6 +203,27 @@ describe("toSelectionResult", () => {
 
   it("선택이 없으면 null을 반환한다", () => {
     expect(toSelectionResult(createInitialSelection(100))).toBeNull();
+  });
+});
+
+describe("formatSelectionRange", () => {
+  // L1 (MSG-120): 초 단위 "s" 표기 + " – " 구분자, 소수 최대 1자리, 정수는 소수점 생략
+  it("소수 구간을 소수 1자리 + 's' 표기로 ' – ' 구분해 포맷한다", () => {
+    expect(formatSelectionRange({ start: 1.2, end: 6.2, mode: "ai" })).toBe(
+      "1.2s – 6.2s",
+    );
+  });
+
+  it("정수 구간은 소수점 없이 's'로 표기한다", () => {
+    expect(formatSelectionRange({ start: 6, end: 12, mode: "ai" })).toBe(
+      "6s – 12s",
+    );
+  });
+
+  it("소수 둘째 자리 이하는 최대 1자리로 반올림한다", () => {
+    expect(
+      formatSelectionRange({ start: 6.25, end: 12.04, mode: "manual" }),
+    ).toBe("6.3s – 12s");
   });
 });
 

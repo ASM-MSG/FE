@@ -4,6 +4,7 @@ import { Dialog } from "radix-ui";
 import { cn, Input, ModalCard } from "@fillmap/ui-web";
 import { MOCK_CELLS } from "@/entities/cell";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
+import type { SelectionResult } from "@/features/upload/model/highlight-selection";
 import {
   getNextStep,
   type UploadStep,
@@ -14,6 +15,7 @@ import {
 } from "@/features/upload/model/upload-validation";
 import { BlurStep } from "./BlurStep";
 import { HighlightStep } from "./HighlightStep";
+import { PreviewStep } from "./PreviewStep";
 import { UploadDropzone } from "./UploadDropzone";
 import { useVideoDuration } from "./use-video-duration";
 
@@ -22,6 +24,11 @@ const MODAL_SUBTITLE = "지금 위치의 격자에 순간을 기록하세요";
 // 위치→격자 해석 로직은 이번 범위 아님 — mock 격자(A-14) 기반 정적 라벨 (Q6·AC7)
 const CURRENT_CELL = MOCK_CELLS.find((cell) => cell.id === "A-14");
 const LOCATION_LABEL = `${CURRENT_CELL?.label ?? "현재 격자"} (현재 위치)`;
+// 4/4 미리보기 위치 카드 — 태그된 셀(A-14)의 상세 위치 + 라벨 합성.
+// Figma "합정동" 플레이스홀더 대신 태그한 셀 실제 데이터를 사용한다 (MSG-120 Q3·S6).
+const PREVIEW_LOCATION_LABEL = CURRENT_CELL
+  ? `${CURRENT_CELL.location} · ${CURRENT_CELL.label}`
+  : "현재 격자";
 
 /**
  * AI 안내 / 최종 확인 박스 — 정적 프레젠테이션 (AC8·AC9).
@@ -79,6 +86,10 @@ export const UploadModal = () => {
   const [rawFile, setRawFile] = useState<File | null>(null);
   // 모달 내부 스텝 전환 — 위젯 경계를 넘지 않으므로 전역 스토어가 아닌 로컬 state (스펙 계획)
   const [step, setStep] = useState<UploadStep>("select");
+  // 2단계 하이라이트 선택 결과를 4/4 미리보기로 상위 전달·보관 (MSG-120 S3·S11).
+  // 5초 이하 건너뜀 흐름·재오픈 시 null — 하이라이트 카드 미표시를 보장한다 (S4·S8).
+  const [highlightSelection, setHighlightSelection] =
+    useState<SelectionResult | null>(null);
 
   const { duration, objectUrl, error: videoLoadError } = useVideoDuration(rawFile);
 
@@ -101,11 +112,13 @@ export const UploadModal = () => {
   };
 
   // 닫힐 때마다 입력을 초기화해 다시 열면 이전 제목·파일·스텝이 남지 않는다 (AC10)
+  // 하이라이트 선택도 리셋 — 재오픈 잔존·5초 이하 새 영상의 하이라이트 카드 오표시 방지 (MSG-120 S4·S8)
   const close = () => {
     setTitle("");
     setFile(null);
     setRawFile(null);
     setStep("select");
+    setHighlightSelection(null);
     closeModal();
   };
 
@@ -128,17 +141,29 @@ export const UploadModal = () => {
               objectUrl={objectUrl}
               duration={duration}
               onClose={close}
-              onNext={() => setStep("blur")}
+              onNext={(result) => {
+                // 선택 결과를 상위에 보관 후 블러 확인(3/4)으로 전환 (MSG-120 S3·S11)
+                setHighlightSelection(result);
+                setStep("blur");
+              }}
             />
           ) : step === "blur" && duration !== null ? (
             <BlurStep
               objectUrl={objectUrl}
               duration={duration}
               onClose={close}
-              onConfirm={(result) =>
-                // 4/4 최종 화면은 다음 티켓 — 확인 결과 로그가 임시 완료 지점 (S13)
-                console.log("[MSG-119] 블러 확인", result)
-              }
+              // 확인 시 4/4 미리보기로 전환 (MSG-120 S1, MSG-119 콘솔 로그 대체).
+              // BlurStep 시그니처는 유지 — payload는 계속 생성되며 상위에서 미사용(고아 방지).
+              onConfirm={() => setStep("preview")}
+            />
+          ) : step === "preview" && duration !== null ? (
+            <PreviewStep
+              objectUrl={objectUrl}
+              highlightSelection={highlightSelection}
+              locationLabel={PREVIEW_LOCATION_LABEL}
+              onPublish={close}
+              onBack={() => setStep("blur")}
+              onClose={close}
             />
           ) : (
             <ModalCard

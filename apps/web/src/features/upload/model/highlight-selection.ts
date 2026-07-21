@@ -218,3 +218,14 @@ export const toSelectionResult = (
   if (!segment || !state.mode) return null;
   return { start: segment.start, end: segment.end, mode: state.mode };
 };
+
+/** 초를 "Ns" 표기로 — 소수 최대 1자리, 정수는 소수점 생략(6→"6s", 6.25→"6.3s"). (MSG-120 Q1) */
+const formatSeconds = (value: number): string => `${Math.round(value * 10) / 10}s`;
+
+/**
+ * 4/4 미리보기 하이라이트 카드용 구간 라벨. [MSG-120 L1]
+ * 초 단위 "s" 표기를 " – "로 이은 range 문자열(예: {start:1.2,end:6.2} → "1.2s – 6.2s").
+ * 2/4·3/4의 formatTimecode(m:ss)와 달리 Figma 4/4 예시대로 "Ns" 표기를 쓴다(Q1).
+ */
+export const formatSelectionRange = (result: SelectionResult): string =>
+  `${formatSeconds(result.start)} – ${formatSeconds(result.end)}`;
