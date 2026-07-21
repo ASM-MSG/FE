@@ -16,3 +16,4 @@ pnpm 모노레포 — apps/web(React 19 + Vite) + packages(design-tokens · tail
 | 2026-07-15 | atlassian MCP 연결 — 티켓 번호만으로 지라 본문 조회 | skills/ticket-to-spec, skills/fillmap-page-dev | "MSG-xxx 진행해줘"만으로 파이프라인 시작 가능하게 |
 | 2026-07-15 | 수술적 변경 원칙 추가 (범위 밖 코드 불간섭, 고아 정리, 기존 죽은 코드는 보고만) | skills/page-implementation | 외부 코딩 가이드에서 하네스에 없던 원칙만 선별 흡수 |
 | 2026-07-21 | 컨벤션 정본 단일화 — 커밋 prefix 표를 훅 기준으로(design·hotfix→style·setting), 브랜치 타입 feat/fix/hotfix로 통일, PR 템플릿 플레이스홀더 정정, Node 고정(.nvmrc·engines), 리뷰 CI concurrency | README.md, skills/ticket-to-spec, .github, .nvmrc | MSG-163 하네스 감사 — 문서·훅·스킬 3원 불일치로 README 준수 커밋이 훅에 거부되는 함정 제거 |
+| 2026-07-21 | tsconfig strict 명시(TS6 기본값이나 다운그레이드 대비), index.html lang=ko·서비스명 title | apps/web | MSG-163 — 감사 재검증에서 "non-strict" 지적은 철회됐고(TS6 기본 strict) 명시만 보강, 문서 메타는 a11y 결함 |
