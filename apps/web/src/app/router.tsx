@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/app/layouts/AppLayout";
 import { ROUTES } from "@/app/routes";
+import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
 import { MapShell } from "@/widgets/map-shell/MapShell";
@@ -18,7 +19,8 @@ export const router = createBrowserRouter([
           { path: ROUTES.home, element: <MapHomePage /> },
           { path: ROUTES.explore, element: <ExplorePanel /> },
           { path: ROUTES.upload, element: <SectionPanel title="업로드" /> },
-          { path: ROUTES.dex, element: <SectionPanel title="도감" /> },
+          // 도감(MSG-121) — 탭은 URL 정본(/dex·/dex/gallery·/dex/badges), 무효 탭은 지도 폴백(AC 2)
+          { path: `${ROUTES.dex}/:tab?`, element: <DexPanel /> },
           { path: ROUTES.profile, element: <SectionPanel title="프로필" /> },
         ],
       },

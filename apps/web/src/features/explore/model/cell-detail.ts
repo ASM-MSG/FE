@@ -25,18 +25,8 @@ export const formatViewCount = (count: number): string => {
   return `${compact(count / 1_000_000)}M`;
 };
 
-const MINUTE = 60_000;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
-
 /**
- * 경과 시간을 "N분 전 / N시간 전 / N일 전"으로 변환한다. [AC 14]
- * 1분 미만은 "방금 전". `now`를 주입받아 결정적으로 테스트 가능하다.
+ * 상대 시간 포맷 [AC 14] — 도감(MSG-121)과 공용이라 shared/format으로 이동, 호출부 호환용 re-export.
+ * 구현·테스트 명세는 shared/format.ts 참조.
  */
-export const formatRelativeTime = (iso: string, now: Date = new Date()): string => {
-  const elapsed = now.getTime() - new Date(iso).getTime();
-  if (elapsed < MINUTE) return "방금 전";
-  if (elapsed < HOUR) return `${Math.floor(elapsed / MINUTE)}분 전`;
-  if (elapsed < DAY) return `${Math.floor(elapsed / HOUR)}시간 전`;
-  return `${Math.floor(elapsed / DAY)}일 전`;
-};
+export { formatRelativeTime } from "@/shared/format";
