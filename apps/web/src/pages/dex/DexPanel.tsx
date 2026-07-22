@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
@@ -12,6 +12,11 @@ import {
   parseDexTab,
   type DexTab,
 } from "@/features/dex/model/dex-tab";
+import {
+  districtOfCell,
+  resolveGalleryRegion,
+} from "@/features/dex/model/gallery";
+import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
 import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
 import { useCurrentRegionName } from "@/features/dex/model/use-current-region";
 import { useDexQuery } from "@/features/dex/model/use-dex-query";
@@ -20,17 +25,18 @@ import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { DexProfileHeader } from "./ui/DexProfileHeader";
 import { DexStatCards } from "./ui/DexStatCards";
 import { DexTabs } from "./ui/DexTabs";
+import { GalleryTabBody } from "./ui/GalleryTabBody";
 import { RecentCellRow } from "./ui/RecentCellRow";
 import { RegionProgress } from "./ui/RegionProgress";
 
 /**
- * 개인 도감 패널 (MSG-121 + 2026-07-22 개정, Figma node 13399:1575는 개정 전 디자인) —
+ * 개인 도감 패널 (MSG-121 + MSG-122 갤러리 탭, Figma node 13399:1575·1654는 개정 전 디자인) —
  * 지속 셸(MapShell) 지도 위 388px 좌측 오버레이.
- * 라우트 `/dex/:tab?`로 열리며 탭은 URL이 정본이다 (추정 A1): /dex→지도, /dex/gallery·/dex/badges→자리 탭.
- * 지도 탭은 프로필 요약("전체 지도 N% 탐험", D1)·현재 지역 탐험률(역지오코딩, D2)·통계 카드·
- * 최근 수집 목록(최신순 최대 30 − X 제거, D3·D4)을 표시하고, 수집 격자 오버레이를
- * map-overlay-store에 게시한다 — 렌더는 셸의 MapCanvas가 담당(AC 9·11).
- * 갤러리·뱃지 탭 내용은 MSG-122·123 범위라 자리 콘텐츠만 둔다 (AC 3).
+ * 라우트 `/dex/:tab?`로 열리며 탭은 URL이 정본이다 (추정 A1): /dex→지도, /dex/gallery→갤러리,
+ * /dex/badges→자리 탭(MSG-123). 지도 탭은 프로필 요약·현재 지역 탐험률·통계 카드·최근 수집 목록,
+ * 갤러리 탭은 지역별 갤러리(GalleryTabBody — 셀 클릭 선택 > 현재 지역 > "중구", MSG-122 AC 3·12).
+ * 수집 격자 오버레이는 지도·갤러리 탭에서 게시하고(MSG-122 A3) 셀 클릭 핸들러를 함께 등록한다 —
+ * 클릭 시 그 격자 지역의 갤러리로 전환(AC 14·18), 렌더는 셸의 MapCanvas가 담당.
  */
 export const DexPanel = () => {
   const { tab: tabParam } = useParams();
@@ -58,13 +64,38 @@ export const DexPanel = () => {
   );
 
   const setCells = useMapOverlayStore((s) => s.setCells);
+  const setOnCellClick = useMapOverlayStore((s) => s.setOnCellClick);
   const clear = useMapOverlayStore((s) => s.clear);
 
-  // 지도 탭에서 수집 오버레이 게시, 탭 이탈·패널 언마운트(다른 섹션 이동) 시 해제 (AC 9·11)
+  // 갤러리 지역 — 셀 클릭 선택(비영속 스토어, A1) > 역지오코딩 > 디폴트 "중구" (MSG-122 AC 3)
+  const selectedRegion = useGalleryRegionStore((s) => s.selectedRegion);
+  const selectRegion = useGalleryRegionStore((s) => s.select);
+  const clearRegion = useGalleryRegionStore((s) => s.clear);
+  const galleryRegion = resolveGalleryRegion(selectedRegion, regionLookup);
+
+  // 오버레이 셀 클릭 → 그 격자 지역 선택 + 갤러리 탭 전환 (MSG-122 AC 14).
+  // 수집 목록에 없는 id는 no-op(AC 4 방어). 탐색 탭식 CellDetailSheet는 띄우지 않는다(기확정).
+  const collectedCells = data?.collectedCells;
+  const handleOverlayCellClick = useCallback(
+    (cellId: string) => {
+      if (!collectedCells) return;
+      const district = districtOfCell(collectedCells, cellId);
+      if (!district) return;
+      selectRegion(district);
+      navigate(dexTabPath("gallery"));
+    },
+    [collectedCells, selectRegion, navigate],
+  );
+
+  // 지도·갤러리 탭에서 수집 오버레이 게시(MSG-122 A3 — 갤러리 탭 유지+클릭 가능) + 클릭 핸들러 등록,
+  // 탭 이탈(뱃지)·패널 언마운트(다른 섹션 이동) 시 해제 (AC 9·11, MSG-122 AC 18)
   useEffect(() => {
-    if (tab === "map" && view) setCells(view.overlayCells);
+    if ((tab === "map" || tab === "gallery") && view) {
+      setCells(view.overlayCells);
+      setOnCellClick(handleOverlayCellClick);
+    }
     return () => clear();
-  }, [tab, view, setCells, clear]);
+  }, [tab, view, setCells, setOnCellClick, handleOverlayCellClick, clear]);
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
@@ -92,7 +123,11 @@ export const DexPanel = () => {
             />
             <DexTabs
               active={tab}
-              onSelect={(next) => navigate(dexTabPath(next))}
+              onSelect={(next) => {
+                // 탭 클릭은 "직접 진입" — 이전 셀 클릭 선택을 초기화해 현재 지역 기준으로 (AC 11, A1)
+                if (next === "gallery") clearRegion();
+                navigate(dexTabPath(next));
+              }}
             />
           </div>
 
@@ -103,6 +138,9 @@ export const DexPanel = () => {
               onCellSelect={moveTo}
               onRemove={removeRecent}
             />
+          ) : tab === "gallery" ? (
+            // key={region} — 지역 변경 시 리마운트로 확장 상태를 프리뷰로 복귀 (A5)
+            <GalleryTabBody key={galleryRegion} region={galleryRegion} />
           ) : (
             <PlaceholderTabBody tab={tab} />
           )}
@@ -165,7 +203,7 @@ const RecentCellList = ({
   </div>
 );
 
-/** 갤러리·뱃지 자리 콘텐츠 — 탭 골격까지가 이 티켓 범위 (AC 3, MSG-122·123에서 채움) */
+/** 뱃지 자리 콘텐츠 — MSG-123에서 채움 (갤러리는 MSG-122에서 GalleryTabBody로 교체됨) */
 const PlaceholderTabBody = ({ tab }: { tab: Exclude<DexTab, "map"> }) => (
   <div className="flex flex-1 items-center justify-center p-md">
     <p className="text-fm-body text-foreground-muted">

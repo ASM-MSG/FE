@@ -82,6 +82,7 @@ const DEX_WITH_CELLS: DexData = {
     {
       cellId: "A-14",
       label: "홍대입구 A-14",
+      district: "마포구",
       center: { lat: 37.5573, lng: 126.9245 },
       collectedAt: "2026-07-21T09:00:00.000Z",
       videoCount: 2,
@@ -89,6 +90,7 @@ const DEX_WITH_CELLS: DexData = {
     {
       cellId: "B-07",
       label: "망원 B-07",
+      district: "마포구",
       center: { lat: 37.5556, lng: 126.9016 },
       collectedAt: "2026-07-20T09:00:00.000Z",
       videoCount: 1,

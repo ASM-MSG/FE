@@ -38,6 +38,7 @@ const cell = (
 ): CollectedCell => ({
   cellId,
   label: `격자 ${cellId}`,
+  district: "마포구",
   center: { lat: 37.55, lng: 126.92 },
   collectedAt,
   videoCount: 1,

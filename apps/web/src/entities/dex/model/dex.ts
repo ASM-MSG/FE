@@ -27,12 +27,33 @@ export interface CollectedCell {
   cellId: string;
   /** 격자 라벨 (예: "홍대입구 A-14") */
   label: string;
+  /**
+   * 행정구(區) 이름 (예: "마포구") — 갤러리 지역 매핑 키 (MSG-122 AC 1·4).
+   * Cell.district와 같은 체계이며 백엔드 제공 가정(mock은 MOCK_CELLS에서 동기화).
+   */
+  district: string;
   /** 격자 중심 좌표 — 행 클릭 시 지도 이동 목적지 (AC 16) */
   center: LatLng;
   /** 수집 시각 (ISO 8601) — 최근 수집 목록 최신순 정렬 기준 (AC 14) */
   collectedAt: string;
   /** 이 격자에서 수집(업로드)한 영상 수 — "영상 N개" 표시 (AC 15) */
   videoCount: number;
+}
+
+/**
+ * 사용자가 수집(업로드)한 개별 영상 — 갤러리 탭 썸네일 그리드의 단위 (MSG-122).
+ * 한 격자에 영상이 여러 개면 각각 별도 항목이다 (티켓 명시).
+ */
+export interface CollectedVideo {
+  id: string;
+  /** 소속 격자 id — CollectedCell.cellId와 같은 체계, 지역 필터 매칭 키 (AC 1) */
+  cellId: string;
+  /** 격자 라벨 denormalize (예: "홍대입구 A-14") — 썸네일 대체 텍스트용 (AC 10) */
+  cellLabel: string;
+  /** 대표 프레임 썸네일 URL — 없으면 placeholder 타일 표시 (CellVideo.thumbnailSrc 관례, R1) */
+  thumbnailSrc?: string;
+  /** 수집 시각 (ISO 8601) — 갤러리 최신 수집순 정렬 기준 (AC 1) */
+  collectedAt: string;
 }
 
 /** 도감 조회 응답 — queryKey ["dex"]의 반환 계약 */
