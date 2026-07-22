@@ -78,6 +78,8 @@ const EMPTY_DEX: DexData = {
     badgeCount: 0,
   },
   collectedCells: [],
+  // 실 카탈로그는 고정이라 비지 않지만(MSG-123 AC 8) 지도 탭 스모크는 뱃지를 렌더하지 않는다
+  badges: [],
   regionExploredPctMap: { 부산진구: 22 },
 };
 
@@ -102,6 +104,7 @@ const DEX_WITH_CELLS: DexData = {
       videoCount: 1,
     },
   ],
+  badges: [],
   regionExploredPctMap: { 부산진구: 22 },
 };
 

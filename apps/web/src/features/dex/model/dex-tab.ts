@@ -26,7 +26,7 @@ export const parseDexTab = (param: string | undefined): DexTab =>
 export const dexTabPath = (tab: DexTab): string =>
   tab === "map" ? DEX_BASE_PATH : `${DEX_BASE_PATH}/${tab}`;
 
-/** 탭 표시 라벨 — 탭 버튼과 자리 콘텐츠 안내가 공용으로 사용 */
+/** 탭 표시 라벨 — 탭 버튼(DexTabs)이 사용 (자리 콘텐츠 안내는 MSG-123 뱃지 탭 구현으로 소멸) */
 export const DEX_TAB_LABELS: Record<DexTab, string> = {
   map: "지도",
   badges: "뱃지",

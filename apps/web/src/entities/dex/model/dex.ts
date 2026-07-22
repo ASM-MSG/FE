@@ -61,10 +61,29 @@ export interface CollectedVideo {
   collectedAt: string;
 }
 
+/**
+ * 뱃지 카탈로그 항목 — 뱃지 진열장의 단위 (MSG-123).
+ * 획득 판정은 백엔드 소관(티켓 제외 범위) — 프론트는 earned를 표시만 한다.
+ */
+export interface DexBadge {
+  /** 뱃지 id — 카탈로그 정의 순서와 함께 백엔드 제공 가정 */
+  id: string;
+  /** 뱃지 이름 — 획득 시에만 라벨로 노출, 미획득은 "미획득" 라벨 (AC 4) */
+  name: string;
+  /** 획득 여부 — 컬러/회색 원 구분 기준. mock에서는 고정값 */
+  earned: boolean;
+}
+
 /** 도감 조회 응답 — queryKey ["dex"]의 반환 계약 */
 export interface DexData {
   summary: DexSummary;
   collectedCells: CollectedCell[];
+  /**
+   * 뱃지 카탈로그(획득+미획득 전체, 정의 순서 = 표시 순서 A2) — 도감 조회 응답의 일부라
+   * 뱃지 탭이 use-dex-query의 로딩·오류 게이트를 공유한다 (MSG-123 AC 11, 티켓 명시).
+   * 고정 카탈로그 — 획득 0개여도 비지 않는다 (AC 8).
+   */
+  badges: DexBadge[];
   /**
    * 지역(구)별 탐험률(%) 맵 (개정 D2) — 값 계산은 백엔드 소관 가정의 mock(A5 개정).
    * 키는 현재 위치 역지오코딩 결과(구 이름)와 매칭하며, 맵에 없는 지역은 0%로 처리한다(AC 21).

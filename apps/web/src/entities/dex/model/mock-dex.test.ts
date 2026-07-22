@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { MOCK_CELLS } from "@/entities/cell";
-import { MOCK_COLLECTED_VIDEOS, MOCK_DEX, svgThumbnail } from "./mock-dex";
+import {
+  MOCK_BADGES,
+  MOCK_COLLECTED_VIDEOS,
+  MOCK_DEX,
+  svgThumbnail,
+} from "./mock-dex";
 
 /**
  * mock 정합성 (AC 6, A6·A7·A9) — 갤러리 mock이 도감 mock과 모순되지 않음을 고정한다.
@@ -70,6 +75,38 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
     for (const cell of MOCK_DEX.collectedCells) {
       expect(cell.district, `${cell.cellId}의 district`).toMatch(/구$/);
     }
+  });
+
+  it("뱃지 카탈로그의 earned 수가 통계 카드 표시값 badgeCount와 일치한다 (MSG-123 AC 5)", () => {
+    const earnedCount = MOCK_BADGES.filter((b) => b.earned).length;
+
+    expect(earnedCount).toBe(MOCK_DEX.summary.badgeCount);
+    expect(earnedCount).toBeGreaterThan(0); // 획득 0이면 컬러/회색 구분(AC 4)이 시연 불가
+  });
+
+  it("뱃지 카탈로그가 프리뷰 8개보다 많다 — '전체 보기' 확장이 시연 가능하다 (MSG-123 A6)", () => {
+    // 8은 features/dex/model/badges의 BADGE_PREVIEW_LIMIT — 부산진구 영상 합계 케이스(9) 선례로 값 고정
+    expect(MOCK_BADGES.length).toBeGreaterThan(8);
+  });
+
+  it("획득 뱃지 전부가 프리뷰 앞 8개 안에 배치된다 — 프리뷰만 봐도 통계 카드와 정합한다 (MSG-123 AC 5, A2)", () => {
+    MOCK_BADGES.forEach((badge, i) => {
+      if (badge.earned) {
+        expect(i, `획득 뱃지 ${badge.name}의 위치`).toBeLessThan(8);
+      }
+    });
+  });
+
+  it("뱃지 이름에 서울 지명이 없다 — MVP 부산 서면 규칙, Figma '서울 정복'은 '부산 정복' 치환 (MSG-123 AC 12)", () => {
+    const seoulNames = /서울|마포|강남|홍대|성수|이태원|종로|여의도/;
+    for (const badge of MOCK_BADGES) {
+      expect(badge.name, `뱃지 이름 ${badge.name}`).not.toMatch(seoulNames);
+    }
+    expect(MOCK_BADGES.some((b) => b.name === "부산 정복")).toBe(true);
+  });
+
+  it("MOCK_DEX.badges가 카탈로그 정본(MOCK_BADGES)이다 — 뱃지 탭이 도감 조회 게이트를 공유한다 (MSG-123 AC 11)", () => {
+    expect(MOCK_DEX.badges).toBe(MOCK_BADGES);
   });
 
   it("XML 특수문자(&·<·>)가 포함된 라벨도 이스케이프되어 유효한 SVG data URI를 생성한다 (④ AC 28)", () => {

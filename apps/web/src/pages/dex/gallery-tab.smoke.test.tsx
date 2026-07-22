@@ -123,6 +123,8 @@ const DEX: DexData = {
       videoCount: 1,
     },
   ],
+  // 뱃지 탭 경유 케이스(④ AC 22)가 있어 1건 제공 — badgeCount(1)와 earned 수 정합 유지
+  badges: [{ id: "first-record", name: "첫 기록", earned: true }],
   regionExploredPctMap: { 부산진구: 22 },
 };
 

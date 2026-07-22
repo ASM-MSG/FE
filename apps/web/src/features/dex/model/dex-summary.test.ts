@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { CollectedCell, DexData, DexSummary } from "@/entities/dex";
+import type {
+  CollectedCell,
+  DexBadge,
+  DexData,
+  DexSummary,
+} from "@/entities/dex";
 import { cellToBounds, CELL_SIDE_METERS } from "./cell-overlay";
 import {
   RECENT_CELLS_LIMIT,
@@ -22,12 +27,19 @@ const summary = (overrides: Partial<DexSummary> = {}): DexSummary => ({
 
 const REGION_PCT_MAP = { 부산진구: 52, 수영구: 34 };
 
+/** 뱃지 카탈로그 픽스처 — 획득·미획득 혼재 (MSG-123 패스스루 판정용) */
+const BADGES: DexBadge[] = [
+  { id: "first-record", name: "첫 기록", earned: true },
+  { id: "busan-conquest", name: "부산 정복", earned: false },
+];
+
 const dexData = (
   collectedCells: CollectedCell[],
   summaryOverrides: Partial<DexSummary> = {},
 ): DexData => ({
   summary: summary(summaryOverrides),
   collectedCells,
+  badges: BADGES,
   regionExploredPctMap: REGION_PCT_MAP,
 });
 
@@ -220,6 +232,12 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
 
     expect(view.nickname).toBe("필맵퍼");
     expect(view.regionExploredPctMap).toEqual(REGION_PCT_MAP);
+  });
+
+  it("뱃지 카탈로그를 재정렬·필터 없이 그대로 전달한다 — 프리뷰 파생은 뱃지 탭(deriveBadgePreview) 몫 (MSG-123 AC 3·5)", () => {
+    const view = deriveDexView(dexData([]));
+
+    expect(view.badges).toEqual(BADGES);
   });
 
   it("통계·오버레이 파생의 입력은 제거 상태와 무관하다 — 같은 입력이면 같은 결과다 (AC 23·24)", () => {
