@@ -14,7 +14,7 @@ interface ChipProps
  * State=active는 boolean prop, State=pressed는 active: 인터랙션으로 처리.
  *
  * @example
- * <Chip text="동작구" active onClick={onToggle} />
+ * <Chip text="부산진구" active onClick={onToggle} />
  */
 export const Chip = ({
   text,

@@ -1,2 +1,7 @@
-export type { DexSummary, CollectedCell, DexData } from "./model/dex";
-export { MOCK_DEX } from "./model/mock-dex";
+export type {
+  DexSummary,
+  CollectedCell,
+  CollectedVideo,
+  DexData,
+} from "./model/dex";
+export { MOCK_DEX, MOCK_COLLECTED_VIDEOS } from "./model/mock-dex";

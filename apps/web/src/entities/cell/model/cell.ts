@@ -28,9 +28,9 @@ export interface CellVideo {
 /** 격자 도메인 모델 */
 export interface Cell {
   id: string;
-  /** 지역명 + 코드 (예: "홍대입구 A-14") */
+  /** 지역명 + 코드 (예: "서면 A-14") */
   label: string;
-  /** 행정구(區) 이름 (예: "마포구") — 지역 필터 매칭 키 (MSG-114 D1) */
+  /** 행정구(區) 이름 (예: "부산진구") — 지역 필터 매칭 키 (MSG-114 D1) */
   district: string;
   /** 격자 중심 좌표 */
   center: LatLng;
@@ -40,7 +40,7 @@ export interface Cell {
   createdAt: string;
   /** 대표 영상 길이(초) — 카드 길이 배지용. 없으면 배지 미표시 (S6) */
   durationSec?: number;
-  /** 상세 위치 문자열 (예: "서울 마포구 홍대입구") — 상세 시트 표시 (MSG-115) */
+  /** 상세 위치 문자열 (예: "부산 부산진구 서면") — 상세 시트 표시 (MSG-115) */
   location: string;
   /** 최근 업로드 시각 (ISO 8601) — 상세 시트 상대 시간 표시 (MSG-115) */
   recentUploadedAt: string;

@@ -10,7 +10,7 @@ export interface MapShellContext {
   moveTo: (coords: LatLng) => void;
   zoomIn: () => void;
   zoomOut: () => void;
-  /** 현재 위치(폴백 시 서울 시청)로 재이동 */
+  /** 현재 위치(폴백 시 서면)로 재이동 */
   locate: () => void;
 }
 

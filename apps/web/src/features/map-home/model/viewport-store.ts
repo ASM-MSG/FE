@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { Bounds, LatLng } from "@/entities/cell";
-import { SEOUL_CITY_HALL } from "@/shared/geolocation";
+import { SEOMYEON_CENTER } from "@/shared/geolocation";
 
 /** 지도 뷰포트 갱신 페이로드 */
 export interface Viewport {
@@ -24,7 +24,7 @@ interface ViewportState {
  * 요약 패널 등은 이 스토어를 구독해 현재 보이는 영역을 파생한다.
  */
 export const useViewportStore = create<ViewportState>((set) => ({
-  center: SEOUL_CITY_HALL,
+  center: SEOMYEON_CENTER,
   zoom: 5,
   bounds: null,
   setViewport: (viewport) => set(viewport),

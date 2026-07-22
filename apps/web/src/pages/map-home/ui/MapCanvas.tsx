@@ -31,6 +31,8 @@ interface MapCanvasProps {
   onViewportChange: (viewport: Viewport) => void;
   /** 반투명 사각 오버레이 목록 (MSG-121 수집 격자) — 미제공/빈 배열이면 기존 동작과 동일(R3) */
   overlayCells?: MapCellOverlay[];
+  /** 오버레이 셀 클릭 (MSG-122 AC 14·18) — 미제공이면 표시 전용 기존 동작과 동일(R3) */
+  onOverlayCellClick?: (cellId: string) => void;
 }
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_APP_KEY as
@@ -77,7 +79,7 @@ const MapFallback = ({ onRetry }: { onRetry: () => void }) => (
  * 키 미설정 시에는 로더를 마운트하지 않아 빈 키로 SDK 요청이 나가지 않는다.
  */
 export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
-  ({ center, onViewportChange, overlayCells }, ref) => {
+  ({ center, onViewportChange, overlayCells, onOverlayCellClick }, ref) => {
     // 재시도 시 로더 훅을 다시 태우기 위해 하위 뷰를 remount
     const [attempt, setAttempt] = useState(0);
 
@@ -93,6 +95,7 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
         center={center}
         onViewportChange={onViewportChange}
         overlayCells={overlayCells}
+        onOverlayCellClick={onOverlayCellClick}
         onRetry={() => setAttempt((n) => n + 1)}
       />
     );
@@ -119,7 +122,10 @@ const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
 ];
 
 const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
-  ({ appkey, center, onViewportChange, overlayCells, onRetry }, ref) => {
+  (
+    { appkey, center, onViewportChange, overlayCells, onOverlayCellClick, onRetry },
+    ref,
+  ) => {
     // services: 도감(MSG-121 개정 D2)의 역지오코딩(coord2RegionCode)용 — SDK 로더 설정은 이 경계 파일에서만.
     // 지도 타일·컨트롤 동작에는 영향이 없어 홈·탐색 회귀 없음(R7), 미로드 시 region-lookup이 null 폴백.
     const [loading, error] = useKakaoLoader({ appkey, libraries: ["services"] });
@@ -177,6 +183,12 @@ const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
             strokeOpacity={OVERLAY_STROKE_OPACITY}
             fillColor={semantic.primary}
             fillOpacity={OVERLAY_FILL_OPACITY}
+            // 핸들러 미등록이면 onClick도 없음 — 표시 전용 기존 동작 유지 (MSG-122, R3)
+            onClick={
+              onOverlayCellClick
+                ? () => onOverlayCellClick(cell.id)
+                : undefined
+            }
           />
         ))}
       </Map>

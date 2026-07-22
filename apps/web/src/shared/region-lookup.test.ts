@@ -33,7 +33,7 @@ describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개�
   it("kakao SDK 전역이 없으면 크래시 없이 null을 반환한다 (R7 — 키 미설정·로드 전)", async () => {
     // jsdom 기본 환경 — kakao 전역 부재
     await expect(
-      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
+      lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 
@@ -41,47 +41,47 @@ describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개�
     vi.stubGlobal("kakao", { maps: {} });
 
     await expect(
-      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
+      lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 
   it("조회 성공 시 행정동(H) 결과의 구 이름(region_2depth_name)을 반환한다", async () => {
     stubKakao((x, y, callback) => {
-      expect(x).toBe(126.978); // 카카오 API는 x=경도, y=위도
-      expect(y).toBe(37.5665);
+      expect(x).toBe(129.0594); // 카카오 API는 x=경도, y=위도
+      expect(y).toBe(35.1579);
       callback(
         [
-          { region_type: "B", region_2depth_name: "중구(법정동)" },
-          { region_type: "H", region_2depth_name: "중구" },
+          { region_type: "B", region_2depth_name: "부산진구(법정동)" },
+          { region_type: "H", region_2depth_name: "부산진구" },
         ],
         "OK",
       );
     });
 
     await expect(
-      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
-    ).resolves.toBe("중구");
+      lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
+    ).resolves.toBe("부산진구");
   });
 
   it("행정동(H) 결과가 없으면 첫 결과의 구 이름으로 폴백한다", async () => {
     stubKakao((_x, _y, callback) => {
-      callback([{ region_type: "B", region_2depth_name: "마포구" }], "OK");
+      callback([{ region_type: "B", region_2depth_name: "수영구" }], "OK");
     });
 
     await expect(
-      lookupRegionName({ lat: 37.55, lng: 126.92 }),
-    ).resolves.toBe("마포구");
+      lookupRegionName({ lat: 35.16, lng: 129.06 }),
+    ).resolves.toBe("수영구");
   });
 
   it("조회 실패(status !== OK)·빈 결과면 null을 반환한다", async () => {
     stubKakao((_x, _y, callback) => callback([], "ERROR"));
     await expect(
-      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
+      lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
 
     stubKakao((_x, _y, callback) => callback([], "OK"));
     await expect(
-      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
+      lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 
@@ -94,7 +94,7 @@ describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개�
     });
 
     await expect(
-      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
+      lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 
@@ -104,7 +104,7 @@ describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개�
     });
 
     await expect(
-      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
+      lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 });

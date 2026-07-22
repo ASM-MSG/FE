@@ -13,7 +13,7 @@ const cell = (
   label: string,
   videoCount: number,
   createdAt: string,
-  district = "마포구",
+  district = "부산진구",
 ): Cell => ({
   id,
   label,
@@ -30,13 +30,13 @@ const cell = (
 
 describe("searchCells (L1)", () => {
   const cells = [
-    cell("A", "홍대입구 A-14", 10, "2026-01-01T00:00:00.000Z"),
-    cell("B", "합정 A-15", 20, "2026-01-02T00:00:00.000Z"),
-    cell("C", "성수 C-02", 30, "2026-01-03T00:00:00.000Z"),
+    cell("A", "서면 A-14", 10, "2026-01-01T00:00:00.000Z"),
+    cell("B", "전포 A-15", 20, "2026-01-02T00:00:00.000Z"),
+    cell("C", "광안리 C-02", 30, "2026-01-03T00:00:00.000Z"),
   ];
 
   it("검색어가 label의 부분 문자열인 격자만 반환한다", () => {
-    expect(searchCells(cells, "홍대").map((c) => c.id)).toEqual(["A"]);
+    expect(searchCells(cells, "서면").map((c) => c.id)).toEqual(["A"]);
   });
 
   it("대소문자를 무시하고 매칭한다", () => {
@@ -128,21 +128,21 @@ describe("formatDuration (L3)", () => {
 
 describe("filterByDistrict 지역 필터 (AC 16)", () => {
   const cells = [
-    cell("A", "홍대입구 A-14", 10, "2026-01-01T00:00:00.000Z", "마포구"),
-    cell("B", "합정 A-15", 20, "2026-01-02T00:00:00.000Z", "마포구"),
-    cell("C", "성수 C-02", 30, "2026-01-03T00:00:00.000Z", "성동구"),
-    cell("D", "강남역 E-05", 40, "2026-01-04T00:00:00.000Z", "강남구"),
+    cell("A", "서면 A-14", 10, "2026-01-01T00:00:00.000Z", "부산진구"),
+    cell("B", "전포 A-15", 20, "2026-01-02T00:00:00.000Z", "부산진구"),
+    cell("C", "광안리 C-02", 30, "2026-01-03T00:00:00.000Z", "수영구"),
+    cell("D", "해운대 E-05", 40, "2026-01-04T00:00:00.000Z", "해운대구"),
   ];
 
   it("지정한 구(district)에 속한 격자만 반환한다", () => {
-    expect(filterByDistrict(cells, "마포구").map((c) => c.id)).toEqual([
+    expect(filterByDistrict(cells, "부산진구").map((c) => c.id)).toEqual([
       "A",
       "B",
     ]);
   });
 
   it("매칭되는 격자가 없는 구는 빈 배열을 반환한다(범위 밖 셀 제거)", () => {
-    expect(filterByDistrict(cells, "관악구")).toEqual([]);
+    expect(filterByDistrict(cells, "사상구")).toEqual([]);
   });
 
   it("district가 null이거나 undefined면 입력 목록을 그대로 반환한다", () => {
@@ -153,16 +153,16 @@ describe("filterByDistrict 지역 필터 (AC 16)", () => {
 
 describe("selectExploreCells 지역 필터 통합 (AC 16)", () => {
   const cells = [
-    cell("A", "홍대입구 A-14", 10, "2026-01-01T00:00:00.000Z", "마포구"),
-    cell("B", "합정 A-15", 50, "2026-01-02T00:00:00.000Z", "마포구"),
-    cell("C", "성수 C-02", 30, "2026-01-03T00:00:00.000Z", "성동구"),
+    cell("A", "서면 A-14", 10, "2026-01-01T00:00:00.000Z", "부산진구"),
+    cell("B", "전포 A-15", 50, "2026-01-02T00:00:00.000Z", "부산진구"),
+    cell("C", "광안리 C-02", 30, "2026-01-03T00:00:00.000Z", "수영구"),
   ];
 
   it("설정된 지역 필터가 결과 집합을 해당 구로 좁힌다", () => {
     const result = selectExploreCells(cells, {
       query: "",
       order: "popular",
-      district: "마포구",
+      district: "부산진구",
     });
     expect(result.map((c) => c.id)).toEqual(["B", "A"]);
   });
@@ -174,9 +174,9 @@ describe("selectExploreCells 지역 필터 통합 (AC 16)", () => {
 
   it("지역 필터와 검색어 필터가 함께 적용된다(교집합)", () => {
     const result = selectExploreCells(cells, {
-      query: "합정",
+      query: "전포",
       order: "popular",
-      district: "마포구",
+      district: "부산진구",
     });
     expect(result.map((c) => c.id)).toEqual(["B"]);
   });
@@ -184,14 +184,14 @@ describe("selectExploreCells 지역 필터 통합 (AC 16)", () => {
 
 describe("selectExploreCells 검색+정렬 파이프라인 (L4)", () => {
   const cells = [
-    cell("A", "홍대입구 A-14", 10, "2026-01-03T00:00:00.000Z"),
-    cell("B", "합정 A-15", 50, "2026-01-01T00:00:00.000Z"),
-    cell("C", "성수 C-02", 30, "2026-01-02T00:00:00.000Z"),
-    cell("D", "홍대 A-16", 40, "2026-01-04T00:00:00.000Z"),
+    cell("A", "서면 A-14", 10, "2026-01-03T00:00:00.000Z"),
+    cell("B", "전포 A-15", 50, "2026-01-01T00:00:00.000Z"),
+    cell("C", "광안리 C-02", 30, "2026-01-02T00:00:00.000Z"),
+    cell("D", "서면 A-16", 40, "2026-01-04T00:00:00.000Z"),
   ];
 
   it("정렬 상태를 바꿔도 동일 검색어의 결과 집합(원소)은 동일하다", () => {
-    const query = "홍대";
+    const query = "서면";
     const popular = selectExploreCells(cells, { query, order: "popular" });
     const recent = selectExploreCells(cells, { query, order: "recent" });
 

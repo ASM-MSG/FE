@@ -20,7 +20,7 @@ const summary = (overrides: Partial<DexSummary> = {}): DexSummary => ({
   ...overrides,
 });
 
-const REGION_PCT_MAP = { 마포구: 52, 중구: 22 };
+const REGION_PCT_MAP = { 부산진구: 52, 수영구: 34 };
 
 const dexData = (
   collectedCells: CollectedCell[],
@@ -38,7 +38,8 @@ const cell = (
 ): CollectedCell => ({
   cellId,
   label: `격자 ${cellId}`,
-  center: { lat: 37.55, lng: 126.92 },
+  district: "부산진구",
+  center: { lat: 35.16, lng: 129.06 },
   collectedAt,
   videoCount: 1,
   ...overrides,
@@ -192,7 +193,7 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
 
   it("수집 격자마다 id + Bounds(한 변 500m mock 상수) 오버레이를 만든다 (AC 9·10)", () => {
     const target = cell("A-14", "2026-07-21T09:00:00.000Z", {
-      center: { lat: 37.5573, lng: 126.9245 },
+      center: { lat: 35.1573, lng: 129.0586 },
     });
 
     const view = deriveDexView(dexData([target]));

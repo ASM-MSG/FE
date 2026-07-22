@@ -7,10 +7,10 @@ import { clampPct } from "./dex-summary";
  */
 
 /**
- * 디폴트 지역 (A13) — 서울시청 소재지 "중구".
- * 위치 폴백 좌표(SEOUL_CITY_HALL)를 역지오코딩해도 자연히 "중구"가 나와 두 경로가 수렴한다.
+ * 디폴트 지역 (A13) — 서면 소재지 "부산진구".
+ * 위치 폴백 좌표(SEOMYEON_CENTER)를 역지오코딩해도 자연히 "부산진구"가 나와 두 경로가 수렴한다.
  */
-export const DEFAULT_REGION_NAME = "중구";
+export const DEFAULT_REGION_NAME = "부산진구";
 
 /** 화면에 표시할 현재 지역 — "{name} 탐험률" 라벨 + 진행 바 값 */
 export interface CurrentRegion {
@@ -21,7 +21,7 @@ export interface CurrentRegion {
 
 /**
  * 역지오코딩 결과 + 지역별 탐험률 맵 → 표시 지역. [AC 21]
- * - 결과 null(조회 실패·services 미가용·권한 거부 경로 포함) → 디폴트 "중구"
+ * - 결과 null(조회 실패·services 미가용·권한 거부 경로 포함) → 디폴트 "부산진구"
  * - 맵에 없는 지역 → 0%
  */
 export const resolveCurrentRegion = (
