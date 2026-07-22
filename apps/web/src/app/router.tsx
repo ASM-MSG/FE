@@ -4,6 +4,7 @@ import { ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
+import { ProfilePanel } from "@/pages/profile/ProfilePanel";
 import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
 
@@ -21,7 +22,8 @@ export const router = createBrowserRouter([
           { path: ROUTES.upload, element: <SectionPanel title="업로드" /> },
           // 도감(MSG-121·122) — 탭은 URL 정본(/dex·/dex/badges), 무효 탭("gallery" 포함)은 지도 폴백(AC 2·21)
           { path: `${ROUTES.dex}/:tab?`, element: <DexPanel /> },
-          { path: ROUTES.profile, element: <SectionPanel title="프로필" /> },
+          // 프로필(MSG-124) — 전고 사이드탭, 전부 mock 렌더 (실동작 없음)
+          { path: ROUTES.profile, element: <ProfilePanel /> },
         ],
       },
     ],
