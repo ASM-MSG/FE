@@ -120,7 +120,9 @@ const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
 
 const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
   ({ appkey, center, onViewportChange, overlayCells, onRetry }, ref) => {
-    const [loading, error] = useKakaoLoader({ appkey });
+    // services: 도감(MSG-121 개정 D2)의 역지오코딩(coord2RegionCode)용 — SDK 로더 설정은 이 경계 파일에서만.
+    // 지도 타일·컨트롤 동작에는 영향이 없어 홈·탐색 회귀 없음(R7), 미로드 시 region-lookup이 null 폴백.
+    const [loading, error] = useKakaoLoader({ appkey, libraries: ["services"] });
     const mapRef = useRef<kakao.maps.Map | null>(null);
 
     useImperativeHandle(

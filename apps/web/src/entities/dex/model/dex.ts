@@ -1,27 +1,24 @@
 import type { LatLng } from "@/entities/cell";
 
 /**
- * 개인 도감 요약 — 백엔드가 제공하는 표시값 (MSG-121).
- * 지역명·탐험률은 프론트가 뷰포트/위치로 계산하지 않는다(추정 A5 — 지역 판정은 백엔드 소관).
+ * 개인 도감 요약 — 백엔드가 제공하는 표시값 (MSG-121, 2026-07-22 개정 반영).
+ * 지역명은 이 요약에 없다 — 현재 위치 역지오코딩이 소유한다(개정 D2, A5 개정).
  */
 export interface DexSummary {
   nickname: string;
   /** 아바타 이미지 URL — 없으면 이니셜 fallback 표시 */
   avatarSrc?: string;
-  /** 전체 탐험 라벨 (예: "서울") — "서울 N% 탐험" 요약 문구용 */
-  totalLabel: string;
-  /** 전체 탐험률(%) — 표시 전 0~100 클램프 (AC 7) */
+  /**
+   * 전체 지도 기준 탐험 진행률(%) — Fog of World식 미소값 (개정 D1, mock 0.012).
+   * 표시 전 0~100 클램프(AC 7) + formatExploredPct 포맷(AC 20)을 거친다.
+   */
   totalExploredPct: number;
-  /** 연속 기록 일수 (예: 23일 연속 기록 · 연속 스트릭 카드) */
+  /** 연속 기록 일수 — "연속 스트릭" 통계 카드 표시값 (헤더 요약에서는 제거 — D1 dedup) */
   streakDays: number;
   /** 수집 격자 수 — 통계 카드 표시값 */
   collectedCellCount: number;
   /** 획득 뱃지 수 — 통계 카드 표시값 */
   badgeCount: number;
-  /** 현재 지역명 (예: "마포구") — "{지역} 탐험률" 라벨용 */
-  regionName: string;
-  /** 현재 지역 탐험률(%) — 표시 전 0~100 클램프 (AC 7) */
-  regionExploredPct: number;
 }
 
 /** 사용자가 수집한 격자 — 최근 수집 목록·지도 오버레이의 단위 (MSG-121) */
@@ -42,4 +39,9 @@ export interface CollectedCell {
 export interface DexData {
   summary: DexSummary;
   collectedCells: CollectedCell[];
+  /**
+   * 지역(구)별 탐험률(%) 맵 (개정 D2) — 값 계산은 백엔드 소관 가정의 mock(A5 개정).
+   * 키는 현재 위치 역지오코딩 결과(구 이름)와 매칭하며, 맵에 없는 지역은 0%로 처리한다(AC 21).
+   */
+  regionExploredPctMap: Record<string, number>;
 }

@@ -10,14 +10,16 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DexData } from "@/entities/dex";
 import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
+import { useRecentRemovalStore } from "@/features/dex/model/recent-removal-store";
 import { DexPanel } from "./DexPanel";
 
 /**
- * 도감 패널 스모크 (AC 18·19 — mock queryFn이 빈/오류 상태를 만들지 않아 브라우저 대신
- * vitest로 판정, 스펙 검증 방법 컬럼·업로드 위저드 스모크 선례).
+ * 도감 패널 스모크 (AC 18·19·25 — mock queryFn이 빈/오류 상태를 만들지 않거나 이벤트 전파·a11y
+ * 이름 판정이 필요해 브라우저 대신 vitest로 판정, 스펙 검증 방법 컬럼·업로드 위저드 스모크 선례).
  * QueryClient 캐시에 상태를 주입해 빈 데이터·오류 상태를 재현한다.
- * 오버레이 게시/해제(AC 9·11)와 행 클릭→moveTo(AC 16)의 배선도 스토어/스파이로 확인한다 —
- * 지도 픽셀 렌더는 브라우저 검증의 몫이고 여기서는 wiring만 단정한다.
+ * 오버레이 게시/해제(AC 9·11)·행 클릭→moveTo(AC 16)·X 제거(AC 24·25)의 배선도 스토어/스파이로
+ * 확인한다 — 지도 픽셀 렌더는 브라우저 검증의 몫이고 여기서는 wiring만 단정한다.
+ * jsdom에는 kakao 전역이 없어 현재 지역은 항상 디폴트 "중구" 경로다(A13 — region-lookup null 폴백).
  */
 
 const moveToSpy = vi.fn();
@@ -60,22 +62,20 @@ const renderPanel = (client: QueryClient, path = "/dex") =>
     </QueryClientProvider>,
   );
 
-/** 수집 0건(신규 사용자) 주입 데이터 */
+/** 수집 0건(신규 사용자) 주입 데이터 — 2026-07-22 개정 DexData 계약 */
 const EMPTY_DEX: DexData = {
   summary: {
     nickname: "새 사용자",
-    totalLabel: "서울",
     totalExploredPct: 0,
     streakDays: 0,
     collectedCellCount: 0,
     badgeCount: 0,
-    regionName: "마포구",
-    regionExploredPct: 0,
   },
   collectedCells: [],
+  regionExploredPctMap: { 중구: 22 },
 };
 
-/** 수집 2건 주입 데이터 — 오버레이 게시·행 클릭 배선 확인용 */
+/** 수집 2건 주입 데이터 — 오버레이 게시·행 클릭·X 제거 배선 확인용 */
 const DEX_WITH_CELLS: DexData = {
   summary: { ...EMPTY_DEX.summary, collectedCellCount: 2 },
   collectedCells: [
@@ -94,11 +94,16 @@ const DEX_WITH_CELLS: DexData = {
       videoCount: 1,
     },
   ],
+  regionExploredPctMap: { 중구: 22 },
 };
 
 describe("도감 패널 스모크", () => {
   beforeEach(() => {
     useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
+    useRecentRemovalStore.setState(
+      useRecentRemovalStore.getInitialState(),
+      true,
+    );
     moveToSpy.mockClear();
   });
 
@@ -158,8 +163,51 @@ describe("도감 패널 스모크", () => {
     client.setQueryData(["dex"], DEX_WITH_CELLS);
     renderPanel(client);
 
-    fireEvent.click(screen.getByRole("button", { name: /홍대입구 A-14/ }));
+    // X 제거 버튼("… 목록에서 제거")과 구분 — 이동용 행 버튼은 메타("영상 N개")를 이름에 포함한다
+    fireEvent.click(
+      screen.getByRole("button", { name: /홍대입구 A-14.*영상 2개/ }),
+    );
 
     expect(moveToSpy).toHaveBeenCalledWith({ lat: 37.5573, lng: 126.9245 });
+  });
+
+  it("X 버튼은 행별 접근 가능한 이름을 갖고, 클릭 시 해당 행만 사라지며 지도 이동으로 전파되지 않는다 (AC 24·25, 개정 D4)", () => {
+    const client = createClient();
+    client.setQueryData(["dex"], DEX_WITH_CELLS);
+    renderPanel(client);
+
+    // 행별 접근 가능한 이름 (AC 25)
+    const removeButton = screen.getByRole("button", {
+      name: "홍대입구 A-14 목록에서 제거",
+    });
+    fireEvent.click(removeButton);
+
+    // 해당 행만 제거, 다른 행 유지 (AC 24)
+    expect(screen.queryByText("홍대입구 A-14")).toBeNull();
+    expect(screen.getByText("망원 B-07")).toBeTruthy();
+    // 행 클릭(지도 이동)으로 전파 금지 (AC 25)
+    expect(moveToSpy).not.toHaveBeenCalled();
+    // 통계 카드·지도 오버레이 불변 — 수집 취소가 아니다 (AC 24)
+    expect(screen.getByText("2개")).toBeTruthy(); // 수집 격자 카드
+    expect(useMapOverlayStore.getState().cells.map((c) => c.id)).toEqual([
+      "A-14",
+      "B-07",
+    ]);
+  });
+
+  it("X로 전부 제거해도 '수집 0건' 빈 상태 안내는 나타나지 않는다 (AC 18과 구분)", () => {
+    const client = createClient();
+    client.setQueryData(["dex"], DEX_WITH_CELLS);
+    renderPanel(client);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "홍대입구 A-14 목록에서 제거" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "망원 B-07 목록에서 제거" }),
+    );
+
+    expect(screen.queryByText(/아직 수집한 격자가 없어요/)).toBeNull();
+    expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
   });
 });
