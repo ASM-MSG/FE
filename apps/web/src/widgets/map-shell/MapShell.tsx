@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import type { LatLng } from "@/entities/cell";
+import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
@@ -19,6 +20,8 @@ export const MapShell = () => {
   const setViewport = useViewportStore((s) => s.setViewport);
   const collapsed = useSidebarStore((s) => s.collapsed);
   const openUploadModal = useUploadModalStore((s) => s.openModal);
+  // 수집 오버레이(MSG-121) — 도감 패널이 게시/해제하고 셸은 지도에 중계만 한다. 빈 목록이면 기존 동작 동일(R3)
+  const overlayCells = useMapOverlayStore((s) => s.cells);
   const mapRef = useRef<MapCanvasHandle>(null);
   const [initialCenter, setInitialCenter] = useState<LatLng>(SEOUL_CITY_HALL);
 
@@ -52,6 +55,7 @@ export const MapShell = () => {
           ref={mapRef}
           center={initialCenter}
           onViewportChange={setViewport}
+          overlayCells={overlayCells}
         />
       </div>
 

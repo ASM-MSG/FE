@@ -4,9 +4,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Map, useKakaoLoader } from "react-kakao-maps-sdk";
+import { Map, Polygon, useKakaoLoader } from "react-kakao-maps-sdk";
+import { semantic } from "@fillmap/design-tokens";
 import { Button } from "@fillmap/ui-web";
-import type { LatLng } from "@/entities/cell";
+import type { Bounds, LatLng } from "@/entities/cell";
 import type { Viewport } from "@/features/map-home/model/viewport-store";
 
 /** 지도 명령 핸들 — 카카오맵 인스턴스 제어를 이 경계 밖으로 노출하지 않고 명령만 공개 */
@@ -17,11 +18,19 @@ export interface MapCanvasHandle {
   zoomOut: () => void;
 }
 
+/** 지도에 그릴 사각 오버레이 한 칸 — 순수 데이터(id + Bounds). 좌표→기하 변환은 호출부 몫 */
+export interface MapCellOverlay {
+  id: string;
+  bounds: Bounds;
+}
+
 interface MapCanvasProps {
   /** 초기 중심 좌표 (geolocation 결과 반영) */
   center: LatLng;
   /** 이동/줌 등으로 뷰포트가 바뀔 때 호출 (스토어 push) */
   onViewportChange: (viewport: Viewport) => void;
+  /** 반투명 사각 오버레이 목록 (MSG-121 수집 격자) — 미제공/빈 배열이면 기존 동작과 동일(R3) */
+  overlayCells?: MapCellOverlay[];
 }
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_APP_KEY as
@@ -68,7 +77,7 @@ const MapFallback = ({ onRetry }: { onRetry: () => void }) => (
  * 키 미설정 시에는 로더를 마운트하지 않아 빈 키로 SDK 요청이 나가지 않는다.
  */
 export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
-  ({ center, onViewportChange }, ref) => {
+  ({ center, onViewportChange, overlayCells }, ref) => {
     // 재시도 시 로더 훅을 다시 태우기 위해 하위 뷰를 remount
     const [attempt, setAttempt] = useState(0);
 
@@ -83,6 +92,7 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
         appkey={KAKAO_APP_KEY}
         center={center}
         onViewportChange={onViewportChange}
+        overlayCells={overlayCells}
         onRetry={() => setAttempt((n) => n + 1)}
       />
     );
@@ -95,8 +105,21 @@ interface KakaoMapViewProps extends MapCanvasProps {
   onRetry: () => void;
 }
 
+// 수집 오버레이 시각 사양 — ui-web GridCell collected(border-primary/60 + bg-primary/40)를
+// 지리 폴리곤으로 차용한다 (스펙 AC 9, 추정 A3 — 균일 투명도). 색은 토큰에서만(hex 리터럴 금지).
+const OVERLAY_STROKE_OPACITY = 0.6;
+const OVERLAY_FILL_OPACITY = 0.4;
+
+/** 사각 Bounds → 폴리곤 꼭짓점 4개 (sw 기준 반시계) */
+const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
+  { lat: sw.lat, lng: sw.lng },
+  { lat: sw.lat, lng: ne.lng },
+  { lat: ne.lat, lng: ne.lng },
+  { lat: ne.lat, lng: sw.lng },
+];
+
 const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
-  ({ appkey, center, onViewportChange, onRetry }, ref) => {
+  ({ appkey, center, onViewportChange, overlayCells, onRetry }, ref) => {
     const [loading, error] = useKakaoLoader({ appkey });
     const mapRef = useRef<kakao.maps.Map | null>(null);
 
@@ -142,7 +165,19 @@ const KakaoMapView = forwardRef<MapCanvasHandle, KakaoMapViewProps>(
           onViewportChange(toViewport(map));
         }}
         onIdle={(map) => onViewportChange(toViewport(map))}
-      />
+      >
+        {overlayCells?.map((cell) => (
+          <Polygon
+            key={cell.id}
+            path={boundsToPath(cell.bounds)}
+            strokeWeight={1}
+            strokeColor={semantic.primary}
+            strokeOpacity={OVERLAY_STROKE_OPACITY}
+            fillColor={semantic.primary}
+            fillOpacity={OVERLAY_FILL_OPACITY}
+          />
+        ))}
+      </Map>
     );
   },
 );
