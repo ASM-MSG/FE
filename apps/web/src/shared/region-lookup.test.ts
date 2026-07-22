@@ -85,6 +85,19 @@ describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개�
     ).resolves.toBeNull();
   });
 
+  it("비동기 콜백이 OK인데 비정상 result(배열 아님)를 전달해도 크래시 없이 null을 반환한다 (R7)", async () => {
+    stubKakao((_x, _y, callback) => {
+      // 실제 SDK처럼 비동기 호출 — 콜백 본문은 등록부 try/catch 밖(SDK 스택)에서 실행된다
+      queueMicrotask(() =>
+        callback(null as unknown as Parameters<RegionCodeCallback>[0], "OK"),
+      );
+    });
+
+    await expect(
+      lookupRegionName({ lat: 37.5665, lng: 126.978 }),
+    ).resolves.toBeNull();
+  });
+
   it("Geocoder 호출이 예외를 던져도 크래시 없이 null을 반환한다 (R7)", async () => {
     stubKakao(() => {
       throw new Error("SDK not ready");

@@ -26,14 +26,19 @@ export const lookupRegionName = (
       const geocoder = new services.Geocoder();
       // 카카오 API는 x=경도(lng), y=위도(lat) 순서
       geocoder.coord2RegionCode(coords.lng, coords.lat, (result, status) => {
-        if (status !== services.Status.OK) {
+        // 콜백은 SDK 스택에서 비동기 실행되므로 바깥 try/catch가 닿지 않는다 — 자체 방어 (R7)
+        try {
+          if (status !== services.Status.OK) {
+            resolve(null);
+            return;
+          }
+          // 행정동(H) 우선 — 구 이름은 region_2depth_name (예: "중구")
+          const region =
+            result.find((r) => r.region_type === "H") ?? result[0];
+          resolve(region?.region_2depth_name || null);
+        } catch {
           resolve(null);
-          return;
         }
-        // 행정동(H) 우선 — 구 이름은 region_2depth_name (예: "중구")
-        const region =
-          result.find((r) => r.region_type === "H") ?? result[0];
-        resolve(region?.region_2depth_name || null);
       });
     } catch {
       // SDK 부분 로드 등 비정상 상태 — 크래시 대신 폴백 (R7)
