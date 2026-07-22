@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DexData } from "@/entities/dex";
+import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
 import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
 import { useRecentRemovalStore } from "@/features/dex/model/recent-removal-store";
 import { DexPanel } from "./DexPanel";
@@ -106,6 +107,11 @@ describe("도감 패널 스모크", () => {
       useRecentRemovalStore.getInitialState(),
       true,
     );
+    // 행 클릭이 갤러리 지역을 쓰게 되어(MSG-122 AC 19) 케이스 간 격리를 위해 함께 초기화
+    useGalleryRegionStore.setState(
+      useGalleryRegionStore.getInitialState(),
+      true,
+    );
     moveToSpy.mockClear();
   });
 
@@ -160,7 +166,7 @@ describe("도감 패널 스모크", () => {
     expect(useMapOverlayStore.getState().cells).toEqual([]);
   });
 
-  it("격자 행 클릭 시 해당 격자 중심 좌표로 지도 이동 명령을 보낸다 (AC 16 배선)", () => {
+  it("격자 행 클릭 시 해당 격자 중심 좌표로 지도 이동 명령을 보낸다 (AC 16 배선 — MSG-122 AC 19 개정으로 갤러리 전환이 동반된다)", async () => {
     const client = createClient();
     client.setQueryData(["dex"], DEX_WITH_CELLS);
     renderPanel(client);
@@ -171,6 +177,8 @@ describe("도감 패널 스모크", () => {
     );
 
     expect(moveToSpy).toHaveBeenCalledWith({ lat: 37.5573, lng: 126.9245 });
+    // AC 19 동반 전환의 갤러리 쿼리 해소를 기다린다(act 경고 방지) — 전환 자체의 단정은 gallery-tab.smoke 몫
+    expect(await screen.findByText(/^마포구 · 영상 \d+개$/)).toBeTruthy();
   });
 
   it("X 버튼은 행별 접근 가능한 이름을 갖고, 클릭 시 해당 행만 사라지며 지도 이동으로 전파되지 않는다 (AC 24·25, 개정 D4)", () => {

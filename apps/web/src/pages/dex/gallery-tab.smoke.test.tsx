@@ -246,6 +246,21 @@ describe("갤러리 탭 스모크", () => {
     expect(await screen.findByText(/^성동구 · 영상 \d+개$/)).toBeTruthy();
   });
 
+  it("최근 수집 격자 행 클릭 시 지도가 그 격자로 이동하고(MSG-121 유지) 그 격자 지역의 갤러리 탭으로 전환된다 (AC 19 배선, 2026-07-22 개정)", async () => {
+    const client = createClient();
+    client.setQueryData(["dex"], DEX);
+    renderPanel(client, "/dex"); // 지도 탭에서 시작
+
+    fireEvent.click(screen.getByRole("button", { name: /성수 C-02.*영상 1개/ }));
+
+    // 기존 지도 이동(MSG-121 AC 16) 유지 — 제거 금지
+    expect(moveToSpy).toHaveBeenCalledWith({ lat: 37.5446, lng: 127.0559 });
+    // 행의 district로 지역 선택 + 갤러리 탭 전환 (행이 CollectedCell을 가지므로 districtOfCell 불요)
+    expect(useGalleryRegionStore.getState().selectedRegion).toBe("성동구");
+    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
+    expect(await screen.findByText(/^성동구 · 영상 \d+개$/)).toBeTruthy();
+  });
+
   it("갤러리 탭에서도 수집 오버레이가 게시 유지되고 셀 클릭 핸들러가 등록된다 (AC 18 배선, A3 — MSG-121 '지도 탭에서만 게시'의 의도된 변경)", () => {
     const client = createClient();
     client.setQueryData(["dex"], DEX);

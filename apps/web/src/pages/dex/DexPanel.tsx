@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
-import type { LatLng } from "@/entities/cell";
 import type { CollectedCell } from "@/entities/dex";
 import { resolveCurrentRegion } from "@/features/dex/model/current-region";
 import { deriveDexView, excludeRemoved } from "@/features/dex/model/dex-summary";
@@ -87,6 +86,17 @@ export const DexPanel = () => {
     [collectedCells, selectRegion, navigate],
   );
 
+  // 최근 수집 행 클릭 — 기존 지도 이동(MSG-121 AC 16) 유지 + 행 지역 갤러리 전환 (MSG-122 AC 19 개정).
+  // 행이 CollectedCell을 이미 가지므로 districtOfCell 조회 없이 district를 직접 쓴다 (스펙 구현 계획)
+  const handleRecentCellClick = useCallback(
+    (cell: CollectedCell) => {
+      moveTo(cell.center);
+      selectRegion(cell.district);
+      navigate(dexTabPath("gallery"));
+    },
+    [moveTo, selectRegion, navigate],
+  );
+
   // 지도·갤러리 탭에서 수집 오버레이 게시(MSG-122 A3 — 갤러리 탭 유지+클릭 가능) + 클릭 핸들러 등록,
   // 탭 이탈(뱃지)·패널 언마운트(다른 섹션 이동) 시 해제 (AC 9·11, MSG-122 AC 18)
   useEffect(() => {
@@ -135,7 +145,7 @@ export const DexPanel = () => {
             <RecentCellList
               cells={visibleRecent}
               hasCollected={view.recentCells.length > 0}
-              onCellSelect={moveTo}
+              onCellSelect={handleRecentCellClick}
               onRemove={removeRecent}
             />
           ) : tab === "gallery" ? (
@@ -168,7 +178,8 @@ interface RecentCellListProps {
   cells: CollectedCell[];
   /** 원본 수집 존재 여부 — 빈 상태 안내는 "수집 0건"일 때만 (X로 전부 제거한 경우와 구분) */
   hasCollected: boolean;
-  onCellSelect: (center: LatLng) => void;
+  /** 행 클릭 — 지도 이동 + 그 지역 갤러리 전환 배선 (AC 16, MSG-122 AC 19 개정) */
+  onCellSelect: (cell: CollectedCell) => void;
   onRemove: (cellId: string) => void;
 }
 
