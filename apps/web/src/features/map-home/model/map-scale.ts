@@ -23,8 +23,13 @@ const SCALE_BY_LEVEL = [
 const MIN_LEVEL = 1;
 const MAX_LEVEL = SCALE_BY_LEVEL.length;
 
-/** 레벨을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다 */
+/**
+ * 레벨을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.
+ * NaN은 클램프를 전파 통과해 undefined 렌더로 이어지므로 최소 축척으로 방어한다
+ * (±Infinity는 클램프가 경계 값으로 흡수 — 별도 가드 불필요).
+ */
 export const scaleLabelForLevel = (level: number): string => {
+  if (Number.isNaN(level)) return SCALE_BY_LEVEL[0];
   const clamped = Math.min(
     MAX_LEVEL,
     Math.max(MIN_LEVEL, Math.floor(level)),

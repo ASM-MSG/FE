@@ -11,6 +11,8 @@ interface BadgeTabBodyProps {
 /**
  * 획득 뱃지 원 색 순환 — 시맨틱 토큰 계열 success·secondary·primary (A4, Figma 정확 hex
  * 대신 토큰 1·2조 우선). 카탈로그 위치 기준이라 프리뷰·확장에서 같은 뱃지는 같은 색이다.
+ * 3종 순환이라 획득 4개째부터 색이 겹친다(구분은 라벨 텍스트) — 뱃지별 고유 아이콘/색이
+ * 생기면 이 순환을 대체한다 (PR #20 리뷰 관찰).
  */
 const EARNED_CIRCLE_CLASSES = [
   "bg-success",

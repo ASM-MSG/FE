@@ -20,4 +20,10 @@ describe("scaleLabelForLevel", () => {
   it("비정수 레벨은 내림해 해석한다", () => {
     expect(scaleLabelForLevel(5.7)).toBe("250m");
   });
+
+  it("NaN·Infinity 등 비정상 값은 최소 축척으로 폴백한다 (undefined 렌더 방어)", () => {
+    expect(scaleLabelForLevel(Number.NaN)).toBe("20m");
+    expect(scaleLabelForLevel(Number.POSITIVE_INFINITY)).toBe("128km");
+    expect(scaleLabelForLevel(Number.NEGATIVE_INFINITY)).toBe("20m");
+  });
 });
