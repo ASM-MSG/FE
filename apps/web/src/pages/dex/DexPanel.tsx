@@ -138,6 +138,14 @@ export const DexPanel = () => {
     return () => clear();
   }, [tab, view, setCells, setOnCellClick, handleOverlayCellClick, clear]);
 
+  // 지도 탭 도달 = 갤러리 뷰 해제 (④ AC 22) — 뱃지 → 브라우저 뒤로가기 등 탭 버튼(onSelect)을
+  // 거치지 않는 라우터 경유 복귀를 커버한다. onSelect의 clearRegion과 상호 보완(같은 지도 탭
+  // 재클릭은 tab 불변이라 effect가 안 돈다). 셀·행 클릭 갤러리 진입도 tab이 "map" 그대로라
+  // (deps 불변) 재실행되지 않는다 — 진입 비간섭. clearRegion은 zustand 액션이라 참조 안정
+  useEffect(() => {
+    if (tab === "map") clearRegion();
+  }, [tab, clearRegion]);
+
   // 패널 언마운트(섹션 이탈) — 갤러리 뷰·시트 상태 해제 (B4, AC 27): 도감 재진입은 항상
   // 지도 본문에서 시작하고, 도감에서 연 시트가 탐색으로 새지 않는다 (zustand 액션 참조는 안정)
   useEffect(
@@ -188,7 +196,9 @@ export const DexPanel = () => {
                 active={tab}
                 onSelect={(next) => {
                   // 지도 탭 클릭 = 갤러리 뷰 해제 → 지도 본문 복귀 (② AC 22 —
-                  // 기존 "갤러리 탭 클릭 초기화"(AC 11 폐기)의 역할 승계)
+                  // 기존 "갤러리 탭 클릭 초기화"(AC 11 폐기)의 역할 승계).
+                  // 같은 지도 탭 재클릭(tab 불변)은 여기서만 해제된다 — ④ tab 감시
+                  // effect(라우터 경유 복귀)와 상호 보완
                   if (next === "map") clearRegion();
                   navigate(dexTabPath(next));
                 }}

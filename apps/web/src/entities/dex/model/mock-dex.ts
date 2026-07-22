@@ -50,17 +50,26 @@ const MOCK_COLLECTED_CELLS: CollectedCell[] = COLLECTED_SEEDS.map(
  */
 const THUMB_HUES = ["#5b7ff2", "#4fae8f", "#d98a4b", "#a26bd4", "#c95f7d"];
 
+/** SVG 마크업 텍스트 삽입용 XML 이스케이프 (④ AC 28) — `&`를 먼저 치환해 이중 이스케이프를 피한다 */
+const escapeXml = (value: string): string =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+
 /**
  * 대표 프레임 mock — 격자 라벨·순번을 담은 SVG data URI (A7).
  * 네트워크 무의존·결정적이라 `img` 렌더 경로를 실제로 태우면서도 시연이 재현 가능하다.
  * 실 API 전환 시 서버 제공 URL로 교체된다 (R1).
+ * export는 특수문자 라벨 이스케이프 판정(④ AC 28, mock-dex.test) 전용 최소 노출 —
+ * 현행 mock 라벨에는 특수문자가 없어 공개 경로(MOCK_COLLECTED_VIDEOS)로는 판정 불가.
  */
-const svgThumbnail = (label: string, seq: number): string => {
+export const svgThumbnail = (label: string, seq: number): string => {
   const fill = THUMB_HUES[(label.length + seq) % THUMB_HUES.length];
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">` +
     `<rect width="240" height="240" fill="${fill}"/>` +
-    `<text x="120" y="112" fill="#ffffff" font-size="20" font-family="sans-serif" text-anchor="middle">${label}</text>` +
+    `<text x="120" y="112" fill="#ffffff" font-size="20" font-family="sans-serif" text-anchor="middle">${escapeXml(label)}</text>` +
     `<text x="120" y="144" fill="#ffffff" font-size="16" font-family="sans-serif" text-anchor="middle" opacity="0.8">#${seq}</text>` +
     `</svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;

@@ -1,5 +1,13 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, Outlet, Route, Routes } from "react-router-dom";
+import {
+  MemoryRouter,
+  Outlet,
+  Route,
+  Routes,
+  useNavigate,
+  type NavigateFunction,
+} from "react-router-dom";
 import {
   act,
   cleanup,
@@ -17,9 +25,10 @@ import { DexPanel } from "./DexPanel";
 
 /**
  * 갤러리 뷰 스모크 (MSG-122 ② 개정 — AC 7~10 상태 판정 + AC 14·18·19 배선 + 신규
- * AC 20·22·23·24·27). 갤러리는 탭이 아니라 지도 탭 내부 뷰다(B1) — gallery-region-store의
- * selectedRegion이 뷰 상태를 겸하므로, 상태 재현이 필요한 케이스는 스토어에 직접 select한다
- * (UI 진입 경로는 셀·행 클릭뿐 — 그 배선은 AC 14·19 케이스가 별도 판정).
+ * AC 20·22·23·24·27, ④ AC 22 라우터 경유 복귀). 갤러리는 탭이 아니라 지도 탭 내부 뷰다(B1) —
+ * gallery-region-store의 selectedRegion이 뷰 상태를 겸하므로, 상태 재현이 필요한 케이스는
+ * 스토어에 직접 select한다(enterGalleryView — ④ tab 감시 effect가 마운트 시에도 clear하므로
+ * 렌더 후 select. UI 진입 경로는 셀·행 클릭뿐 — 그 배선은 AC 14·19 케이스가 별도 판정).
  * mock queryFn이 실패·pending·빈 지역을 브라우저에서 확정적으로 재현하지 못해 vitest로 판정
  * (스펙 검증 방법 컬럼·dex-panel.smoke 선례). QueryClient 캐시에 상태를 주입해 재현한다.
  * 지도 픽셀·Polygon 클릭은 브라우저 검증의 몫 — 여기서는 스토어/핸들러 wiring만 단정한다.
@@ -27,17 +36,27 @@ import { DexPanel } from "./DexPanel";
 
 const moveToSpy = vi.fn();
 
-/** MapShell 대역 — Outlet context로 지도 명령 API만 주입한다 */
-const ShellStub = () => (
-  <Outlet
-    context={{
-      moveTo: moveToSpy,
-      zoomIn: vi.fn(),
-      zoomOut: vi.fn(),
-      locate: vi.fn(),
-    }}
-  />
-);
+/** 브라우저 뒤로가기 재현용 — ShellStub이 effect에서 채운다 (④ AC 22 라우터 경유 케이스) */
+let shellNavigate: NavigateFunction | undefined;
+
+/** MapShell 대역 — Outlet context로 지도 명령 API만 주입하고, 뒤로가기 재현용 navigate를 노출한다 */
+const ShellStub = () => {
+  const navigate = useNavigate();
+  // 렌더 중 외부 변수 대입은 react-hooks/globals 위반 — effect에서 갱신한다
+  useEffect(() => {
+    shellNavigate = navigate;
+  }, [navigate]);
+  return (
+    <Outlet
+      context={{
+        moveTo: moveToSpy,
+        zoomIn: vi.fn(),
+        zoomOut: vi.fn(),
+        locate: vi.fn(),
+      }}
+    />
+  );
+};
 
 // 캐시 주입 상태가 마운트 직후 refetch로 덮이지 않도록 자동 재조회를 끈다
 const createClient = () =>
@@ -50,6 +69,17 @@ const createClient = () =>
         staleTime: Infinity,
       },
     },
+  });
+
+/**
+ * 갤러리 뷰 상태 재현 — 렌더 후 select한다. ④ tab 감시 effect가 마운트 시에도 clear하는데
+ * (실제 앱에선 언마운트 정리 B4로 마운트 시 항상 null이라 no-op), 렌더 전 select는 그 마운트
+ * clear에 지워진다. 렌더 후에는 tab이 "map" 그대로라(deps 불변) effect가 재실행되지 않아
+ * 뷰 상태가 유지된다 — 셀·행 클릭 진입과 같은 전제.
+ */
+const enterGalleryView = (region: string) =>
+  act(() => {
+    useGalleryRegionStore.getState().select(region);
   });
 
 // 갤러리는 URL 진입이 없다(② B1) — 항상 지도 탭(/dex)에서 렌더하고 뷰 상태로 분기한다
@@ -225,9 +255,9 @@ describe("갤러리 뷰 스모크", () => {
   it("갤러리 쿼리 pending 중 스켈레톤(그리드 자리 타일)이 렌더된다 (AC 9)", async () => {
     const client = createClient();
     seedClient(client);
-    // 갤러리 뷰 상태 재현 — 수집 없는 "사상구"라 해소 후엔 빈 상태다 (Q5)
-    useGalleryRegionStore.getState().select("사상구");
     renderPanel(client);
+    // 갤러리 뷰 상태 재현 — 수집 없는 "사상구"라 해소 후엔 빈 상태다 (Q5)
+    enterGalleryView("사상구");
 
     // queryFn(비동기)이 해소되기 전 첫 렌더는 pending — 스켈레톤이 보인다
     expect(
@@ -242,8 +272,8 @@ describe("갤러리 뷰 스모크", () => {
   it("수집 영상이 없는 지역이면 빈 상태 안내가 렌더되고 전체 보기 버튼은 없다 (AC 8 ② — UI 도달 불가한 방어 분기라 스모크 전용 판정, Q5·A4)", async () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("사상구");
     renderPanel(client);
+    enterGalleryView("사상구");
 
     expect(
       await screen.findByText(/사상구에서 수집한 영상이 아직 없어요/),
@@ -256,7 +286,6 @@ describe("갤러리 뷰 스모크", () => {
   it("갤러리 조회 실패 시 오류 안내·재시도 버튼이 렌더되고, 재시도 클릭 시 다시 조회한다 (AC 7)", async () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("사상구");
     // 오류 상태 주입 — 실패하는 queryFn으로 갤러리 캐시 엔트리를 error로 만든다
     await client
       .fetchQuery({
@@ -266,6 +295,7 @@ describe("갤러리 뷰 스모크", () => {
       })
       .catch(() => undefined);
     renderPanel(client);
+    enterGalleryView("사상구");
 
     expect(screen.getByText("갤러리를 불러오지 못했어요")).toBeTruthy();
 
@@ -280,9 +310,9 @@ describe("갤러리 뷰 스모크", () => {
   it("각 썸네일 타일이 격자 라벨 이름을 가진 button이고, thumbnailSrc 없는 항목은 placeholder 타일로 렌더된다 (AC 10 ② button화)", () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("사상구");
     client.setQueryData(["dex", "gallery", "사상구"], GALLERY_VIDEOS);
     renderPanel(client);
+    enterGalleryView("사상구");
 
     // 이미지·placeholder 두 경로 모두 접근 가능한 이름을 가진 버튼이다 (AC 10 ②)
     const tiles = screen.getAllByRole("button", { name: /수집 영상$/ });
@@ -308,13 +338,39 @@ describe("갤러리 뷰 스모크", () => {
   it("갤러리 뷰에서 지도 탭을 누르면 지도 탭 본문(최근 수집 목록)으로 복귀하고 뷰 상태가 해제된다 (AC 22)", () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("수영구");
     client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
     renderPanel(client);
+    enterGalleryView("수영구");
 
     expect(screen.getByText("지역별 갤러리")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "지도" }));
+
+    expect(useGalleryRegionStore.getState().selectedRegion).toBeNull();
+    expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
+    expect(screen.queryByText("지역별 갤러리")).toBeNull();
+  });
+
+  it("갤러리 뷰에서 뱃지 탭 → 브라우저 뒤로가기로 지도 탭에 재도달하면 갤러리 뷰가 해제되고 최근 수집 목록으로 복귀한다 (AC 22 ④ — onSelect를 거치지 않는 라우터 경유 복귀)", () => {
+    const client = createClient();
+    seedClient(client);
+    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
+    renderPanel(client);
+
+    // 갤러리 뷰 진입 — 셀 클릭 배선(AC 14)과 동일 경로. tab은 "map" 그대로라 감시 effect 비간섭
+    act(() => {
+      useMapOverlayStore.getState().onCellClick?.("C-02");
+    });
+    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
+
+    // 뱃지 탭 이동 — onSelect는 map이 아니면 clearRegion을 부르지 않는다(뷰 상태 잔존)
+    fireEvent.click(screen.getByRole("tab", { name: "뱃지" }));
+    expect(useGalleryRegionStore.getState().selectedRegion).toBe("수영구");
+
+    // 브라우저 뒤로가기 — 탭 버튼(onSelect)을 거치지 않고 라우터로 지도 탭 재도달
+    act(() => {
+      shellNavigate?.(-1);
+    });
 
     expect(useGalleryRegionStore.getState().selectedRegion).toBeNull();
     expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
@@ -366,9 +422,9 @@ describe("갤러리 뷰 스모크", () => {
   it("갤러리 뷰에서도 수집 오버레이가 게시 유지되고 셀 클릭 핸들러가 등록된다 (AC 18 배선 — ② 게시 조건 map 단일화로 자동 충족)", () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("수영구");
     client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
     renderPanel(client);
+    enterGalleryView("수영구");
 
     expect(useMapOverlayStore.getState().cells.map((c) => c.id)).toEqual([
       "A-14",
@@ -380,9 +436,9 @@ describe("갤러리 뷰 스모크", () => {
   it("썸네일 클릭 시 격자 상세 시트가 우측 컬럼에 열리고 클릭한 영상이 활성 상태다 — 격자 소스에 없는 cellId는 no-op (AC 23)", () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("수영구");
     client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
     renderPanel(client);
+    enterGalleryView("수영구");
 
     // 격자 소스(["cells"])에 없는 cellId — 시트를 열지 않는다 (방어)
     fireEvent.click(screen.getByRole("button", { name: "유령 Z-99 수집 영상" }));
@@ -406,9 +462,9 @@ describe("갤러리 뷰 스모크", () => {
   it("시트의 닫기 버튼·Escape로 시트만 닫히고 갤러리 뷰는 유지된다 (AC 24)", () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("수영구");
     client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
     renderPanel(client);
+    enterGalleryView("수영구");
 
     const openSheet = () =>
       fireEvent.click(
@@ -461,9 +517,9 @@ describe("갤러리 뷰 스모크", () => {
   it("패널 언마운트 시 갤러리 뷰·시트 상태가 해제된다 — 도감의 시트가 탐색으로 새지 않는다 (AC 27, B4)", () => {
     const client = createClient();
     seedClient(client);
-    useGalleryRegionStore.getState().select("수영구");
     client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
     const { unmount } = renderPanel(client);
+    enterGalleryView("수영구");
 
     fireEvent.click(
       screen.getAllByRole("button", { name: "광안리 C-02 수집 영상" })[0],

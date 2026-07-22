@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MOCK_CELLS } from "@/entities/cell";
-import { MOCK_COLLECTED_VIDEOS, MOCK_DEX } from "./mock-dex";
+import { MOCK_COLLECTED_VIDEOS, MOCK_DEX, svgThumbnail } from "./mock-dex";
 
 /**
  * mock 정합성 (AC 6, A6·A7·A9) — 갤러리 mock이 도감 mock과 모순되지 않음을 고정한다.
@@ -70,5 +70,20 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
     for (const cell of MOCK_DEX.collectedCells) {
       expect(cell.district, `${cell.cellId}의 district`).toMatch(/구$/);
     }
+  });
+
+  it("XML 특수문자(&·<·>)가 포함된 라벨도 이스케이프되어 유효한 SVG data URI를 생성한다 (④ AC 28)", () => {
+    const uri = svgThumbnail("서면 <A&B> 상가", 1);
+    const prefix = "data:image/svg+xml;utf8,";
+    expect(uri.startsWith(prefix)).toBe(true);
+
+    const markup = decodeURIComponent(uri.slice(prefix.length));
+    // 원시 특수문자가 아니라 XML 엔티티로 삽입된다 (&가 &amp;로 — 이중 이스케이프 아님)
+    expect(markup).toContain("서면 &lt;A&amp;B&gt; 상가");
+
+    // 유효 XML — 파싱 에러 없이 원래 라벨이 텍스트 노드로 복원된다
+    const doc = new DOMParser().parseFromString(markup, "image/svg+xml");
+    expect(doc.querySelector("parsererror")).toBeNull();
+    expect(doc.querySelector("text")?.textContent).toBe("서면 <A&B> 상가");
   });
 });
