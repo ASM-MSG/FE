@@ -9,7 +9,7 @@ import {
 const cell = (id: string, lat: number, lng: number, videoCount: number): Cell => ({
   id,
   label: id,
-  district: "마포구",
+  district: "부산진구",
   center: { lat, lng },
   videoCount,
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -20,17 +20,17 @@ const cell = (id: string, lat: number, lng: number, videoCount: number): Cell =>
   videos: [],
 });
 
-// 서울 도심을 감싸는 예시 bounds
+// 부산 도심을 감싸는 예시 bounds
 const bounds: Bounds = {
-  sw: { lat: 37.5, lng: 126.9 },
-  ne: { lat: 37.6, lng: 127.0 },
+  sw: { lat: 35.1, lng: 129.0 },
+  ne: { lat: 35.2, lng: 129.1 },
 };
 
 describe("filterCellsInBounds (L1)", () => {
   it("중심 좌표가 bounds 안에 있는 격자만 반환한다", () => {
-    const inside = cell("in", 37.55, 126.95, 10);
-    const outsideLat = cell("outLat", 37.7, 126.95, 10);
-    const outsideLng = cell("outLng", 37.55, 127.5, 10);
+    const inside = cell("in", 35.15, 129.05, 10);
+    const outsideLat = cell("outLat", 35.3, 129.05, 10);
+    const outsideLng = cell("outLng", 35.15, 129.5, 10);
 
     const result = filterCellsInBounds([inside, outsideLat, outsideLng], bounds);
 
@@ -38,8 +38,8 @@ describe("filterCellsInBounds (L1)", () => {
   });
 
   it("bounds 경계 위의 격자는 포함한다 (경계 포함)", () => {
-    const onSw = cell("sw", 37.5, 126.9, 1);
-    const onNe = cell("ne", 37.6, 127.0, 1);
+    const onSw = cell("sw", 35.1, 129.0, 1);
+    const onNe = cell("ne", 35.2, 129.1, 1);
 
     const result = filterCellsInBounds([onSw, onNe], bounds);
 

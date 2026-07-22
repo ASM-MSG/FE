@@ -12,7 +12,7 @@ interface VideoRowProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * SOURCE: Figma "FeelMap VideoRow" (node 13431:704) — 영상 리스트 행 (썸네일 88×56).
  *
  * @example
- * <VideoRow title="홍대 거리 야경 감성" meta="조회 214 · 어제" thumbnailSrc={url} onClick={open} />
+ * <VideoRow title="서면 거리 야경 감성" meta="조회 214 · 어제" thumbnailSrc={url} onClick={open} />
  */
 export const VideoRow = ({
   title,

@@ -1,10 +1,10 @@
 import type { CollectedCell, CollectedVideo } from "@/entities/dex";
-import { DEFAULT_REGION_NAME } from "./current-region";
 
 /**
- * 갤러리 탭 파생 로직 (MSG-122 AC 1~4).
+ * 갤러리 뷰 파생 로직 (MSG-122 AC 1·2·4).
  * 순수 함수 — 지도 SDK/플랫폼(window·router)에 의존하지 않는다(RN 재사용 대상).
- * 지역 결정의 우선순위(셀 클릭 > 역지오코딩 > 디폴트)는 A1·A3의 합의를 코드로 옮긴 것이다.
+ * resolveGalleryRegion(AC 3)은 ② 개정으로 제거 — 진입 경로가 셀·행 클릭뿐이라
+ * 역지오코딩·디폴트 지역 폴백이 도달 불가한 죽은 코드였다 (B1·Q6 고아 정리).
  */
 
 /**
@@ -57,13 +57,3 @@ export const districtOfCell = (
   cellId: string,
 ): string | null =>
   cells.find((c) => c.cellId === cellId)?.district ?? null;
-
-/**
- * 갤러리 표시 지역 결정: 셀 클릭 선택 > 역지오코딩 결과 > 디폴트 "중구". [AC 3, A1]
- * 셀 클릭 선택은 gallery-region-store, 역지오코딩은 use-current-region이 소유하고
- * 여기는 해석만 담당한다 (resolveCurrentRegion 패턴).
- */
-export const resolveGalleryRegion = (
-  selected: string | null,
-  lookup: string | null,
-): string => selected ?? lookup ?? DEFAULT_REGION_NAME;

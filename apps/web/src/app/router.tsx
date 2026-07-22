@@ -19,7 +19,7 @@ export const router = createBrowserRouter([
           { path: ROUTES.home, element: <MapHomePage /> },
           { path: ROUTES.explore, element: <ExplorePanel /> },
           { path: ROUTES.upload, element: <SectionPanel title="업로드" /> },
-          // 도감(MSG-121) — 탭은 URL 정본(/dex·/dex/gallery·/dex/badges), 무효 탭은 지도 폴백(AC 2)
+          // 도감(MSG-121·122) — 탭은 URL 정본(/dex·/dex/badges), 무효 탭("gallery" 포함)은 지도 폴백(AC 2·21)
           { path: `${ROUTES.dex}/:tab?`, element: <DexPanel /> },
           { path: ROUTES.profile, element: <SectionPanel title="프로필" /> },
         ],

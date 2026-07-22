@@ -25,10 +25,10 @@ export interface DexSummary {
 export interface CollectedCell {
   /** 격자 id — entities/cell의 Cell.id와 같은 체계 */
   cellId: string;
-  /** 격자 라벨 (예: "홍대입구 A-14") */
+  /** 격자 라벨 (예: "서면 A-14") */
   label: string;
   /**
-   * 행정구(區) 이름 (예: "마포구") — 갤러리 지역 매핑 키 (MSG-122 AC 1·4).
+   * 행정구(區) 이름 (예: "부산진구") — 갤러리 지역 매핑 키 (MSG-122 AC 1·4).
    * Cell.district와 같은 체계이며 백엔드 제공 가정(mock은 MOCK_CELLS에서 동기화).
    */
   district: string;
@@ -45,10 +45,15 @@ export interface CollectedCell {
  * 한 격자에 영상이 여러 개면 각각 별도 항목이다 (티켓 명시).
  */
 export interface CollectedVideo {
+  /**
+   * 영상 id — 소속 격자 Cell.videos(CellVideo.id)와 같은 체계 (예: "A-14-v1", ② B3).
+   * 썸네일 클릭 시 상세 시트의 활성 영상 매칭 키 (AC 23). 실 API가 Cell.videos에 없는
+   * 영상을 내려주면 시트가 대표 영상(videos[0])으로 강등한다 (R8 — mock 전용 보장)
+   */
   id: string;
   /** 소속 격자 id — CollectedCell.cellId와 같은 체계, 지역 필터 매칭 키 (AC 1) */
   cellId: string;
-  /** 격자 라벨 denormalize (예: "홍대입구 A-14") — 썸네일 대체 텍스트용 (AC 10) */
+  /** 격자 라벨 denormalize (예: "서면 A-14") — 썸네일 대체 텍스트용 (AC 10) */
   cellLabel: string;
   /** 대표 프레임 썸네일 URL — 없으면 placeholder 타일 표시 (CellVideo.thumbnailSrc 관례, R1) */
   thumbnailSrc?: string;

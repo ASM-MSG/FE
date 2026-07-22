@@ -20,7 +20,7 @@ import { DexPanel } from "./DexPanel";
  * QueryClient 캐시에 상태를 주입해 빈 데이터·오류 상태를 재현한다.
  * 오버레이 게시/해제(AC 9·11)·행 클릭→moveTo(AC 16)·X 제거(AC 24·25)의 배선도 스토어/스파이로
  * 확인한다 — 지도 픽셀 렌더는 브라우저 검증의 몫이고 여기서는 wiring만 단정한다.
- * jsdom에는 kakao 전역이 없어 현재 지역은 항상 디폴트 "중구" 경로다(A13 — region-lookup null 폴백).
+ * jsdom에는 kakao 전역이 없어 현재 지역은 항상 디폴트 "부산진구" 경로다(A13 — region-lookup null 폴백).
  */
 
 const moveToSpy = vi.fn();
@@ -38,8 +38,8 @@ const ShellStub = () => (
 );
 
 // 캐시 주입 상태가 마운트 직후 refetch로 덮이지 않도록 자동 재조회를 끈다
-const createClient = () =>
-  new QueryClient({
+const createClient = () => {
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
@@ -49,6 +49,11 @@ const createClient = () =>
       },
     },
   });
+  // DexPanel이 상세 시트용 격자 소스(useCellsQuery)를 항상 구독한다(MSG-122 ② AC 23) —
+  // 빈 배열을 주입해 mock fetch의 비동기 해소(act 경고)를 차단한다. 시트 판정은 gallery-tab.smoke 몫
+  client.setQueryData(["cells"], []);
+  return client;
+};
 
 const renderPanel = (client: QueryClient, path = "/dex") =>
   render(
@@ -73,7 +78,7 @@ const EMPTY_DEX: DexData = {
     badgeCount: 0,
   },
   collectedCells: [],
-  regionExploredPctMap: { 중구: 22 },
+  regionExploredPctMap: { 부산진구: 22 },
 };
 
 /** 수집 2건 주입 데이터 — 오버레이 게시·행 클릭·X 제거 배선 확인용 */
@@ -82,22 +87,22 @@ const DEX_WITH_CELLS: DexData = {
   collectedCells: [
     {
       cellId: "A-14",
-      label: "홍대입구 A-14",
-      district: "마포구",
-      center: { lat: 37.5573, lng: 126.9245 },
+      label: "서면 A-14",
+      district: "부산진구",
+      center: { lat: 35.1573, lng: 129.0586 },
       collectedAt: "2026-07-21T09:00:00.000Z",
       videoCount: 2,
     },
     {
       cellId: "B-07",
-      label: "망원 B-07",
-      district: "마포구",
-      center: { lat: 37.5556, lng: 126.9016 },
+      label: "부전 B-07",
+      district: "부산진구",
+      center: { lat: 35.1631, lng: 129.0604 },
       collectedAt: "2026-07-20T09:00:00.000Z",
       videoCount: 1,
     },
   ],
-  regionExploredPctMap: { 중구: 22 },
+  regionExploredPctMap: { 부산진구: 22 },
 };
 
 describe("도감 패널 스모크", () => {
@@ -166,19 +171,19 @@ describe("도감 패널 스모크", () => {
     expect(useMapOverlayStore.getState().cells).toEqual([]);
   });
 
-  it("격자 행 클릭 시 해당 격자 중심 좌표로 지도 이동 명령을 보낸다 (AC 16 배선 — MSG-122 AC 19 개정으로 갤러리 전환이 동반된다)", async () => {
+  it("격자 행 클릭 시 해당 격자 중심 좌표로 지도 이동 명령을 보낸다 (AC 16 배선 — MSG-122 ② AC 19 개정으로 갤러리 뷰 전환이 동반된다, URL 무변경)", async () => {
     const client = createClient();
     client.setQueryData(["dex"], DEX_WITH_CELLS);
     renderPanel(client);
 
     // X 제거 버튼("… 목록에서 제거")과 구분 — 이동용 행 버튼은 메타("영상 N개")를 이름에 포함한다
     fireEvent.click(
-      screen.getByRole("button", { name: /홍대입구 A-14.*영상 2개/ }),
+      screen.getByRole("button", { name: /서면 A-14.*영상 2개/ }),
     );
 
-    expect(moveToSpy).toHaveBeenCalledWith({ lat: 37.5573, lng: 126.9245 });
-    // AC 19 동반 전환의 갤러리 쿼리 해소를 기다린다(act 경고 방지) — 전환 자체의 단정은 gallery-tab.smoke 몫
-    expect(await screen.findByText(/^마포구 · 영상 \d+개$/)).toBeTruthy();
+    expect(moveToSpy).toHaveBeenCalledWith({ lat: 35.1573, lng: 129.0586 });
+    // AC 19 동반 전환(갤러리 뷰)의 쿼리 해소를 기다린다(act 경고 방지) — 전환 자체의 단정은 gallery-tab.smoke 몫
+    expect(await screen.findByText(/^부산진구 · 영상 \d+개$/)).toBeTruthy();
   });
 
   it("X 버튼은 행별 접근 가능한 이름을 갖고, 클릭 시 해당 행만 사라지며 지도 이동으로 전파되지 않는다 (AC 24·25, 개정 D4)", () => {
@@ -188,13 +193,13 @@ describe("도감 패널 스모크", () => {
 
     // 행별 접근 가능한 이름 (AC 25)
     const removeButton = screen.getByRole("button", {
-      name: "홍대입구 A-14 목록에서 제거",
+      name: "서면 A-14 목록에서 제거",
     });
     fireEvent.click(removeButton);
 
     // 해당 행만 제거, 다른 행 유지 (AC 24)
-    expect(screen.queryByText("홍대입구 A-14")).toBeNull();
-    expect(screen.getByText("망원 B-07")).toBeTruthy();
+    expect(screen.queryByText("서면 A-14")).toBeNull();
+    expect(screen.getByText("부전 B-07")).toBeTruthy();
     // 행 클릭(지도 이동)으로 전파 금지 (AC 25)
     expect(moveToSpy).not.toHaveBeenCalled();
     // 통계 카드·지도 오버레이 불변 — 수집 취소가 아니다 (AC 24)
@@ -211,10 +216,10 @@ describe("도감 패널 스모크", () => {
     renderPanel(client);
 
     fireEvent.click(
-      screen.getByRole("button", { name: "홍대입구 A-14 목록에서 제거" }),
+      screen.getByRole("button", { name: "서면 A-14 목록에서 제거" }),
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "망원 B-07 목록에서 제거" }),
+      screen.getByRole("button", { name: "부전 B-07 목록에서 제거" }),
     );
 
     expect(screen.queryByText(/아직 수집한 격자가 없어요/)).toBeNull();

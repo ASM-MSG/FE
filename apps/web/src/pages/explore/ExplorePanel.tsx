@@ -14,13 +14,13 @@ import {
 } from "@/features/map-home/model/cell-viewport";
 import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { CellDetailSheet } from "@/widgets/cell-detail/CellDetailSheet";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
-import { CellDetailSheet } from "./ui/CellDetailSheet";
 import { ExploreCellCard } from "./ui/ExploreCellCard";
 import { SortChip } from "./ui/SortChip";
 
 /** 뷰포트→행정구역명 변환은 범위 밖, 고정 목값 표시 */
-const REGION_LABEL = "서울 마포구 격자";
+const REGION_LABEL = "부산 부산진구 격자";
 
 /**
  * 탐색 패널(`/explore`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 오버레이.
@@ -165,7 +165,7 @@ const ExploreBody = ({
           {query.trim()
             ? `'${query.trim()}' 검색 결과`
             : district
-              ? `서울 ${district} 격자`
+              ? `부산 ${district} 격자`
               : REGION_LABEL}
         </span>
         <span className="text-fm-body text-foreground-muted">{cellCount}개</span>

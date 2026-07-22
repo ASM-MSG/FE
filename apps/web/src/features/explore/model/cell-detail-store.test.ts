@@ -14,11 +14,11 @@ const video = (id: string): CellVideo => ({
 const makeCell = (id: string, videos: CellVideo[]): Cell => ({
   id,
   label: `격자 ${id}`,
-  district: "마포구",
-  center: { lat: 37.5, lng: 127 },
+  district: "부산진구",
+  center: { lat: 35.15, lng: 129.06 },
   videoCount: videos.length,
   createdAt: "2026-07-20T00:00:00.000Z",
-  location: `서울 마포구 ${id}`,
+  location: `부산 부산진구 ${id}`,
   recentUploadedAt: "2026-07-20T00:00:00.000Z",
   fillRate: 50,
   viewCount: 1000,
@@ -90,8 +90,8 @@ describe("필터 스토어 변경과 선택 상태의 독립성 (AC 8)", () => {
 
   it("검색어·지역 필터를 변경해도 selectedCellId는 유지된다", () => {
     useCellDetailStore.getState().select(cellA);
-    useExploreFilterStore.getState().applySearch("성수");
-    useExploreFilterStore.getState().selectRegion("강남구");
+    useExploreFilterStore.getState().applySearch("광안리");
+    useExploreFilterStore.getState().selectRegion("해운대구");
     useExploreFilterStore.getState().clearFilters();
     expect(useCellDetailStore.getState().selectedCellId).toBe("A");
   });

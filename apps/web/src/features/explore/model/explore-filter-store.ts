@@ -6,7 +6,7 @@ import * as history from "./recent-history";
  * 최근 검색 mock 시드 (비영속, D3) — 새로고침 시 이 목데이터로 리셋된다.
  * 라벨 부분일치 검색(searchCells)에 걸리는 용어로 두어 클릭 시 결과가 좁혀지는 것을 확인할 수 있다.
  */
-const MOCK_RECENT_SEARCHES = ["성수", "홍대입구", "강남역"];
+const MOCK_RECENT_SEARCHES = ["광안리", "서면", "해운대"];
 
 interface ExploreFilterState {
   /** 커밋된 검색어 — 탐색 패널 카드 그리드 필터 입력 */

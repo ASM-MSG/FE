@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MOCK_CELLS } from "@/entities/cell";
 import { MOCK_COLLECTED_VIDEOS, MOCK_DEX } from "./mock-dex";
 
 /**
@@ -34,16 +35,26 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
     }
   });
 
-  it("마포구 영상 합계가 9를 넘는다 — 프리뷰 제한·전체 보기 시연 가능 (A6)", () => {
-    const mapoCellIds = new Set(
+  it("부산진구 영상 합계가 9를 넘는다 — 프리뷰 제한·전체 보기 시연 가능 (A6)", () => {
+    const busanjinCellIds = new Set(
       MOCK_DEX.collectedCells
-        .filter((c) => c.district === "마포구")
+        .filter((c) => c.district === "부산진구")
         .map((c) => c.cellId),
     );
-    const mapoCount = MOCK_COLLECTED_VIDEOS.filter((v) =>
-      mapoCellIds.has(v.cellId),
+    const busanjinCount = MOCK_COLLECTED_VIDEOS.filter((v) =>
+      busanjinCellIds.has(v.cellId),
     ).length;
-    expect(mapoCount).toBeGreaterThan(9);
+    expect(busanjinCount).toBeGreaterThan(9);
+  });
+
+  it("모든 수집 영상 id가 소속 격자 Cell.videos의 id로 존재한다 — 상세 시트 활성 매칭 정합 (② B3, AC 6 추가)", () => {
+    for (const video of MOCK_COLLECTED_VIDEOS) {
+      const cell = MOCK_CELLS.find((c) => c.id === video.cellId);
+      expect(
+        cell?.videos.some((v) => v.id === video.id),
+        `${video.id}가 ${video.cellId}의 Cell.videos에 존재`,
+      ).toBe(true);
+    }
   });
 
   it("썸네일 제공 항목과 미제공 항목이 모두 존재한다 — placeholder 경로 검증 가능 (A7)", () => {

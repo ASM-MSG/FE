@@ -12,7 +12,7 @@ const isoAgo = (ms: number) => new Date(Date.now() - ms).toISOString();
  * 수집 표본 시드 — 격자 라벨·중심 좌표·행정구(district)는 MOCK_CELLS와 동기화하고,
  * 수집 시각(collectedAt)·수집 영상 수(videoCount)만 여기서 부여한다.
  * videoCount는 격자 전체 영상 수가 아니라 "이 사용자가 그 격자에서 수집한 수"라 별도 값이다.
- * A-14 4·B-08 5는 MSG-122 상향(A6) — 마포구 합계(11)가 프리뷰 9개 제한을 넘겨
+ * A-14 4·B-08 5는 MSG-122 상향(A6) — 부산진구 합계(11)가 프리뷰 9개 제한을 넘겨
  * "갤러리 전체 보기"를 시연할 수 있게 한다 (AC 6·13, R6).
  */
 const COLLECTED_SEEDS: { cellId: string; ago: number; videoCount: number }[] = [
@@ -74,11 +74,14 @@ const VIDEO_GAP = 10 * MINUTE;
  * 격자당 videoCount개 생성, 첫 영상(i=0)의 collectedAt은 격자 collectedAt과 동일
  * ("첫 영상 수집 = 격자 수집", A9 — 갤러리 최신순과 최근 수집 목록 순서가 모순되지 않는다).
  * 격자당 3번째 영상(i=2)은 thumbnailSrc 미제공 — placeholder 타일 경로 검증용 (A7·AC 10).
+ * id는 소속 Cell.videos(CellVideo)의 `-v` 체계와 일치(② B3) — "수집 영상 = 그 격자 영상의
+ * 일부"의 mock 표현으로, 썸네일 클릭 → 상세 시트 활성 매칭 키가 된다. 전 수집 격자에서
+ * videoCount ≤ sampleSize라 항상 매칭 가능하다 (AC 6 불변식, mock-dex.test).
  */
 export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
   MOCK_COLLECTED_CELLS.flatMap((cell) =>
     Array.from({ length: cell.videoCount }, (_, i): CollectedVideo => ({
-      id: `${cell.cellId}-g${i + 1}`,
+      id: `${cell.cellId}-v${i + 1}`,
       cellId: cell.cellId,
       cellLabel: cell.label,
       collectedAt: new Date(
@@ -89,20 +92,20 @@ export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
   );
 
 /**
- * 지역(구)별 탐험률 mock 맵 (개정 D2, A5 개정) — 키는 MOCK_REGIONS(entities/region) 8개 구
- * + 디폴트 지역 "중구"(A13, 서울시청 소재지). 값은 백엔드 소관 가정의 임시 목값.
+ * 지역(구)별 탐험률 mock 맵 (개정 D2, A5 개정) — 키는 MOCK_REGIONS(entities/region) 8개 구.
+ * 디폴트 지역 "부산진구"(A13, 서면 소재지)가 REGIONS에 포함되므로 별도 키가 없다
+ * (서울 시절의 "중구"는 REGIONS 밖이라 9번째 키였다). 값은 백엔드 소관 가정의 임시 목값.
  * 맵에 없는 지역은 조회 측(current-region)이 0%로 처리한다 (AC 21).
  */
 const MOCK_REGION_EXPLORED_PCT: Record<string, number> = {
-  마포구: 52,
-  강남구: 18,
-  성동구: 34,
-  용산구: 27,
-  영등포구: 12,
-  송파구: 8,
-  관악구: 5,
-  종로구: 41,
-  중구: 22,
+  부산진구: 52,
+  해운대구: 18,
+  수영구: 34,
+  남구: 27,
+  연제구: 12,
+  동래구: 8,
+  사상구: 5,
+  동구: 41,
 };
 
 /**

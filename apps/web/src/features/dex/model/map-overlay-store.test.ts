@@ -5,15 +5,15 @@ const OVERLAYS = [
   {
     id: "A-14",
     bounds: {
-      sw: { lat: 37.555, lng: 126.922 },
-      ne: { lat: 37.559, lng: 126.927 },
+      sw: { lat: 35.155, lng: 129.056 },
+      ne: { lat: 35.159, lng: 129.061 },
     },
   },
   {
     id: "B-07",
     bounds: {
-      sw: { lat: 37.553, lng: 126.899 },
-      ne: { lat: 37.558, lng: 126.904 },
+      sw: { lat: 35.161, lng: 129.058 },
+      ne: { lat: 35.166, lng: 129.063 },
     },
   },
 ];

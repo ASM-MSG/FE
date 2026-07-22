@@ -17,20 +17,20 @@ describe("useViewportStore (L5)", () => {
 
   it("setViewport 호출 시 중심(lat/lng)·줌·bounds가 갱신된다", () => {
     useViewportStore.getState().setViewport({
-      center: { lat: 37.5, lng: 127.0 },
+      center: { lat: 35.15, lng: 129.05 },
       zoom: 4,
       bounds: {
-        sw: { lat: 37.4, lng: 126.9 },
-        ne: { lat: 37.6, lng: 127.1 },
+        sw: { lat: 35.1, lng: 129.0 },
+        ne: { lat: 35.2, lng: 129.1 },
       },
     });
 
     const state = useViewportStore.getState();
-    expect(state.center).toEqual({ lat: 37.5, lng: 127.0 });
+    expect(state.center).toEqual({ lat: 35.15, lng: 129.05 });
     expect(state.zoom).toBe(4);
     expect(state.bounds).toEqual({
-      sw: { lat: 37.4, lng: 126.9 },
-      ne: { lat: 37.6, lng: 127.1 },
+      sw: { lat: 35.1, lng: 129.0 },
+      ne: { lat: 35.2, lng: 129.1 },
     });
   });
 });

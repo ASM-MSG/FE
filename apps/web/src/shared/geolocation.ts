@@ -4,13 +4,13 @@ export interface GeoCoords {
   lng: number;
 }
 
-/** 위치 조회 폴백 — 서울 시청 */
-export const SEOUL_CITY_HALL: GeoCoords = { lat: 37.5665, lng: 126.978 };
+/** 위치 조회 폴백 — 서면 */
+export const SEOMYEON_CENTER: GeoCoords = { lat: 35.1579, lng: 129.0594 };
 
 /**
  * 현재 위치 조회 어댑터. [L6]
  * `navigator.geolocation`은 이 파일 안에서만 참조한다(RN 경계 — RN에서는 구현만 교체).
- * 권한 거부·조회 실패·API 미지원 시 서울 시청 좌표로 폴백한다.
+ * 권한 거부·조회 실패·API 미지원 시 서면 중심 좌표로 폴백한다.
  */
 export const getCurrentPosition = (): Promise<GeoCoords> =>
   new Promise((resolve) => {
@@ -18,7 +18,7 @@ export const getCurrentPosition = (): Promise<GeoCoords> =>
       typeof navigator !== "undefined" ? navigator.geolocation : undefined;
 
     if (!geolocation) {
-      resolve(SEOUL_CITY_HALL);
+      resolve(SEOMYEON_CENTER);
       return;
     }
 
@@ -28,6 +28,6 @@ export const getCurrentPosition = (): Promise<GeoCoords> =>
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         }),
-      () => resolve(SEOUL_CITY_HALL),
+      () => resolve(SEOMYEON_CENTER),
     );
   });

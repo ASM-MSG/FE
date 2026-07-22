@@ -9,7 +9,7 @@ export interface RegionLookupCoords {
  * `kakao.maps.services`(Geocoder.coord2RegionCode) 참조는 이 파일 안에서만 한다
  * (RN 경계 — geolocation.ts의 navigator 선례와 동일 패턴, RN에서는 구현만 교체).
  * SDK 미로드·services 미포함·조회 실패·예외 등 어떤 경우에도 크래시 없이 null로 폴백한다(R7) —
- * null 해석(디폴트 "중구")은 호출 측(current-region)의 몫.
+ * null 해석(디폴트 "부산진구")은 호출 측(current-region)의 몫.
  */
 export const lookupRegionName = (
   coords: RegionLookupCoords,
@@ -32,7 +32,7 @@ export const lookupRegionName = (
             resolve(null);
             return;
           }
-          // 행정동(H) 우선 — 구 이름은 region_2depth_name (예: "중구")
+          // 행정동(H) 우선 — 구 이름은 region_2depth_name (예: "부산진구")
           const region =
             result.find((r) => r.region_type === "H") ?? result[0];
           resolve(region?.region_2depth_name || null);

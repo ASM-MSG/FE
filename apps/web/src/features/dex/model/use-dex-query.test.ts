@@ -20,8 +20,8 @@ describe("dex query (AC 19)", () => {
       collectedCellCount: expect.any(Number),
       badgeCount: expect.any(Number),
     });
-    // 개정 D2 — 지역별 탐험률 맵 (디폴트 지역 "중구" 키 포함, A13)
-    expect(data.regionExploredPctMap["중구"]).toEqual(expect.any(Number));
+    // 개정 D2 — 지역별 탐험률 맵 (디폴트 지역 "부산진구" 키 포함, A13)
+    expect(data.regionExploredPctMap["부산진구"]).toEqual(expect.any(Number));
     expect(data.collectedCells.length).toBeGreaterThan(0);
     for (const cell of data.collectedCells) {
       expect(cell).toMatchObject({

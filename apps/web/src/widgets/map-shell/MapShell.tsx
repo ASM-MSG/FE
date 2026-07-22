@@ -6,7 +6,7 @@ import { useUploadModalStore } from "@/features/upload/model/upload-modal-store"
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
 import { MapControls } from "@/pages/map-home/ui/MapControls";
-import { SEOUL_CITY_HALL, getCurrentPosition } from "@/shared/geolocation";
+import { SEOMYEON_CENTER, getCurrentPosition } from "@/shared/geolocation";
 import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
 import { useSidebarStore } from "./sidebar-store";
 import type { MapShellContext } from "./use-map-shell";
@@ -25,9 +25,9 @@ export const MapShell = () => {
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
   const mapRef = useRef<MapCanvasHandle>(null);
-  const [initialCenter, setInitialCenter] = useState<LatLng>(SEOUL_CITY_HALL);
+  const [initialCenter, setInitialCenter] = useState<LatLng>(SEOMYEON_CENTER);
 
-  // 진입 시 현재 위치로 초기 중심 설정 (권한 거부/실패 시 서울 시청 폴백)
+  // 진입 시 현재 위치로 초기 중심 설정 (권한 거부/실패 시 서면 폴백)
   useEffect(() => {
     let active = true;
     getCurrentPosition().then((coords) => {

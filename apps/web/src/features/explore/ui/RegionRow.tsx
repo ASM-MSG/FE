@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 
 interface RegionRowProps {
-  /** 구 이름 (예: "마포구") */
+  /** 구 이름 (예: "부산진구") */
   name: string;
   /** 격자 수 (목값) */
   count: number;

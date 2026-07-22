@@ -17,8 +17,8 @@ export const AllStates: Story = {
   render: () => (
     <div className="flex w-80 flex-col gap-md bg-surface p-md">
       <Input placeholder="내용을 입력하세요" />
-      <Input defaultValue="동작구 상도동" />
-      <Input defaultValue="동작구 상도동" error />
+      <Input defaultValue="부산진구 부전동" />
+      <Input defaultValue="부산진구 부전동" error />
       <Input placeholder="내용을 입력하세요" disabled />
     </div>
   ),

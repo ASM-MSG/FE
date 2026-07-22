@@ -11,7 +11,7 @@ const VIDEO_TITLES = [
   "거리 야경 감성 스팟",
   "숨은 골목 카페 투어",
   "주말 플리마켓 현장",
-  "노을 지는 한강뷰",
+  "노을 지는 광안대교뷰",
   "비 오는 날 우산 씬",
 ];
 const VIDEO_DURATIONS = [42, 96, 27, 184, 63];
@@ -45,28 +45,28 @@ interface CellSeed {
 }
 
 const SEEDS: CellSeed[] = [
-  { id: "A-14", label: "홍대입구 A-14", district: "마포구", center: { lat: 37.5573, lng: 126.9245 }, videoCount: 138, createdAt: "2026-07-10T09:00:00.000Z", durationSec: 24, location: "서울 마포구 홍대입구", recentAgo: 5 * MINUTE, fillRate: 73, viewCount: 1400, sampleSize: 5 },
-  { id: "A-15", label: "합정 A-15", district: "마포구", center: { lat: 37.5495, lng: 126.9137 }, videoCount: 72, createdAt: "2026-06-28T09:00:00.000Z", durationSec: 84, location: "서울 마포구 합정", recentAgo: 2 * HOUR, fillRate: 61, viewCount: 8600, sampleSize: 4 },
-  { id: "B-07", label: "망원 B-07", district: "마포구", center: { lat: 37.5556, lng: 126.9016 }, videoCount: 54, createdAt: "2026-07-05T09:00:00.000Z", location: "서울 마포구 망원", recentAgo: 9 * HOUR, fillRate: 48, viewCount: 5200, sampleSize: 4 },
-  { id: "B-08", label: "연남 B-08", district: "마포구", center: { lat: 37.5631, lng: 126.9256 }, videoCount: 91, createdAt: "2026-07-14T09:00:00.000Z", durationSec: 132, location: "서울 마포구 연남", recentAgo: 40 * MINUTE, fillRate: 67, viewCount: 12000, sampleSize: 5 },
-  { id: "C-02", label: "성수 C-02", district: "성동구", center: { lat: 37.5446, lng: 127.0559 }, videoCount: 205, createdAt: "2026-07-01T09:00:00.000Z", durationSec: 605, location: "서울 성동구 성수", recentAgo: 12 * MINUTE, fillRate: 88, viewCount: 24000, sampleSize: 5 },
-  { id: "C-03", label: "건대입구 C-03", district: "성동구", center: { lat: 37.5402, lng: 127.0702 }, videoCount: 47, createdAt: "2026-06-20T09:00:00.000Z", durationSec: 47, location: "서울 성동구 건대입구", recentAgo: 1 * DAY, fillRate: 39, viewCount: 3100, sampleSize: 3 },
-  { id: "D-01", label: "이태원 D-01", district: "용산구", center: { lat: 37.5346, lng: 126.9946 }, videoCount: 119, createdAt: "2026-07-12T09:00:00.000Z", durationSec: 210, location: "서울 용산구 이태원", recentAgo: 33 * MINUTE, fillRate: 71, viewCount: 15400, sampleSize: 5 },
-  { id: "D-02", label: "한남 D-02", district: "용산구", center: { lat: 37.5344, lng: 127.0016 }, videoCount: 33, createdAt: "2026-06-15T09:00:00.000Z", location: "서울 용산구 한남", recentAgo: 3 * DAY, fillRate: 34, viewCount: 2200, sampleSize: 3 },
-  { id: "E-05", label: "강남역 E-05", district: "강남구", center: { lat: 37.4979, lng: 127.0276 }, videoCount: 176, createdAt: "2026-07-08T09:00:00.000Z", durationSec: 366, location: "서울 강남구 강남역", recentAgo: 8 * MINUTE, fillRate: 82, viewCount: 31000, sampleSize: 5 },
-  { id: "E-06", label: "역삼 E-06", district: "강남구", center: { lat: 37.5006, lng: 127.0364 }, videoCount: 88, createdAt: "2026-06-30T09:00:00.000Z", durationSec: 59, location: "서울 강남구 역삼", recentAgo: 4 * HOUR, fillRate: 59, viewCount: 7400, sampleSize: 4 },
-  { id: "F-09", label: "잠실 F-09", district: "송파구", center: { lat: 37.5133, lng: 127.1 }, videoCount: 64, createdAt: "2026-07-11T09:00:00.000Z", durationSec: 148, location: "서울 송파구 잠실", recentAgo: 55 * MINUTE, fillRate: 52, viewCount: 6100, sampleSize: 4 },
-  { id: "F-10", label: "송파 F-10", district: "송파구", center: { lat: 37.5145, lng: 127.106 }, videoCount: 21, createdAt: "2026-06-25T09:00:00.000Z", location: "서울 송파구 송파", recentAgo: 5 * DAY, fillRate: 27, viewCount: 1100, sampleSize: 2 },
-  { id: "G-03", label: "종로 G-03", district: "종로구", center: { lat: 37.5729, lng: 126.9793 }, videoCount: 97, createdAt: "2026-07-13T09:00:00.000Z", durationSec: 302, location: "서울 종로구 종로", recentAgo: 18 * MINUTE, fillRate: 64, viewCount: 9800, sampleSize: 5 },
-  { id: "G-04", label: "광화문 G-04", district: "종로구", center: { lat: 37.5716, lng: 126.9769 }, videoCount: 142, createdAt: "2026-07-03T09:00:00.000Z", durationSec: 75, location: "서울 종로구 광화문", recentAgo: 2 * HOUR, fillRate: 76, viewCount: 18700, sampleSize: 5 },
-  { id: "H-11", label: "여의도 H-11", district: "영등포구", center: { lat: 37.5219, lng: 126.9245 }, videoCount: 58, createdAt: "2026-07-06T09:00:00.000Z", durationSec: 41, location: "서울 영등포구 여의도", recentAgo: 6 * HOUR, fillRate: 45, viewCount: 4600, sampleSize: 4 },
-  { id: "H-12", label: "노량진 H-12", district: "영등포구", center: { lat: 37.5136, lng: 126.9425 }, videoCount: 12, createdAt: "2026-06-18T09:00:00.000Z", location: "서울 영등포구 노량진", recentAgo: 4 * DAY, fillRate: 19, viewCount: 640, sampleSize: 2 },
+  { id: "A-14", label: "서면 A-14", district: "부산진구", center: { lat: 35.1573, lng: 129.0586 }, videoCount: 138, createdAt: "2026-07-10T09:00:00.000Z", durationSec: 24, location: "부산 부산진구 서면", recentAgo: 5 * MINUTE, fillRate: 73, viewCount: 1400, sampleSize: 5 },
+  { id: "A-15", label: "전포 A-15", district: "부산진구", center: { lat: 35.1552, lng: 129.0633 }, videoCount: 72, createdAt: "2026-06-28T09:00:00.000Z", durationSec: 84, location: "부산 부산진구 전포", recentAgo: 2 * HOUR, fillRate: 61, viewCount: 8600, sampleSize: 4 },
+  { id: "B-07", label: "부전 B-07", district: "부산진구", center: { lat: 35.1631, lng: 129.0604 }, videoCount: 54, createdAt: "2026-07-05T09:00:00.000Z", location: "부산 부산진구 부전", recentAgo: 9 * HOUR, fillRate: 48, viewCount: 5200, sampleSize: 4 },
+  { id: "B-08", label: "양정 B-08", district: "부산진구", center: { lat: 35.1699, lng: 129.0708 }, videoCount: 91, createdAt: "2026-07-14T09:00:00.000Z", durationSec: 132, location: "부산 부산진구 양정", recentAgo: 40 * MINUTE, fillRate: 67, viewCount: 12000, sampleSize: 5 },
+  { id: "C-02", label: "광안리 C-02", district: "수영구", center: { lat: 35.1532, lng: 129.1187 }, videoCount: 205, createdAt: "2026-07-01T09:00:00.000Z", durationSec: 605, location: "부산 수영구 광안리", recentAgo: 12 * MINUTE, fillRate: 88, viewCount: 24000, sampleSize: 5 },
+  { id: "C-03", label: "민락 C-03", district: "수영구", center: { lat: 35.1571, lng: 129.1214 }, videoCount: 47, createdAt: "2026-06-20T09:00:00.000Z", durationSec: 47, location: "부산 수영구 민락", recentAgo: 1 * DAY, fillRate: 39, viewCount: 3100, sampleSize: 3 },
+  { id: "D-01", label: "대연 D-01", district: "남구", center: { lat: 35.1365, lng: 129.1005 }, videoCount: 119, createdAt: "2026-07-12T09:00:00.000Z", durationSec: 210, location: "부산 남구 대연", recentAgo: 33 * MINUTE, fillRate: 71, viewCount: 15400, sampleSize: 5 },
+  { id: "D-02", label: "용호 D-02", district: "남구", center: { lat: 35.1153, lng: 129.1123 }, videoCount: 33, createdAt: "2026-06-15T09:00:00.000Z", location: "부산 남구 용호", recentAgo: 3 * DAY, fillRate: 34, viewCount: 2200, sampleSize: 3 },
+  { id: "E-05", label: "해운대 E-05", district: "해운대구", center: { lat: 35.1587, lng: 129.1604 }, videoCount: 176, createdAt: "2026-07-08T09:00:00.000Z", durationSec: 366, location: "부산 해운대구 해운대", recentAgo: 8 * MINUTE, fillRate: 82, viewCount: 31000, sampleSize: 5 },
+  { id: "E-06", label: "센텀 E-06", district: "해운대구", center: { lat: 35.1691, lng: 129.1312 }, videoCount: 88, createdAt: "2026-06-30T09:00:00.000Z", durationSec: 59, location: "부산 해운대구 센텀", recentAgo: 4 * HOUR, fillRate: 59, viewCount: 7400, sampleSize: 4 },
+  { id: "F-09", label: "온천장 F-09", district: "동래구", center: { lat: 35.2211, lng: 129.0866 }, videoCount: 64, createdAt: "2026-07-11T09:00:00.000Z", durationSec: 148, location: "부산 동래구 온천장", recentAgo: 55 * MINUTE, fillRate: 52, viewCount: 6100, sampleSize: 4 },
+  { id: "F-10", label: "명륜 F-10", district: "동래구", center: { lat: 35.213, lng: 129.0834 }, videoCount: 21, createdAt: "2026-06-25T09:00:00.000Z", location: "부산 동래구 명륜", recentAgo: 5 * DAY, fillRate: 27, viewCount: 1100, sampleSize: 2 },
+  { id: "G-03", label: "초량 G-03", district: "동구", center: { lat: 35.1177, lng: 129.0394 }, videoCount: 97, createdAt: "2026-07-13T09:00:00.000Z", durationSec: 302, location: "부산 동구 초량", recentAgo: 18 * MINUTE, fillRate: 64, viewCount: 9800, sampleSize: 5 },
+  { id: "G-04", label: "범일 G-04", district: "동구", center: { lat: 35.1368, lng: 129.0562 }, videoCount: 142, createdAt: "2026-07-03T09:00:00.000Z", durationSec: 75, location: "부산 동구 범일", recentAgo: 2 * HOUR, fillRate: 76, viewCount: 18700, sampleSize: 5 },
+  { id: "H-11", label: "연산 H-11", district: "연제구", center: { lat: 35.1799, lng: 129.0796 }, videoCount: 58, createdAt: "2026-07-06T09:00:00.000Z", durationSec: 41, location: "부산 연제구 연산", recentAgo: 6 * HOUR, fillRate: 45, viewCount: 4600, sampleSize: 4 },
+  { id: "H-12", label: "거제 H-12", district: "연제구", center: { lat: 35.1907, lng: 129.0745 }, videoCount: 12, createdAt: "2026-06-18T09:00:00.000Z", location: "부산 연제구 거제", recentAgo: 4 * DAY, fillRate: 19, viewCount: 640, sampleSize: 2 },
   // videoCount === 0 격자 — 상세 선택 no-op·카드 비활성(AC 2·3) 검증용
-  { id: "I-01", label: "상암 I-01", district: "마포구", center: { lat: 37.5796, lng: 126.8895 }, videoCount: 0, createdAt: "2026-07-02T09:00:00.000Z", location: "서울 마포구 상암", recentAgo: 7 * DAY, fillRate: 0, viewCount: 0, sampleSize: 0 },
+  { id: "I-01", label: "범천 I-01", district: "부산진구", center: { lat: 35.1461, lng: 129.0592 }, videoCount: 0, createdAt: "2026-07-02T09:00:00.000Z", location: "부산 부산진구 범천", recentAgo: 7 * DAY, fillRate: 0, viewCount: 0, sampleSize: 0 },
 ];
 
 /**
- * 서울 일대 mock 격자 데이터.
+ * 부산 일대 mock 격자 데이터.
  * 실 API 연동 전까지 뷰포트 매칭·요약 집계·상세 시트(MSG-115) 시연을 위한 임시 소스.
  * 라벨은 "지역명 + 코드" 형식(Figma 13399-1208 확인), 영상 수는 편차를 두어 배치.
  * createdAt은 "최신순"(D3), durationSec은 카드 길이 배지(S5) 시연용 —

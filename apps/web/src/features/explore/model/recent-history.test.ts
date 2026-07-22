@@ -9,18 +9,18 @@ import {
 
 describe("addRecentSearch (AC 11)", () => {
   it("검색어를 최근 검색 목록 맨 앞에 추가한다", () => {
-    expect(addRecentSearch(["성수", "강남"], "홍대")).toEqual([
-      "홍대",
-      "성수",
-      "강남",
+    expect(addRecentSearch(["광안리", "해운대"], "서면")).toEqual([
+      "서면",
+      "광안리",
+      "해운대",
     ]);
   });
 
   it("이미 존재하는 검색어는 중복 없이 맨 앞(최신)으로 이동시킨다", () => {
-    expect(addRecentSearch(["성수", "강남", "홍대"], "강남")).toEqual([
-      "강남",
-      "성수",
-      "홍대",
+    expect(addRecentSearch(["광안리", "해운대", "서면"], "해운대")).toEqual([
+      "해운대",
+      "광안리",
+      "서면",
     ]);
   });
 
@@ -33,11 +33,11 @@ describe("addRecentSearch (AC 11)", () => {
   });
 
   it("앞뒤 공백을 제거해 추가한다", () => {
-    expect(addRecentSearch([], "  성수  ")).toEqual(["성수"]);
+    expect(addRecentSearch([], "  광안리  ")).toEqual(["광안리"]);
   });
 
   it("빈/공백 검색어는 무시하고 목록을 그대로 반환한다", () => {
-    const list = ["성수"];
+    const list = ["광안리"];
     expect(addRecentSearch(list, "")).toEqual(list);
     expect(addRecentSearch(list, "   ")).toEqual(list);
   });
@@ -45,16 +45,16 @@ describe("addRecentSearch (AC 11)", () => {
 
 describe("removeRecentSearch (AC 12)", () => {
   it("지정한 항목만 제거하고 나머지 항목의 상대 순서는 보존한다", () => {
-    expect(removeRecentSearch(["홍대", "성수", "강남"], "성수")).toEqual([
-      "홍대",
-      "강남",
+    expect(removeRecentSearch(["서면", "광안리", "해운대"], "광안리")).toEqual([
+      "서면",
+      "해운대",
     ]);
   });
 
   it("존재하지 않는 항목 제거 시 목록을 그대로 반환한다", () => {
-    expect(removeRecentSearch(["홍대", "성수"], "없음")).toEqual([
-      "홍대",
-      "성수",
+    expect(removeRecentSearch(["서면", "광안리"], "없음")).toEqual([
+      "서면",
+      "광안리",
     ]);
   });
 });
@@ -71,6 +71,6 @@ describe("isHistoryEmpty 빈 상태 판정 (AC 14)", () => {
   });
 
   it("항목이 하나라도 있으면 false를 반환한다", () => {
-    expect(isHistoryEmpty(["성수"])).toBe(false);
+    expect(isHistoryEmpty(["광안리"])).toBe(false);
   });
 });

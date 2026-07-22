@@ -9,18 +9,21 @@ import { useGalleryQuery } from "@/features/dex/model/use-gallery-query";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 
 interface GalleryTabBodyProps {
-  /** 표시 지역 — 셀 클릭 선택 > 현재 지역 > 디폴트로 해석 완료된 값 (resolveGalleryRegion) */
+  /** 표시 지역 — 수집 셀·최근 수집 행 클릭으로 선택된 지역 (gallery-region-store, ② B1) */
   region: string;
+  /** 썸네일 클릭 — 격자 상세 시트 열기 배선은 부모(DexPanel) 몫 (AC 23) */
+  onVideoClick: (video: CollectedVideo) => void;
 }
 
 /**
- * "지역별 갤러리" 탭 본문 (MSG-122 AC 7~13·15·16) — 제목 + 선택 지역명 보조 표시(A8) +
- * 최신 수집순 3열 썸네일 그리드. 기본 프리뷰 9개, ">9개"일 때만 "갤러리 전체 보기"를 표시하고(A4)
- * 클릭 시 인라인 확장 + 버튼 제거(티켓 명시), 확장 목록은 패널 안에서 스크롤된다 (AC 15).
- * 확장 상태는 로컬 state — 부모(DexPanel)가 key={region}으로 리마운트해 지역 변경 시
- * 프리뷰로 복귀한다 (A5). 빈/스켈레톤/오류 상태는 기존 도감 관례(DexErrorState 톤) 준용.
+ * "지역별 갤러리" 뷰 본문 (MSG-122 AC 7~13·15·16, ② — 탭이 아니라 지도 탭 내부 뷰) —
+ * 제목 + 선택 지역명 보조 표시(A8) + 최신 수집순 3열 썸네일 그리드. 기본 프리뷰 9개,
+ * ">9개"일 때만 "갤러리 전체 보기"를 표시하고(A4) 클릭 시 인라인 확장 + 버튼 제거(티켓 명시),
+ * 확장 목록은 패널 안에서 스크롤된다 (AC 15). 확장 상태는 로컬 state — 부모(DexPanel)가
+ * key={region}으로 리마운트해 지역 변경 시 프리뷰로 복귀한다 (A5).
+ * 빈 상태는 ② 개정으로 UI 도달 불가지만 방어 분기로 존치한다 (AC 8, Q5).
  */
-export const GalleryTabBody = ({ region }: GalleryTabBodyProps) => {
+export const GalleryTabBody = ({ region, onVideoClick }: GalleryTabBodyProps) => {
   const { data, isError, refetch } = useGalleryQuery(region);
   const [expanded, setExpanded] = useState(false);
 
@@ -47,6 +50,7 @@ export const GalleryTabBody = ({ region }: GalleryTabBodyProps) => {
           videos={data}
           expanded={expanded}
           onExpand={() => setExpanded(true)}
+          onVideoClick={onVideoClick}
         />
       )}
     </div>
@@ -58,10 +62,16 @@ interface GalleryGridProps {
   videos: CollectedVideo[];
   expanded: boolean;
   onExpand: () => void;
+  onVideoClick: (video: CollectedVideo) => void;
 }
 
 /** 3열 썸네일 그리드 + 전체 보기 버튼 (AC 13·15·16) — 그리드만 스크롤 영역이다 */
-const GalleryGrid = ({ videos, expanded, onExpand }: GalleryGridProps) => {
+const GalleryGrid = ({
+  videos,
+  expanded,
+  onExpand,
+  onVideoClick,
+}: GalleryGridProps) => {
   const preview = deriveGalleryPreview(videos);
   const shown = expanded ? videos : preview.videos;
 
@@ -70,7 +80,7 @@ const GalleryGrid = ({ videos, expanded, onExpand }: GalleryGridProps) => {
       <ul className="grid min-h-0 grid-cols-3 content-start gap-xs overflow-y-auto scrollbar-gutter-stable">
         {shown.map((video) => (
           <li key={video.id}>
-            <GalleryThumbnail video={video} />
+            <GalleryThumbnail video={video} onClick={onVideoClick} />
           </li>
         ))}
       </ul>

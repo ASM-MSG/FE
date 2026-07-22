@@ -18,8 +18,8 @@ export const Playground: Story = {
   render: (args) => (
     <div className="w-97.5 bg-surface pt-xl">
       <BottomSheet {...args}>
-        <VideoRow title="홍대 거리 야경 감성" meta="조회 214 · 어제" />
-        <VideoRow title="성수동 카페거리 브이로그" meta="조회 87 · 2일 전" />
+        <VideoRow title="서면 거리 야경 감성" meta="조회 214 · 어제" />
+        <VideoRow title="전포 카페거리 브이로그" meta="조회 87 · 2일 전" />
       </BottomSheet>
     </div>
   ),
@@ -31,7 +31,7 @@ export const Docked: Story = {
   render: (args) => (
     <div className="w-97.5 bg-surface p-md">
       <BottomSheet {...args} className="rounded-lg">
-        <VideoRow title="홍대 거리 야경 감성" meta="조회 214 · 어제" />
+        <VideoRow title="서면 거리 야경 감성" meta="조회 214 · 어제" />
       </BottomSheet>
     </div>
   ),

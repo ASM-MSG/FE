@@ -1,5 +1,5 @@
 interface RegionProgressProps {
-  /** 현재 지역명 (예: "마포구") — 백엔드 제공 표시값 (추정 A5) */
+  /** 현재 지역명 (예: "부산진구") — 백엔드 제공 표시값 (추정 A5) */
   regionName: string;
   /** 탐험률(%) — 0~100 클램프 완료 값 (AC 7) */
   pct: number;
