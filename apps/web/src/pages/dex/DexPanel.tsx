@@ -41,11 +41,11 @@ export const DexPanel = () => {
 
   const view = useMemo(() => (data ? deriveDexView(data) : null), [data]);
 
-  // 현재 지역 — 진입 시 1회 측위 + 역지오코딩(A10), null이면 디폴트 "중구"(A13) (AC 6·21·22)
+  // 현재 지역 — 진입 시 1회 측위 + 역지오코딩(A10). 조회 전·실패는 디폴트 "중구"(A13)로
+  // 해석되므로 항상 존재한다 — 로딩 게이트는 view(쿼리)만 본다 (AC 6·21·22)
   const regionLookup = useCurrentRegionName();
   const region = useMemo(
-    () =>
-      view ? resolveCurrentRegion(regionLookup, view.regionExploredPctMap) : null,
+    () => resolveCurrentRegion(regionLookup, view?.regionExploredPctMap ?? {}),
     [regionLookup, view],
   );
 
@@ -71,7 +71,7 @@ export const DexPanel = () => {
       <h1 className="sr-only">도감</h1>
       {isError ? (
         <DexErrorState onRetry={() => refetch()} />
-      ) : isLoading || !view || !region ? (
+      ) : isLoading || !view ? (
         <p className="p-md text-fm-body text-foreground-muted">
           도감을 불러오는 중이에요…
         </p>
