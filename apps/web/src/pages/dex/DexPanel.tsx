@@ -5,12 +5,7 @@ import { ROUTES } from "@/app/routes";
 import type { CollectedCell, CollectedVideo } from "@/entities/dex";
 import { resolveCurrentRegion } from "@/features/dex/model/current-region";
 import { deriveDexView, excludeRemoved } from "@/features/dex/model/dex-summary";
-import {
-  DEX_TAB_LABELS,
-  dexTabPath,
-  parseDexTab,
-  type DexTab,
-} from "@/features/dex/model/dex-tab";
+import { dexTabPath, parseDexTab } from "@/features/dex/model/dex-tab";
 import { districtOfCell } from "@/features/dex/model/gallery";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
 import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
@@ -21,6 +16,7 @@ import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
 import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { CellDetailSheet } from "@/widgets/cell-detail/CellDetailSheet";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
+import { BadgeTabBody } from "./ui/BadgeTabBody";
 import { DexProfileHeader } from "./ui/DexProfileHeader";
 import { DexStatCards } from "./ui/DexStatCards";
 import { DexTabs } from "./ui/DexTabs";
@@ -32,8 +28,9 @@ import { RegionProgress } from "./ui/RegionProgress";
  * 개인 도감 패널 (MSG-121 + MSG-122 ② 개정, Figma node 13399:1575·1654는 개정 전 디자인 —
  * 2탭·갤러리 뷰·썸네일 상세는 티켓 명시 사용자 결정으로 Figma 3탭 정본과 다르다) —
  * 지속 셸(MapShell) 지도 위 388px 좌측 오버레이.
- * 라우트 `/dex/:tab?`로 열리며 탭은 지도·뱃지 2개(URL 정본, AC 20): /dex→지도, /dex/badges→자리
- * 탭(MSG-123). 갤러리는 탭이 아니라 지도 탭 내부 뷰다(② B1) — gallery-region-store의
+ * 라우트 `/dex/:tab?`로 열리며 탭은 지도·뱃지 2개(URL 정본, AC 20): /dex→지도, /dex/badges→뱃지
+ * 진열장(MSG-123 — 로딩·오류 게이트가 탭 분기 상류라 뱃지 탭도 공유한다, AC 11).
+ * 갤러리는 탭이 아니라 지도 탭 내부 뷰다(② B1) — gallery-region-store의
  * selectedRegion(null=최근 수집 목록, 문자열=그 지역 갤러리)으로 분기하고, 수집 셀·최근 수집 행
  * 클릭으로만 진입하며 지도 탭 클릭이 복귀다 (AC 14·19·22).
  * 썸네일 클릭은 탐색과 공유하는 격자 상세 시트(widgets/cell-detail, Q7)를 우측 flex-1 컬럼에
@@ -222,7 +219,7 @@ export const DexPanel = () => {
                 />
               )
             ) : (
-              <PlaceholderTabBody tab={tab} />
+              <BadgeTabBody badges={view.badges} />
             )}
           </>
         )}
@@ -286,14 +283,5 @@ const RecentCellList = ({
         ))}
       </ul>
     )}
-  </div>
-);
-
-/** 뱃지 자리 콘텐츠 — MSG-123에서 채움 (② 개정: 갤러리 탭이 사라져 남은 자리 탭은 뱃지뿐) */
-const PlaceholderTabBody = ({ tab }: { tab: Exclude<DexTab, "map"> }) => (
-  <div className="flex flex-1 items-center justify-center p-md">
-    <p className="text-fm-body text-foreground-muted">
-      {DEX_TAB_LABELS[tab]} 탭은 준비 중이에요
-    </p>
   </div>
 );

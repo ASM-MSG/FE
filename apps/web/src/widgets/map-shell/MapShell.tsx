@@ -18,6 +18,9 @@ import type { MapShellContext } from "./use-map-shell";
  */
 export const MapShell = () => {
   const setViewport = useViewportStore((s) => s.setViewport);
+  // 축척 표시값 — MapCanvas가 이동/줌 이벤트마다 setViewport로 밀어 넣는 값을 구독.
+  // bounds는 "지도 준비 전에는 null"(스토어 계약) — 준비 전·로드 실패 폴백에서는 축척을 숨긴다
+  const zoomLevel = useViewportStore((s) => (s.bounds ? s.zoom : null));
   const collapsed = useSidebarStore((s) => s.collapsed);
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   // 수집 오버레이(MSG-121) — 도감 패널이 게시/해제하고 셸은 지도에 중계만 한다. 빈 목록이면 기존 동작 동일(R3)
@@ -77,6 +80,7 @@ export const MapShell = () => {
             onLocate={context.locate}
             onZoomIn={context.zoomIn}
             onZoomOut={context.zoomOut}
+            zoomLevel={zoomLevel}
           />
         </div>
       </div>

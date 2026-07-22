@@ -1,4 +1,4 @@
-import type { CollectedCell, DexData } from "@/entities/dex";
+import type { CollectedCell, DexBadge, DexData } from "@/entities/dex";
 import {
   CELL_SIDE_METERS,
   cellToBounds,
@@ -67,6 +67,8 @@ export interface DexView {
   badgeCount: number;
   /** 지역별 탐험률 맵 패스스루 — 현재 지역 결정(current-region)이 소비 (개정 D2) */
   regionExploredPctMap: Record<string, number>;
+  /** 뱃지 카탈로그 패스스루 — 뱃지 탭 진열장이 소비, 프리뷰 파생은 deriveBadgePreview (MSG-123) */
+  badges: DexBadge[];
   /** 최근 수집 목록 — 최신순 최대 30 (AC 14 개정 D3). X 제거 제외는 뷰에서 excludeRemoved로 */
   recentCells: CollectedCell[];
   /** 지도 게시용 오버레이 — 격자당 1개, 한 변 500m mock 상수 (AC 9·10). 제거 상태 미반영 (AC 24) */
@@ -82,6 +84,7 @@ export interface DexView {
 export const deriveDexView = ({
   summary,
   collectedCells,
+  badges,
   regionExploredPctMap,
 }: DexData): DexView => ({
   nickname: summary.nickname,
@@ -91,6 +94,7 @@ export const deriveDexView = ({
   collectedCellCount: summary.collectedCellCount,
   badgeCount: summary.badgeCount,
   regionExploredPctMap,
+  badges,
   recentCells: selectRecentCells(collectedCells),
   overlayCells: collectedCells.map((cell) => ({
     id: cell.cellId,

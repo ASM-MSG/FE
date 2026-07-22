@@ -1,5 +1,5 @@
 import { MOCK_CELLS } from "@/entities/cell";
-import type { CollectedCell, CollectedVideo, DexData } from "./dex";
+import type { CollectedCell, CollectedVideo, DexBadge, DexData } from "./dex";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -118,11 +118,35 @@ const MOCK_REGION_EXPLORED_PCT: Record<string, number> = {
 };
 
 /**
+ * 뱃지 카탈로그 mock 12개 (MSG-123 A6) — Figma 이름 6개("서울 정복"→"부산 정복" 치환, AC 12
+ * MVP 부산 서면 규칙) + 신규 6개(부산·서면 테마 — mock 전용, 실 카탈로그 확정 시 교체).
+ * 정의 순서 = 표시 순서(A2 — 획득 여부로 재정렬하지 않음, Figma도 컬러·회색 혼재 배치).
+ * 획득 4개는 앞 8개(프리뷰 범위) 안에 배치해 프리뷰만 봐도 통계 카드 "획득 뱃지"와
+ * 정합이 눈으로 확인된다 (AC 5). 획득 판정은 백엔드 소관(제외 범위) — earned는 고정값.
+ */
+export const MOCK_BADGES: DexBadge[] = [
+  { id: "first-record", name: "첫 기록", earned: true },
+  { id: "first-upload", name: "첫 업로드", earned: true },
+  { id: "explorer", name: "탐험가", earned: true },
+  { id: "busan-conquest", name: "부산 정복", earned: false },
+  { id: "passion-recorder", name: "열정 기록러", earned: true },
+  { id: "streak-30", name: "30일 스트릭", earned: false },
+  { id: "seomyeon-master", name: "서면 마스터", earned: false },
+  { id: "jeonpo-cafe", name: "전포 카페거리", earned: false },
+  { id: "night-collector", name: "야간 수집가", earned: false },
+  { id: "alley-explorer", name: "골목 탐험가", earned: false },
+  { id: "gwangalli-trip", name: "광안리 원정", earned: false },
+  { id: "cells-100", name: "격자 100칸", earned: false },
+];
+
+/**
  * 개인 도감 mock 데이터 (MSG-121, 2026-07-22 개정 반영).
  * Figma의 닉네임·68%·148개·12개·23일 등은 전부 플레이스홀더(티켓 [참고] 명시) —
  * 여기 값이 화면의 유일한 출처다. 실 API 전환 시 use-dex-query의 queryFn 내부만 교체한다.
  * totalExploredPct는 전체 지도 기준 미소값 0.012 (개정 D1, A12 — "전체 지도 0.012% 탐험").
- * collectedCellCount는 수집 목록 길이와 일치시켜 mock의 자기모순을 피한다.
+ * collectedCellCount는 수집 목록 길이와, badgeCount는 카탈로그 earned 수와 일치시켜
+ * mock의 자기모순을 피한다 (MSG-123 AC 5 — badgeCount는 백엔드 표시값 계약 유지, R3:
+ * 파생은 mock 정합 장치일 뿐 프론트 획득 판정 로직이 아니다).
  * 수집 목록은 6건 — 최근 목록 상한 30(개정 D3)은 mock으로 발동하지 않으며 vitest가 판정한다(AC 14).
  */
 export const MOCK_DEX: DexData = {
@@ -131,8 +155,9 @@ export const MOCK_DEX: DexData = {
     totalExploredPct: 0.012,
     streakDays: 12,
     collectedCellCount: MOCK_COLLECTED_CELLS.length,
-    badgeCount: 4,
+    badgeCount: MOCK_BADGES.filter((b) => b.earned).length,
   },
   collectedCells: MOCK_COLLECTED_CELLS,
+  badges: MOCK_BADGES,
   regionExploredPctMap: MOCK_REGION_EXPLORED_PCT,
 };
