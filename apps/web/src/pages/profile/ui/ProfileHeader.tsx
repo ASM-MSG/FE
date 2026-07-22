@@ -30,7 +30,10 @@ export const ProfileHeader = ({
     />
     <div className="flex min-w-0 flex-1 flex-col gap-xxs">
       <p className="truncate text-fm-title text-foreground">{nickname}</p>
-      <p className="truncate text-fm-body text-foreground-muted">
+      <p
+        className="truncate text-fm-body text-foreground-muted"
+        title={`가입일 ${joinedDateLabel} · ${email}`}
+      >
         가입일 {joinedDateLabel} · {email}
       </p>
     </div>

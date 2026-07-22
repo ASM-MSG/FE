@@ -13,4 +13,10 @@ describe("formatJoinedDate (AC 3)", () => {
   it("한 자리 월·일은 제로 패딩한다", () => {
     expect(formatJoinedDate("2026-3-5")).toBe("2026.03.05");
   });
+
+  it("연-월-일 3파트가 아닌 문자열은 변환하지 않고 원본을 반환한다 (실 API 방어)", () => {
+    expect(formatJoinedDate("2026-01")).toBe("2026-01");
+    expect(formatJoinedDate("20260112")).toBe("20260112");
+    expect(formatJoinedDate("")).toBe("");
+  });
 });
