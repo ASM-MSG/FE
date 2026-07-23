@@ -23,6 +23,11 @@ export const palette = {
   "gray-100": "#F5F5F7",
   "surface-soft": "#FAFAFC",
   white: "#FFFFFF",
+  // 카카오 브랜드 고정색 (MSG-46 소셜 로그인) — Figma 변수 미등록, 컨테이너 fill은
+  // node 13686:1508에서 확정(#FEE500, 카카오 브랜드 가이드 표준). 라벨·로고는 kakao/logo(#000000).
+  // 브랜드 규정색이라 시맨틱 매핑 없이 원시 토큰으로만 사용한다.
+  "kakao-yellow": "#FEE500",
+  "kakao-black": "#000000",
 } as const;
 
 /** 시맨틱 토큰 — Figma "FeelMap Color" 컬렉션과 1:1. 컴포넌트에서는 이것을 우선 사용 */

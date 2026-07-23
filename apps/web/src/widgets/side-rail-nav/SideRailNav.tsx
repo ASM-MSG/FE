@@ -2,6 +2,8 @@ import { Compass, Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
 import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
+import { useAuthStore } from "@/features/auth/model/auth-store";
+import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
@@ -25,6 +27,8 @@ export const SideRailNav = () => {
   const toggle = useSidebarStore((s) => s.toggle);
   const clearFilters = useExploreFilterStore((s) => s.clearFilters);
   const openUploadModal = useUploadModalStore((s) => s.openModal);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const openLoginModal = useLoginModalStore((s) => s.openModal);
 
   return (
     <SideRail
@@ -37,6 +41,13 @@ export const SideRailNav = () => {
       activeKey={getActiveNavKey(pathname)}
       onSelect={(key) => {
         if (!isNavKey(key)) return;
+        // 로그아웃 상태의 프로필은 이동 대신 로그인 모달을 연다 (URL 불변) — MSG-46 후속 2 G1.
+        // 활성 탭 토글보다 앞에 둔다 — 로그아웃 직후 /profile에 머문 상태에서
+        // 프로필 재클릭이 접기 토글로 빠지면 데모 흐름이 끊긴다 (후속 1 결정 유지)
+        if (key === "profile" && !isAuthenticated) {
+          openLoginModal();
+          return;
+        }
         // 업로드는 페이지 이동 대신 모달을 연다 (URL 불변) — AC1
         if (key === "upload") {
           openUploadModal();

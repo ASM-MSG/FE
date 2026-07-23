@@ -8,6 +8,7 @@ export { CellBadge } from "./cell-badge";
 export { Dots } from "./dots";
 export { Toast } from "./toast";
 export { ModalCard } from "./modal-card";
+export { DialogShell } from "./dialog-shell";
 export { BottomSheet } from "./bottom-sheet";
 export { AppHeader } from "./app-header";
 export { SearchBar } from "./search-bar";

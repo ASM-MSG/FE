@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/app/layouts/AppLayout";
+import { RequireAuth } from "@/app/RequireAuth";
 import { ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
@@ -9,6 +10,8 @@ import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
 
 export const router = createBrowserRouter([
+  // 로그인은 라우트가 아니라 모달(LoginModal, AppLayout 마운트)이다 — MSG-46 후속 2 G7.
+  // /login 직접 진입은 라우터 기본 폴백(무매칭 에러 화면)을 따른다 (신규 404 페이지 없음)
   {
     element: <AppLayout />,
     children: [
@@ -22,8 +25,16 @@ export const router = createBrowserRouter([
           { path: ROUTES.upload, element: <SectionPanel title="업로드" /> },
           // 도감(MSG-121·122) — 탭은 URL 정본(/dex·/dex/badges), 무효 탭("gallery" 포함)은 지도 폴백(AC 2·21)
           { path: `${ROUTES.dex}/:tab?`, element: <DexPanel /> },
-          // 프로필(MSG-124) — 전고 사이드탭, 전부 mock 렌더 (실동작 없음)
-          { path: ROUTES.profile, element: <ProfilePanel /> },
+          // 프로필(MSG-124) — 전고 사이드탭, 전부 mock 렌더 (실동작 없음).
+          // 로그아웃 상태 직접 진입은 RequireAuth가 홈+로그인 모달로 보낸다 (PR #23 R1)
+          {
+            path: ROUTES.profile,
+            element: (
+              <RequireAuth>
+                <ProfilePanel />
+              </RequireAuth>
+            ),
+          },
         ],
       },
     ],
