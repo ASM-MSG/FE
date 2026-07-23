@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ROUTES, getActiveNavKey, isNavKey } from "./routes";
+import { NAV_ROUTES, ROUTES, getActiveNavKey, isNavKey } from "./routes";
 
 describe("isNavKey", () => {
-  it("ROUTES에 정의된 키는 true를 반환한다", () => {
-    for (const key of Object.keys(ROUTES)) {
+  it("NAV_ROUTES에 정의된 네비 섹션 키는 true를 반환한다", () => {
+    for (const key of Object.keys(NAV_ROUTES)) {
       expect(isNavKey(key)).toBe(true);
     }
   });
@@ -11,6 +11,20 @@ describe("isNavKey", () => {
   it("정의되지 않은 키는 false를 반환한다", () => {
     expect(isNavKey("unknown")).toBe(false);
     expect(isNavKey("")).toBe(false);
+  });
+});
+
+describe("login 라우트 (MSG-46) — 셸 밖 독립 페이지, 네비 섹션 아님", () => {
+  it("라우트 상수에 /login이 추가된다 (AC 9)", () => {
+    expect(ROUTES.login).toBe("/login");
+  });
+
+  it('isNavKey("login")은 false다 — login은 네비 섹션으로 취급하지 않는다 (AC 9)', () => {
+    expect(isNavKey("login")).toBe(false);
+  });
+
+  it('getActiveNavKey("/login")은 undefined다 (AC 9)', () => {
+    expect(getActiveNavKey("/login")).toBeUndefined();
   });
 });
 

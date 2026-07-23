@@ -3,12 +3,15 @@ import { AppLayout } from "@/app/layouts/AppLayout";
 import { ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
+import { LoginPage } from "@/pages/login/LoginPage";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
 import { ProfilePanel } from "@/pages/profile/ProfilePanel";
 import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
 
 export const router = createBrowserRouter([
+  // 로그인(MSG-46) — 미로그인 진입점이라 셸(AppLayout·MapShell) 밖 독립 라우트 (AC 1)
+  { path: ROUTES.login, element: <LoginPage /> },
   {
     element: <AppLayout />,
     children: [
