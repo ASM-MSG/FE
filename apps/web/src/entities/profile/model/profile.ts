@@ -18,4 +18,6 @@ export interface ProfileData {
   };
   /** 앱 버전 표시값 — mock 상수, 실 배포 시 빌드 주입 값으로 교체 (A3) */
   appVersion: string;
+  /** 위치정보 사용 여부 — 프로필 편집 모달 토글 초기값 (MSG-125 A1) */
+  locationEnabled: boolean;
 }

@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@fillmap/ui-web";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
+import { ProfileEditModal } from "@/features/profile/ui/ProfileEditModal";
 import { ActivityCard } from "./ui/ActivityCard";
 import { ProfileHeader } from "./ui/ProfileHeader";
 import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
@@ -11,12 +12,14 @@ import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
  * Figma node 13399:2106은 지도 위 플로팅 카드(400px)지만, 티켓 명시 결정으로
  * 홈·탐색·도감과 동일한 전고 사이드탭(w-97) 패턴을 따른다 — Figma에서는 섹션 구성·콘텐츠만.
  * 구성: 프로필 헤더 → "내 활동" 카드 → "설정" 3행 → "계정" 3행(앱 버전은 정보 행) → [로그아웃].
- * 전부 mock이고 › 행·[편집]·[로그아웃]은 렌더만 — 실동작 없음 (핸들러 미배선, A4·A5).
+ * 전부 mock이고 › 행·[로그아웃]은 렌더만 — 실동작 없음 (핸들러 미배선, A4·A5).
+ * [편집]은 프로필 편집 모달을 연다 (MSG-125 AC 1) — 모달 open 상태는 이 패널이 보유.
  * 본문은 패널 내부 세로 스크롤(AC 11), [로그아웃]은 본문 마지막 항목 + 콘텐츠가 짧으면
  * mt-auto로 패널 하단 정렬 (A6). 로딩/오류 게이트는 use-dex-query 패턴 미러링 (A7).
  */
 export const ProfilePanel = () => {
   const { data, isLoading, isError, refetch } = useProfileQuery();
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
@@ -28,40 +31,50 @@ export const ProfilePanel = () => {
           프로필을 불러오는 중이에요…
         </p>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto p-md scrollbar-gutter-stable">
-          <ProfileHeader
-            nickname={data.nickname}
-            email={data.email}
-            joinedDateLabel={formatJoinedDate(data.joinedAt)}
-          />
-
-          <ProfileSection title="내 활동">
-            <ActivityCard
-              streakDays={data.streakDays}
-              collectionRate={data.collectionRate}
+        <>
+          <div className="flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto p-md scrollbar-gutter-stable">
+            <ProfileHeader
+              nickname={data.nickname}
+              email={data.email}
+              joinedDateLabel={formatJoinedDate(data.joinedAt)}
+              onEdit={() => setEditOpen(true)}
             />
-          </ProfileSection>
 
-          {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 3행 → 약관 → 처리방침 → [로그아웃] (AC 10) */}
-          <ProfileSection title="설정">
-            <SettingRow label="위치정보 동의 관리" />
-            <SettingRow label="알림 설정" />
-            <SettingRow label="신고 관리" />
-          </ProfileSection>
+            <ProfileSection title="내 활동">
+              <ActivityCard
+                streakDays={data.streakDays}
+                collectionRate={data.collectionRate}
+              />
+            </ProfileSection>
 
-          <ProfileSection title="계정">
-            {/* 앱 버전은 정보 행 — 포커스 대상 아님, › 없음 (AC 8). 티켓·Figma 순서상 첫 행이며
-                비포커스라 AC 10 포커스 순회(약관 → 처리방침)에는 관여하지 않는다 */}
-            <SettingInfoRow label="앱 버전" value={data.appVersion} />
-            <SettingRow label="서비스 이용약관" />
-            <SettingRow label="개인정보 처리방침" />
-          </ProfileSection>
+            {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 3행 → 약관 → 처리방침 → [로그아웃] (AC 10) */}
+            <ProfileSection title="설정">
+              <SettingRow label="위치정보 동의 관리" />
+              <SettingRow label="알림 설정" />
+              <SettingRow label="신고 관리" />
+            </ProfileSection>
 
-          {/* [로그아웃] — danger 활성 외관 + 핸들러 미배선(클릭 no-op) (AC 9, A5·A6) */}
-          <div className="mt-auto flex flex-col pt-md">
-            <Button text="로그아웃" variant="danger" className="w-full" />
+            <ProfileSection title="계정">
+              {/* 앱 버전은 정보 행 — 포커스 대상 아님, › 없음 (AC 8). 티켓·Figma 순서상 첫 행이며
+                  비포커스라 AC 10 포커스 순회(약관 → 처리방침)에는 관여하지 않는다 */}
+              <SettingInfoRow label="앱 버전" value={data.appVersion} />
+              <SettingRow label="서비스 이용약관" />
+              <SettingRow label="개인정보 처리방침" />
+            </ProfileSection>
+
+            {/* [로그아웃] — danger 활성 외관 + 핸들러 미배선(클릭 no-op) (AC 9, A5·A6) */}
+            <div className="mt-auto flex flex-col pt-md">
+              <Button text="로그아웃" variant="danger" className="w-full" />
+            </div>
           </div>
-        </div>
+
+          {/* 프로필 편집 모달 (MSG-125) — 포털 렌더라 패널 DOM 밖(전면 스크림)에 뜬다 */}
+          <ProfileEditModal
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            profile={data}
+          />
+        </>
       )}
     </aside>
   );
