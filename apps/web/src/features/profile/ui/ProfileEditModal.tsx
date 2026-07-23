@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { Dialog } from "radix-ui";
 import { Avatar, Chip, Input, ModalCard, Switch } from "@fillmap/ui-web";
-import type { ProfileData } from "@/entities/profile";
+import { avatarFallback, type ProfileData } from "@/entities/profile";
 import { canSaveProfile, locationStatusLabel } from "../model/profile-edit";
 
 interface ProfileEditModalProps {
@@ -63,11 +63,16 @@ export const ProfileEditModal = ({
               <Avatar
                 size="lg"
                 alt={profile.nickname}
-                fallback={profile.nickname.slice(0, 1)}
+                fallback={avatarFallback(profile.nickname)}
                 className="size-22"
               />
+              {/* 순수 프레젠테이셔널 트리거라 토글 시맨틱(aria-pressed)을 제거한다 —
+                  Chip은 aria-pressed={active}를 항상 렌더하지만 {...props}가 뒤에
+                  스프레드되므로 undefined 전달로 속성을 미노출 (PR #22 리뷰 반영,
+                  스모크 테스트로 속성 부재 고정) */}
               <Chip
                 text="변경"
+                aria-pressed={undefined}
                 className="border border-primary bg-transparent text-primary"
               />
             </div>

@@ -25,7 +25,7 @@ describe("locationStatusLabel — 토글 상태 문구 (AC 4)", () => {
     expect(locationStatusLabel(true)).toBe("사용 중");
   });
 
-  it("꺼짐이면 '사용 안 함'을 반환한다 (추정 A2 승인)", () => {
+  it("꺼짐이면 '사용 안 함'을 반환한다 (A2 — 2026-07-23 승인 게이트에서 사용자 확정 카피)", () => {
     expect(locationStatusLabel(false)).toBe("사용 안 함");
   });
 });

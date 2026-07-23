@@ -100,5 +100,42 @@ describe("프로필 패널 스모크", () => {
     const nicknameInput = screen.getByLabelText("닉네임") as HTMLInputElement;
     expect(nicknameInput.value).toBe(MOCK_PROFILE.nickname);
     expect(screen.getByTestId("location").textContent).toBe("/profile");
+
+    // [변경]은 순수 프레젠테이셔널 트리거 — 토글 시맨틱(aria-pressed) 미노출을 고정한다
+    // (PR #22 리뷰 반영 — Chip 내부 스프레드 순서에 기대는 억제라 회귀 방지 필수)
+    expect(
+      screen.getByRole("button", { name: "변경" }).hasAttribute("aria-pressed"),
+    ).toBe(false);
+  });
+
+  it("값 변경(닉네임·토글) 후 [취소] → 재오픈하면 초기값으로 복원된다 (MSG-125 AC 8)", async () => {
+    renderPanel();
+    await screen.findByText(MOCK_PROFILE.nickname);
+
+    // 열고 닉네임·토글을 모두 변경한다 (mock 토글 초기값 true → "사용 중")
+    fireEvent.click(screen.getByRole("button", { name: "편집" }));
+    fireEvent.change(screen.getByLabelText("닉네임"), {
+      target: { value: "바꾼닉네임" },
+    });
+    fireEvent.click(screen.getByRole("switch", { name: "위치정보 사용" }));
+    expect(screen.getByText("사용 안 함")).toBeTruthy();
+
+    // [취소]로 닫힘 — 모달이 사라진다
+    fireEvent.click(screen.getByRole("button", { name: "취소" }));
+    expect(screen.queryAllByRole("dialog", { name: "프로필 편집" })).toEqual(
+      [],
+    );
+
+    // 재오픈 — 닉네임·토글이 초기값으로 복원되어 있다 (변경 미반영)
+    fireEvent.click(screen.getByRole("button", { name: "편집" }));
+    expect((screen.getByLabelText("닉네임") as HTMLInputElement).value).toBe(
+      MOCK_PROFILE.nickname,
+    );
+    expect(
+      screen
+        .getByRole("switch", { name: "위치정보 사용" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(screen.getByText("사용 중")).toBeTruthy();
   });
 });

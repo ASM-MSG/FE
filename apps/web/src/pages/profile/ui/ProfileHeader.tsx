@@ -1,4 +1,5 @@
 import { Avatar, Button } from "@fillmap/ui-web";
+import { avatarFallback } from "@/entities/profile";
 
 interface ProfileHeaderProps {
   nickname: string;
@@ -29,7 +30,7 @@ export const ProfileHeader = ({
       size="lg"
       src={avatarSrc}
       alt={nickname}
-      fallback={nickname.slice(0, 1)}
+      fallback={avatarFallback(nickname)}
     />
     <div className="flex min-w-0 flex-1 flex-col gap-xxs">
       <p className="truncate text-fm-title text-foreground">{nickname}</p>
