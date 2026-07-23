@@ -17,4 +17,6 @@ export const MOCK_PROFILE: ProfileData = {
   streakDays: MOCK_DEX.summary.streakDays,
   collectionRate: { regionLabel: "부산", pct: 34 },
   appVersion: "1.0.0",
+  // 위치정보 사용 켜짐 — Figma 기본 상태 (MSG-125 A1)
+  locationEnabled: true,
 };
