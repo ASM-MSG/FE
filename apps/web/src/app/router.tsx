@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/app/layouts/AppLayout";
+import { RequireAuth } from "@/app/RequireAuth";
 import { ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
@@ -24,8 +25,16 @@ export const router = createBrowserRouter([
           { path: ROUTES.upload, element: <SectionPanel title="업로드" /> },
           // 도감(MSG-121·122) — 탭은 URL 정본(/dex·/dex/badges), 무효 탭("gallery" 포함)은 지도 폴백(AC 2·21)
           { path: `${ROUTES.dex}/:tab?`, element: <DexPanel /> },
-          // 프로필(MSG-124) — 전고 사이드탭, 전부 mock 렌더 (실동작 없음)
-          { path: ROUTES.profile, element: <ProfilePanel /> },
+          // 프로필(MSG-124) — 전고 사이드탭, 전부 mock 렌더 (실동작 없음).
+          // 로그아웃 상태 직접 진입은 RequireAuth가 홈+로그인 모달로 보낸다 (PR #23 R1)
+          {
+            path: ROUTES.profile,
+            element: (
+              <RequireAuth>
+                <ProfilePanel />
+              </RequireAuth>
+            ),
+          },
         ],
       },
     ],

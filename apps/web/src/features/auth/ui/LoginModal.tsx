@@ -1,6 +1,7 @@
 import type { ComponentProps } from "react";
 import { X } from "lucide-react";
 import { Dialog } from "radix-ui";
+import { DialogShell } from "@fillmap/ui-web";
 import { useLoginModalStore } from "../model/login-modal-store";
 import { LoginContent } from "./LoginContent";
 
@@ -19,8 +20,8 @@ const ModalTitle = (props: ComponentProps<"h2">) => (
  * 로그인 모달 (MSG-46 후속 2) — 로그아웃 상태에서 SideRail 프로필 클릭 시 현재 화면 위에
  * 뜬다(G1, URL 불변). /login 페이지는 제거되어 이 모달이 로그인 UI의 유일한 진입이다(G7).
  * 콘텐츠는 Figma 13729:5021 구조 그대로 LoginContent를 단일 소스로 렌더한다(G2).
- * 프레이밍(오버레이·포털·Esc/scrim 닫기·포커스 트랩·✕)은
- * Figma에 정의가 없어 앱 모달 관례(UploadModal·ProfileEditModal의 Radix Dialog)를 따른다(G3).
+ * 프레이밍(오버레이·포털·Esc/scrim 닫기·포커스 트랩)은 공용 DialogShell —
+ * srTitle 없이 가시 타이틀을 Dialog.Title(asChild)로 승격한다 (PR #23 R2).
  * ModalCard 미사용 — 필수 가시 title 행(좌측 정렬 h2)이 페이지와 동일해야 하는 중앙 정렬
  * 콘텐츠 타이틀과 중복·충돌한다. 카드 셸 시각(라운드·surface-elevated·p-7·shadow-modal)은
  * ModalCard와 동일 토큰을 사용한다.
@@ -36,26 +37,23 @@ export const LoginModal = () => {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-navy-900/40" />
-        <Dialog.Content
-          aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-120 -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none"
+    <DialogShell open={open} onOpenChange={handleOpenChange} scrollable>
+      <div className="relative flex w-full flex-col rounded-[20px] bg-surface-elevated p-7 shadow-modal">
+        {/* ✕ absolute 배치는 ModalCard title-row 패턴의 의도적 이탈이다 (PR #23 R3) —
+            이 모달은 헤더 행이 없고 타이틀이 콘텐츠(LoginContent) 소유의 중앙 정렬
+            히어로 구성이라 title-row로 바꾸면 페이지와 공유하던 단일 소스 시각이 깨진다.
+            타이틀("필맵에 로그인")은 카드 폭 대비 충분히 짧아 겹칠 여지가 없고,
+            겹칠 만큼 길어지는 개편이면 그때 title-row(ModalCard) 재검토가 맞다 */}
+        <button
+          type="button"
+          aria-label="닫기"
+          onClick={closeModal}
+          className="absolute right-7 top-7 text-foreground-muted transition-colors hover:text-foreground"
         >
-          <div className="relative flex w-full flex-col rounded-[20px] bg-surface-elevated p-7 shadow-modal">
-            <button
-              type="button"
-              aria-label="닫기"
-              onClick={closeModal}
-              className="absolute right-7 top-7 text-foreground-muted transition-colors hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-            <LoginContent titleAs={ModalTitle} />
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          <X className="size-4" />
+        </button>
+        <LoginContent titleAs={ModalTitle} />
+      </div>
+    </DialogShell>
   );
 };

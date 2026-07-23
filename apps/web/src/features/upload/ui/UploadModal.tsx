@@ -1,7 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { MapPin } from "lucide-react";
-import { Dialog } from "radix-ui";
-import { cn, Input, ModalCard } from "@fillmap/ui-web";
+import { cn, DialogShell, Input, ModalCard } from "@fillmap/ui-web";
 import { MOCK_CELLS } from "@/entities/cell";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import type { SelectionResult } from "@/features/upload/model/highlight-selection";
@@ -71,7 +70,7 @@ const InfoBox = ({
 );
 
 /**
- * 영상 업로드 모달 — Radix Dialog(오버레이·포털·포커스 트랩·Esc·scrim)로 ModalCard를 감싼다.
+ * 영상 업로드 모달 — DialogShell(오버레이·포털·포커스 트랩·Esc·scrim)로 ModalCard를 감싼다.
  * 두 진입점 공통 조상(AppLayout)에 1회 마운트되고 열림 상태는 전역 스토어가 관리한다(Q1·Q2).
  * 제목·선택 파일·스텝은 로컬 state이며 닫힐 때 초기화된다(AC10·S14).
  * 정보 입력 → (하이라이트) → 블러 확인 선형 위저드다 — "다음"은 스텝을 전환하고,
@@ -128,118 +127,114 @@ export const UploadModal = () => {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-navy-900/40" />
-        <Dialog.Content
-          aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-120 -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none"
+    <DialogShell
+      open={open}
+      onOpenChange={handleOpenChange}
+      srTitle="영상 업로드"
+      scrollable
+    >
+      {step === "highlight" && duration !== null ? (
+        <HighlightStep
+          objectUrl={objectUrl}
+          duration={duration}
+          onClose={close}
+          onNext={(result) => {
+            // 선택 결과를 상위에 보관 후 블러 확인(3/4)으로 전환 (MSG-120 S3·S11)
+            setHighlightSelection(result);
+            setStep("blur");
+          }}
+        />
+      ) : step === "blur" && duration !== null ? (
+        <BlurStep
+          objectUrl={objectUrl}
+          duration={duration}
+          onClose={close}
+          // 확인 시 4/4 미리보기로 전환 (MSG-120 S1, MSG-119 콘솔 로그 대체).
+          // BlurStep 시그니처는 유지 — payload는 계속 생성되며 상위에서 미사용(고아 방지).
+          onConfirm={() => setStep("preview")}
+        />
+      ) : step === "preview" && duration !== null ? (
+        <PreviewStep
+          objectUrl={objectUrl}
+          highlightSelection={highlightSelection}
+          locationLabel={PREVIEW_LOCATION_LABEL}
+          onPublish={close}
+          onBack={() => setStep("blur")}
+          onClose={close}
+        />
+      ) : (
+        <ModalCard
+          title="영상 업로드"
+          description={MODAL_SUBTITLE}
+          cancelText="취소"
+          confirmText="다음"
+          confirmDisabled={!canProceed}
+          onCancel={close}
+          onConfirm={goNext}
+          onClose={close}
         >
-          <Dialog.Title className="sr-only">영상 업로드</Dialog.Title>
-          {step === "highlight" && duration !== null ? (
-            <HighlightStep
-              objectUrl={objectUrl}
-              duration={duration}
-              onClose={close}
-              onNext={(result) => {
-                // 선택 결과를 상위에 보관 후 블러 확인(3/4)으로 전환 (MSG-120 S3·S11)
-                setHighlightSelection(result);
-                setStep("blur");
-              }}
-            />
-          ) : step === "blur" && duration !== null ? (
-            <BlurStep
-              objectUrl={objectUrl}
-              duration={duration}
-              onClose={close}
-              // 확인 시 4/4 미리보기로 전환 (MSG-120 S1, MSG-119 콘솔 로그 대체).
-              // BlurStep 시그니처는 유지 — payload는 계속 생성되며 상위에서 미사용(고아 방지).
-              onConfirm={() => setStep("preview")}
-            />
-          ) : step === "preview" && duration !== null ? (
-            <PreviewStep
-              objectUrl={objectUrl}
-              highlightSelection={highlightSelection}
-              locationLabel={PREVIEW_LOCATION_LABEL}
-              onPublish={close}
-              onBack={() => setStep("blur")}
-              onClose={close}
-            />
-          ) : (
-            <ModalCard
-              title="영상 업로드"
-              description={MODAL_SUBTITLE}
-              cancelText="취소"
-              confirmText="다음"
-              confirmDisabled={!canProceed}
-              onCancel={close}
-              onConfirm={goNext}
-              onClose={close}
+          <UploadDropzone
+            selectedName={file?.name ?? null}
+            onSelectFile={handleSelectFile}
+          />
+
+          <div className="flex w-full flex-col gap-xs">
+            <label
+              htmlFor="upload-title"
+              className="text-fm-body-strong text-foreground"
             >
-              <UploadDropzone
-                selectedName={file?.name ?? null}
-                onSelectFile={handleSelectFile}
-              />
+              제목
+            </label>
+            <Input
+              id="upload-title"
+              placeholder="영상 제목을 입력해주세요"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              className="border-border bg-surface-soft"
+            />
+          </div>
 
-            <div className="flex w-full flex-col gap-xs">
-              <label
-                htmlFor="upload-title"
-                className="text-fm-body-strong text-foreground"
-              >
-                제목
-              </label>
-              <Input
-                id="upload-title"
-                placeholder="영상 제목을 입력해주세요"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                className="border-border bg-surface-soft"
-              />
-            </div>
+          <div className="flex w-full items-center gap-xs">
+            <span className="shrink-0 text-fm-body-strong text-foreground">
+              위치 태그
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-sm py-1.75 text-fm-label text-primary">
+              <MapPin className="size-3" />
+              {LOCATION_LABEL}
+            </span>
+            {/* 격자 재선택은 범위 밖 — disabled로 비활성 표시해 클릭 오인 방지 (AC7) */}
+            <button
+              type="button"
+              disabled
+              className="shrink-0 text-fm-label text-foreground-muted disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              변경
+            </button>
+          </div>
 
-            <div className="flex w-full items-center gap-xs">
-              <span className="shrink-0 text-fm-body-strong text-foreground">
-                위치 태그
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-sm py-1.75 text-fm-label text-primary">
-                <MapPin className="size-3" />
-                {LOCATION_LABEL}
-              </span>
-              {/* 격자 재선택은 범위 밖 — disabled로 비활성 표시해 클릭 오인 방지 (AC7) */}
-              <button
-                type="button"
-                disabled
-                className="shrink-0 text-fm-label text-foreground-muted disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                변경
-              </button>
-            </div>
-
-            {/* 하이라이트 진입은 "다음" 버튼이 담당 — 카드는 정적 안내 (S5) */}
-            {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 (S7) */}
-              <InfoBox
-                tone="soft"
-                title="AI 하이라이트 자동 추천"
-                body={
-                  videoLoadError
-                    ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
-                    : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
-                }
-              />
-              <InfoBox
-                tone="soft"
-                title="AI 자동 블러 처리"
-                body="업로드 전 얼굴과 번호판을 자동 감지해 블러 처리합니다"
-              />
-              <InfoBox
-                tone="dark"
-                title="업로드 전 최종 확인"
-                body="AI 처리가 끝나면 미리보기에서 확인한 뒤 지도에 게시돼요"
-              />
-            </ModalCard>
-          )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          {/* 하이라이트 진입은 "다음" 버튼이 담당 — 카드는 정적 안내 (S5) */}
+          {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 (S7) */}
+          <InfoBox
+            tone="soft"
+            title="AI 하이라이트 자동 추천"
+            body={
+              videoLoadError
+                ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
+                : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
+            }
+          />
+          <InfoBox
+            tone="soft"
+            title="AI 자동 블러 처리"
+            body="업로드 전 얼굴과 번호판을 자동 감지해 블러 처리합니다"
+          />
+          <InfoBox
+            tone="dark"
+            title="업로드 전 최종 확인"
+            body="AI 처리가 끝나면 미리보기에서 확인한 뒤 지도에 게시돼요"
+          />
+        </ModalCard>
+      )}
+    </DialogShell>
   );
 };

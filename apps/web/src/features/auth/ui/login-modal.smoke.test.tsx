@@ -1,12 +1,13 @@
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { useAuthStore } from "../model/auth-store";
 import { useLoginModalStore } from "../model/login-modal-store";
 import { LoginModal } from "./LoginModal";
 
 /**
- * 로그인 모달 스모크 (MSG-46 후속 2 G2·G3·G5 — login-page.smoke 관례).
- * 콘텐츠 구성·닫기 계약·카카오 버튼 무동작만 고정한다. 색·간격·카드 형태 등
+ * 로그인 모달 스모크 (MSG-46 후속 2 G2·G3 + 후속 3 P2 — login-page.smoke 관례).
+ * 콘텐츠 구성·닫기 계약·카카오 버튼 목 로그인만 고정한다. 색·간격·카드 형태 등
  * 픽셀 판정은 브라우저 검증의 몫 — 스타일 단정은 넣지 않는다.
  * 모달 열기 진입(SideRail 분기)은 side-rail-nav.test.tsx 몫 (G1).
  */
@@ -73,7 +74,8 @@ describe("로그인 모달 스모크", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("카카오 버튼은 클릭 가능하되 무동작 — 모달이 열린 채 URL 불변 (G5, MSG-46 AC 6 의도 유지)", () => {
+  it("카카오 버튼 클릭 → 목 로그인(상태 true) + 모달 닫힘 — URL 불변 (P2, G5 '무동작' 대체)", () => {
+    useAuthStore.setState({ isAuthenticated: false });
     renderModal();
 
     const button = screen.getByRole("button", { name: "카카오로 계속하기" });
@@ -81,8 +83,10 @@ describe("로그인 모달 스모크", () => {
 
     fireEvent.click(button);
 
-    expect(useLoginModalStore.getState().open).toBe(true);
-    expect(screen.getByRole("dialog", { name: "필맵에 로그인" })).toBeTruthy();
+    // 목 로그인일 뿐 실제 OAuth 아님 — 인가 리다이렉트·토큰 없음 (스펙 오탐 방지)
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(useLoginModalStore.getState().open).toBe(false);
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByTestId("location").textContent).toBe("/");
   });
 });
