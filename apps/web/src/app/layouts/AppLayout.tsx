@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { LoginModal } from "@/features/auth/ui/LoginModal";
 import { UploadModal } from "@/features/upload/ui/UploadModal";
 import { SideRailNav } from "@/widgets/side-rail-nav/SideRailNav";
 
@@ -11,5 +12,7 @@ export const AppLayout = () => (
     </main>
     {/* 두 진입점(사이드레일·지도 FAB) 공통 조상에 1회 마운트 — 열림 상태는 전역 스토어 (Q2) */}
     <UploadModal />
+    {/* 로그아웃 상태 프로필 클릭 진입 — 업로드 모달과 동일 레벨 1회 마운트 (MSG-46 후속 2 G1) */}
+    <LoginModal />
   </div>
 );

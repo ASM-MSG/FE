@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { NAV_ROUTES, ROUTES, getActiveNavKey, isNavKey } from "./routes";
+import { ROUTES, getActiveNavKey, isNavKey } from "./routes";
 
 describe("isNavKey", () => {
-  it("NAV_ROUTES에 정의된 네비 섹션 키는 true를 반환한다", () => {
-    for (const key of Object.keys(NAV_ROUTES)) {
+  it("ROUTES에 정의된 네비 섹션 키는 true를 반환한다", () => {
+    for (const key of Object.keys(ROUTES)) {
       expect(isNavKey(key)).toBe(true);
     }
   });
@@ -14,16 +14,12 @@ describe("isNavKey", () => {
   });
 });
 
-describe("login 라우트 (MSG-46) — 셸 밖 독립 페이지, 네비 섹션 아님", () => {
-  it("라우트 상수에 /login이 추가된다 (AC 9)", () => {
-    expect(ROUTES.login).toBe("/login");
+describe("login 라우트 부재 (MSG-46 후속 2 G7) — 로그인은 모달이 유일한 진입", () => {
+  it("라우트 상수에 login이 없다 — /login 라우트를 다시 만들지 않는다", () => {
+    expect("login" in ROUTES).toBe(false);
   });
 
-  it('isNavKey("login")은 false다 — login은 네비 섹션으로 취급하지 않는다 (AC 9)', () => {
-    expect(isNavKey("login")).toBe(false);
-  });
-
-  it('getActiveNavKey("/login")은 undefined다 (AC 9)', () => {
+  it('getActiveNavKey("/login")은 undefined다 — 미등록 경로라 라우터 기본 폴백을 따른다', () => {
     expect(getActiveNavKey("/login")).toBeUndefined();
   });
 });

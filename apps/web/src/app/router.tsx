@@ -3,15 +3,14 @@ import { AppLayout } from "@/app/layouts/AppLayout";
 import { ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
-import { LoginPage } from "@/pages/login/LoginPage";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
 import { ProfilePanel } from "@/pages/profile/ProfilePanel";
 import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
 
 export const router = createBrowserRouter([
-  // 로그인(MSG-46) — 미로그인 진입점이라 셸(AppLayout·MapShell) 밖 독립 라우트 (AC 1)
-  { path: ROUTES.login, element: <LoginPage /> },
+  // 로그인은 라우트가 아니라 모달(LoginModal, AppLayout 마운트)이다 — MSG-46 후속 2 G7.
+  // /login 직접 진입은 라우터 기본 폴백(무매칭 에러 화면)을 따른다 (신규 404 페이지 없음)
   {
     element: <AppLayout />,
     children: [
