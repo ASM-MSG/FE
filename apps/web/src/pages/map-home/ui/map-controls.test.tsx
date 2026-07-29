@@ -20,13 +20,15 @@ describe("MapControls 축척 바", () => {
     cleanup();
   });
 
-  it("현재 줌 레벨의 축척 거리를 표시한다 (레벨 5 → 250m)", () => {
-    renderControls(5);
+  // MSG-254: 축척 단정값을 네이버 zoom 의미(클수록 확대)로 번역 — 기존 카카오 level 단정과
+  // 케이스 구성은 동일하다 (zoom 15 = 기존 level 5 등가, A1)
+  it("현재 줌의 축척 거리를 표시한다 (zoom 15 → 250m)", () => {
+    renderControls(15);
     expect(screen.getByText("250m")).toBeTruthy();
   });
 
-  it("zoomLevel prop이 바뀌면 축척 표기가 갱신된다 (5 → 4)", () => {
-    const { rerender } = renderControls(5);
+  it("zoomLevel prop이 바뀌면 축척 표기가 갱신된다 (15 → 16 확대)", () => {
+    const { rerender } = renderControls(15);
     expect(screen.getByText("250m")).toBeTruthy();
     rerender(
       <MapControls
@@ -34,7 +36,7 @@ describe("MapControls 축척 바", () => {
         onLocate={noop}
         onZoomIn={noop}
         onZoomOut={noop}
-        zoomLevel={4}
+        zoomLevel={16}
       />,
     );
     expect(screen.getByText("100m")).toBeTruthy();
@@ -42,7 +44,7 @@ describe("MapControls 축척 바", () => {
   });
 
   it("축척은 status 역할로 노출되고 버튼이 아니다", () => {
-    renderControls(8);
+    renderControls(12);
     const badge = screen.getByRole("status");
     expect(badge.getAttribute("aria-label")).toBe("지도 축척 2km");
     // 축척이 버튼으로 렌더되지 않는다 — 인터랙티브 요소는 기존 컨트롤뿐
@@ -76,7 +78,7 @@ describe("MapControls 축척 바", () => {
         onLocate={noop}
         onZoomIn={onZoomIn}
         onZoomOut={onZoomOut}
-        zoomLevel={5}
+        zoomLevel={15}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "확대" }));

@@ -63,7 +63,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 - **라우터 격리**: 훅·스토어가 `react-router`를 직접 import하지 않는다. 네비게이션이 필요한 로직은 콜백을 주입받는다
 - **뷰-레이어 훅 예외**: widgets/pages의 조립 전용 훅(예: `widgets/map-shell/use-map-shell.ts` — Outlet context로 지도 명령을 전달)은 라우터를 import할 수 있다. RN 재사용 대상이 아니므로 파일 상단 JSDoc에 뷰-레이어 훅임을 선언하고, model/스토어 파일과 물리적으로 분리한다
 - 이 중 기계 판별 가능한 부분(model·스토어의 라우터 import, window/document/localStorage 참조)은 eslint(no-restricted-imports/globals)가 강제한다 — 위반 시 lint가 대안을 안내하므로 억지로 우회(eslint-disable)하지 말고 어댑터/콜백 설계로 푼다
-- **지도 격리**: `react-kakao-maps-sdk`는 웹 전용이다. 지도 관련 코드는 지도 컴포넌트 경계 안에만 두고, 지도 상태(중심좌표·줌 등)는 플랫폼 중립 스토어로 분리한다
+- **지도 격리**: 지도 SDK(`react-naver-maps` — MSG-254에서 카카오맵을 대체)는 웹 전용이다. 지도 관련 코드는 지도 컴포넌트 경계(MapCanvas·naver-sdk-loader) 안에만 두고, 지도 상태(중심좌표·줌 등)는 플랫폼 중립 스토어로 분리한다. 줌 값은 네이버 의미 체계(클수록 확대, 6~21)가 정본이다
 - **선제적 패키지 생성 금지**: `ui-native`, `packages/core` 등을 미리 만들지 않는다. 경계만 지키면 분리는 필요해질 때 싸게 할 수 있다
 
 ## ui-web 승격 절차

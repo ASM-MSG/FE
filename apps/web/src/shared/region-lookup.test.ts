@@ -1,25 +1,43 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { lookupRegionName } from "./region-lookup";
 
-type RegionCodeCallback = (
-  result: {
-    region_type: string;
-    region_2depth_name: string;
-  }[],
-  status: string,
+/** reverseGeocode 응답 결과 한 건 — name(admcode/legalcode) + region.area2(구) */
+type ReverseGeocodeResult = {
+  name: string;
+  region: { area2: { name: string } };
+};
+
+type ReverseGeocodeCallback = (
+  status: number,
+  response: { v2: { results: ReverseGeocodeResult[] } },
 ) => void;
 
-/** kakao services 전역 대역 — coord2RegionCode 구현만 주입한다 */
-const stubKakao = (
-  coord2RegionCode: (x: number, y: number, callback: RegionCodeCallback) => void,
+type ReverseGeocodeOptions = {
+  coords: { lat: number; lng: number };
+  orders?: string;
+};
+
+/** naver 전역 대역 — Service.reverseGeocode 구현만 주입한다 (geocoder 서브모듈 등가) */
+const stubNaver = (
+  reverseGeocode: (
+    options: ReverseGeocodeOptions,
+    callback: ReverseGeocodeCallback,
+  ) => void,
 ) => {
-  vi.stubGlobal("kakao", {
+  vi.stubGlobal("naver", {
     maps: {
-      services: {
-        Status: { OK: "OK", ERROR: "ERROR", ZERO_RESULT: "ZERO_RESULT" },
-        Geocoder: class {
-          coord2RegionCode = coord2RegionCode;
-        },
+      // 실 SDK처럼 (lat, lng) 순서 생성자 — 좌표 순서 단정에 쓴다
+      LatLng: class {
+        lat: number;
+        lng: number;
+        constructor(lat: number, lng: number) {
+          this.lat = lat;
+          this.lng = lng;
+        }
+      },
+      Service: {
+        Status: { OK: 200, ERROR: 500 },
+        reverseGeocode,
       },
     },
   });
@@ -29,33 +47,36 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개정 D2)", () => {
-  it("kakao SDK 전역이 없으면 크래시 없이 null을 반환한다 (R7 — 키 미설정·로드 전)", async () => {
-    // jsdom 기본 환경 — kakao 전역 부재
+describe("lookupRegionName — naver 역지오코딩 어댑터 (AC 6·R7 계약 유지)", () => {
+  it("naver SDK 전역이 없으면 크래시 없이 null을 반환한다 (키 미설정·로드 전)", async () => {
+    // jsdom 기본 환경 — naver 전역 부재
     await expect(
       lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 
-  it("services 라이브러리가 없으면(services 미포함 로드) null을 반환한다", async () => {
-    vi.stubGlobal("kakao", { maps: {} });
+  it("geocoder 서브모듈이 없으면(Service 미포함 로드) null을 반환한다", async () => {
+    vi.stubGlobal("naver", { maps: {} });
 
     await expect(
       lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 
-  it("조회 성공 시 행정동(H) 결과의 구 이름(region_2depth_name)을 반환한다", async () => {
-    stubKakao((x, y, callback) => {
-      expect(x).toBe(129.0594); // 카카오 API는 x=경도, y=위도
-      expect(y).toBe(35.1579);
-      callback(
-        [
-          { region_type: "B", region_2depth_name: "부산진구(법정동)" },
-          { region_type: "H", region_2depth_name: "부산진구" },
-        ],
-        "OK",
-      );
+  it("조회 성공 시 admcode(행정동) 결과의 구 이름(region.area2.name)을 반환한다 (A4)", async () => {
+    stubNaver((options, callback) => {
+      // naver LatLng는 (lat, lng) 순서 — 카카오 (x=lng, y=lat)와 반대라 순서를 단정한다
+      expect(options.coords).toMatchObject({ lat: 35.1579, lng: 129.0594 });
+      // 행정동 우선 요청 (A4: admcode 우선)
+      expect(options.orders).toBe("admcode,legalcode");
+      callback(200, {
+        v2: {
+          results: [
+            { name: "legalcode", region: { area2: { name: "부산진구(법정동)" } } },
+            { name: "admcode", region: { area2: { name: "부산진구" } } },
+          ],
+        },
+      });
     });
 
     await expect(
@@ -63,33 +84,37 @@ describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개�
     ).resolves.toBe("부산진구");
   });
 
-  it("행정동(H) 결과가 없으면 첫 결과의 구 이름으로 폴백한다", async () => {
-    stubKakao((_x, _y, callback) => {
-      callback([{ region_type: "B", region_2depth_name: "수영구" }], "OK");
+  it("admcode 결과가 없으면 첫 결과의 구 이름으로 폴백한다 (A4)", async () => {
+    stubNaver((_options, callback) => {
+      callback(200, {
+        v2: {
+          results: [{ name: "legalcode", region: { area2: { name: "수영구" } } }],
+        },
+      });
     });
 
-    await expect(
-      lookupRegionName({ lat: 35.16, lng: 129.06 }),
-    ).resolves.toBe("수영구");
+    await expect(lookupRegionName({ lat: 35.16, lng: 129.06 })).resolves.toBe(
+      "수영구",
+    );
   });
 
   it("조회 실패(status !== OK)·빈 결과면 null을 반환한다", async () => {
-    stubKakao((_x, _y, callback) => callback([], "ERROR"));
+    stubNaver((_options, callback) => callback(500, { v2: { results: [] } }));
     await expect(
       lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
 
-    stubKakao((_x, _y, callback) => callback([], "OK"));
+    stubNaver((_options, callback) => callback(200, { v2: { results: [] } }));
     await expect(
       lookupRegionName({ lat: 35.1579, lng: 129.0594 }),
     ).resolves.toBeNull();
   });
 
-  it("비동기 콜백이 OK인데 비정상 result(배열 아님)를 전달해도 크래시 없이 null을 반환한다 (R7)", async () => {
-    stubKakao((_x, _y, callback) => {
+  it("비동기 콜백이 OK인데 비정상 response(v2/results 없음)를 전달해도 크래시 없이 null을 반환한다 (R7 계약)", async () => {
+    stubNaver((_options, callback) => {
       // 실제 SDK처럼 비동기 호출 — 콜백 본문은 등록부 try/catch 밖(SDK 스택)에서 실행된다
       queueMicrotask(() =>
-        callback(null as unknown as Parameters<RegionCodeCallback>[0], "OK"),
+        callback(200, null as unknown as Parameters<ReverseGeocodeCallback>[1]),
       );
     });
 
@@ -98,8 +123,8 @@ describe("lookupRegionName — kakao 역지오코딩 어댑터 (AC 21·R7, 개�
     ).resolves.toBeNull();
   });
 
-  it("Geocoder 호출이 예외를 던져도 크래시 없이 null을 반환한다 (R7)", async () => {
-    stubKakao(() => {
+  it("reverseGeocode 호출이 예외를 던져도 크래시 없이 null을 반환한다 (R7 계약)", async () => {
+    stubNaver(() => {
       throw new Error("SDK not ready");
     });
 

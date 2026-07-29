@@ -5,41 +5,46 @@ export interface RegionLookupCoords {
 }
 
 /**
- * 좌표 → 행정구(區) 이름 역지오코딩 어댑터 (개정 D2). [AC 21·R7]
- * `kakao.maps.services`(Geocoder.coord2RegionCode) 참조는 이 파일 안에서만 한다
+ * 좌표 → 행정구(區) 이름 역지오코딩 어댑터 (MSG-254 AC 6). [R7 계약 유지]
+ * `naver.maps.Service`(reverseGeocode, geocoder 서브모듈) 참조는 이 파일 안에서만 한다
  * (RN 경계 — geolocation.ts의 navigator 선례와 동일 패턴, RN에서는 구현만 교체).
- * SDK 미로드·services 미포함·조회 실패·예외 등 어떤 경우에도 크래시 없이 null로 폴백한다(R7) —
+ * SDK 미로드·geocoder 서브모듈 미포함·조회 실패·예외 등 어떤 경우에도 크래시 없이 null로 폴백한다 —
  * null 해석(디폴트 "부산진구")은 호출 측(current-region)의 몫.
  */
 export const lookupRegionName = (
   coords: RegionLookupCoords,
 ): Promise<string | null> =>
   new Promise((resolve) => {
-    const services =
-      typeof kakao !== "undefined" ? kakao.maps?.services : undefined;
-    if (!services) {
+    const service =
+      typeof naver !== "undefined" ? naver.maps?.Service : undefined;
+    if (!service) {
       resolve(null);
       return;
     }
 
     try {
-      const geocoder = new services.Geocoder();
-      // 카카오 API는 x=경도(lng), y=위도(lat) 순서
-      geocoder.coord2RegionCode(coords.lng, coords.lat, (result, status) => {
-        // 콜백은 SDK 스택에서 비동기 실행되므로 바깥 try/catch가 닿지 않는다 — 자체 방어 (R7)
-        try {
-          if (status !== services.Status.OK) {
+      service.reverseGeocode(
+        {
+          coords: new naver.maps.LatLng(coords.lat, coords.lng),
+          // 기존 카카오 행정동(H) 우선 방침 승계 — admcode 우선, legalcode 보조 (A4)
+          orders: "admcode,legalcode",
+        },
+        (status, response) => {
+          // 콜백은 SDK 스택에서 비동기 실행되므로 바깥 try/catch가 닿지 않는다 — 자체 방어 (R7)
+          try {
+            if (status !== service.Status.OK) {
+              resolve(null);
+              return;
+            }
+            // 구 이름은 region.area2.name (예: "부산진구") — admcode 결과 우선, 부재 시 첫 결과 (A4)
+            const results = response.v2.results;
+            const item = results.find((r) => r.name === "admcode") ?? results[0];
+            resolve(item?.region.area2.name || null);
+          } catch {
             resolve(null);
-            return;
           }
-          // 행정동(H) 우선 — 구 이름은 region_2depth_name (예: "부산진구")
-          const region =
-            result.find((r) => r.region_type === "H") ?? result[0];
-          resolve(region?.region_2depth_name || null);
-        } catch {
-          resolve(null);
-        }
-      });
+        },
+      );
     } catch {
       // SDK 부분 로드 등 비정상 상태 — 크래시 대신 폴백 (R7)
       resolve(null);
