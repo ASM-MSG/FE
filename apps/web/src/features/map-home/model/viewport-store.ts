@@ -11,7 +11,7 @@ export interface Viewport {
 
 interface ViewportState {
   center: LatLng;
-  /** 카카오맵 level 스케일 */
+  /** 네이버 지도 zoom 스케일 (6~21, 클수록 확대) */
   zoom: number;
   /** 지도 준비 전에는 null */
   bounds: Bounds | null;
@@ -25,7 +25,8 @@ interface ViewportState {
  */
 export const useViewportStore = create<ViewportState>((set) => ({
   center: SEOMYEON_CENTER,
-  zoom: 5,
+  // 기존 카카오 level 5의 체감 등가 (MSG-254 A1: zoom ≈ 20 − level) — MapCanvas DEFAULT_ZOOM과 동일 값
+  zoom: 15,
   bounds: null,
   setViewport: (viewport) => set(viewport),
 }));

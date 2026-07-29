@@ -20,7 +20,7 @@ import { DexPanel } from "./DexPanel";
  * QueryClient 캐시에 상태를 주입해 빈 데이터·오류 상태를 재현한다.
  * 오버레이 게시/해제(AC 9·11)·행 클릭→moveTo(AC 16)·X 제거(AC 24·25)의 배선도 스토어/스파이로
  * 확인한다 — 지도 픽셀 렌더는 브라우저 검증의 몫이고 여기서는 wiring만 단정한다.
- * jsdom에는 kakao 전역이 없어 현재 지역은 항상 디폴트 "부산진구" 경로다(A13 — region-lookup null 폴백).
+ * jsdom에는 naver 전역이 없어 현재 지역은 항상 디폴트 "부산진구" 경로다(A13 — region-lookup null 폴백).
  */
 
 const moveToSpy = vi.fn();
