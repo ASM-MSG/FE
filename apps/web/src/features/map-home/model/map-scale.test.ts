@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { scaleLabelForZoom } from "./map-scale";
+import { MAX_ZOOM, MIN_ZOOM, scaleLabelForZoom } from "./map-scale";
+
+describe("zoom 유효 범위 (A2) — 축척 표·줌 클램핑(MapCanvas)이 공유하는 단일 정의", () => {
+  it("네이버 지도 zoom 범위는 6~21이다", () => {
+    expect(MIN_ZOOM).toBe(6);
+    expect(MAX_ZOOM).toBe(21);
+  });
+});
 
 describe("scaleLabelForZoom", () => {
   it("네이버 zoom별 축척 표기를 반환한다 (AC 5, A3 — 기존 카카오 표 역순 재배치 + 2단 확장)", () => {

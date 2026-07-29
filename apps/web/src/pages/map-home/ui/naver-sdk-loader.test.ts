@@ -13,6 +13,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildNaverMapsScriptUrl,
+  JS_CONTENT_LOADED_TIMEOUT_MS,
   loadNaverMapsScript,
   markNaverMapsPoisoned,
   resetNaverMapsPreflight,
@@ -205,5 +206,110 @@ describe("loadNaverMapsScript — 스크립트 주입·오염 판별·재시도"
     freshMaps.jsContentLoaded = true;
     freshMaps.onJSContentLoaded?.();
     await expect(retry).resolves.toBeUndefined();
+  });
+});
+
+describe("loadNaverMapsScript — jsContentLoaded 타임아웃 (PR #25 리뷰 반영)", () => {
+  // 결함 재현 대상: load는 왔지만 jsContentLoaded도 navermap_authFailure도 영원히 안 오면
+  // promise가 영구 pending → MapCanvas sdkStatus가 "loading"에 갇혀 재시도 없는 무한
+  // aria-busy(조용한 실패)가 된다. 타임아웃 reject로 기존 실패 경로(MapFallback)로 수렴해야 한다.
+  afterEach(() => {
+    resetNaverMapsPreflight();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  const URL = "https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=t";
+
+  it("load 후 jsContentLoaded가 타임아웃까지 오지 않으면 reject한다 — 무한 로딩(조용한 실패) 방지", async () => {
+    vi.useFakeTimers();
+    const promise = loadNaverMapsScript(URL);
+    const [tag] = injectedScripts();
+    stubNaverGlobal({ jsContentLoaded: false });
+    tag.dispatchEvent(new Event("load"));
+
+    // 거부 단정을 타이머 진행 전에 부착한다 — 타임아웃 발화 순간 미처리 거부가 되지 않게
+    const rejection = expect(promise).rejects.toThrow(/jsContentLoaded/);
+    await vi.advanceTimersByTimeAsync(JS_CONTENT_LOADED_TIMEOUT_MS);
+    await rejection;
+
+    // 타임아웃 후 재시도 정합: reset이 잔존 태그를 비우고, 재호출이 새 태그를 주입한다
+    resetNaverMapsPreflight();
+    expect(injectedScripts()).toHaveLength(0);
+    const retry = loadNaverMapsScript(URL);
+    expect(retry).not.toBe(promise);
+    expect(injectedScripts()).toHaveLength(1);
+  });
+
+  it("타임아웃 전에 jsContentLoaded가 발화하면 resolve하고 타이머를 정리한다 — 타이머 누수 없음", async () => {
+    vi.useFakeTimers();
+    const promise = loadNaverMapsScript(URL);
+    const [tag] = injectedScripts();
+    const maps: FakeMaps = { jsContentLoaded: false };
+    stubNaverGlobal(maps);
+    tag.dispatchEvent(new Event("load"));
+
+    maps.jsContentLoaded = true;
+    maps.onJSContentLoaded?.();
+    await expect(promise).resolves.toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("버려진 시도의 스테일 onJSContentLoaded가 늦게 발화해도 새 시도의 타임아웃을 소실시키지 않는다 — 공유 타이머 슬롯 레이스 회귀 방지", async () => {
+    vi.useFakeTimers();
+    // attempt 0: load까지 진행 — 구 maps 객체에 핸들러·타이머가 부착된다
+    const abandoned = loadNaverMapsScript(URL);
+    settledFlag(abandoned); // 호출부(MapCanvas)의 .catch·cancelled 가드에 해당 — 미처리 거부 방지
+    const staleMaps: FakeMaps = { jsContentLoaded: false };
+    stubNaverGlobal(staleMaps);
+    injectedScripts()[0].dispatchEvent(new Event("load"));
+
+    // 폴백 → 재시도: reset 후 attempt 1이 새 스크립트를 로드하고 자기 타이머를 설정한다
+    resetNaverMapsPreflight();
+    const retry = loadNaverMapsScript(URL);
+    const retryFlag = settledFlag(retry);
+    const freshMaps: FakeMaps = { jsContentLoaded: false };
+    stubNaverGlobal(freshMaps);
+    injectedScripts()[0].dispatchEvent(new Event("load"));
+
+    // 레이스: 구 maps 객체의 스테일 핸들러가 새 시도의 타이머 설정 이후에 발화한다.
+    // 공유 슬롯 구현에서는 이 발화가 새 시도의 타이머를 지워 타임아웃이 소실된다
+    staleMaps.jsContentLoaded = true;
+    staleMaps.onJSContentLoaded?.();
+
+    // 새 시도의 jsContentLoaded가 영영 안 와도 타임아웃이 살아 있어 reject해야 한다
+    const rejection = expect(retry).rejects.toThrow(/jsContentLoaded/);
+    await vi.advanceTimersByTimeAsync(JS_CONTENT_LOADED_TIMEOUT_MS);
+    expect(retryFlag.settled).toBe(true);
+    await rejection;
+  });
+
+  it("reset으로 버려진 시도의 유령 타이머가 늦게 발화해도 자기(버려진) promise만 reject하고 새 시도는 영향 없다", async () => {
+    vi.useFakeTimers();
+    // attempt 0: load까지 진행 후 버려진다 — 타이머는 클로저 로컬이라 reset이 지우지 않는다(유령 타이머)
+    const abandoned = loadNaverMapsScript(URL);
+    const abandonedFlag = settledFlag(abandoned); // 호출부의 .catch·cancelled 가드에 해당 — 미처리 거부 없이 소멸
+    stubNaverGlobal({ jsContentLoaded: false });
+    injectedScripts()[0].dispatchEvent(new Event("load"));
+
+    // 두 시도의 타이머 만료 시점을 벌린 뒤 재시도
+    await vi.advanceTimersByTimeAsync(1_000);
+    resetNaverMapsPreflight();
+    const retry = loadNaverMapsScript(URL);
+    const retryFlag = settledFlag(retry);
+    const freshMaps: FakeMaps = { jsContentLoaded: false };
+    stubNaverGlobal(freshMaps);
+    injectedScripts()[0].dispatchEvent(new Event("load"));
+
+    // 유령 타이머(버려진 시도)가 먼저 발화 — 버려진 promise만 reject, 새 시도는 계속 대기
+    await vi.advanceTimersByTimeAsync(JS_CONTENT_LOADED_TIMEOUT_MS - 1_000);
+    expect(abandonedFlag.settled).toBe(true);
+    expect(retryFlag.settled).toBe(false);
+
+    // 새 시도의 핸들러·타이머 정리는 정상 동작 — 유령 발화의 영향 없이 resolve
+    freshMaps.jsContentLoaded = true;
+    freshMaps.onJSContentLoaded?.();
+    await expect(retry).resolves.toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

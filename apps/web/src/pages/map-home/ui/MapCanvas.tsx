@@ -11,6 +11,7 @@ import { Container, NaverMap, NavermapsProvider, Polygon } from "react-naver-map
 import { semantic } from "@fillmap/design-tokens";
 import { Button } from "@fillmap/ui-web";
 import type { Bounds, LatLng } from "@/entities/cell";
+import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
 import type { Viewport } from "@/features/map-home/model/viewport-store";
 import {
   buildNaverMapsScriptUrl,
@@ -62,9 +63,7 @@ const NAVER_SUBMODULES = ["geocoder"];
 
 // 기존 카카오 level 5의 체감 등가 초기 줌 (A1: zoom ≈ 20 − level) — viewport-store 초기값과 동일
 const DEFAULT_ZOOM = 15;
-// 네이버 지도 zoom 유효 범위 (A2) — SDK 내부 클램핑에 기대지 않고 명시한다
-const MIN_ZOOM = 6;
-const MAX_ZOOM = 21;
+// 네이버 지도 zoom 유효 범위(A2)는 map-scale 단일 정의를 공유한다 — SDK 내부 클램핑에 기대지 않고 명시한다
 
 /** 네이버 지도 Map → 플랫폼 중립 Viewport 추출 */
 const toViewport = (map: naver.maps.Map): Viewport => {
@@ -117,6 +116,11 @@ class MapLoadErrorBoundary extends Component<
 
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+
+  componentDidCatch(error: Error) {
+    // 흡수한 예외를 관측 가능하게 남긴다 (PR #25 리뷰 반영) — 폴백 전환 사유의 조용한 유실 방지
+    console.error("[MapCanvas] 지도 SDK 하위 트리 예외를 흡수하고 폴백으로 전환:", error);
   }
 
   render() {

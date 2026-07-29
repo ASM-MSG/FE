@@ -24,8 +24,9 @@ const SCALE_BY_ZOOM = [
   "5m",
 ] as const;
 
-const MIN_ZOOM = 6;
-const MAX_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.length - 1;
+/** 네이버 지도 zoom 유효 범위 (A2) — 축척 표와 줌 클램핑(MapCanvas)이 공유하는 단일 정의 */
+export const MIN_ZOOM = 6;
+export const MAX_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.length - 1;
 
 /**
  * zoom을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.
