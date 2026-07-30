@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import type { LatLng } from "@/entities/cell";
-import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
+import { useMapOverlayStore } from "./map-overlay-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
@@ -23,8 +23,10 @@ export const MapShell = () => {
   const zoomLevel = useViewportStore((s) => (s.bounds ? s.zoom : null));
   const collapsed = useSidebarStore((s) => s.collapsed);
   const openUploadModal = useUploadModalStore((s) => s.openModal);
-  // 수집 오버레이(MSG-121) — 도감 패널이 게시/해제하고 셸은 지도에 중계만 한다. 빈 목록이면 기존 동작 동일(R3)
+  // 셀 오버레이(MSG-121) — 게시자 패널(도감·홈)이 게시/해제하고 셸은 지도에 중계만 한다. 빈 목록이면 기존 동작 동일(R3)
   const overlayCells = useMapOverlayStore((s) => s.cells);
+  // 경로 오버레이(MSG-252 AC 8) — 홈이 경로추천 활성 시에만 게시, null이면 미표시
+  const routeOverlay = useMapOverlayStore((s) => s.route);
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
   const mapRef = useRef<MapCanvasHandle>(null);
@@ -61,6 +63,7 @@ export const MapShell = () => {
           center={initialCenter}
           onViewportChange={setViewport}
           overlayCells={overlayCells}
+          route={routeOverlay ?? undefined}
           onOverlayCellClick={onOverlayCellClick ?? undefined}
         />
       </div>

@@ -8,7 +8,7 @@ import { deriveDexView, excludeRemoved } from "@/features/dex/model/dex-summary"
 import { dexTabPath, parseDexTab } from "@/features/dex/model/dex-tab";
 import { districtOfCell } from "@/features/dex/model/gallery";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
-import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
+import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useCurrentRegionName } from "@/features/dex/model/use-current-region";
 import { useDexQuery } from "@/features/dex/model/use-dex-query";
 import { useRecentRemovalStore } from "@/features/dex/model/recent-removal-store";

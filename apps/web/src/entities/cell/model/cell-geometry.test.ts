@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CELL_SIDE_METERS, METERS_PER_DEGREE_LAT, cellToBounds } from "./cell-overlay";
+import { CELL_SIDE_METERS, METERS_PER_DEGREE_LAT, cellToBounds } from "./cell-geometry";
 
 describe("cellToBounds — 격자 중심+한 변 → 사각 Bounds 변환 (AC 10)", () => {
   const SEOMYEON = { lat: 35.1579, lng: 129.0594 };

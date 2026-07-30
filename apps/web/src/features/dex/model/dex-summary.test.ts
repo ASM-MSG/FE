@@ -5,7 +5,7 @@ import type {
   DexData,
   DexSummary,
 } from "@/entities/dex";
-import { cellToBounds, CELL_SIDE_METERS } from "./cell-overlay";
+import { cellToBounds, CELL_SIDE_METERS } from "@/entities/cell";
 import {
   RECENT_CELLS_LIMIT,
   clampPct,

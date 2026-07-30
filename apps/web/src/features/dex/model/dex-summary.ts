@@ -1,9 +1,9 @@
-import type { CollectedCell, DexBadge, DexData } from "@/entities/dex";
 import {
   CELL_SIDE_METERS,
   cellToBounds,
   type CellOverlay,
-} from "./cell-overlay";
+} from "@/entities/cell";
+import type { CollectedCell, DexBadge, DexData } from "@/entities/dex";
 
 /**
  * 도감 화면 파생 로직 (AC 7·14·17·20·23, 2026-07-22 개정 반영).
