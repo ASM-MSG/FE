@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import { BottomSheet, Button } from "@fillmap/ui-web";
 import type { Cell, LatLng } from "@/entities/cell";
+import { formatDuration } from "@/features/explore/model/explore-cells";
 import {
   filterCellsInBounds,
   summarizeCells,
@@ -16,32 +17,44 @@ interface CellSummaryPanelProps {
   onCellSelect: (center: LatLng) => void;
 }
 
-/** 격자 카드 — 썸네일(재생 아이콘) + 라벨 + "N개 영상", 클릭 시 지도 이동(S7) */
+/**
+ * 격자 카드 — 168:110 비율 썸네일(중앙 재생 아이콘 + 우하단 재생시간 배지) + 라벨 + "N개 영상",
+ * 클릭 시 지도 이동(S7 유지). 회색 썸네일은 placeholder가 정상 — 실제 이미지 연동은 제외 범위
+ * (MSG-253 오탐 방지 1). durationSec이 없는 격자는 배지 미표시 (AC 3).
+ */
 const CellCard = ({
   cell,
   onSelect,
 }: {
   cell: Cell;
   onSelect: (center: LatLng) => void;
-}) => (
-  <button
-    type="button"
-    onClick={() => onSelect(cell.center)}
-    className="flex w-25 shrink-0 flex-col gap-xxs text-left transition-colors active:opacity-80"
-  >
-    <span className="flex h-16 w-full items-center justify-center rounded-sm bg-surface">
-      <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
-        <Play className="size-3 fill-current" />
+}) => {
+  const duration = formatDuration(cell.durationSec);
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(cell.center)}
+      className="flex flex-col gap-xxs text-left transition-colors active:opacity-80"
+    >
+      <span className="relative flex aspect-[168/110] w-full items-center justify-center overflow-hidden rounded-sm bg-surface">
+        <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Play className="size-3 fill-current" />
+        </span>
+        {duration && (
+          <span className="absolute bottom-xs right-xs rounded-xs bg-navy-900/70 px-1.5 py-0.5 text-fm-caption text-foreground-inverse">
+            {duration}
+          </span>
+        )}
       </span>
-    </span>
-    <span className="max-w-full truncate text-fm-body-strong text-foreground">
-      {cell.label}
-    </span>
-    <span className="text-fm-caption text-foreground-muted">
-      {cell.videoCount}개 영상
-    </span>
-  </button>
-);
+      <span className="max-w-full truncate text-fm-body-strong text-foreground">
+        {cell.label}
+      </span>
+      <span className="text-fm-caption text-foreground-muted">
+        {cell.videoCount}개 영상
+      </span>
+    </button>
+  );
+};
 
 /**
  * 지도 위 요약 패널 — 현재 뷰포트 기준 격자·영상 요약과 상위 격자 카드.
@@ -100,7 +113,8 @@ export const CellSummaryPanel = ({
           이 지역에는 아직 격자가 없어요. 지도를 움직여 다른 지역을 둘러보세요.
         </p>
       ) : (
-        <div className="flex gap-xs overflow-x-auto">
+        // 2열 세로 그리드 (AC 1) — 홀수 개면 마지막 행은 왼쪽 1개만 채워진다
+        <div className="grid grid-cols-2 gap-sm">
           {topCells.map((cell) => (
             <CellCard key={cell.id} cell={cell} onSelect={onCellSelect} />
           ))}

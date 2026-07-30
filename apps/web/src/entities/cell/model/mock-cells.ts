@@ -17,6 +17,14 @@ const VIDEO_TITLES = [
 const VIDEO_DURATIONS = [42, 96, 27, 184, 63];
 const VIDEO_VIEWS = [214, 1400, 58, 8900, 320];
 const VIDEO_AGES = [5 * MINUTE, 3 * HOUR, 21 * HOUR, 2 * DAY, 6 * DAY];
+// 업로더 핸들 — 홈 셀 상세의 다른 사용자 카드 메타(MSG-253), 부산 서면 무드
+const VIDEO_HANDLES = [
+  "@minji_b",
+  "@busan.vlog",
+  "@seomyeon_now",
+  "@jeonpo_alley",
+  "@haeundae_walk",
+];
 
 /** 격자당 대표 리스트에 노출할 개별 영상 표본을 만든다 (전체 videoCount와 별개인 최근 표본). */
 const buildVideos = (cellId: string, sampleSize: number): CellVideo[] =>
@@ -26,6 +34,7 @@ const buildVideos = (cellId: string, sampleSize: number): CellVideo[] =>
     viewCount: VIDEO_VIEWS[i % VIDEO_VIEWS.length],
     uploadedAt: isoAgo(VIDEO_AGES[i % VIDEO_AGES.length]),
     durationSec: VIDEO_DURATIONS[i % VIDEO_DURATIONS.length],
+    uploaderHandle: VIDEO_HANDLES[i % VIDEO_HANDLES.length],
   }));
 
 interface CellSeed {

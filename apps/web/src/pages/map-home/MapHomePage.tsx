@@ -68,6 +68,13 @@ export const MapHomePage = () => {
     [activeTheme],
   );
 
+  // "전체 보기" — 브라우즈(전체 조회): 이전 필터를 비우고 탐색으로 이동.
+  // 요약·상세 패널이 동일 동작을 공유한다 (MSG-253 AC 11)
+  const handleViewAll = useCallback(() => {
+    clearFilters();
+    navigate(ROUTES.explore);
+  }, [clearFilters, navigate]);
+
   // 셀 탭 → 상세 오픈/무시 판정 (AC 9·10) — 판정은 순수 함수, 스토어는 상태만
   const handleCellTap = useCallback(
     (cellId: string) => {
@@ -117,16 +124,13 @@ export const MapHomePage = () => {
         {/* 검색은 드롭다운으로 그 자리에서 — 확정 시 탐색 그리드로 이동해 결과 표시 */}
         <SearchBox />
         {detail ? (
-          <HomeCellDetailPanel detail={detail} onClose={closeDetail} />
-        ) : (
-          <CellSummaryPanel
-            onViewAll={() => {
-              // "전체 보기"는 브라우즈(전체 조회) — 이전 필터를 비우고 탐색으로 이동
-              clearFilters();
-              navigate(ROUTES.explore);
-            }}
-            onCellSelect={moveTo}
+          <HomeCellDetailPanel
+            detail={detail}
+            onClose={closeDetail}
+            onViewAll={handleViewAll}
           />
+        ) : (
+          <CellSummaryPanel onViewAll={handleViewAll} onCellSelect={moveTo} />
         )}
       </aside>
       {/* 상단 테마 칩 — 좌측 패널 오른쪽 홈 오버레이 (AC 1, A6) */}

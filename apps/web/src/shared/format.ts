@@ -20,3 +20,9 @@ export const formatRelativeTime = (iso: string, now: Date = new Date()): string 
   if (elapsed < DAY) return `${Math.floor(elapsed / HOUR)}시간 전`;
   return `${Math.floor(elapsed / DAY)}일 전`;
 };
+
+/** ISO 시각을 "M월 D일"로 변환한다 — 앞자리 0 없음 (MSG-253 AC 8, 예: "7월 21일"). */
+export const formatMonthDay = (iso: string): string => {
+  const date = new Date(iso);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+};

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MOCK_CELLS } from "@/entities/cell";
+import { MOCK_CELLS, type Cell, type CellVideo } from "@/entities/cell";
 import { MOCK_COLLECTED_VIDEOS } from "@/entities/dex";
 import {
   canOpenDetail,
@@ -133,7 +133,100 @@ describe("deriveHomeCellDetail — 배지·영상 목록·버튼 파생 (AC 9·1
 
     expect(detail.cellId).toBe("C-02");
     expect(detail.label).toBe(cell.label);
-    expect(detail.location).toBe(cell.location);
-    expect(detail.videoCount).toBe(cell.videoCount);
+  });
+});
+
+// ── 서브타이틀 파생 (MSG-253 AC 6·7) ─────────────────────────────────────────
+// mock 영상의 uploadedAt은 로드 시점 상대값이라 비결정적 — 고정 픽스처 + now 주입으로 단정한다.
+
+const NOW = new Date("2026-07-30T12:00:00.000Z");
+
+const fixtureVideo = (id: string, uploadedAt: string): CellVideo => ({
+  id,
+  title: "표본 영상",
+  viewCount: 10,
+  uploadedAt,
+  durationSec: 60,
+});
+
+const fixtureCell = (videos: CellVideo[]): Cell => ({
+  id: "T-01",
+  label: "서면 T-01",
+  district: "부산진구",
+  center: { lat: 35.1573, lng: 129.0586 },
+  videoCount: videos.length,
+  createdAt: "2026-07-01T00:00:00.000Z",
+  location: "부산 부산진구 서면",
+  recentUploadedAt: "2026-07-30T00:00:00.000Z",
+  fillRate: 50,
+  viewCount: 100,
+  videos,
+});
+
+describe("deriveHomeCellDetail — 서브타이틀 파생 (MSG-253 AC 6·7)", () => {
+  it("비테마(내 점령) 상세: '내 영상 N개 · 마지막 업로드 M월 D일' — 날짜는 내 영상 중 최신 uploadedAt (AC 6)", () => {
+    // 최신(7/21)을 목록 중간에 둔다 — 첫/마지막 원소를 집는 구현을 걸러낸다
+    const cell = fixtureCell([
+      fixtureVideo("T-01-v1", "2026-07-18T12:00:00.000Z"),
+      fixtureVideo("T-01-v2", "2026-07-21T12:00:00.000Z"),
+      fixtureVideo("T-01-v3", "2026-07-19T12:00:00.000Z"),
+    ]);
+    const detail = deriveHomeCellDetail({
+      cell,
+      activeTheme: null,
+      occupied: true,
+      myVideoIds: ["T-01-v1", "T-01-v2", "T-01-v3"],
+      now: NOW,
+    });
+
+    expect(detail.subtitle).toBe("내 영상 3개 · 마지막 업로드 7월 21일");
+  });
+
+  it("내 영상이 0개면 날짜 부분 없이 '내 영상 0개'만 표기한다 (AC 6)", () => {
+    const cell = fixtureCell([
+      fixtureVideo("T-01-v1", "2026-07-18T12:00:00.000Z"),
+    ]);
+    const detail = deriveHomeCellDetail({
+      cell,
+      activeTheme: null,
+      occupied: true,
+      myVideoIds: [],
+      now: NOW,
+    });
+
+    expect(detail.subtitle).toBe("내 영상 0개");
+  });
+
+  it("핫구역 테마 상세: '내 영상 N개 · 최근 24시간 영상 +M개' — M은 셀 영상 중 24시간 내 업로드 수 (AC 7)", () => {
+    // now 기준 -3h·-23h는 24시간 내, -30h는 밖 → +2개
+    const cell = fixtureCell([
+      fixtureVideo("T-01-v1", "2026-07-30T09:00:00.000Z"),
+      fixtureVideo("T-01-v2", "2026-07-29T13:00:00.000Z"),
+      fixtureVideo("T-01-v3", "2026-07-29T06:00:00.000Z"),
+    ]);
+    const detail = deriveHomeCellDetail({
+      cell,
+      activeTheme: "hot",
+      occupied: true,
+      myVideoIds: ["T-01-v1"],
+      now: NOW,
+    });
+
+    expect(detail.subtitle).toBe("내 영상 1개 · 최근 24시간 영상 +2개");
+  });
+
+  it("지역축제·팝업스토어 테마 상세도 같은 24시간 변형을 쓴다 (추정 1 — 테마 공통)", () => {
+    const cell = fixtureCell([
+      fixtureVideo("T-01-v1", "2026-07-30T09:00:00.000Z"),
+      fixtureVideo("T-01-v2", "2026-07-29T06:00:00.000Z"),
+    ]);
+    const base = { cell, occupied: false, myVideoIds: [], now: NOW };
+
+    expect(
+      deriveHomeCellDetail({ ...base, activeTheme: "festival" }).subtitle,
+    ).toBe("내 영상 0개 · 최근 24시간 영상 +1개");
+    expect(
+      deriveHomeCellDetail({ ...base, activeTheme: "popup" }).subtitle,
+    ).toBe("내 영상 0개 · 최근 24시간 영상 +1개");
   });
 });

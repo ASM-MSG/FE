@@ -1,4 +1,5 @@
 import type { Cell, CellVideo } from "@/entities/cell";
+import { formatMonthDay } from "@/shared/format";
 import { THEME_META, type ThemeId } from "./theme";
 
 /**
@@ -43,8 +44,12 @@ export interface HomeCellBadge {
 export interface HomeCellDetail {
   cellId: string;
   label: string;
-  location: string;
-  videoCount: number;
+  /**
+   * 헤더 서브타이틀 (MSG-253 AC 6·7) —
+   * 비테마: "내 영상 N개 · 마지막 업로드 M월 D일" (내 영상 0개면 날짜 부분 생략),
+   * 테마: "내 영상 N개 · 최근 24시간 영상 +M개"
+   */
+  subtitle: string;
   badges: HomeCellBadge[];
   /** 내 영상 — 수집 영상 id와 매칭되는 격자 영상 (AC 9·10) */
   myVideos: CellVideo[];
@@ -62,7 +67,32 @@ interface DeriveHomeCellDetailInput {
   occupied: boolean;
   /** 이 셀에서 내가 수집한 영상 id (myVideoIdsOf 결과) */
   myVideoIds: string[];
+  /** 서브타이틀 "최근 24시간" 판정 기준 시각 — 테스트 결정성용 주입, 기본은 호출 시점 (AC 7) */
+  now?: Date;
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** 서브타이틀 파생 (MSG-253 AC 6·7) — 테마면 24시간 변형, 비테마면 내 영상 최신 업로드 날짜 */
+const deriveSubtitle = (
+  cell: Cell,
+  activeTheme: DetailTheme | null,
+  myVideos: CellVideo[],
+  now: Date,
+): string => {
+  const myPart = `내 영상 ${myVideos.length}개`;
+  if (activeTheme) {
+    const recent24hCount = cell.videos.filter(
+      (v) => now.getTime() - new Date(v.uploadedAt).getTime() < DAY_MS,
+    ).length;
+    return `${myPart} · 최근 24시간 영상 +${recent24hCount}개`;
+  }
+  if (myVideos.length === 0) return myPart;
+  const latest = myVideos.reduce((a, b) =>
+    new Date(a.uploadedAt).getTime() >= new Date(b.uploadedAt).getTime() ? a : b,
+  );
+  return `${myPart} · 마지막 업로드 ${formatMonthDay(latest.uploadedAt)}`;
+};
 
 /**
  * 셀 + 활성 테마 + 점령 여부 → 상세 패널 표시 모델. [AC 9·10, A5·A7]
@@ -75,6 +105,7 @@ export const deriveHomeCellDetail = ({
   activeTheme,
   occupied,
   myVideoIds,
+  now = new Date(),
 }: DeriveHomeCellDetailInput): HomeCellDetail => {
   const badges: HomeCellBadge[] = [
     ...(occupied ? [{ id: "occupied" as const, label: "내 점령" }] : []),
@@ -83,13 +114,14 @@ export const deriveHomeCellDetail = ({
       : []),
   ];
 
+  const myVideos = cell.videos.filter((v) => myVideoIds.includes(v.id));
+
   return {
     cellId: cell.id,
     label: cell.label,
-    location: cell.location,
-    videoCount: cell.videoCount,
+    subtitle: deriveSubtitle(cell, activeTheme, myVideos, now),
     badges,
-    myVideos: cell.videos.filter((v) => myVideoIds.includes(v.id)),
+    myVideos,
     otherVideos: activeTheme
       ? cell.videos.filter((v) => !myVideoIds.includes(v.id))
       : [],
