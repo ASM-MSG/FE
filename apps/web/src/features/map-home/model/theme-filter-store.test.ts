@@ -71,3 +71,30 @@ describe("useThemeFilterStore — 셀 상세 닫힘 연동 (AC 9-1, A3)", () => 
     expect(useHomeCellDetailStore.getState().selectedCellId).toBeNull();
   });
 });
+
+describe("useThemeFilterStore — 홈 이탈 시 초기화 (AC 14)", () => {
+  beforeEach(() => {
+    useThemeFilterStore.setState(useThemeFilterStore.getInitialState(), true);
+    useHomeCellDetailStore.setState(
+      useHomeCellDetailStore.getInitialState(),
+      true,
+    );
+  });
+
+  it("칩 활성 상태에서 reset하면 칩이 해제되어 기본 상태로 돌아간다 — 사이드레일로 다른 섹션에 갔다가 홈에 복귀하면 초기화 (AC 14)", () => {
+    useThemeFilterStore.getState().toggle("hot");
+
+    useThemeFilterStore.getState().reset();
+
+    expect(useThemeFilterStore.getState().activeTheme).toBeNull();
+  });
+
+  it("reset은 열려 있던 셀 상세도 함께 닫는다 — 칩 없이 열린 내 점령 셀 상세(AC 10)도 포함 (AC 14)", () => {
+    useThemeFilterStore.getState().toggle("hot");
+    useHomeCellDetailStore.getState().select("A-14");
+
+    useThemeFilterStore.getState().reset();
+
+    expect(useHomeCellDetailStore.getState().selectedCellId).toBeNull();
+  });
+});

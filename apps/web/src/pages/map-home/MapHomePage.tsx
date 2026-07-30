@@ -42,6 +42,7 @@ export const MapHomePage = () => {
   const clearFilters = useExploreFilterStore((s) => s.clearFilters);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
+  const resetThemeFilter = useThemeFilterStore((s) => s.reset);
   const selectedCellId = useHomeCellDetailStore((s) => s.selectedCellId);
   const selectCell = useHomeCellDetailStore((s) => s.select);
   const closeDetail = useHomeCellDetailStore((s) => s.close);
@@ -92,6 +93,10 @@ export const MapHomePage = () => {
     setOnCellClick,
     clearOverlays,
   ]);
+
+  // 홈 이탈(다른 섹션 라우트로 언마운트) 시 칩·셀 상세 초기화 (AC 14) — 복귀 화면이 기본 상태.
+  // 접힘은 셸이 display:none으로 숨겨 언마운트되지 않으므로 상태가 유지된다 (A6 정합)
+  useEffect(() => resetThemeFilter, [resetThemeFilter]);
 
   // 상세 표시 모델 파생 (AC 9·10) — 열림 판정(canOpenDetail)상 route 활성 중에는 열리지 않는다
   const detail = useMemo(() => {

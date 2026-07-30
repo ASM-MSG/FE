@@ -7,6 +7,8 @@ interface ThemeFilterState {
   activeTheme: ThemeId | null;
   /** 칩 탭 — 같은 테마 재탭이면 해제, 다른 테마면 전환 (AC 4·5) */
   toggle: (theme: ThemeId) => void;
+  /** 홈 이탈 시 기본 상태로 초기화 — 칩 해제 + 열린 셀 상세 닫힘 (AC 14) */
+  reset: () => void;
 }
 
 /**
@@ -20,5 +22,11 @@ export const useThemeFilterStore = create<ThemeFilterState>((set) => ({
   toggle: (theme) => {
     useHomeCellDetailStore.getState().close();
     set((s) => ({ activeTheme: s.activeTheme === theme ? null : theme }));
+  },
+  // 사이드레일로 다른 섹션에 다녀오면 칩·상세가 남지 않도록 홈 언마운트 시 호출된다 (AC 14).
+  // 칩 없이 열린 점령 셀 상세(AC 10)도 함께 닫아 복귀 화면을 기본 상태로 보장한다
+  reset: () => {
+    useHomeCellDetailStore.getState().close();
+    set({ activeTheme: null });
   },
 }));
