@@ -1,0 +1,53 @@
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { HomeCellDetail } from "@/features/map-home/model/home-cell-detail";
+import { HomeCellDetailPanel } from "./HomeCellDetailPanel";
+
+/**
+ * 셀 상세 패널 Escape 배선 스모크 (MSG-252 리뷰 반영 — 2026-07-30).
+ * 패널의 window keydown 리스너가 SearchBox 자체 Escape(드롭다운 닫기)와 충돌해
+ * 검색창 포커스 상태의 Escape가 드롭다운·상세를 동시에 닫던 결함의 재현 테스트 —
+ * 입력 요소가 타깃인 Escape는 무시하고, 일반 타깃의 Escape만 onClose를 호출해야 한다.
+ * SearchBox 자체는 범위 밖이라 패널 단독 렌더로 window 버블링만 단정한다.
+ */
+
+/** 최소 상세 픽스처 — Escape 배선 단정에는 헤더 메타만 있으면 된다 (서면 목 관례) */
+const DETAIL: HomeCellDetail = {
+  cellId: "A-14",
+  label: "서면 A-14",
+  location: "부산진구 부전동",
+  videoCount: 0,
+  badges: [],
+  myVideos: [],
+  otherVideos: [],
+  showMashup: false,
+};
+
+describe("홈 셀 상세 패널 Escape 배선", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("input이 타깃인 Escape는 무시한다 — 검색창 드롭다운 닫기와 동시 닫힘 금지 (리뷰 반영 1)", () => {
+    const onClose = vi.fn();
+    render(
+      <>
+        <input aria-label="검색어" />
+        <HomeCellDetailPanel detail={DETAIL} onClose={onClose} />
+      </>,
+    );
+
+    fireEvent.keyDown(screen.getByLabelText("검색어"), { key: "Escape" });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("일반 타깃(body)의 Escape는 상세를 닫는다 (AC 9-1 보존)", () => {
+    const onClose = vi.fn();
+    render(<HomeCellDetailPanel detail={DETAIL} onClose={onClose} />);
+
+    fireEvent.keyDown(document.body, { key: "Escape" });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});

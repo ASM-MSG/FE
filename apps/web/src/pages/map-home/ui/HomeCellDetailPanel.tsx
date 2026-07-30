@@ -83,6 +83,9 @@ export const HomeCellDetailPanel = ({
   // Escape 닫기 (AC 9-1) — 뷰 레이어라 window 이벤트 직접 배선 (RN 경계는 model에만 적용)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // 입력 요소 타깃은 무시 — SearchBox 자체 Escape(드롭다운 닫기)와 동시 닫힘 방지 (리뷰 반영)
+      const target = event.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);

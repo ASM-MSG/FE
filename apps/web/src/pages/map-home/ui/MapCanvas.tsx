@@ -224,6 +224,7 @@ const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
  * 경로 경유지 번호 마커 HTML (MSG-252 AC 8) — 네이버 Marker HtmlIcon content.
  * 마커 앵커는 좌상단 기준이라 translate로 원 중심을 좌표에 맞춘다 (naver.maps.Point 앵커 불요).
  * 지도 DOM은 같은 document라 tailwind 토큰 클래스가 그대로 적용된다 — 색 임의값 없이 토큰만.
+ * seq는 정적 목 경로(theme.ts) 숫자 전제 — 경로 데이터가 서버/사용자 입력을 포함하게 되면 이스케이프 필요.
  */
 const routeMarkerContent = (seq: number): string =>
   `<div class="flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-theme-route text-fm-body-strong text-primary-foreground shadow-raised">${seq}</div>`;
