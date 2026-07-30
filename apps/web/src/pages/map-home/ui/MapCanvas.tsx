@@ -7,11 +7,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Container, NaverMap, NavermapsProvider, Polygon } from "react-naver-maps";
+import {
+  Container,
+  Marker,
+  NaverMap,
+  NavermapsProvider,
+  Polygon,
+  Polyline,
+} from "react-naver-maps";
 import { semantic } from "@fillmap/design-tokens";
 import { Button } from "@fillmap/ui-web";
 import type { Bounds, LatLng } from "@/entities/cell";
 import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
+import { buildHatchLines } from "@/features/map-home/model/theme-overlay";
 import type { Viewport } from "@/features/map-home/model/viewport-store";
 import {
   buildNaverMapsScriptUrl,
@@ -35,10 +43,24 @@ export interface MapCanvasHandle {
   zoomOut: () => void;
 }
 
-/** 지도에 그릴 사각 오버레이 한 칸 — 순수 데이터(id + Bounds). 좌표→기하 변환은 호출부 몫 */
+/**
+ * 지도에 그릴 사각 오버레이 한 칸 — 순수 데이터(id + Bounds). 좌표→기하 변환은 호출부 몫.
+ * 스타일 필드(MSG-252)는 옵셔널 — 미지정이면 현행 primary 렌더 그대로 (기존 도감 오버레이 불변, AC 13)
+ */
 export interface MapCellOverlay {
   id: string;
   bounds: Bounds;
+  /** 채움·테두리 색 (테마 토큰 hex) — 미지정 시 primary (MSG-252 AC 6) */
+  color?: string;
+  /** 빗금 표시 (테마 셀 ∩ 내 점령 — MSG-252 AC 7, R1: 사선 Polyline 근사) */
+  hatched?: boolean;
+}
+
+/** 지도에 그릴 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (MSG-252 AC 8) */
+export interface MapRouteOverlay {
+  path: LatLng[];
+  waypoints: { seq: number; position: LatLng }[];
+  color: string;
 }
 
 interface MapCanvasProps {
@@ -48,6 +70,8 @@ interface MapCanvasProps {
   onViewportChange: (viewport: Viewport) => void;
   /** 반투명 사각 오버레이 목록 (MSG-121 수집 격자) — 미제공/빈 배열이면 기존 동작과 동일(R3) */
   overlayCells?: MapCellOverlay[];
+  /** 경로 오버레이 (MSG-252 AC 8) — 미제공이면 기존 동작과 동일 */
+  route?: MapRouteOverlay;
   /** 오버레이 셀 클릭 (MSG-122 AC 14·18) — 미제공이면 표시 전용 기존 동작과 동일(R3) */
   onOverlayCellClick?: (cellId: string) => void;
 }
@@ -136,7 +160,7 @@ class MapLoadErrorBoundary extends Component<
  * 키 미설정 시에는 NaverMapView 자체를 마운트하지 않아 빈 키로 SDK 요청이 나가지 않는다.
  */
 export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
-  ({ center, onViewportChange, overlayCells, onOverlayCellClick }, ref) => {
+  ({ center, onViewportChange, overlayCells, route, onOverlayCellClick }, ref) => {
     // 재시도 시 로드 경계·인증 상태를 다시 태우기 위해 하위 뷰를 remount
     const [attempt, setAttempt] = useState(0);
 
@@ -160,6 +184,7 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
         center={center}
         onViewportChange={onViewportChange}
         overlayCells={overlayCells}
+        route={route}
         onOverlayCellClick={onOverlayCellClick}
         onRetry={retry}
       />
@@ -177,8 +202,15 @@ interface NaverMapViewProps extends MapCanvasProps {
 
 // 수집 오버레이 시각 사양 — ui-web GridCell collected(border-primary/60 + bg-primary/40)를
 // 지리 폴리곤으로 차용한다 (스펙 AC 9, 추정 A3 — 균일 투명도). 색은 토큰에서만(hex 리터럴 금지).
+// 테마 강조 셀(MSG-252 AC 6)도 같은 투명도를 쓴다 — "반투명 채움 + 테두리" 사양 공유.
 const OVERLAY_STROKE_OPACITY = 0.6;
 const OVERLAY_FILL_OPACITY = 0.4;
+// 빗금 선(MSG-252 AC 7, R1) — 채움보다 진하게 그려 교집합이 한눈에 구분되게 한다
+const HATCH_STROKE_WEIGHT = 2;
+const HATCH_STROKE_OPACITY = 0.85;
+// 경로 연결선(MSG-252 AC 8) — 이동 동선이라 셀 테두리(1)보다 두껍게
+const ROUTE_STROKE_WEIGHT = 4;
+const ROUTE_STROKE_OPACITY = 0.9;
 
 /** 사각 Bounds → 폴리곤 링(꼭짓점 4개, sw 기준 반시계) — 네이버 Polygon paths는 링 배열을 받는다 */
 const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
@@ -188,6 +220,15 @@ const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
   { lat: ne.lat, lng: sw.lng },
 ];
 
+/**
+ * 경로 경유지 번호 마커 HTML (MSG-252 AC 8) — 네이버 Marker HtmlIcon content.
+ * 마커 앵커는 좌상단 기준이라 translate로 원 중심을 좌표에 맞춘다 (naver.maps.Point 앵커 불요).
+ * 지도 DOM은 같은 document라 tailwind 토큰 클래스가 그대로 적용된다 — 색 임의값 없이 토큰만.
+ * seq는 정적 목 경로(theme.ts) 숫자 전제 — 경로 데이터가 서버/사용자 입력을 포함하게 되면 이스케이프 필요.
+ */
+const routeMarkerContent = (seq: number): string =>
+  `<div class="flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-theme-route text-fm-body-strong text-primary-foreground shadow-raised">${seq}</div>`;
+
 const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
   (
     {
@@ -196,6 +237,7 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       center,
       onViewportChange,
       overlayCells,
+      route,
       onOverlayCellClick,
       onRetry,
     },
@@ -322,9 +364,10 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                     key={cell.id}
                     paths={[boundsToPath(cell.bounds)]}
                     strokeWeight={1}
-                    strokeColor={semantic.primary}
+                    // 스타일 미지정 셀은 현행 primary 그대로 — 도감 오버레이·스모크 불변 (MSG-252 AC 13)
+                    strokeColor={cell.color ?? semantic.primary}
                     strokeOpacity={OVERLAY_STROKE_OPACITY}
-                    fillColor={semantic.primary}
+                    fillColor={cell.color ?? semantic.primary}
                     fillOpacity={OVERLAY_FILL_OPACITY}
                     // 네이버 Polygon은 clickable=false가 기본 — 핸들러가 있을 때만 클릭을 받는다.
                     // 핸들러 미등록이면 onClick도 없음 — 표시 전용 기존 동작 유지 (MSG-122, R3)
@@ -336,6 +379,40 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                     }
                   />
                 ))}
+                {/* 빗금(테마 셀 ∩ 내 점령 — MSG-252 AC 7): 네이버 Polygon은 패턴 채움 미지원이라
+                    사선 Polyline 묶음으로 근사한다 (R1). 클릭은 폴리곤이 받는다(Polyline 기본 비클릭) */}
+                {overlayCells
+                  ?.filter((cell) => cell.hatched)
+                  .map((cell) =>
+                    buildHatchLines(cell.bounds).map((line, i) => (
+                      <Polyline
+                        key={`${cell.id}-hatch-${i}`}
+                        path={line}
+                        strokeWeight={HATCH_STROKE_WEIGHT}
+                        strokeColor={cell.color ?? semantic.primary}
+                        strokeOpacity={HATCH_STROKE_OPACITY}
+                      />
+                    )),
+                  )}
+                {/* 경로추천 오버레이 (MSG-252 AC 8) — 연결선 + 번호 경유지 마커 */}
+                {route && (
+                  <>
+                    <Polyline
+                      path={route.path}
+                      strokeWeight={ROUTE_STROKE_WEIGHT}
+                      strokeColor={route.color}
+                      strokeOpacity={ROUTE_STROKE_OPACITY}
+                    />
+                    {route.waypoints.map((waypoint) => (
+                      <Marker
+                        key={waypoint.seq}
+                        position={waypoint.position}
+                        title={`경유지 ${waypoint.seq}`}
+                        icon={{ content: routeMarkerContent(waypoint.seq) }}
+                      />
+                    ))}
+                  </>
+                )}
               </NaverMap>
             </Container>
           </NavermapsProvider>

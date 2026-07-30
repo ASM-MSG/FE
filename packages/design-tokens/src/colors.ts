@@ -28,6 +28,13 @@ export const palette = {
   // 브랜드 규정색이라 시맨틱 매핑 없이 원시 토큰으로만 사용한다.
   "kakao-yellow": "#FEE500",
   "kakao-black": "#000000",
+  // 지도 홈 테마 필터 색 4종 (MSG-252 A1) — Figma 지도 홈 프레임(13845:6974 계열) 실측값.
+  // 기존 error(#EF4444)·success(#22C55E)와 값이 달라 신규 토큰으로 둔다(근사 사용 금지 — 스펙 R2).
+  // Figma 변수 미등록 상태의 선등록 — SEED v3(ver 7) 전환 시 값만 교체한다.
+  "theme-hot": "#FF3B30",
+  "theme-festival": "#AF52DE",
+  "theme-popup": "#FF9500",
+  "theme-route": "#34C759",
 } as const;
 
 /** 시맨틱 토큰 — Figma "FeelMap Color" 컬렉션과 1:1. 컴포넌트에서는 이것을 우선 사용 */

@@ -66,3 +66,50 @@ describe("useMapOverlayStore — 셀 클릭 핸들러 슬롯 (MSG-122 AC 14·18,
     expect(useMapOverlayStore.getState().onCellClick).toBeNull();
   });
 });
+
+describe("useMapOverlayStore — 스타일드 셀·경로 슬롯 (MSG-252 AC 6·7·8)", () => {
+  const ROUTE = {
+    path: [
+      { lat: 35.1573, lng: 129.0586 },
+      { lat: 35.1552, lng: 129.0633 },
+    ],
+    waypoints: [
+      { seq: 1, position: { lat: 35.1573, lng: 129.0586 } },
+      { seq: 2, position: { lat: 35.1552, lng: 129.0633 } },
+    ],
+    color: "#34C759",
+  };
+
+  beforeEach(() => {
+    useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
+  });
+
+  it("초기 상태는 경로 없음(null)이다 — 기본 상태 지도는 셀 오버레이만 (AC 2)", () => {
+    expect(useMapOverlayStore.getState().route).toBeNull();
+  });
+
+  it("setCells는 스타일 필드(색·빗금)를 그대로 게시한다 — 미지정 셀은 기존 primary 렌더 유지 (AC 6·7)", () => {
+    const styled = [
+      { ...OVERLAYS[0], color: "#FF3B30", hatched: true },
+      OVERLAYS[1],
+    ];
+    useMapOverlayStore.getState().setCells(styled);
+
+    expect(useMapOverlayStore.getState().cells).toEqual(styled);
+  });
+
+  it("setRoute로 경로 오버레이를 게시하고 null로 해제한다 (AC 8)", () => {
+    useMapOverlayStore.getState().setRoute(ROUTE);
+    expect(useMapOverlayStore.getState().route).toEqual(ROUTE);
+
+    useMapOverlayStore.getState().setRoute(null);
+    expect(useMapOverlayStore.getState().route).toBeNull();
+  });
+
+  it("clear는 경로도 함께 해제한다 — 홈 이탈 시 지도는 무오버레이로 복귀", () => {
+    useMapOverlayStore.getState().setRoute(ROUTE);
+    useMapOverlayStore.getState().clear();
+
+    expect(useMapOverlayStore.getState().route).toBeNull();
+  });
+});

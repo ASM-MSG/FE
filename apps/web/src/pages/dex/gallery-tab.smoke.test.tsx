@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cell, CellVideo } from "@/entities/cell";
 import type { CollectedVideo, DexData } from "@/entities/dex";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
-import { useMapOverlayStore } from "@/features/dex/model/map-overlay-store";
+import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
 import { DexPanel } from "./DexPanel";
 

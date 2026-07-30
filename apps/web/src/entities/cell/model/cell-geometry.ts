@@ -1,9 +1,11 @@
-import type { Bounds, LatLng } from "@/entities/cell";
+import type { Bounds, LatLng } from "./cell";
 
 /**
- * 수집 격자 → 지도 오버레이 기하 변환 (AC 9·10).
+ * 격자 → 지도 오버레이 기하 변환 (MSG-121 AC 9·10).
  * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
  * 렌더링(naver Polygon)은 MapCanvas 경계 안에서 하고, 여기는 데이터만 만든다.
+ * 원래 features/dex/model/cell-overlay.ts에 있었으나 홈 테마 오버레이(MSG-252)도 쓰게 되어
+ * 교차 feature import를 피하려고 entities/cell로 이동했다 (스펙 구현 계획 — shared/format 선례).
  */
 
 /**
