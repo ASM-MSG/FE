@@ -12,16 +12,20 @@ import { HomeCellDetailPanel } from "./HomeCellDetailPanel";
  */
 
 /** 최소 상세 픽스처 — Escape 배선 단정에는 헤더 메타만 있으면 된다 (서면 목 관례) */
+// MSG-253: HomeCellDetail 타입 변경(location·videoCount → subtitle)에 따른 픽스처 갱신만 —
+// Escape 단정 2케이스는 불변
 const DETAIL: HomeCellDetail = {
   cellId: "A-14",
   label: "서면 A-14",
-  location: "부산진구 부전동",
-  videoCount: 0,
+  subtitle: "내 영상 0개",
   badges: [],
   myVideos: [],
   otherVideos: [],
   showMashup: false,
 };
+
+/** onViewAll 필수 prop 신설(MSG-253 AC 11)에 따른 렌더 인자 — Escape 단정과 무관한 no-op */
+const noopViewAll = () => {};
 
 describe("홈 셀 상세 패널 Escape 배선", () => {
   afterEach(() => {
@@ -33,7 +37,11 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
     render(
       <>
         <input aria-label="검색어" />
-        <HomeCellDetailPanel detail={DETAIL} onClose={onClose} />
+        <HomeCellDetailPanel
+          detail={DETAIL}
+          onClose={onClose}
+          onViewAll={noopViewAll}
+        />
       </>,
     );
 
@@ -44,7 +52,13 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
 
   it("일반 타깃(body)의 Escape는 상세를 닫는다 (AC 9-1 보존)", () => {
     const onClose = vi.fn();
-    render(<HomeCellDetailPanel detail={DETAIL} onClose={onClose} />);
+    render(
+      <HomeCellDetailPanel
+        detail={DETAIL}
+        onClose={onClose}
+        onViewAll={noopViewAll}
+      />,
+    );
 
     fireEvent.keyDown(document.body, { key: "Escape" });
 

@@ -23,6 +23,11 @@ export interface CellVideo {
   durationSec: number;
   /** 썸네일 URL — 없으면 placeholder 표시 */
   thumbnailSrc?: string;
+  /**
+   * 업로더 핸들 (표시 문자열, 예: "@minji_b") — 홈 셀 상세의 다른 사용자 카드 메타 (MSG-253).
+   * 선택 필드로 추가만 — 기존 feature(explore·dex) 표시에는 영향 없음
+   */
+  uploaderHandle?: string;
 }
 
 /** 격자 도메인 모델 */
