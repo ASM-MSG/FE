@@ -9,8 +9,9 @@ import type { Bounds, LatLng } from "./cell";
  */
 
 /**
- * 격자 한 변 길이(m) — mock 상수 (추정 A4, 리스크 R2).
- * 격자 지오메트리 정의가 기획·코드베이스 어디에도 없어 500m로 가정한다.
+ * 격자 한 변 길이(m) — 도감(dex-summary) 전용 mock 상수 (MSG-263 병행 방침).
+ * 홈 오버레이는 100m 균일 격자(model/grid.ts — MSG-263 D5)로 이관됐고,
+ * 도감 오버레이만 이 500m 근사를 유지한다(수술적 변경 — 후속 이관 티켓 대상, 리스크 R1).
  * 실 API 전환 시 서버 제공 bounds로 교체하고 이 상수는 제거한다.
  */
 export const CELL_SIDE_METERS = 500;

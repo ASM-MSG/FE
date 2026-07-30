@@ -27,6 +27,8 @@ export const MapShell = () => {
   const overlayCells = useMapOverlayStore((s) => s.cells);
   // 경로 오버레이(MSG-252 AC 8) — 홈이 경로추천 활성 시에만 게시, null이면 미표시
   const routeOverlay = useMapOverlayStore((s) => s.route);
+  // 격자선 오버레이(MSG-263 AC 9·16) — 게시자는 홈뿐, 빈 목록이면 격자 미표시
+  const gridLines = useMapOverlayStore((s) => s.gridLines);
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
   const mapRef = useRef<MapCanvasHandle>(null);
@@ -63,6 +65,7 @@ export const MapShell = () => {
           center={initialCenter}
           onViewportChange={setViewport}
           overlayCells={overlayCells}
+          gridLines={gridLines}
           route={routeOverlay ?? undefined}
           onOverlayCellClick={onOverlayCellClick ?? undefined}
         />

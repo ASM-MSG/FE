@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CELL_SIDE_METERS, cellToBounds } from "@/entities/cell";
+import { cellBoundsAt, cellIndexAt } from "@/entities/cell";
 import { MOCK_DEX } from "@/entities/dex";
 import { MOCK_ROUTE, MOCK_THEME_CELLS, THEME_META, themeCellsOf } from "./theme";
 import {
@@ -15,23 +15,24 @@ const OCCUPIED = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
 const OCCUPIED_IDS = OCCUPIED.map((c) => c.cellId);
 
 describe("buildHomeOverlayCells — 기본 상태 (AC 2)", () => {
-  it("활성 테마가 없으면 내 점령 셀 오버레이만, 스타일 미지정(기존 primary 렌더)으로 만든다", () => {
+  it("활성 테마가 없으면 내 점령 셀 오버레이만, 점령 스타일(occupied — 테마 색·빗금 없음)로 만든다 (MSG-263 AC 10)", () => {
     const overlays = buildHomeOverlayCells(null, [], OCCUPIED);
 
     expect(overlays.map((o) => o.id).sort()).toEqual([...OCCUPIED_IDS].sort());
     for (const overlay of overlays) {
       expect(overlay.color).toBeUndefined();
       expect(overlay.hatched).toBeUndefined();
+      expect(overlay.occupied).toBe(true);
     }
   });
 
-  it("점령 셀 bounds는 중심→500m 근사 기하를 따른다 (A8 — cellToBounds 재사용)", () => {
+  it("점령 셀 bounds는 center 소속 100m 격자 셀 bounds와 일치한다 (MSG-263 D5·AC 7·8 — 격자 스냅)", () => {
     const overlays = buildHomeOverlayCells(null, [], OCCUPIED);
-    const first = overlays.find((o) => o.id === OCCUPIED[0].cellId)!;
 
-    expect(first.bounds).toEqual(
-      cellToBounds(OCCUPIED[0].center, CELL_SIDE_METERS),
-    );
+    for (const cell of OCCUPIED) {
+      const overlay = overlays.find((o) => o.id === cell.cellId)!;
+      expect(overlay.bounds).toEqual(cellBoundsAt(cellIndexAt(cell.center)));
+    }
   });
 });
 
@@ -72,6 +73,23 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
   it("교집합 셀은 오버레이 목록에 한 번만 등장한다 (점령 + 테마 이중 게시 없음)", () => {
     const ids = overlays.map((o) => o.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("테마 셀 bounds도 100m 격자 스냅이다 — 500m/100m 혼재 불허 (MSG-263 D5·AC 8)", () => {
+    for (const cell of MOCK_THEME_CELLS.hot) {
+      const overlay = overlays.find((o) => o.id === cell.id)!;
+      expect(overlay.bounds).toEqual(cellBoundsAt(cellIndexAt(cell.center)));
+    }
+  });
+
+  it("셀 중심이 부산 행정경계 밖인 테마 셀은 오버레이 대상이 아니다 (MSG-263 AC 4)", () => {
+    const withSeaCell = [
+      ...MOCK_THEME_CELLS.hot,
+      { id: "SEA-CELL", center: { lat: 34.95, lng: 129.0 } },
+    ];
+    const result = buildHomeOverlayCells("hot", withSeaCell, OCCUPIED);
+
+    expect(result.map((o) => o.id)).not.toContain("SEA-CELL");
   });
 
   it("지역축제·팝업스토어도 같은 규칙으로 각 테마 색을 쓴다 (AC 6)", () => {

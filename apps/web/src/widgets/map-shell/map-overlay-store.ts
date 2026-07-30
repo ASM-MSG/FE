@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { GridLineOverlay } from "@/features/map-home/model/grid-overlay";
 import type {
   RouteOverlay,
   StyledCellOverlay,
@@ -12,6 +13,8 @@ interface MapOverlayState {
   cells: StyledCellOverlay[];
   /** 경로 오버레이 (MSG-252 AC 8) — null이면 미표시. 게시자는 홈(경로추천 활성 시)뿐이다 */
   route: RouteOverlay | null;
+  /** 격자선 오버레이 (MSG-263 AC 9·16) — 게시자는 홈뿐이다. 빈 목록이면 격자 미표시 */
+  gridLines: GridLineOverlay[];
   /**
    * 오버레이 셀 클릭 핸들러 (MSG-122 AC 14·18) — null이면 표시 전용(MSG-121 기존 동작, R3).
    * 게시자는 DexPanel(지도·갤러리 탭)·MapHomePage(MSG-252), 소비자는 MapShell → MapCanvas.
@@ -19,6 +22,7 @@ interface MapOverlayState {
   onCellClick: ((cellId: string) => void) | null;
   setCells: (cells: StyledCellOverlay[]) => void;
   setRoute: (route: RouteOverlay | null) => void;
+  setGridLines: (gridLines: GridLineOverlay[]) => void;
   setOnCellClick: (handler: ((cellId: string) => void) | null) => void;
   clear: () => void;
 }
@@ -34,9 +38,12 @@ interface MapOverlayState {
 export const useMapOverlayStore = create<MapOverlayState>((set) => ({
   cells: [],
   route: null,
+  gridLines: [],
   onCellClick: null,
   setCells: (cells) => set({ cells }),
   setRoute: (route) => set({ route }),
+  setGridLines: (gridLines) => set({ gridLines }),
   setOnCellClick: (handler) => set({ onCellClick: handler }),
-  clear: () => set({ cells: [], route: null, onCellClick: null }),
+  clear: () =>
+    set({ cells: [], route: null, gridLines: [], onCellClick: null }),
 }));

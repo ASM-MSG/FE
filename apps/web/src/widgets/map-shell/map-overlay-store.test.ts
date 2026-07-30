@@ -67,6 +67,42 @@ describe("useMapOverlayStore — 셀 클릭 핸들러 슬롯 (MSG-122 AC 14·18,
   });
 });
 
+describe("useMapOverlayStore — 격자선 슬롯 (MSG-263 AC 9·16)", () => {
+  const GRID_LINES = [
+    {
+      id: "h-190-0",
+      path: [
+        { lat: 35.1557, lng: 129.053 },
+        { lat: 35.1557, lng: 129.065 },
+      ] as [
+        { lat: number; lng: number },
+        { lat: number; lng: number },
+      ],
+    },
+  ];
+
+  beforeEach(() => {
+    useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
+  });
+
+  it("초기 상태는 격자선 없음(빈 목록)이다 — 게시자 없는 섹션의 지도는 격자 없음", () => {
+    expect(useMapOverlayStore.getState().gridLines).toEqual([]);
+  });
+
+  it("setGridLines로 격자선 목록을 게시한다 (AC 9)", () => {
+    useMapOverlayStore.getState().setGridLines(GRID_LINES);
+
+    expect(useMapOverlayStore.getState().gridLines).toEqual(GRID_LINES);
+  });
+
+  it("clear는 격자선도 함께 해제한다 — 홈 이탈 시 격자가 사라진다 (AC 16)", () => {
+    useMapOverlayStore.getState().setGridLines(GRID_LINES);
+    useMapOverlayStore.getState().clear();
+
+    expect(useMapOverlayStore.getState().gridLines).toEqual([]);
+  });
+});
+
 describe("useMapOverlayStore — 스타일드 셀·경로 슬롯 (MSG-252 AC 6·7·8)", () => {
   const ROUTE = {
     path: [
