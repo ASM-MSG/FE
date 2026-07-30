@@ -121,3 +121,15 @@ export const buildOccupiedGridCells = (
       bounds: cellBoundsAt(cellIndexAt(cell.center)),
       occupied: true,
     }));
+
+/**
+ * 셸 상시 점령 셀 중 섹션 게시 셀과 id가 겹치는 셀을 렌더 대상에서 제외한다. [개정 2 AC 8, R6]
+ * 교집합 셀은 섹션(테마) 스타일 쪽으로만 1회 그려진다 — 상시 층·게시 층 이중 렌더 방지.
+ */
+export const excludeSectionCells = (
+  persistent: StyledCellOverlay[],
+  sectionCells: { id: string }[],
+): StyledCellOverlay[] => {
+  const sectionIds = new Set(sectionCells.map((cell) => cell.id));
+  return persistent.filter((cell) => !sectionIds.has(cell.id));
+};

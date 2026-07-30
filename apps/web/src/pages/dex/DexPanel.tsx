@@ -35,8 +35,8 @@ import { RegionProgress } from "./ui/RegionProgress";
  * 클릭으로만 진입하며 지도 탭 클릭이 복귀다 (AC 14·19·22).
  * 썸네일 클릭은 탐색과 공유하는 격자 상세 시트(widgets/cell-detail, Q7)를 우측 flex-1 컬럼에
  * 연다 (AC 23, Q3) — 갤러리 진입·지역 전환·패널 언마운트에서 close해 상태 번짐을 차단한다 (AC 27).
- * 수집 격자 오버레이는 지도 탭에서 게시하고(② 단일화 — 갤러리 뷰는 지도 탭 내부라 AC 18 자동
- * 충족) 셀 클릭 핸들러를 함께 등록한다. 렌더는 셸의 MapCanvas가 담당.
+ * 수집 격자 오버레이 게시는 MSG-263 D8로 제거 — 지도 표시는 셸 상시 100m 격자·점령 층이 담당하고,
+ * 도감은 지도 탭에서 셀 클릭 핸들러만 등록한다(A7 — 클릭 타깃은 상시 점령 셀, 수집 상세 기능 보존).
  */
 export const DexPanel = () => {
   const { tab: tabParam } = useParams();
@@ -65,7 +65,6 @@ export const DexPanel = () => {
     [view, removedIds],
   );
 
-  const setCells = useMapOverlayStore((s) => s.setCells);
   const setOnCellClick = useMapOverlayStore((s) => s.setOnCellClick);
   const clear = useMapOverlayStore((s) => s.clear);
 
@@ -125,15 +124,14 @@ export const DexPanel = () => {
     [cells, selectDetailCell, selectDetailVideo],
   );
 
-  // 지도 탭에서 수집 오버레이 게시 + 클릭 핸들러 등록 (② map 단일화 — 갤러리 뷰는 지도 탭
-  // 내부라 AC 18 자동 충족), 탭 이탈(뱃지)·패널 언마운트(다른 섹션 이동) 시 해제 (AC 9·11)
+  // 지도 탭에서 셀 클릭 핸들러 등록 (MSG-263 D8 — 오버레이 게시는 제거, 클릭 타깃은 셸 상시
+  // 점령 셀 100m·A7), 탭 이탈(뱃지)·패널 언마운트(다른 섹션 이동) 시 해제 (AC 9·11)
   useEffect(() => {
     if (tab === "map" && view) {
-      setCells(view.overlayCells);
       setOnCellClick(handleOverlayCellClick);
     }
     return () => clear();
-  }, [tab, view, setCells, setOnCellClick, handleOverlayCellClick, clear]);
+  }, [tab, view, setOnCellClick, handleOverlayCellClick, clear]);
 
   // 지도 탭 도달 = 갤러리 뷰 해제 (④ AC 22) — 뱃지 → 브라우저 뒤로가기 등 탭 버튼(onSelect)을
   // 거치지 않는 라우터 경유 복귀를 커버한다. onSelect의 clearRegion과 상호 보완(같은 지도 탭

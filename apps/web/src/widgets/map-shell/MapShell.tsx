@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import type { LatLng } from "@/entities/cell";
+import { MOCK_DEX } from "@/entities/dex";
 import { useMapOverlayStore } from "./map-overlay-store";
+import {
+  buildGridLines,
+  buildOccupiedGridCells,
+  excludeSectionCells,
+} from "@/features/map-home/model/grid-overlay";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
@@ -11,10 +17,16 @@ import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
 import { useSidebarStore } from "./sidebar-store";
 import type { MapShellContext } from "./use-map-shell";
 
+// 상시 점령 셀 (MSG-263 D3·D9) — mock(MOCK_DEX.collectedCells)의 center를 100m 격자로 스냅.
+// mock이 정적이라 모듈 스코프 1회 파생 — 섹션 전환·리렌더에 재계산이 없다
+const PERSISTENT_OCCUPIED_CELLS = buildOccupiedGridCells(MOCK_DEX.collectedCells);
+
 /**
- * 지속 지도 셸 — 홈(`/`)과 탐색(`/explore`)이 이 셸을 공유하므로 지도 인스턴스와
+ * 지속 지도 셸 — siderail 전 섹션이 이 셸을 공유하므로 지도 인스턴스와
  * 뷰포트 상태가 라우트 전환에도 유지된다(D1). 경로별 오버레이는 Outlet으로 스위칭한다.
  * 지도 SDK import는 MapCanvas 경계 안에만 두고, 셸은 배치와 명령 주입만 담당한다.
+ * 격자선·점령 셀(MSG-263 D9)은 셸이 직접 파생·렌더하는 상시 층이다 — 섹션 게시 스토어를
+ * 거치지 않아 섹션 전환·clear()와 무관하게 전 섹션에서 유지된다 (AC 16·18).
  */
 export const MapShell = () => {
   const setViewport = useViewportStore((s) => s.setViewport);
@@ -23,12 +35,29 @@ export const MapShell = () => {
   const zoomLevel = useViewportStore((s) => (s.bounds ? s.zoom : null));
   const collapsed = useSidebarStore((s) => s.collapsed);
   const openUploadModal = useUploadModalStore((s) => s.openModal);
-  // 셀 오버레이(MSG-121) — 게시자 패널(도감·홈)이 게시/해제하고 셸은 지도에 중계만 한다. 빈 목록이면 기존 동작 동일(R3)
-  const overlayCells = useMapOverlayStore((s) => s.cells);
+  // 섹션 게시 셀(MSG-121·252) — 게시자 패널(홈 테마 셀)이 게시/해제하고 셸은 중계만 한다
+  const sectionCells = useMapOverlayStore((s) => s.cells);
   // 경로 오버레이(MSG-252 AC 8) — 홈이 경로추천 활성 시에만 게시, null이면 미표시
   const routeOverlay = useMapOverlayStore((s) => s.route);
-  // 격자선 오버레이(MSG-263 AC 9·16) — 게시자는 홈뿐, 빈 목록이면 격자 미표시
-  const gridLines = useMapOverlayStore((s) => s.gridLines);
+
+  // 상시 격자선 파생(MSG-263 D9) — MapCanvas가 idle마다 push하는 뷰포트를 직접 구독해
+  // 뷰포트∩부산 경계·한 화면 버퍼·줌 게이트(14 미만 숨김, D4)로 재계산 (AC 9·13·16)
+  const viewportBounds = useViewportStore((s) => s.bounds);
+  const viewportZoom = useViewportStore((s) => s.zoom);
+  const gridLines = useMemo(
+    () => (viewportBounds ? buildGridLines(viewportBounds, viewportZoom) : []),
+    [viewportBounds, viewportZoom],
+  );
+
+  // 상시 점령 셀 + 섹션 게시 셀 병합 — 게시 셀과 id가 겹치는 상시 셀은 제외해
+  // 교집합을 섹션(테마) 스타일로 1회만 그린다 (MSG-263 개정 2 AC 8, R6)
+  const overlayCells = useMemo(
+    () => [
+      ...excludeSectionCells(PERSISTENT_OCCUPIED_CELLS, sectionCells),
+      ...sectionCells,
+    ],
+    [sectionCells],
+  );
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
   const mapRef = useRef<MapCanvasHandle>(null);

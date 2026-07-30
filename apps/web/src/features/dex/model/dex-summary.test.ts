@@ -5,7 +5,6 @@ import type {
   DexData,
   DexSummary,
 } from "@/entities/dex";
-import { cellToBounds, CELL_SIDE_METERS } from "@/entities/cell";
 import {
   RECENT_CELLS_LIMIT,
   clampPct,
@@ -193,7 +192,6 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
     expect(view.streakDays).toBe(0);
     expect(view.totalExploredPct).toBe(0);
     expect(view.recentCells).toEqual([]);
-    expect(view.overlayCells).toEqual([]);
   });
 
   it("최근 수집 목록은 최신순 최대 30개다 (AC 14 개정 D3)", () => {
@@ -203,16 +201,10 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
     expect(view.recentCells[0].cellId).toBe("C-30");
   });
 
-  it("수집 격자마다 id + Bounds(한 변 500m mock 상수) 오버레이를 만든다 (AC 9·10)", () => {
-    const target = cell("A-14", "2026-07-21T09:00:00.000Z", {
-      center: { lat: 35.1573, lng: 129.0586 },
-    });
+  it("파생 뷰는 지도 오버레이를 만들지 않는다 — 도감 500m 오버레이는 MSG-263 D8로 제거, 지도 표시는 셸 상시 층 소유", () => {
+    const view = deriveDexView(dexData(manyCells(3)));
 
-    const view = deriveDexView(dexData([target]));
-
-    expect(view.overlayCells).toEqual([
-      { id: "A-14", bounds: cellToBounds(target.center, CELL_SIDE_METERS) },
-    ]);
+    expect("overlayCells" in view).toBe(false);
   });
 
   it("전체 진행률은 0~100으로 클램프하되 mock 미소값(0.012)은 그대로 담는다 (AC 7, 개정 D1)", () => {
@@ -240,7 +232,7 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
     expect(view.badges).toEqual(BADGES);
   });
 
-  it("통계·오버레이 파생의 입력은 제거 상태와 무관하다 — 같은 입력이면 같은 결과다 (AC 23·24)", () => {
+  it("통계 파생의 입력은 제거 상태와 무관하다 — 같은 입력이면 같은 결과다 (AC 23·24)", () => {
     const data = dexData(manyCells(3), { collectedCellCount: 3 });
 
     const before = deriveDexView(data);
@@ -249,8 +241,7 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
     const after = deriveDexView(data);
 
     expect(visible.length).toBe(2);
-    expect(after.overlayCells).toEqual(before.overlayCells);
-    expect(after.overlayCells.length).toBe(3);
+    expect(after.recentCells).toEqual(before.recentCells);
     expect(after.collectedCellCount).toBe(3);
   });
 });

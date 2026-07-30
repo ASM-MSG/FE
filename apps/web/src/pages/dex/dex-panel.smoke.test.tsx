@@ -160,18 +160,18 @@ describe("도감 패널 스모크", () => {
     await waitFor(() => expect(screen.getByText("필맵퍼")).toBeTruthy());
   });
 
-  it("지도 탭 마운트 시 수집 오버레이를 게시하고, 언마운트(섹션 이탈) 시 해제한다 (AC 9·11 배선)", () => {
+  it("지도 탭 마운트 시 오버레이 게시 없이 셀 클릭 핸들러만 등록하고, 언마운트(섹션 이탈) 시 해제한다 (MSG-263 D8·A7 — 500m 게시 제거, 클릭 타깃은 셸 상시 점령 셀)", () => {
     const client = createClient();
     client.setQueryData(["dex"], DEX_WITH_CELLS);
     const { unmount } = renderPanel(client);
 
-    expect(useMapOverlayStore.getState().cells.map((c) => c.id)).toEqual([
-      "A-14",
-      "B-07",
-    ]);
+    // 500m 수집 오버레이 게시는 제거됐다 — 지도 표시는 셸 상시 층(MapShell) 소유 (AC 17)
+    expect(useMapOverlayStore.getState().cells).toEqual([]);
+    // 수집 상세 진입 기능은 보존 — 클릭 핸들러 등록 유지 (A7)
+    expect(useMapOverlayStore.getState().onCellClick).not.toBeNull();
 
     unmount();
-    expect(useMapOverlayStore.getState().cells).toEqual([]);
+    expect(useMapOverlayStore.getState().onCellClick).toBeNull();
   });
 
   it("격자 행 클릭 시 해당 격자 중심 좌표로 지도 이동 명령을 보낸다 (AC 16 배선 — MSG-122 ② AC 19 개정으로 갤러리 뷰 전환이 동반된다, URL 무변경)", async () => {
@@ -205,12 +205,9 @@ describe("도감 패널 스모크", () => {
     expect(screen.getByText("부전 B-07")).toBeTruthy();
     // 행 클릭(지도 이동)으로 전파 금지 (AC 25)
     expect(moveToSpy).not.toHaveBeenCalled();
-    // 통계 카드·지도 오버레이 불변 — 수집 취소가 아니다 (AC 24)
+    // 통계 카드 불변 — 수집 취소가 아니다 (AC 24. 오버레이 게시 단정은 MSG-263 D8로 제거 —
+    // 상시 점령 표시는 셸 소유라 X 제거의 영향 범위 밖)
     expect(screen.getByText("2개")).toBeTruthy(); // 수집 격자 카드
-    expect(useMapOverlayStore.getState().cells.map((c) => c.id)).toEqual([
-      "A-14",
-      "B-07",
-    ]);
   });
 
   it("X로 전부 제거해도 '수집 0건' 빈 상태 안내는 나타나지 않는다 (AC 18과 구분)", () => {

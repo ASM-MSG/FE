@@ -421,17 +421,14 @@ describe("갤러리 뷰 스모크", () => {
     expect(await screen.findByText(/^수영구 · 영상 \d+개$/)).toBeTruthy();
   });
 
-  it("갤러리 뷰에서도 수집 오버레이가 게시 유지되고 셀 클릭 핸들러가 등록된다 (AC 18 배선 — ② 게시 조건 map 단일화로 자동 충족)", () => {
+  it("갤러리 뷰에서도 셀 클릭 핸들러 등록이 유지된다 (AC 18 배선 — ② map 단일화. 오버레이 게시는 MSG-263 D8로 제거, 표시는 셸 상시 층 소유)", () => {
     const client = createClient();
     seedClient(client);
     client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
     renderPanel(client);
     enterGalleryView("수영구");
 
-    expect(useMapOverlayStore.getState().cells.map((c) => c.id)).toEqual([
-      "A-14",
-      "C-02",
-    ]);
+    expect(useMapOverlayStore.getState().cells).toEqual([]);
     expect(useMapOverlayStore.getState().onCellClick).not.toBeNull();
   });
 

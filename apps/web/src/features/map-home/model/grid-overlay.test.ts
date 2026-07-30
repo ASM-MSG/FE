@@ -12,6 +12,7 @@ import {
   GRID_MIN_ZOOM,
   buildGridLines,
   buildOccupiedGridCells,
+  excludeSectionCells,
 } from "./grid-overlay";
 
 /** 서면 일대 뷰포트 — 기본 줌 15 체감 크기(약 1km 남짓) */
@@ -118,5 +119,28 @@ describe("buildOccupiedGridCells — 점령 셀 격자 스냅 (MSG-263 AC 4·7, 
 
     expect(overlays.map((o) => o.id)).not.toContain("SEA-1");
     expect(overlays).toHaveLength(OCCUPIED.length);
+  });
+});
+
+describe("excludeSectionCells — 상시 점령 셀 ∩ 섹션 게시 셀 1회 렌더 (MSG-263 개정 2 AC 8, R6)", () => {
+  const persistent = buildOccupiedGridCells(OCCUPIED);
+
+  it("섹션 게시 셀과 id가 겹치는 상시 점령 셀은 렌더 대상에서 제외된다 — 교집합은 섹션(테마) 스타일로 1회만", () => {
+    const sectionCells = [
+      { id: OCCUPIED[0].cellId },
+      { id: OCCUPIED[1].cellId },
+    ];
+    const visible = excludeSectionCells(persistent, sectionCells);
+
+    expect(visible.map((o) => o.id)).not.toContain(OCCUPIED[0].cellId);
+    expect(visible.map((o) => o.id)).not.toContain(OCCUPIED[1].cellId);
+    expect(visible).toHaveLength(persistent.length - 2);
+  });
+
+  it("겹치지 않는 섹션 게시 셀은 상시 점령 셀을 줄이지 않고, 섹션 게시가 없으면 전체가 유지된다", () => {
+    expect(excludeSectionCells(persistent, [{ id: "THEME-ONLY" }])).toEqual(
+      persistent,
+    );
+    expect(excludeSectionCells(persistent, [])).toEqual(persistent);
   });
 });

@@ -14,25 +14,9 @@ const OCCUPIED = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
 }));
 const OCCUPIED_IDS = OCCUPIED.map((c) => c.cellId);
 
-describe("buildHomeOverlayCells — 기본 상태 (AC 2)", () => {
-  it("활성 테마가 없으면 내 점령 셀 오버레이만, 점령 스타일(occupied — 테마 색·빗금 없음)로 만든다 (MSG-263 AC 10)", () => {
-    const overlays = buildHomeOverlayCells(null, [], OCCUPIED);
-
-    expect(overlays.map((o) => o.id).sort()).toEqual([...OCCUPIED_IDS].sort());
-    for (const overlay of overlays) {
-      expect(overlay.color).toBeUndefined();
-      expect(overlay.hatched).toBeUndefined();
-      expect(overlay.occupied).toBe(true);
-    }
-  });
-
-  it("점령 셀 bounds는 center 소속 100m 격자 셀 bounds와 일치한다 (MSG-263 D5·AC 7·8 — 격자 스냅)", () => {
-    const overlays = buildHomeOverlayCells(null, [], OCCUPIED);
-
-    for (const cell of OCCUPIED) {
-      const overlay = overlays.find((o) => o.id === cell.cellId)!;
-      expect(overlay.bounds).toEqual(cellBoundsAt(cellIndexAt(cell.center)));
-    }
+describe("buildHomeOverlayCells — 기본 상태 (AC 2, MSG-263 개정 2 D9)", () => {
+  it("활성 테마가 없으면 아무것도 게시하지 않는다 — 점령 셀 표시는 셸 상시 층(MapShell) 소유다", () => {
+    expect(buildHomeOverlayCells(null, [], OCCUPIED)).toEqual([]);
   });
 });
 
@@ -58,21 +42,20 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
     }
   });
 
-  it("테마에 속하지 않는 내 점령 셀은 기본 스타일 그대로 함께 표시된다 — 교집합만 빗금으로 '구분'된다", () => {
+  it("테마에 속하지 않는 내 점령 셀은 게시하지 않는다 — 셸 상시 층이 그린다 (MSG-263 개정 2 AC 8, D9)", () => {
     const outside = OCCUPIED_IDS.filter(
       (id) => !MOCK_THEME_CELLS.hot.some((c) => c.id === id),
     );
     expect(outside.length).toBeGreaterThan(0);
     for (const id of outside) {
-      const overlay = overlays.find((o) => o.id === id);
-      expect(overlay).toBeDefined();
-      expect(overlay!.color).toBeUndefined();
+      expect(overlays.find((o) => o.id === id)).toBeUndefined();
     }
   });
 
-  it("교집합 셀은 오버레이 목록에 한 번만 등장한다 (점령 + 테마 이중 게시 없음)", () => {
+  it("게시 목록은 테마 셀뿐이고 중복이 없다 — 교집합 셀은 테마 스타일로 1회만 (개정 2 AC 8)", () => {
     const ids = overlays.map((o) => o.id);
     expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.sort()).toEqual(MOCK_THEME_CELLS.hot.map((c) => c.id).sort());
   });
 
   it("테마 셀 bounds도 100m 격자 스냅이다 — 500m/100m 혼재 불허 (MSG-263 D5·AC 8)", () => {

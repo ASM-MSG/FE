@@ -11,22 +11,20 @@ import {
   myVideoIdsOf,
 } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
-import { buildGridLines } from "@/features/map-home/model/grid-overlay";
 import { MOCK_ROUTE, themeCellsOf } from "@/features/map-home/model/theme";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import {
   buildHomeOverlayCells,
   buildRouteOverlay,
 } from "@/features/map-home/model/theme-overlay";
-import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
 import { HomeCellDetailPanel } from "./ui/HomeCellDetailPanel";
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
 
-// 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 홈 기본 표시는 이번 티켓 신규 동작 (R3).
-// center → 100m 격자 스냅(MSG-263 D3)은 파생(buildHomeOverlayCells → buildOccupiedGridCells) 몫
+// 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 표시는 셸 상시 층(MSG-263 D9) 소유이고,
+// 홈은 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정에만 이 목록을 쓴다
 const OCCUPIED_CELLS = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
   cellId,
   center,
@@ -52,13 +50,8 @@ export const MapHomePage = () => {
 
   const setCells = useMapOverlayStore((s) => s.setCells);
   const setRoute = useMapOverlayStore((s) => s.setRoute);
-  const setGridLines = useMapOverlayStore((s) => s.setGridLines);
   const setOnCellClick = useMapOverlayStore((s) => s.setOnCellClick);
   const clearOverlays = useMapOverlayStore((s) => s.clear);
-
-  // 격자선 파생 입력 — MapCanvas가 idle마다 push하는 뷰포트 (MSG-263 AC 2, R3)
-  const viewportBounds = useViewportStore((s) => s.bounds);
-  const zoom = useViewportStore((s) => s.zoom);
 
   const themeCells = useMemo(
     () => (activeTheme ? themeCellsOf(activeTheme) : []),
@@ -74,13 +67,6 @@ export const MapHomePage = () => {
   const routeOverlay = useMemo(
     () => buildRouteOverlay(activeTheme, MOCK_ROUTE),
     [activeTheme],
-  );
-
-  // 격자선 파생 (MSG-263 AC 9·13) — idle마다 뷰포트∩부산 경계·한 화면 버퍼로 재계산.
-  // 줌 게이트(14 미만 숨김, D4)는 파생이 판정하고, bounds 준비 전(지도 로드 전)에는 빈 목록
-  const gridLines = useMemo(
-    () => (viewportBounds ? buildGridLines(viewportBounds, zoom) : []),
-    [viewportBounds, zoom],
   );
 
   // "전체 보기" — 브라우즈(전체 조회): 이전 필터를 비우고 탐색으로 이동.
@@ -100,23 +86,20 @@ export const MapHomePage = () => {
     [activeTheme, themeCells, selectCell],
   );
 
-  // 오버레이 게시 — 홈 마운트 중 유지, 이탈 시 해제 (도감 DexPanel 게시 선례).
-  // 격자선도 같은 effect에서 게시한다 — cleanup(clear)이 전 슬롯을 비우므로 게시를 나누면
-  // 한쪽 재게시 때 다른 쪽이 유실된다 (MSG-263 AC 16: 홈 이탈 시 격자도 함께 해제)
+  // 섹션 오버레이 게시(테마 셀·경로·클릭 핸들러) — 홈 마운트 중 유지, 이탈 시 해제.
+  // 격자선·기본 점령 셀은 셸 상시 층 소유(MSG-263 D9)라 여기서 게시하지 않는다 —
+  // 홈 이탈 clear()는 테마 오버레이만 걷어내고 격자·점령 표시는 유지된다 (AC 16·18)
   useEffect(() => {
     setCells(overlayCells);
     setRoute(routeOverlay);
-    setGridLines(gridLines);
     setOnCellClick(handleCellTap);
     return () => clearOverlays();
   }, [
     overlayCells,
     routeOverlay,
-    gridLines,
     handleCellTap,
     setCells,
     setRoute,
-    setGridLines,
     setOnCellClick,
     clearOverlays,
   ]);
