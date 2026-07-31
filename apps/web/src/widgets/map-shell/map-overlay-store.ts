@@ -29,7 +29,9 @@ interface MapOverlayState {
  * 구독해 MapCanvas에 순수 데이터(id+Bounds)와 클릭 핸들러로 전달한다 — 지도 SDK를 import하지
  * 않는다(RN 경계). 원래 features/dex 소유였으나 홈(MSG-252)이 게시자로 추가되며 feature 간
  * 결합을 피해 소비자인 셸 위젯의 계약으로 이동했다 (스펙 R4 — sidebar-store 선례).
- * clear는 오버레이·경로·핸들러를 함께 해제한다 — 게시자 없는 섹션의 지도는 표시 전용·무오버레이다.
+ * clear는 오버레이·경로·핸들러를 함께 해제한다 — 게시자 없는 섹션의 지도는 섹션 오버레이가 없다.
+ * 격자선·상시 점령 셀(MSG-263 D9)은 이 스토어 소유가 아니다 — MapShell이 직접 파생·렌더하므로
+ * 섹션 게시 해제(clear)가 격자·점령 상시 표시에 영향을 주지 않는다 (AC 18).
  */
 export const useMapOverlayStore = create<MapOverlayState>((set) => ({
   cells: [],

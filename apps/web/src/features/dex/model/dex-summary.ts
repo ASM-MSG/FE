@@ -1,13 +1,10 @@
-import {
-  CELL_SIDE_METERS,
-  cellToBounds,
-  type CellOverlay,
-} from "@/entities/cell";
 import type { CollectedCell, DexBadge, DexData } from "@/entities/dex";
 
 /**
  * 도감 화면 파생 로직 (AC 7·14·17·20·23, 2026-07-22 개정 반영).
  * 순수 함수 — 지도 SDK/플랫폼(window·router)에 의존하지 않는다(RN 재사용 대상).
+ * MSG-263 개정 2(D8): 500m 수집 오버레이 파생(overlayCells)은 제거 — 도감 지도 표시는
+ * 셸 상시 100m 격자·점령 층(MapShell)이 담당하고, 여기는 통계·목록 파생만 남는다.
  */
 
 /** 탐험률을 0~100으로 클램프한다 — 음수·100 초과 입력 방어. [AC 7] */
@@ -49,14 +46,14 @@ export const selectRecentCells = (cells: CollectedCell[]): CollectedCell[] =>
 /**
  * 표시 목록에서 X로 제거된 항목을 제외한다 (개정 D4). [AC 23]
  * 정렬·상한 파생 "이후"에 적용한다 — 상위 30에서 제거해도 31번째가 복귀하지 않는다.
- * 제거는 표시 전용 상태로, 통계·오버레이 파생(deriveDexView)은 이 결과를 입력받지 않는다.
+ * 제거는 표시 전용 상태로, 통계 파생(deriveDexView)은 이 결과를 입력받지 않는다.
  */
 export const excludeRemoved = (
   cells: CollectedCell[],
   removedIds: string[],
 ): CollectedCell[] => cells.filter((c) => !removedIds.includes(c.cellId));
 
-/** 도감 화면이 소비하는 파생 뷰 모델 — 요약(클램프 적용) + 최신순·상한 목록 + 오버레이 */
+/** 도감 화면이 소비하는 파생 뷰 모델 — 요약(클램프 적용) + 최신순·상한 목록 */
 export interface DexView {
   nickname: string;
   avatarSrc?: string;
@@ -71,15 +68,13 @@ export interface DexView {
   badges: DexBadge[];
   /** 최근 수집 목록 — 최신순 최대 30 (AC 14 개정 D3). X 제거 제외는 뷰에서 excludeRemoved로 */
   recentCells: CollectedCell[];
-  /** 지도 게시용 오버레이 — 격자당 1개, 한 변 500m mock 상수 (AC 9·10). 제거 상태 미반영 (AC 24) */
-  overlayCells: CellOverlay[];
 }
 
 /**
  * 도감 조회 데이터 → 화면 뷰 모델. [AC 7·14·17]
- * 수집 0건 입력이면 통계 0·빈 목록·오버레이 0개가 그대로 파생된다 —
+ * 수집 0건 입력이면 통계 0·빈 목록이 그대로 파생된다 —
  * 통계는 요약(서버 표시값)을 전달할 뿐 목록 길이로 재계산하지 않는다.
- * X 제거 상태(recent-removal-store)는 입력받지 않는다 — 통계·오버레이 불변 (AC 23·24).
+ * X 제거 상태(recent-removal-store)는 입력받지 않는다 — 통계 불변 (AC 23·24).
  */
 export const deriveDexView = ({
   summary,
@@ -96,8 +91,4 @@ export const deriveDexView = ({
   regionExploredPctMap,
   badges,
   recentCells: selectRecentCells(collectedCells),
-  overlayCells: collectedCells.map((cell) => ({
-    id: cell.cellId,
-    bounds: cellToBounds(cell.center, CELL_SIDE_METERS),
-  })),
 });

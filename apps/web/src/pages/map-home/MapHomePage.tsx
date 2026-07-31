@@ -23,7 +23,8 @@ import { CellSummaryPanel } from "./ui/CellSummaryPanel";
 import { HomeCellDetailPanel } from "./ui/HomeCellDetailPanel";
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
 
-// 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 홈 기본 표시는 이번 티켓 신규 동작 (R3)
+// 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 표시는 셸 상시 층(MSG-263 D9) 소유이고,
+// 홈은 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정에만 이 목록을 쓴다
 const OCCUPIED_CELLS = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
   cellId,
   center,
@@ -85,7 +86,9 @@ export const MapHomePage = () => {
     [activeTheme, themeCells, selectCell],
   );
 
-  // 오버레이 게시 — 홈 마운트 중 유지, 이탈 시 해제 (도감 DexPanel 게시 선례)
+  // 섹션 오버레이 게시(테마 셀·경로·클릭 핸들러) — 홈 마운트 중 유지, 이탈 시 해제.
+  // 격자선·기본 점령 셀은 셸 상시 층 소유(MSG-263 D9)라 여기서 게시하지 않는다 —
+  // 홈 이탈 clear()는 테마 오버레이만 걷어내고 격자·점령 표시는 유지된다 (AC 16·18)
   useEffect(() => {
     setCells(overlayCells);
     setRoute(routeOverlay);

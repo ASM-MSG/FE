@@ -45,7 +45,7 @@ export interface MapCanvasHandle {
 
 /**
  * 지도에 그릴 사각 오버레이 한 칸 — 순수 데이터(id + Bounds). 좌표→기하 변환은 호출부 몫.
- * 스타일 필드(MSG-252)는 옵셔널 — 미지정이면 현행 primary 렌더 그대로 (기존 도감 오버레이 불변, AC 13)
+ * 스타일 필드(MSG-252·263)는 옵셔널 — 미지정이면 현행 primary 렌더 그대로 (기존 도감 오버레이 불변, AC 13)
  */
 export interface MapCellOverlay {
   id: string;
@@ -54,6 +54,14 @@ export interface MapCellOverlay {
   color?: string;
   /** 빗금 표시 (테마 셀 ∩ 내 점령 — MSG-252 AC 7, R1: 사선 Polyline 근사) */
   hatched?: boolean;
+  /** 점령 셀 스타일 (MSG-263 AC 10 — Figma: 채움 18% + 실선 테두리 40%) */
+  occupied?: boolean;
+}
+
+/** 지도에 그릴 격자선 한 선분 — 순수 데이터(id + 두 끝점). 파생(경계 절단·컬링)은 호출부 몫 (MSG-263 AC 9) */
+export interface MapGridLine {
+  id: string;
+  path: [LatLng, LatLng];
 }
 
 /** 지도에 그릴 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (MSG-252 AC 8) */
@@ -70,6 +78,8 @@ interface MapCanvasProps {
   onViewportChange: (viewport: Viewport) => void;
   /** 반투명 사각 오버레이 목록 (MSG-121 수집 격자) — 미제공/빈 배열이면 기존 동작과 동일(R3) */
   overlayCells?: MapCellOverlay[];
+  /** 점선 격자선 목록 (MSG-263 AC 9) — 미제공/빈 배열이면 기존 동작과 동일 */
+  gridLines?: MapGridLine[];
   /** 경로 오버레이 (MSG-252 AC 8) — 미제공이면 기존 동작과 동일 */
   route?: MapRouteOverlay;
   /** 오버레이 셀 클릭 (MSG-122 AC 14·18) — 미제공이면 표시 전용 기존 동작과 동일(R3) */
@@ -160,7 +170,10 @@ class MapLoadErrorBoundary extends Component<
  * 키 미설정 시에는 NaverMapView 자체를 마운트하지 않아 빈 키로 SDK 요청이 나가지 않는다.
  */
 export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
-  ({ center, onViewportChange, overlayCells, route, onOverlayCellClick }, ref) => {
+  (
+    { center, onViewportChange, overlayCells, gridLines, route, onOverlayCellClick },
+    ref,
+  ) => {
     // 재시도 시 로드 경계·인증 상태를 다시 태우기 위해 하위 뷰를 remount
     const [attempt, setAttempt] = useState(0);
 
@@ -184,6 +197,7 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
         center={center}
         onViewportChange={onViewportChange}
         overlayCells={overlayCells}
+        gridLines={gridLines}
         route={route}
         onOverlayCellClick={onOverlayCellClick}
         onRetry={retry}
@@ -205,6 +219,13 @@ interface NaverMapViewProps extends MapCanvasProps {
 // 테마 강조 셀(MSG-252 AC 6)도 같은 투명도를 쓴다 — "반투명 채움 + 테두리" 사양 공유.
 const OVERLAY_STROKE_OPACITY = 0.6;
 const OVERLAY_FILL_OPACITY = 0.4;
+// 점령 셀(MSG-263 AC 10) — Figma 13847:876 정본: 채움 rgba(0,102,204,0.18) + 실선 테두리
+// rgba(0,102,204,0.4). 색은 semantic.primary(#0066CC)와 동일 — 투명도만 상수로 분리
+const OCCUPIED_STROKE_OPACITY = 0.4;
+const OCCUPIED_FILL_OPACITY = 0.18;
+// 격자선(MSG-263 AC 9) — Figma 미점령 셀 점선 테두리 1.5px. 네이버 SDK는 dash 간격 직접 지정이
+// 없어 shortdash 프리셋으로 근사한다 (스펙 R2 — 점선 계열이면 통과)
+const GRID_LINE_STROKE_WEIGHT = 1.5;
 // 빗금 선(MSG-252 AC 7, R1) — 채움보다 진하게 그려 교집합이 한눈에 구분되게 한다
 const HATCH_STROKE_WEIGHT = 2;
 const HATCH_STROKE_OPACITY = 0.85;
@@ -237,6 +258,7 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       center,
       onViewportChange,
       overlayCells,
+      gridLines,
       route,
       onOverlayCellClick,
       onRetry,
@@ -359,16 +381,32 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                 onInit={pushViewport}
                 onIdle={pushViewport}
               >
+                {/* 미점령 격자선(MSG-263 AC 9·12) — 경계 절단·컬링·줌 게이트는 파생(grid-overlay) 몫,
+                    여기는 점선 Polyline 렌더만. 클릭 불요(Polyline 기본 비클릭) */}
+                {gridLines?.map((line) => (
+                  <Polyline
+                    key={line.id}
+                    path={line.path}
+                    strokeWeight={GRID_LINE_STROKE_WEIGHT}
+                    strokeColor={semantic.primary}
+                    strokeStyle="shortdash"
+                  />
+                ))}
                 {overlayCells?.map((cell) => (
                   <Polygon
                     key={cell.id}
                     paths={[boundsToPath(cell.bounds)]}
                     strokeWeight={1}
-                    // 스타일 미지정 셀은 현행 primary 그대로 — 도감 오버레이·스모크 불변 (MSG-252 AC 13)
+                    // 스타일 미지정 셀은 현행 primary 그대로 — 도감 오버레이·스모크 불변 (MSG-252 AC 13).
+                    // occupied 셀은 Figma 점령 스타일(채움 18% + 실선 테두리 40% — MSG-263 AC 10)
                     strokeColor={cell.color ?? semantic.primary}
-                    strokeOpacity={OVERLAY_STROKE_OPACITY}
+                    strokeOpacity={
+                      cell.occupied ? OCCUPIED_STROKE_OPACITY : OVERLAY_STROKE_OPACITY
+                    }
                     fillColor={cell.color ?? semantic.primary}
-                    fillOpacity={OVERLAY_FILL_OPACITY}
+                    fillOpacity={
+                      cell.occupied ? OCCUPIED_FILL_OPACITY : OVERLAY_FILL_OPACITY
+                    }
                     // 네이버 Polygon은 clickable=false가 기본 — 핸들러가 있을 때만 클릭을 받는다.
                     // 핸들러 미등록이면 onClick도 없음 — 표시 전용 기존 동작 유지 (MSG-122, R3)
                     clickable={onOverlayCellClick != null}

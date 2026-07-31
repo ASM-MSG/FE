@@ -1,10 +1,11 @@
 import {
-  CELL_SIDE_METERS,
-  cellToBounds,
+  cellBoundsAt,
+  cellIndexAt,
   type Bounds,
   type CellOverlay,
   type LatLng,
 } from "@/entities/cell";
+import { isGridCellCenterInBusan } from "./grid-overlay";
 import {
   THEME_META,
   type MockRoute,
@@ -17,14 +18,20 @@ import {
  * 테마 오버레이 파생 (MSG-252 AC 2·6·7·8).
  * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
  * 렌더링(naver Polygon·Polyline·Marker)은 MapCanvas 경계 안에서 하고, 여기는 데이터만 만든다.
+ * MSG-263 개정(D5): 셀 bounds는 500m 근사(cellToBounds)가 아니라 100m 격자 스냅
+ * (cellBoundsAt∘cellIndexAt)이고, 셀 중심이 부산 행정경계 밖인 셀은 대상에서 제외한다(AC 4).
+ * MSG-263 개정 2(D9): 기본 점령 셀은 셸 상시 층(MapShell → buildOccupiedGridCells)으로 분리 —
+ * 여기서는 테마 셀(빗금 포함)만 게시한다. 교집합 1회 렌더는 셸의 excludeSectionCells가 맡는다(AC 8).
  */
 
-/** 스타일드 셀 오버레이 — color·hatched 미지정이면 기존 primary 렌더 그대로 (MapCanvas 계약, AC 13) */
+/** 스타일드 셀 오버레이 — color·hatched·occupied 미지정이면 기존 primary 렌더 그대로 (MapCanvas 계약, AC 13) */
 export interface StyledCellOverlay extends CellOverlay {
   /** 채움·테두리 색 (테마 토큰 hex) — 미지정 시 primary */
   color?: string;
   /** 빗금 표시 여부 — 테마 셀 ∩ 내 점령 셀 (AC 7) */
   hatched?: boolean;
+  /** 점령 셀 스타일 (MSG-263 AC 10 — Figma: primary 채움 18% + 실선 테두리 40%) */
+  occupied?: boolean;
 }
 
 /** 내 점령 셀 입력 — CollectedCell(entities/dex)의 구조적 부분집합 */
@@ -34,38 +41,28 @@ export interface OccupiedCell {
 }
 
 /**
- * 활성 테마 + 테마 셀 + 내 점령 셀 → 지도 게시용 스타일드 오버레이 목록. [AC 2·6·7·8]
- * - 비활성: 내 점령 셀만, 스타일 미지정(기존 primary 렌더) — 홈 기본 표시 (R3 신규 동작)
- * - 핫구역·지역축제·팝업스토어: 테마 셀은 테마 색, 교집합은 빗금. 테마 밖 점령 셀은 기본 유지
+ * 활성 테마 + 테마 셀 + 내 점령 셀 → 지도 게시용 테마 오버레이 목록. [AC 2·6·7·8]
+ * - 비활성: 빈 목록 — 기본 점령 표시는 셸 상시 층 소유 (MSG-263 개정 2 D9)
+ * - 핫구역·지역축제·팝업스토어: 테마 셀을 테마 색으로, 교집합(∩ 내 점령)은 빗금
  * - 경로추천: 경로 주변 셀을 경로 색으로 — 교집합 빗금 규칙 동일 (Figma 정본 13848:8440, 검증 재작업 1)
- * 교집합 셀은 테마 스타일 쪽으로만 1회 게시한다 (이중 폴리곤 방지).
+ * 교집합 셀은 테마 스타일 쪽으로만 1회 그려진다 — 셸이 게시 id와 겹치는 상시 점령 셀을 제외한다(AC 8).
  */
 export const buildHomeOverlayCells = (
   activeTheme: ThemeId | null,
   themeCells: ThemeCell[],
   occupiedCells: OccupiedCell[],
 ): StyledCellOverlay[] => {
-  const activeThemeCells = activeTheme === null ? [] : themeCells;
-  const themeIds = new Set(activeThemeCells.map((c) => c.id));
+  if (activeTheme === null) return [];
+
   const occupiedIds = new Set(occupiedCells.map((c) => c.cellId));
-
-  const base: StyledCellOverlay[] = occupiedCells
-    .filter((c) => !themeIds.has(c.cellId))
+  return themeCells
+    .filter((c) => isGridCellCenterInBusan(c.center))
     .map((c) => ({
-      id: c.cellId,
-      bounds: cellToBounds(c.center, CELL_SIDE_METERS),
+      id: c.id,
+      bounds: cellBoundsAt(cellIndexAt(c.center)),
+      color: THEME_META[activeTheme].color,
+      hatched: occupiedIds.has(c.id),
     }));
-
-  if (activeTheme === null) return base;
-
-  const themed: StyledCellOverlay[] = activeThemeCells.map((c) => ({
-    id: c.id,
-    bounds: cellToBounds(c.center, CELL_SIDE_METERS),
-    color: THEME_META[activeTheme].color,
-    hatched: occupiedIds.has(c.id),
-  }));
-
-  return [...base, ...themed];
 };
 
 /** 지도 게시용 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (AC 8) */
@@ -88,7 +85,7 @@ export const buildRouteOverlay = (
       }
     : null;
 
-/** 빗금 선분 개수 기본값 — 500m 셀에서 선 간격이 시각적으로 구분되는 밀도 */
+/** 빗금 선분 개수 기본값 — 셀 폭 안에서 선 간격이 시각적으로 구분되는 밀도 (MSG-263: 100m 셀에도 유지) */
 export const HATCH_LINE_COUNT = 5;
 
 /**
