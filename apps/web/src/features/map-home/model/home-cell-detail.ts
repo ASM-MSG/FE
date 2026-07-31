@@ -7,14 +7,10 @@ import { THEME_META, type ThemeId } from "./theme";
  * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
  */
 
-/** 상세를 열 수 있는 테마 — 경로추천은 표시 전용이라 제외 (AC 8·9 문언) */
-export type DetailTheme = Exclude<ThemeId, "route">;
-
 /**
- * 셀 탭 → 상세 오픈 판정. [AC 9·10]
- * - 핫구역·지역축제·팝업스토어 활성: 그 테마의 강조 셀만 (A5 — 3테마 공통)
+ * 셀 탭 → 상세 오픈 판정. [AC 9·10, MSG-277 AC 13]
+ * - 테마 활성: 그 테마의 강조 셀만 (A5 — 경로추천 포함 4테마 공통, MSG-277에서 route 제외 제거)
  * - 비활성: 내 점령 셀만 (AC 10)
- * - 경로추천: 항상 무시 — 경로 강조는 표시 전용
  */
 export const canOpenDetail = (
   activeTheme: ThemeId | null,
@@ -23,7 +19,6 @@ export const canOpenDetail = (
   occupiedCellIds: string[],
 ): boolean => {
   if (activeTheme === null) return occupiedCellIds.includes(cellId);
-  if (activeTheme === "route") return false;
   return themeCellIds.includes(cellId);
 };
 
@@ -34,9 +29,9 @@ export const myVideoIdsOf = (
 ): string[] =>
   collectedVideos.filter((v) => v.cellId === cellId).map((v) => v.id);
 
-/** 상세 헤더 속성 배지 — id는 스타일 매핑 키(뷰), label은 표시 텍스트 (AC 9·10) */
+/** 상세 헤더 속성 배지 — id는 스타일 매핑 키(뷰), label은 표시 텍스트 (AC 9·10, MSG-277 route 포함) */
 export interface HomeCellBadge {
-  id: "occupied" | DetailTheme;
+  id: "occupied" | ThemeId;
   label: string;
 }
 
@@ -61,8 +56,8 @@ export interface HomeCellDetail {
 
 interface DeriveHomeCellDetailInput {
   cell: Cell;
-  /** 상세를 연 시점의 활성 테마 — canOpenDetail 통과가 전제라 route는 오지 않는다 */
-  activeTheme: DetailTheme | null;
+  /** 상세를 연 시점의 활성 테마 — 경로추천 포함 (MSG-277 AC 13) */
+  activeTheme: ThemeId | null;
   /** 내 점령 셀 여부 — "내 점령" 배지·내 영상 섹션 기준 */
   occupied: boolean;
   /** 이 셀에서 내가 수집한 영상 id (myVideoIdsOf 결과) */
@@ -76,7 +71,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** 서브타이틀 파생 (MSG-253 AC 6·7) — 테마면 24시간 변형, 비테마면 내 영상 최신 업로드 날짜 */
 const deriveSubtitle = (
   cell: Cell,
-  activeTheme: DetailTheme | null,
+  activeTheme: ThemeId | null,
   myVideos: CellVideo[],
   now: Date,
 ): string => {

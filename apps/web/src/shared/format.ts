@@ -26,3 +26,17 @@ export const formatMonthDay = (iso: string): string => {
   const date = new Date(iso);
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
 };
+
+/**
+ * 조회수를 한국어 만 단위로 축약한다 (MSG-277 AC 6 — 홈 피드 카드 "조회 {축약}").
+ * - 1만 미만: 콤마 표기 (8410 → "8,410")
+ * - 1만 이상: 만 단위 소수 첫째 자리 (12000 → "1.2만"), 10 이상은 정수 (124000 → "12만")
+ * explore 상세 시트의 formatViewCount(K/M)와 표기 이원화 공존 — 통일은 별도 티켓 (추정 3).
+ * 억 단위는 목 데이터 범위 밖이라 미정의.
+ */
+export const formatViewCountKo = (count: number): string => {
+  if (count < 10_000) return count.toLocaleString("ko-KR");
+  const man = count / 10_000;
+  const rounded = man < 10 ? Math.round(man * 10) / 10 : Math.round(man);
+  return `${rounded}만`;
+};

@@ -15,7 +15,8 @@ const VIDEO_TITLES = [
   "비 오는 날 우산 씬",
 ];
 const VIDEO_DURATIONS = [42, 96, 27, 184, 63];
-const VIDEO_VIEWS = [214, 1400, 58, 8900, 320];
+// 1만 이상 값(12000)을 포함해 홈 피드의 "1.2만" 축약(MSG-277 AC 6)이 화면에서 시연되게 한다
+const VIDEO_VIEWS = [214, 1400, 58, 12000, 320];
 const VIDEO_AGES = [5 * MINUTE, 3 * HOUR, 21 * HOUR, 2 * DAY, 6 * DAY];
 // 업로더 핸들 — 홈 셀 상세의 다른 사용자 카드 메타(MSG-253), 부산 서면 무드
 const VIDEO_HANDLES = [

@@ -32,8 +32,10 @@ describe("canOpenDetail — 셀 탭 → 상세 오픈 판정 (AC 9·10)", () => 
     expect(canOpenDetail(null, "E-05", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(false);
   });
 
-  it("경로추천 활성 중에는 상세를 열지 않는다 — 경로 강조는 표시 전용 (AC 8·9 문언)", () => {
-    expect(canOpenDetail("route", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(false);
+  // MSG-277 AC 13: 경로추천도 상세를 연다 — route=false 단정 갱신은 스펙 승인 예외 (빌드 리포트 기록)
+  it("경로추천 활성 중에도 강조 셀 탭은 상세를 연다 — 다른 테마와 동일 판정 (MSG-277 AC 13)", () => {
+    expect(canOpenDetail("route", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(true);
+    expect(canOpenDetail("route", "C-02", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(false);
   });
 });
 
@@ -120,6 +122,22 @@ describe("deriveHomeCellDetail — 배지·영상 목록·버튼 파생 (AC 9·1
     expect(detail.myVideos.map((v) => v.id)).toEqual(myIds);
     expect(detail.otherVideos).toEqual([]);
     expect(detail.showMashup).toBe(false);
+  });
+
+  it("경로추천 상세: 배지에 경로추천 테마가 표시된다 (MSG-277 AC 13 — route 확장)", () => {
+    const cell = cellOf("A-14");
+    const detail = deriveHomeCellDetail({
+      cell,
+      activeTheme: "route",
+      occupied: true,
+      myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, "A-14"),
+    });
+
+    expect(detail.badges).toEqual([
+      { id: "occupied", label: "내 점령" },
+      { id: "route", label: "경로추천" },
+    ]);
+    expect(detail.showMashup).toBe(true);
   });
 
   it("상세 헤더 메타는 목 격자에서 파생된다 — 디자인 예시 라벨 하드코딩 없음 (Figma 오탐 방지 4)", () => {

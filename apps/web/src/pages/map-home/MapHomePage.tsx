@@ -12,6 +12,7 @@ import {
 } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { MOCK_ROUTE, themeCellsOf } from "@/features/map-home/model/theme";
+import { deriveThemeFeed } from "@/features/map-home/model/theme-feed";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import {
   buildHomeOverlayCells,
@@ -22,6 +23,7 @@ import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
 import { HomeCellDetailPanel } from "./ui/HomeCellDetailPanel";
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
+import { ThemeFeedPanel } from "./ui/ThemeFeedPanel";
 
 // 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 표시는 셸 상시 층(MSG-263 D9) 소유이고,
 // 홈은 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정에만 이 목록을 쓴다
@@ -31,9 +33,13 @@ const OCCUPIED_CELLS = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
 }));
 const OCCUPIED_IDS = OCCUPIED_CELLS.map((c) => c.cellId);
 
+// 내 수집 영상 id 전체 — 테마 피드의 mine 판정 키 (MSG-277 AC 4). 영상 id는 셀 접두라 전역 유일
+const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.id);
+
 /**
  * 홈 패널(`/`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 좌측 사이드바 + 상단 테마 칩.
- * 검색바 + 요약(CellSummaryPanel), 셀 선택 시 상세(HomeCellDetailPanel)로 전환된다 (MSG-252).
+ * 검색바 + 요약(CellSummaryPanel), 칩 클릭 시 테마 피드(ThemeFeedPanel — MSG-277),
+ * 셀 선택 시 상세(HomeCellDetailPanel)로 전환된다 (MSG-252).
  * 테마 오버레이(점령·테마 셀·경로)는 map-overlay-store로 게시하고 렌더는 셸의 MapCanvas가
  * 담당한다 — 지도 SDK를 import하지 않는다(RN 경계). 접힘 시 칩·패널 모두 셸 래퍼로 숨는다(A6).
  */
@@ -43,6 +49,7 @@ export const MapHomePage = () => {
   const clearFilters = useExploreFilterStore((s) => s.clearFilters);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
+  const toggleTheme = useThemeFilterStore((s) => s.toggle);
   const resetThemeFilter = useThemeFilterStore((s) => s.reset);
   const selectedCellId = useHomeCellDetailStore((s) => s.selectedCellId);
   const selectCell = useHomeCellDetailStore((s) => s.select);
@@ -108,30 +115,47 @@ export const MapHomePage = () => {
   // 접힘은 셸이 display:none으로 숨겨 언마운트되지 않으므로 상태가 유지된다 (A6 정합)
   useEffect(() => resetThemeFilter, [resetThemeFilter]);
 
-  // 상세 표시 모델 파생 (AC 9·10) — 열림 판정(canOpenDetail)상 route 활성 중에는 열리지 않는다
+  // 상세 표시 모델 파생 (AC 9·10) — MSG-277 AC 13: 경로추천도 다른 테마와 동일하게 상세를 연다
   const detail = useMemo(() => {
     if (selectedCellId === null) return null;
     const cell = MOCK_CELLS.find((c) => c.id === selectedCellId);
     if (!cell) return null;
     return deriveHomeCellDetail({
       cell,
-      activeTheme: activeTheme === "route" ? null : activeTheme,
+      activeTheme,
       occupied: OCCUPIED_IDS.includes(cell.id),
       myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, cell.id),
     });
   }, [selectedCellId, activeTheme]);
+
+  // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
+  const themeFeed = useMemo(
+    () =>
+      activeTheme ? deriveThemeFeed(activeTheme, MOCK_CELLS, MY_VIDEO_IDS) : null,
+    [activeTheme],
+  );
+
+  // 테마 피드 Escape 닫기 = 칩 해제와 동일 효과 (추정 6) — toggle이 상세 close도 동반하나
+  // 피드 표시 중엔 상세가 이미 닫혀 있어 무해
+  const closeThemeFeed = useCallback(() => {
+    if (activeTheme) toggleTheme(activeTheme);
+  }, [activeTheme, toggleTheme]);
 
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
         {/* 검색은 드롭다운으로 그 자리에서 — 확정 시 탐색 그리드로 이동해 결과 표시 */}
         <SearchBox />
+        {/* 분기 우선순위 (MSG-277 확정): 셀 상세 > 테마 피드 > 요약 — 테마 상세를 닫으면
+            칩이 유지된 채 피드로 자연 복귀한다 (AC 13) */}
         {detail ? (
           <HomeCellDetailPanel
             detail={detail}
             onClose={closeDetail}
             onViewAll={handleViewAll}
           />
+        ) : themeFeed ? (
+          <ThemeFeedPanel feed={themeFeed} onClose={closeThemeFeed} />
         ) : (
           <CellSummaryPanel onViewAll={handleViewAll} onCellSelect={moveTo} />
         )}

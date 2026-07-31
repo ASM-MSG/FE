@@ -1,0 +1,60 @@
+import { Play } from "lucide-react";
+import type { CellVideo } from "@/entities/cell";
+import { formatDuration } from "@/features/explore/model/explore-cells";
+import {
+  formatMonthDay,
+  formatRelativeTime,
+  formatViewCountKo,
+} from "@/shared/format";
+
+interface FeedVideoCardProps {
+  video: CellVideo;
+  /** 내 영상 여부 — 메타 문구 분기 (AC 4·5): 내 영상 "내 영상 · M월 D일" / 다른 사용자 "@핸들 · 상대시간" */
+  mine: boolean;
+}
+
+/**
+ * 세로 1열 피드 영상 카드 (MSG-277 AC 5) — 테마 피드·점령 셀 상세 공용.
+ * 썸네일 placeholder(회색 배경 + 중앙 primary 재생 아이콘 + 우하단 길이 배지 — 기존 카드 관례,
+ * Figma 오탐 방지 1·5, 추정 8) 아래 메타 한 줄: 좌측 소유 구분 문구, 우측 "조회 {한국어 축약}".
+ * 재생은 제외 범위 — 클릭 배선 없음 (AC 10 no-op).
+ */
+export const FeedVideoCard = ({ video, mine }: FeedVideoCardProps) => {
+  const duration = formatDuration(video.durationSec);
+  return (
+    <div className="flex flex-col gap-xxs">
+      <span className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-sm bg-surface">
+        <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Play className="size-3 fill-current" />
+        </span>
+        {duration && (
+          <span className="absolute bottom-xs right-xs rounded-xs bg-navy-900/70 px-1.5 py-0.5 text-fm-caption text-foreground-inverse">
+            {duration}
+          </span>
+        )}
+      </span>
+      <div className="flex items-center justify-between gap-sm">
+        {mine ? (
+          <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
+            <span className="text-fm-body-strong text-primary">내 영상</span>
+            {` · ${formatMonthDay(video.uploadedAt)}`}
+          </span>
+        ) : (
+          <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
+            {video.uploaderHandle && (
+              <span className="text-fm-body-strong text-foreground">
+                {video.uploaderHandle}
+              </span>
+            )}
+            {video.uploaderHandle
+              ? ` · ${formatRelativeTime(video.uploadedAt)}`
+              : formatRelativeTime(video.uploadedAt)}
+          </span>
+        )}
+        <span className="shrink-0 text-fm-caption text-foreground-muted">
+          조회 {formatViewCountKo(video.viewCount)}
+        </span>
+      </div>
+    </div>
+  );
+};
