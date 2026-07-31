@@ -27,6 +27,17 @@ const VIDEO_HANDLES = [
   "@haeundae_walk",
 ];
 
+/**
+ * 재생 소스 — 미니 디테일 패널 HTML5 video용 목 (MSG-277 3차 AC 7, 확정 1 — 외부 CC0 URL 순환).
+ * 출처: MDN cc0-videos 세트(CC0 1.0 퍼블릭 도메인), mdn.github.io/shared-assets 호스팅.
+ * 로드 확인 2026-07-31 (HTTP 206, video/mp4). 오프라인 데모에선 재생 실패 가능 —
+ * 패널·메타·닫힘 동작은 정상, 재생만 실패한다 (스펙 리스크 수용).
+ */
+const VIDEO_SOURCES = [
+  "https://mdn.github.io/shared-assets/videos/flower.mp4",
+  "https://mdn.github.io/shared-assets/videos/friday.mp4",
+];
+
 /** 격자당 대표 리스트에 노출할 개별 영상 표본을 만든다 (전체 videoCount와 별개인 최근 표본). */
 const buildVideos = (cellId: string, sampleSize: number): CellVideo[] =>
   Array.from({ length: sampleSize }, (_, i) => ({
@@ -36,6 +47,7 @@ const buildVideos = (cellId: string, sampleSize: number): CellVideo[] =>
     uploadedAt: isoAgo(VIDEO_AGES[i % VIDEO_AGES.length]),
     durationSec: VIDEO_DURATIONS[i % VIDEO_DURATIONS.length],
     uploaderHandle: VIDEO_HANDLES[i % VIDEO_HANDLES.length],
+    videoSrc: VIDEO_SOURCES[i % VIDEO_SOURCES.length],
   }));
 
 interface CellSeed {

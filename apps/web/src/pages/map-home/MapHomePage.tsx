@@ -18,12 +18,14 @@ import {
   buildHomeOverlayCells,
   buildRouteOverlay,
 } from "@/features/map-home/model/theme-overlay";
+import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
 import { HomeCellDetailPanel } from "./ui/HomeCellDetailPanel";
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
 import { ThemeFeedPanel } from "./ui/ThemeFeedPanel";
+import { VideoMiniPanel } from "./ui/VideoMiniPanel";
 
 // 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 표시는 셸 상시 층(MSG-263 D9) 소유이고,
 // 홈은 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정에만 이 목록을 쓴다
@@ -35,6 +37,20 @@ const OCCUPIED_IDS = OCCUPIED_CELLS.map((c) => c.cellId);
 
 // 내 수집 영상 id 전체 — 테마 피드의 mine 판정 키 (MSG-277 AC 4). 영상 id는 셀 접두라 전역 유일
 const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.id);
+
+/**
+ * Escape 우선순위 래핑 (MSG-277 3차 AC 13) — 미니 패널이 열려 있으면 그것만 닫고,
+ * 아니면 원래 닫기를 실행한다. 패널의 useEscapeClose 훅·onClose 계약은 불변 —
+ * 우선순위는 페이지 레벨 콜백 조합으로만 해결한다 (스펙 재사용 항목).
+ */
+const withMiniPanelPriority = (close: () => void) => () => {
+  const mini = useVideoMiniPanelStore.getState();
+  if (mini.selected) {
+    mini.close();
+    return;
+  }
+  close();
+};
 
 /**
  * 홈 패널(`/`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 좌측 사이드바 + 상단 테마 칩.
@@ -54,6 +70,9 @@ export const MapHomePage = () => {
   const selectedCellId = useHomeCellDetailStore((s) => s.selectedCellId);
   const selectCell = useHomeCellDetailStore((s) => s.select);
   const closeDetail = useHomeCellDetailStore((s) => s.close);
+  const miniSelection = useVideoMiniPanelStore((s) => s.selected);
+  const openMiniPanel = useVideoMiniPanelStore((s) => s.open);
+  const closeMiniPanel = useVideoMiniPanelStore((s) => s.close);
 
   const setCells = useMapOverlayStore((s) => s.setCells);
   const setRoute = useMapOverlayStore((s) => s.setRoute);
@@ -141,6 +160,17 @@ export const MapHomePage = () => {
     if (activeTheme) toggleTheme(activeTheme);
   }, [activeTheme, toggleTheme]);
 
+  // Escape는 미니 패널 먼저 (3차 AC 13 — 기확정 4): 미니 열림이면 미니만 닫고,
+  // 재차 Escape가 기존 동작(상세/피드 닫힘). 패널 스모크 2케이스(onClose 계약)는 불변
+  const closeDetailMiniFirst = useMemo(
+    () => withMiniPanelPriority(closeDetail),
+    [closeDetail],
+  );
+  const closeThemeFeedMiniFirst = useMemo(
+    () => withMiniPanelPriority(closeThemeFeed),
+    [closeThemeFeed],
+  );
+
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
@@ -151,16 +181,26 @@ export const MapHomePage = () => {
         {detail ? (
           <HomeCellDetailPanel
             detail={detail}
-            onClose={closeDetail}
+            onVideoSelect={openMiniPanel}
+            onClose={closeDetailMiniFirst}
             onViewAll={handleViewAll}
           />
         ) : themeFeed ? (
-          <ThemeFeedPanel feed={themeFeed} onClose={closeThemeFeed} />
+          <ThemeFeedPanel
+            feed={themeFeed}
+            onVideoSelect={openMiniPanel}
+            onClose={closeThemeFeedMiniFirst}
+          />
         ) : (
           <CellSummaryPanel onViewAll={handleViewAll} onCellSelect={moveTo} />
         )}
       </aside>
-      {/* 상단 테마 칩 — 좌측 패널 오른쪽 홈 오버레이 (AC 1, A6) */}
+      {/* 영상 미니 디테일 패널 — 좌측 패널 오른쪽 flush 보조 패널 (3차 AC 8~11).
+          aside 뒤 형제라 접힘 시 셸 래퍼로 함께 숨는다 (추정 9) */}
+      {miniSelection && (
+        <VideoMiniPanel selected={miniSelection} onClose={closeMiniPanel} />
+      )}
+      {/* 상단 테마 칩 — 좌측 패널 오른쪽 홈 오버레이 (AC 1, A6). 미니 열림 시 우측 이동 (3차 AC 15) */}
       <ThemeChipsBar />
     </>
   );

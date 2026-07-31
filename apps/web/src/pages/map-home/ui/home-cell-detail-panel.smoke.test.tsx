@@ -33,6 +33,9 @@ const DETAIL: HomeCellDetail = {
 /** onViewAll 필수 prop 신설(MSG-253 AC 11)에 따른 렌더 인자 — Escape 단정과 무관한 no-op */
 const noopViewAll = () => {};
 
+/** onVideoSelect 필수 prop 신설(MSG-277 3차 AC 4·9)에 따른 렌더 인자 — Escape 단정과 무관한 no-op */
+const noopVideoSelect = () => {};
+
 describe("홈 셀 상세 패널 Escape 배선", () => {
   afterEach(() => {
     cleanup();
@@ -45,6 +48,7 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
         <input aria-label="검색어" />
         <HomeCellDetailPanel
           detail={DETAIL}
+          onVideoSelect={noopVideoSelect}
           onClose={onClose}
           onViewAll={noopViewAll}
         />
@@ -61,6 +65,7 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
     render(
       <HomeCellDetailPanel
         detail={DETAIL}
+        onVideoSelect={noopVideoSelect}
         onClose={onClose}
         onViewAll={noopViewAll}
       />,

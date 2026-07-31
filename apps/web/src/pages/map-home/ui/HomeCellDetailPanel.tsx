@@ -1,5 +1,6 @@
 import { Clock, MapPin } from "lucide-react";
 import { cn } from "@fillmap/ui-web";
+import type { CellVideo } from "@/entities/cell";
 import type {
   HomeCellBadge,
   HomeCellDetail,
@@ -12,6 +13,8 @@ import { useEscapeClose } from "./use-escape-close";
 
 interface HomeCellDetailPanelProps {
   detail: HomeCellDetail;
+  /** 영상 카드 클릭 — 미니 디테일 패널 열기/교체 (3차 AC 4·9, 테마 피드와 공통 배선) */
+  onVideoSelect: (video: CellVideo, mine: boolean) => void;
   /** 닫기 — Escape 키 배선 (AC 9-1). 칩 해제·전환 닫힘은 스토어 연동이 담당 */
   onClose: () => void;
   /** "전체 보기" 클릭 — 요약 패널과 동일하게 탐색으로 이동 (MSG-253 AC 11) */
@@ -36,10 +39,12 @@ const BADGE_CLASS: Record<HomeCellBadge["id"], string> = {
  * 액션 행 → 1열 피드(내 영상 앞) → 위치 정보 블록 → 활발한 시간대 그래프 (2차 AC 3·12).
  * 그래프·표본 문구는 실제 피드 표본(myVideos+otherVideos) 기준 — videoCount 집계 필드와
  * 다른 숫자가 병존하는 것은 의도된 정직성 장치 (AC 10, 추정 5).
- * 버튼 실동작(재생·업로드·액션 행)은 제외 범위 — 클릭은 no-op이어야 한다 (2차 AC 5).
+ * 액션 행 실동작은 제외 범위 — 클릭 no-op 유지 (2차 AC 5, 3차 제외 범위).
+ * 영상 카드 클릭은 3차에서 미니 디테일 패널 열기로 대체됐다 (3차 AC 4·9 — onVideoSelect).
  */
 export const HomeCellDetailPanel = ({
   detail,
+  onVideoSelect,
   onClose,
   onViewAll,
 }: HomeCellDetailPanelProps) => {
@@ -83,15 +88,25 @@ export const HomeCellDetailPanel = ({
       {/* 본문 단일 스크롤 컬럼 (2차 AC 12) — 하단 고정 버튼 영역 제거, 액션 행이 대체 (2차 AC 3) */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-md">
-          <CellActionRow accent={detail.accent} showMashup={detail.showMashup} />
+          <CellActionRow showMashup={detail.showMashup} />
 
           {/* 1열 피드 — 섹션 헤더 없이 내 영상이 앞 (MSG-253 AC 9 정렬 유지, MSG-277 AC 11 디자인 통일) */}
           <div className="flex flex-col gap-sm">
             {detail.myVideos.map((video) => (
-              <FeedVideoCard key={video.id} video={video} mine />
+              <FeedVideoCard
+                key={video.id}
+                video={video}
+                mine
+                onSelect={() => onVideoSelect(video, true)}
+              />
             ))}
             {detail.otherVideos.map((video) => (
-              <FeedVideoCard key={video.id} video={video} mine={false} />
+              <FeedVideoCard
+                key={video.id}
+                video={video}
+                mine={false}
+                onSelect={() => onVideoSelect(video, false)}
+              />
             ))}
           </div>
 

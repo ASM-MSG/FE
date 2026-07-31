@@ -1,4 +1,5 @@
 import { cn } from "@fillmap/ui-web";
+import type { CellVideo } from "@/entities/cell";
 import { THEME_META, type ThemeId } from "@/features/map-home/model/theme";
 import type { ThemeFeed } from "@/features/map-home/model/theme-feed";
 import { FeedVideoCard } from "./FeedVideoCard";
@@ -6,6 +7,8 @@ import { useEscapeClose } from "./use-escape-close";
 
 interface ThemeFeedPanelProps {
   feed: ThemeFeed;
+  /** 영상 카드 클릭 — 미니 디테일 패널 열기/교체 (3차 AC 4·8, 셀 상세와 공통 배선) */
+  onVideoSelect: (video: CellVideo, mine: boolean) => void;
   /** 닫기 — Escape 배선 (추정 6 — 칩 해제와 동일 효과). 칩 재클릭·전환 닫힘은 스토어 연동이 담당 */
   onClose: () => void;
 }
@@ -35,7 +38,11 @@ const DOT_CLASS: Record<ThemeId, string> = {
  * 추정 1·7), 본문 = 셀 라벨 섹션 헤더(AC 7) 아래 1열 피드 카드. 순수 탐색 피드 — 하단 버튼·
  * "전체 보기" 없음 (확정 4). 닫힘: 칩 재클릭(스토어)·Escape (추정 6).
  */
-export const ThemeFeedPanel = ({ feed, onClose }: ThemeFeedPanelProps) => {
+export const ThemeFeedPanel = ({
+  feed,
+  onVideoSelect,
+  onClose,
+}: ThemeFeedPanelProps) => {
   useEscapeClose(onClose);
 
   return (
@@ -73,7 +80,12 @@ export const ThemeFeedPanel = ({ feed, onClose }: ThemeFeedPanelProps) => {
               </h3>
               <div className="flex flex-col gap-sm">
                 {section.videos.map((video) => (
-                  <FeedVideoCard key={video.id} video={video} mine={video.mine} />
+                  <FeedVideoCard
+                    key={video.id}
+                    video={video}
+                    mine={video.mine}
+                    onSelect={() => onVideoSelect(video, video.mine)}
+                  />
                 ))}
               </div>
             </section>

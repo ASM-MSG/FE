@@ -5,8 +5,10 @@ import { ThemeFeedPanel } from "./ThemeFeedPanel";
 
 /**
  * 테마 피드 패널 스모크 (MSG-277 AC 2·7, 확정 4, 추정 6).
- * 헤더 개수·셀 섹션 헤더·버튼 부재·Escape 배선(입력 타깃 무시 계약 포함)을 고정한다.
+ * 헤더 개수·셀 섹션 헤더·CTA 부재·Escape 배선(입력 타깃 무시 계약 포함)을 고정한다.
  * 피드 파생 규칙 자체는 theme-feed.test.ts가 커버 — 여기서는 렌더 배선만 단정한다.
+ * MSG-277 3차: 카드 button화(3차 AC 4)로 "버튼 전무" 단정을 "카드 재생 버튼 외 버튼 없음"으로
+ * 재작성 — 원 의도(순수 탐색 피드: 하단 CTA·"전체 보기" 없음)는 보존 (스펙 승인 예외).
  */
 
 /** 고정 픽스처 — 서면 목 관례 (부산 서면 MVP). totalCount(3)는 나열 영상 수 합과 일치 (AC 2) */
@@ -61,24 +63,35 @@ describe("테마 피드 패널 스모크", () => {
   });
 
   it("헤더에 테마 배지와 실제 나열 영상 총수가 보인다 (AC 2)", () => {
-    render(<ThemeFeedPanel feed={FEED} onClose={() => {}} />);
+    render(
+      <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={() => {}} />,
+    );
 
     expect(screen.getByText("핫구역")).toBeTruthy();
     expect(screen.getByText("· 3개")).toBeTruthy();
   });
 
   it("셀 라벨 섹션 헤더가 보인다 — 피드 내 셀 식별 (AC 7)", () => {
-    render(<ThemeFeedPanel feed={FEED} onClose={() => {}} />);
+    render(
+      <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={() => {}} />,
+    );
 
     // 접근성 이름에 섹션 개수("· N개")가 합쳐진다 — 리뷰 반영(헤더 위계 승격)으로 부분 일치 단정
     expect(screen.getByRole("heading", { name: /서면 A-14/ })).toBeTruthy();
     expect(screen.getByRole("heading", { name: /전포 A-15/ })).toBeTruthy();
   });
 
-  it("하단 버튼·'전체 보기'가 없다 — 순수 탐색 피드 (확정 4)", () => {
-    render(<ThemeFeedPanel feed={FEED} onClose={() => {}} />);
+  it("버튼은 카드 재생 버튼뿐이고 '전체 보기'가 없다 — 순수 탐색 피드 (확정 4, 3차 AC 4 button화 반영 재작성)", () => {
+    render(
+      <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={() => {}} />,
+    );
 
-    expect(screen.queryByRole("button")).toBeNull();
+    // 나열 영상 3개 = 재생 버튼 3개 — 그 외 버튼(하단 CTA 등)이 없음을 총수로 고정
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      expect(button.getAttribute("aria-label")).toMatch(/재생$/);
+    }
     expect(screen.queryByText("전체 보기")).toBeNull();
   });
 
@@ -87,7 +100,7 @@ describe("테마 피드 패널 스모크", () => {
     render(
       <>
         <input aria-label="검색어" />
-        <ThemeFeedPanel feed={FEED} onClose={onClose} />
+        <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={onClose} />
       </>,
     );
 
