@@ -50,11 +50,11 @@ describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6)", (
     expect(buildGridLines(OPEN_SEA_VIEWPORT, 15)).toEqual([]);
   });
 
-  it("줌 14 미만이면 빈 결과, 14 이상이면 반환한다 (AC 6, D4)", () => {
-    expect(GRID_MIN_ZOOM).toBe(14);
-    expect(buildGridLines(SEOMYEON_VIEWPORT, 13)).toEqual([]);
+  it("줌 15 미만이면 빈 결과, 15 이상이면 반환한다 (AC 6, D4)", () => {
+    expect(GRID_MIN_ZOOM).toBe(15);
+    expect(buildGridLines(SEOMYEON_VIEWPORT, 14)).toEqual([]);
     expect(buildGridLines(SEOMYEON_VIEWPORT, GRID_MIN_ZOOM).length).toBeGreaterThan(0);
-    expect(buildGridLines(SEOMYEON_VIEWPORT, 15).length).toBeGreaterThan(0);
+    expect(buildGridLines(SEOMYEON_VIEWPORT, 16).length).toBeGreaterThan(0);
   });
 
   it("파생 도형 수가 셀 수(열×행)가 아닌 선 수(열+행) 규모에 머문다 — 뷰포트 크기 기준 상한 가드 (AC 5)", () => {

@@ -25,7 +25,7 @@ import type { OccupiedCell, StyledCellOverlay } from "./theme-overlay";
  */
 
 /** 격자선 표시 최소 줌 (D4) — 미만이면 격자선 숨김. 점령 채움은 임계와 무관하게 항상 표시 */
-export const GRID_MIN_ZOOM = 14;
+export const GRID_MIN_ZOOM = 15;
 
 /** 지도에 게시할 격자선 한 선분 — 순수 데이터(id + 두 끝점), MapCanvas prop 계약 */
 export interface GridLineOverlay {
