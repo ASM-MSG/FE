@@ -1,5 +1,9 @@
 import type { Cell, CellVideo } from "@/entities/cell";
-import { formatMonthDay } from "@/shared/format";
+import {
+  formatMonthDay,
+  formatRelativeTime,
+  formatViewCountKo,
+} from "@/shared/format";
 import { THEME_META, type ThemeId } from "./theme";
 
 /**
@@ -52,6 +56,14 @@ export interface HomeCellDetail {
   otherVideos: CellVideo[];
   /** "영상 몰아보기" 노출 — 테마 상세만 (AC 9), 비활성 점령 상세는 숨김 (AC 10) */
   showMashup: boolean;
+  /** 지표 한 줄 "영상 N개 · 조회 {한국어 축약} · 담수율 M%" — 셀 집계 필드 파생 (MSG-277 2차 AC 1) */
+  statsLine: string;
+  /** 상세 위치 문자열 — cell.location 그대로 (MSG-277 2차 AC 7) */
+  locationLabel: string;
+  /** "마지막 업로드 {상대시간}" — cell.recentUploadedAt 기준, 서브타이틀의 내 영상 기준과 다름 (AC 7, 추정 6) */
+  lastUploadText: string;
+  /** 액션 행 강조·그래프 막대 색 키 — 뷰 토큰 클래스 리터럴 표의 키 (MSG-277 2차 AC 11) */
+  accent: ThemeId | "primary";
 }
 
 interface DeriveHomeCellDetailInput {
@@ -121,5 +133,9 @@ export const deriveHomeCellDetail = ({
       ? cell.videos.filter((v) => !myVideoIds.includes(v.id))
       : [],
     showMashup: activeTheme !== null,
+    statsLine: `영상 ${cell.videoCount}개 · 조회 ${formatViewCountKo(cell.viewCount)} · 담수율 ${cell.fillRate}%`,
+    locationLabel: cell.location,
+    lastUploadText: `마지막 업로드 ${formatRelativeTime(cell.recentUploadedAt, now)}`,
+    accent: activeTheme ?? "primary",
   };
 };

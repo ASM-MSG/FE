@@ -14,6 +14,8 @@ import { HomeCellDetailPanel } from "./HomeCellDetailPanel";
 /** 최소 상세 픽스처 — Escape 배선 단정에는 헤더 메타만 있으면 된다 (서면 목 관례) */
 // MSG-253: HomeCellDetail 타입 변경(location·videoCount → subtitle)에 따른 픽스처 갱신만 —
 // Escape 단정 2케이스는 불변
+// MSG-277 2차: additive 필드(statsLine·locationLabel·lastUploadText·accent) 추가에 따른
+// 픽스처 갱신만 — Escape 단정 2케이스는 여전히 불변
 const DETAIL: HomeCellDetail = {
   cellId: "A-14",
   label: "서면 A-14",
@@ -22,6 +24,10 @@ const DETAIL: HomeCellDetail = {
   myVideos: [],
   otherVideos: [],
   showMashup: false,
+  statsLine: "영상 138개 · 조회 1,400 · 담수율 73%",
+  locationLabel: "부산 부산진구 서면",
+  lastUploadText: "마지막 업로드 방금 전",
+  accent: "primary",
 };
 
 /** onViewAll 필수 prop 신설(MSG-253 AC 11)에 따른 렌더 인자 — Escape 단정과 무관한 no-op */

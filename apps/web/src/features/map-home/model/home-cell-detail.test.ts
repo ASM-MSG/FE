@@ -248,3 +248,74 @@ describe("deriveHomeCellDetail — 서브타이틀 파생 (MSG-253 AC 6·7)", ()
     ).toBe("내 영상 0개 · 최근 24시간 영상 +1개");
   });
 });
+
+// ── MSG-277 2차: 지표 한 줄·위치 블록·액센트 파생 (AC 1·7·11) ───────────────
+
+describe("deriveHomeCellDetail — 지표 한 줄 파생 (MSG-277 2차 AC 1)", () => {
+  it("셀의 videoCount·viewCount·fillRate에서 '영상 {N}개 · 조회 {축약} · 담수율 {M}%'를 파생한다 — A-14", () => {
+    const detail = deriveHomeCellDetail({
+      cell: cellOf("A-14"),
+      activeTheme: "hot",
+      occupied: true,
+      myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, "A-14"),
+    });
+
+    expect(detail.statsLine).toBe("영상 138개 · 조회 1,400 · 담수율 73%");
+  });
+
+  it("조회수 1만 이상 셀은 한국어 만 단위 축약을 쓴다 — B-08(12000)은 '1.2만'", () => {
+    const detail = deriveHomeCellDetail({
+      cell: cellOf("B-08"),
+      activeTheme: null,
+      occupied: true,
+      myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, "B-08"),
+    });
+
+    expect(detail.statsLine).toBe("영상 91개 · 조회 1.2만 · 담수율 67%");
+  });
+});
+
+describe("deriveHomeCellDetail — 위치 정보 블록 파생 (MSG-277 2차 AC 7)", () => {
+  it("위치 문자열은 cell.location 그대로, 마지막 업로드는 recentUploadedAt의 상대시간이다 — now 주입 결정성", () => {
+    // fixtureCell.recentUploadedAt = 2026-07-30T00:00Z, NOW = 동일 일 12:00Z → 12시간 전
+    const cell = fixtureCell([
+      fixtureVideo("T-01-v1", "2026-07-18T12:00:00.000Z"),
+    ]);
+    const detail = deriveHomeCellDetail({
+      cell,
+      activeTheme: null,
+      occupied: true,
+      myVideoIds: [],
+      now: NOW,
+    });
+
+    expect(detail.locationLabel).toBe("부산 부산진구 서면");
+    expect(detail.lastUploadText).toBe("마지막 업로드 12시간 전");
+  });
+});
+
+describe("deriveHomeCellDetail — 액센트 파생 (MSG-277 2차 AC 11)", () => {
+  it("테마 상세의 액센트는 활성 테마 id다 — 액션 행·그래프 막대 색 키", () => {
+    const base = {
+      cell: cellOf("A-14"),
+      occupied: true,
+      myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, "A-14"),
+    };
+
+    expect(deriveHomeCellDetail({ ...base, activeTheme: "hot" }).accent).toBe("hot");
+    expect(deriveHomeCellDetail({ ...base, activeTheme: "route" }).accent).toBe(
+      "route",
+    );
+  });
+
+  it("비테마 점령 상세의 액센트는 primary다", () => {
+    const detail = deriveHomeCellDetail({
+      cell: cellOf("B-08"),
+      activeTheme: null,
+      occupied: true,
+      myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, "B-08"),
+    });
+
+    expect(detail.accent).toBe("primary");
+  });
+});
