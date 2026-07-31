@@ -70,8 +70,9 @@ describe("테마 피드 패널 스모크", () => {
   it("셀 라벨 섹션 헤더가 보인다 — 피드 내 셀 식별 (AC 7)", () => {
     render(<ThemeFeedPanel feed={FEED} onClose={() => {}} />);
 
-    expect(screen.getByRole("heading", { name: "서면 A-14" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "전포 A-15" })).toBeTruthy();
+    // 접근성 이름에 섹션 개수("· N개")가 합쳐진다 — 리뷰 반영(헤더 위계 승격)으로 부분 일치 단정
+    expect(screen.getByRole("heading", { name: /서면 A-14/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /전포 A-15/ })).toBeTruthy();
   });
 
   it("하단 버튼·'전체 보기'가 없다 — 순수 탐색 피드 (확정 4)", () => {
