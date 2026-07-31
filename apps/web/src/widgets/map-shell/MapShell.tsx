@@ -41,7 +41,7 @@ export const MapShell = () => {
   const routeOverlay = useMapOverlayStore((s) => s.route);
 
   // 상시 격자선 파생(MSG-263 D9) — MapCanvas가 idle마다 push하는 뷰포트를 직접 구독해
-  // 뷰포트∩부산 경계·한 화면 버퍼·줌 게이트(14 미만 숨김, D4)로 재계산 (AC 9·13·16)
+  // 뷰포트∩부산 경계·한 화면 버퍼·줌 게이트(GRID_MIN_ZOOM 미만 숨김, D4)로 재계산 (AC 9·13·16)
   const viewportBounds = useViewportStore((s) => s.bounds);
   const viewportZoom = useViewportStore((s) => s.zoom);
   const gridLines = useMemo(
