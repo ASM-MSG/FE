@@ -24,7 +24,11 @@ import type { OccupiedCell, StyledCellOverlay } from "./theme-overlay";
  * 파생한다 — 도형 수가 셀 수(열×행)가 아닌 선 수(열+행 × 경계 분절) 규모다 [AC 5].
  */
 
-/** 격자선 표시 최소 줌 (D4) — 미만이면 격자선 숨김. 점령 채움은 임계와 무관하게 항상 표시 */
+/**
+ * 격자·채움 표시 최소 줌 — 미만이면 격자선과 점령·테마 채움을 모두 숨기고 클러스터 마커로
+ * 전환한다 (MSG-264 — D4 "점령 채움은 임계와 무관하게 항상 표시"를 명시적으로 대체).
+ * 채움 게이트·클러스터 파생은 cluster-overlay(gateFillCells·buildClusterMarkers) 소유.
+ */
 export const GRID_MIN_ZOOM = 15;
 
 /** 지도에 게시할 격자선 한 선분 — 순수 데이터(id + 두 끝점), MapCanvas prop 계약 */
@@ -48,7 +52,7 @@ const intersectBounds = (a: Bounds, b: Bounds): Bounds | null => {
 
 /**
  * 뷰포트 → 부산 행정경계로 절단된 점선 격자선 선분 목록. [AC 2·3·5·6]
- * - 줌 게이트: GRID_MIN_ZOOM 미만이면 빈 배열 (D4)
+ * - 줌 게이트: GRID_MIN_ZOOM 미만이면 빈 배열 — 채움·클러스터 전환 게이트(MSG-264, cluster-overlay)와 임계 공유
  * - 뷰포트 컬링 + 한 화면 버퍼: 드래그 중 빈 영역 노출을 줄이기 위해 각 방향 1화면 여유(R3)
  * - 부산 bbox 교집합 밖이면 빈 배열, 경계 절단은 clipLineToBoundary(스캔라인) [D7]
  */

@@ -4,6 +4,11 @@ import type { LatLng } from "@/entities/cell";
 import { MOCK_DEX } from "@/entities/dex";
 import { useMapOverlayStore } from "./map-overlay-store";
 import {
+  buildClusterMarkers,
+  gateFillCells,
+  selectClusterSource,
+} from "@/features/map-home/model/cluster-overlay";
+import {
   buildGridLines,
   buildOccupiedGridCells,
   excludeSectionCells,
@@ -58,6 +63,22 @@ export const MapShell = () => {
     ],
     [sectionCells],
   );
+  // 채움 줌 게이트 (MSG-264 AC 1·2, A5 — 전 섹션 공유): zoom < GRID_MIN_ZOOM이면
+  // 채움 셀을 전달하지 않고 아래 클러스터로 전환한다 — MSG-263 D4(채움 상시 표시) 대체
+  const visibleOverlayCells = useMemo(
+    () => gateFillCells(overlayCells, viewportZoom),
+    [overlayCells, viewportZoom],
+  );
+  // 클러스터 파생 (MSG-264 AC 4·9): 섹션 게시 셀이 있으면 그 셀(테마 색), 없으면 상시
+  // 점령 셀(primary) 기준으로 집계 — zoom ≥ GRID_MIN_ZOOM이면 빈 배열(게이트 내장)
+  const clusters = useMemo(
+    () =>
+      buildClusterMarkers(
+        selectClusterSource(sectionCells, PERSISTENT_OCCUPIED_CELLS).cells,
+        viewportZoom,
+      ),
+    [sectionCells, viewportZoom],
+  );
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
   const mapRef = useRef<MapCanvasHandle>(null);
@@ -93,9 +114,10 @@ export const MapShell = () => {
           ref={mapRef}
           center={initialCenter}
           onViewportChange={setViewport}
-          overlayCells={overlayCells}
+          overlayCells={visibleOverlayCells}
           gridLines={gridLines}
           route={routeOverlay ?? undefined}
+          clusters={clusters}
           onOverlayCellClick={onOverlayCellClick ?? undefined}
         />
       </div>
