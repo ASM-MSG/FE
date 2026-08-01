@@ -15,7 +15,8 @@ const VIDEO_TITLES = [
   "비 오는 날 우산 씬",
 ];
 const VIDEO_DURATIONS = [42, 96, 27, 184, 63];
-const VIDEO_VIEWS = [214, 1400, 58, 8900, 320];
+// 1만 이상 값(12000)을 포함해 홈 피드의 "1.2만" 축약(MSG-277 AC 6)이 화면에서 시연되게 한다
+const VIDEO_VIEWS = [214, 1400, 58, 12000, 320];
 const VIDEO_AGES = [5 * MINUTE, 3 * HOUR, 21 * HOUR, 2 * DAY, 6 * DAY];
 // 업로더 핸들 — 홈 셀 상세의 다른 사용자 카드 메타(MSG-253), 부산 서면 무드
 const VIDEO_HANDLES = [
@@ -24,6 +25,17 @@ const VIDEO_HANDLES = [
   "@seomyeon_now",
   "@jeonpo_alley",
   "@haeundae_walk",
+];
+
+/**
+ * 재생 소스 — 미니 디테일 패널 HTML5 video용 목 (MSG-277 3차 AC 7, 확정 1 — 외부 CC0 URL 순환).
+ * 출처: MDN cc0-videos 세트(CC0 1.0 퍼블릭 도메인), mdn.github.io/shared-assets 호스팅.
+ * 로드 확인 2026-07-31 (HTTP 206, video/mp4). 오프라인 데모에선 재생 실패 가능 —
+ * 패널·메타·닫힘 동작은 정상, 재생만 실패한다 (스펙 리스크 수용).
+ */
+const VIDEO_SOURCES = [
+  "https://mdn.github.io/shared-assets/videos/flower.mp4",
+  "https://mdn.github.io/shared-assets/videos/friday.mp4",
 ];
 
 /** 격자당 대표 리스트에 노출할 개별 영상 표본을 만든다 (전체 videoCount와 별개인 최근 표본). */
@@ -35,6 +47,7 @@ const buildVideos = (cellId: string, sampleSize: number): CellVideo[] =>
     uploadedAt: isoAgo(VIDEO_AGES[i % VIDEO_AGES.length]),
     durationSec: VIDEO_DURATIONS[i % VIDEO_DURATIONS.length],
     uploaderHandle: VIDEO_HANDLES[i % VIDEO_HANDLES.length],
+    videoSrc: VIDEO_SOURCES[i % VIDEO_SOURCES.length],
   }));
 
 interface CellSeed {

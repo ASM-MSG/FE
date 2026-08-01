@@ -28,6 +28,12 @@ export interface CellVideo {
    * 선택 필드로 추가만 — 기존 feature(explore·dex) 표시에는 영향 없음
    */
   uploaderHandle?: string;
+  /**
+   * 재생 소스 URL — 홈 미니 디테일 패널의 HTML5 video src (MSG-277 3차 AC 5·7).
+   * 실 스트리밍 전까지 목은 외부 CC0 샘플을 순환 배정한다. 선택 필드로 추가만 —
+   * 기존 feature(explore·dex) 표시에는 영향 없음. 없으면 플레이스홀더 표시
+   */
+  videoSrc?: string;
 }
 
 /** 격자 도메인 모델 */

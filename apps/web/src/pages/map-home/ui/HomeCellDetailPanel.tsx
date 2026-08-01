@@ -1,111 +1,59 @@
-import { useEffect } from "react";
-import { Play } from "lucide-react";
-import { Button, cn } from "@fillmap/ui-web";
+import { Clock, MapPin } from "lucide-react";
+import { cn } from "@fillmap/ui-web";
 import type { CellVideo } from "@/entities/cell";
-import { formatDuration } from "@/features/explore/model/explore-cells";
 import type {
   HomeCellBadge,
   HomeCellDetail,
 } from "@/features/map-home/model/home-cell-detail";
-import { formatMonthDay, formatRelativeTime } from "@/shared/format";
+import { deriveUploadHourBuckets } from "@/features/map-home/model/upload-hours";
+import { CellActionRow } from "./CellActionRow";
+import { CellHourChart } from "./CellHourChart";
+import { FeedVideoCard } from "./FeedVideoCard";
+import { useEscapeClose } from "./use-escape-close";
 
 interface HomeCellDetailPanelProps {
   detail: HomeCellDetail;
+  /** 영상 카드 클릭 — 미니 디테일 패널 열기/교체 (3차 AC 4·9, 테마 피드와 공통 배선) */
+  onVideoSelect: (video: CellVideo, mine: boolean) => void;
   /** 닫기 — Escape 키 배선 (AC 9-1). 칩 해제·전환 닫힘은 스토어 연동이 담당 */
   onClose: () => void;
   /** "전체 보기" 클릭 — 요약 패널과 동일하게 탐색으로 이동 (MSG-253 AC 11) */
   onViewAll: () => void;
 }
 
-/** 배지 스타일 매핑 — 연한 배경 pill (Figma 셀 선택 프레임). 토큰 클래스 리터럴만 사용 */
+/** 배지 스타일 매핑 — 연한 배경 pill (Figma 셀 선택 프레임). 토큰 클래스 리터럴만 사용. MSG-277: route 추가 */
 const BADGE_CLASS: Record<HomeCellBadge["id"], string> = {
   occupied: "bg-primary/10 text-primary",
   hot: "bg-theme-hot/10 text-theme-hot",
   festival: "bg-theme-festival/10 text-theme-festival",
   popup: "bg-theme-popup/10 text-theme-popup",
+  route: "bg-theme-route/10 text-theme-route",
 };
 
 /**
- * 영상 카드 — CellSummaryPanel CellCard 시각 관례 차용(썸네일 자리 + 재생 아이콘 + 길이 배지).
- * 회색 썸네일 박스는 placeholder가 정상 (Figma 오탐 방지 1). 재생은 제외 범위라 클릭 없음.
- * 메타는 소유 구분 (MSG-253 AC 10) — 내 영상: 업로드 날짜(혼합 그리드에선 "내 영상" 라벨 동반),
- * 다른 사용자: "@업로더" + 상대시간 두 줄 (추정 2).
- */
-const VideoCard = ({
-  video,
-  mine,
-  showMineLabel,
-}: {
-  video: CellVideo;
-  mine: boolean;
-  /** "내 영상" 라벨 표시 — 혼합 그리드(다른 사용자 영상 동반)에서만 (추정 3) */
-  showMineLabel: boolean;
-}) => {
-  const duration = formatDuration(video.durationSec);
-  return (
-    <div className="flex flex-col gap-xxs">
-      <span className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-sm bg-surface">
-        <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Play className="size-3 fill-current" />
-        </span>
-        {duration && (
-          <span className="absolute bottom-xs right-xs rounded-xs bg-navy-900/70 px-1.5 py-0.5 text-fm-caption text-foreground-inverse">
-            {duration}
-          </span>
-        )}
-      </span>
-      {mine ? (
-        <>
-          {showMineLabel && (
-            <span className="text-fm-body-strong text-primary">내 영상</span>
-          )}
-          <span className="text-fm-caption text-foreground-muted">
-            {formatMonthDay(video.uploadedAt)}
-          </span>
-        </>
-      ) : (
-        <>
-          {video.uploaderHandle && (
-            <span className="truncate text-fm-body-strong text-foreground">
-              {video.uploaderHandle}
-            </span>
-          )}
-          <span className="text-fm-caption text-foreground-muted">
-            {formatRelativeTime(video.uploadedAt)}
-          </span>
-        </>
-      )}
-    </div>
-  );
-};
-
-/**
- * 홈 셀 상세 패널 (MSG-252 AC 9·9-1·10 → MSG-253 시각 정리) — 좌측 패널에서 요약
- * (CellSummaryPanel) 자리에 전환 렌더된다(SearchBox 유지). 별도 닫기 버튼 없음(A3) —
- * 칩 해제·전환(스토어 연동)·다른 셀 탭(교체)·Escape로 닫힌다.
- * 영상은 섹션 헤더 없는 단일 2열 그리드 — 내 영상이 앞 (MSG-253 AC 9).
- * "전체 보기" 링크는 타이틀 행 오른쪽에 표시 (MSG-253 AC 11 — MSG-252의 미표시를 대체).
- * 버튼 실동작(재생·업로드)은 제외 범위 — 클릭은 no-op이어야 한다 (AC 12).
+ * 홈 셀 상세 패널 (MSG-252 AC 9·9-1·10 → MSG-253 시각 정리 → MSG-277 피드 디자인 통일 →
+ * MSG-277 2차 정보 구조 확장 — 네이버 지도 PC 장소 패널 층위 참고) —
+ * 좌측 패널에서 요약(CellSummaryPanel)·테마 피드 자리에 전환 렌더된다(SearchBox 유지).
+ * 별도 닫기 버튼 없음(A3) — 칩 해제·전환(스토어 연동)·다른 셀 탭(교체)·Escape로 닫힌다.
+ * 구조: 헤더(셀명+배지+전체 보기 · 서브타이틀 · 지표 한 줄) 고정, 본문 단일 스크롤 컬럼 =
+ * 액션 행 → 1열 피드(내 영상 앞) → 위치 정보 블록 → 활발한 시간대 그래프 (2차 AC 3·12).
+ * 그래프·표본 문구는 실제 피드 표본(myVideos+otherVideos) 기준 — videoCount 집계 필드와
+ * 다른 숫자가 병존하는 것은 의도된 정직성 장치 (AC 10, 추정 5).
+ * 액션 행 실동작은 제외 범위 — 클릭 no-op 유지 (2차 AC 5, 3차 제외 범위).
+ * 영상 카드 클릭은 3차에서 미니 디테일 패널 열기로 대체됐다 (3차 AC 4·9 — onVideoSelect).
  */
 export const HomeCellDetailPanel = ({
   detail,
+  onVideoSelect,
   onClose,
   onViewAll,
 }: HomeCellDetailPanelProps) => {
-  // Escape 닫기 (AC 9-1) — 뷰 레이어라 window 이벤트 직접 배선 (RN 경계는 model에만 적용)
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // 입력 요소 타깃은 무시 — SearchBox 자체 Escape(드롭다운 닫기)와 동시 닫힘 방지 (리뷰 반영)
-      const target = event.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  // Escape 닫기 (AC 9-1) — 입력 요소 타깃 무시 계약 포함 (use-escape-close, MSG-277 공용 추출)
+  useEscapeClose(onClose);
 
-  // 혼합 그리드 여부 — "내 영상" 라벨은 다른 사용자 영상과 섞일 때만 필요 (추정 3)
-  const mixed = detail.otherVideos.length > 0;
+  // 피드 표본 = 화면에 나열되는 영상 — 그래프 집계·"영상 N개 기준" 문구의 공통 기준 (AC 10)
+  const feedVideos = [...detail.myVideos, ...detail.otherVideos];
+  const hourBuckets = deriveUploadHourBuckets(feedVideos);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-md">
@@ -133,35 +81,53 @@ export const HomeCellDetailPanel = ({
           </button>
         </div>
         <p className="text-fm-caption text-foreground-muted">{detail.subtitle}</p>
+        {/* 지표 한 줄 — 셀 전체 지표(집계 필드), 서브타이틀(내 활동)과 별도 줄 유지 (2차 AC 1·2, 추정 2) */}
+        <p className="text-fm-caption text-foreground">{detail.statsLine}</p>
       </header>
 
-      {/* 단일 2열 그리드 — 섹션 헤더 없이 내 영상이 앞 (AC 9) */}
+      {/* 본문 단일 스크롤 컬럼 (2차 AC 12) — 하단 고정 버튼 영역 제거, 액션 행이 대체 (2차 AC 3) */}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-sm">
-          {detail.myVideos.map((video) => (
-            <VideoCard key={video.id} video={video} mine showMineLabel={mixed} />
-          ))}
-          {detail.otherVideos.map((video) => (
-            <VideoCard
-              key={video.id}
-              video={video}
-              mine={false}
-              showMineLabel={false}
-            />
-          ))}
-        </div>
-      </div>
+        <div className="flex flex-col gap-md">
+          <CellActionRow showMashup={detail.showMashup} />
 
-      <div className="flex gap-xs">
-        {detail.showMashup && (
-          <Button
-            text="영상 몰아보기"
-            variant="secondary"
-            size="sm"
-            className="flex-1 border border-border"
+          {/* 1열 피드 — 섹션 헤더 없이 내 영상이 앞 (MSG-253 AC 9 정렬 유지, MSG-277 AC 11 디자인 통일) */}
+          <div className="flex flex-col gap-sm">
+            {detail.myVideos.map((video) => (
+              <FeedVideoCard
+                key={video.id}
+                video={video}
+                mine
+                onSelect={() => onVideoSelect(video, true)}
+              />
+            ))}
+            {detail.otherVideos.map((video) => (
+              <FeedVideoCard
+                key={video.id}
+                video={video}
+                mine={false}
+                onSelect={() => onVideoSelect(video, false)}
+              />
+            ))}
+          </div>
+
+          {/* 위치 정보 블록 — 아이콘 + 한 줄씩 (2차 AC 8, 네이버 주소·영업시간 블록 참고) */}
+          <section className="flex flex-col gap-xs border-t border-border pt-md">
+            <p className="flex items-center gap-xs text-fm-caption text-foreground">
+              <MapPin aria-hidden className="size-4 shrink-0 text-foreground-muted" />
+              {detail.locationLabel}
+            </p>
+            <p className="flex items-center gap-xs text-fm-caption text-foreground">
+              <Clock aria-hidden className="size-4 shrink-0 text-foreground-muted" />
+              {detail.lastUploadText}
+            </p>
+          </section>
+
+          <CellHourChart
+            buckets={hourBuckets}
+            sampleCount={feedVideos.length}
+            accent={detail.accent}
           />
-        )}
-        <Button text="영상 추가하기" variant="primary" size="sm" className="flex-1" />
+        </div>
       </div>
     </div>
   );

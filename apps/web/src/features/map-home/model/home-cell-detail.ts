@@ -1,5 +1,9 @@
 import type { Cell, CellVideo } from "@/entities/cell";
-import { formatMonthDay } from "@/shared/format";
+import {
+  formatMonthDay,
+  formatRelativeTime,
+  formatViewCountKo,
+} from "@/shared/format";
 import { THEME_META, type ThemeId } from "./theme";
 
 /**
@@ -7,14 +11,10 @@ import { THEME_META, type ThemeId } from "./theme";
  * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
  */
 
-/** 상세를 열 수 있는 테마 — 경로추천은 표시 전용이라 제외 (AC 8·9 문언) */
-export type DetailTheme = Exclude<ThemeId, "route">;
-
 /**
- * 셀 탭 → 상세 오픈 판정. [AC 9·10]
- * - 핫구역·지역축제·팝업스토어 활성: 그 테마의 강조 셀만 (A5 — 3테마 공통)
+ * 셀 탭 → 상세 오픈 판정. [AC 9·10, MSG-277 AC 13]
+ * - 테마 활성: 그 테마의 강조 셀만 (A5 — 경로추천 포함 4테마 공통, MSG-277에서 route 제외 제거)
  * - 비활성: 내 점령 셀만 (AC 10)
- * - 경로추천: 항상 무시 — 경로 강조는 표시 전용
  */
 export const canOpenDetail = (
   activeTheme: ThemeId | null,
@@ -23,7 +23,6 @@ export const canOpenDetail = (
   occupiedCellIds: string[],
 ): boolean => {
   if (activeTheme === null) return occupiedCellIds.includes(cellId);
-  if (activeTheme === "route") return false;
   return themeCellIds.includes(cellId);
 };
 
@@ -34,9 +33,9 @@ export const myVideoIdsOf = (
 ): string[] =>
   collectedVideos.filter((v) => v.cellId === cellId).map((v) => v.id);
 
-/** 상세 헤더 속성 배지 — id는 스타일 매핑 키(뷰), label은 표시 텍스트 (AC 9·10) */
+/** 상세 헤더 속성 배지 — id는 스타일 매핑 키(뷰), label은 표시 텍스트 (AC 9·10, MSG-277 route 포함) */
 export interface HomeCellBadge {
-  id: "occupied" | DetailTheme;
+  id: "occupied" | ThemeId;
   label: string;
 }
 
@@ -57,12 +56,20 @@ export interface HomeCellDetail {
   otherVideos: CellVideo[];
   /** "영상 몰아보기" 노출 — 테마 상세만 (AC 9), 비활성 점령 상세는 숨김 (AC 10) */
   showMashup: boolean;
+  /** 지표 한 줄 "영상 N개 · 조회 {한국어 축약} · 담수율 M%" — 셀 집계 필드 파생 (MSG-277 2차 AC 1) */
+  statsLine: string;
+  /** 상세 위치 문자열 — cell.location 그대로 (MSG-277 2차 AC 7) */
+  locationLabel: string;
+  /** "마지막 업로드 {상대시간}" — cell.recentUploadedAt 기준, 서브타이틀의 내 영상 기준과 다름 (AC 7, 추정 6) */
+  lastUploadText: string;
+  /** 액션 행 강조·그래프 막대 색 키 — 뷰 토큰 클래스 리터럴 표의 키 (MSG-277 2차 AC 11) */
+  accent: ThemeId | "primary";
 }
 
 interface DeriveHomeCellDetailInput {
   cell: Cell;
-  /** 상세를 연 시점의 활성 테마 — canOpenDetail 통과가 전제라 route는 오지 않는다 */
-  activeTheme: DetailTheme | null;
+  /** 상세를 연 시점의 활성 테마 — 경로추천 포함 (MSG-277 AC 13) */
+  activeTheme: ThemeId | null;
   /** 내 점령 셀 여부 — "내 점령" 배지·내 영상 섹션 기준 */
   occupied: boolean;
   /** 이 셀에서 내가 수집한 영상 id (myVideoIdsOf 결과) */
@@ -76,7 +83,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** 서브타이틀 파생 (MSG-253 AC 6·7) — 테마면 24시간 변형, 비테마면 내 영상 최신 업로드 날짜 */
 const deriveSubtitle = (
   cell: Cell,
-  activeTheme: DetailTheme | null,
+  activeTheme: ThemeId | null,
   myVideos: CellVideo[],
   now: Date,
 ): string => {
@@ -126,5 +133,9 @@ export const deriveHomeCellDetail = ({
       ? cell.videos.filter((v) => !myVideoIds.includes(v.id))
       : [],
     showMashup: activeTheme !== null,
+    statsLine: `영상 ${cell.videoCount}개 · 조회 ${formatViewCountKo(cell.viewCount)} · 담수율 ${cell.fillRate}%`,
+    locationLabel: cell.location,
+    lastUploadText: `마지막 업로드 ${formatRelativeTime(cell.recentUploadedAt, now)}`,
+    accent: activeTheme ?? "primary",
   };
 };
