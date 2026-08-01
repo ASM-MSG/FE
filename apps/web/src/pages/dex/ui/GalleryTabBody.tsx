@@ -79,7 +79,7 @@ const GalleryGrid = ({
     <>
       <ul className="grid min-h-0 grid-cols-3 content-start gap-xs overflow-y-auto scrollbar-gutter-stable">
         {shown.map((video) => (
-          <li key={video.id}>
+          <li key={video.videoId}>
             <GalleryThumbnail video={video} onClick={onVideoClick} />
           </li>
         ))}

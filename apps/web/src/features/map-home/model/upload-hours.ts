@@ -15,7 +15,7 @@ const BUCKET_HOURS = 3;
 const BUCKET_COUNT = 24 / BUCKET_HOURS;
 
 /**
- * 영상들의 uploadedAt 로컬 시각을 3시간 단위 8버킷(0–3시 … 21–24시)으로 집계한다.
+ * 영상들의 recordedAt 로컬 시각을 3시간 단위 8버킷(0–3시 … 21–24시)으로 집계한다.
  * 각 영상은 자기 시각 버킷에 정확히 1회 — 버킷 count 합 = videos.length, 빈 표본이면 전 버킷 0.
  */
 export const deriveUploadHourBuckets = (
@@ -26,7 +26,7 @@ export const deriveUploadHourBuckets = (
     (_, i) => ({ startHour: i * BUCKET_HOURS, count: 0 }),
   );
   for (const video of videos) {
-    const hour = new Date(video.uploadedAt).getHours();
+    const hour = new Date(video.recordedAt).getHours();
     buckets[Math.floor(hour / BUCKET_HOURS)].count += 1;
   }
   return buckets;

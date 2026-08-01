@@ -30,7 +30,7 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
   const [reportOpen, setReportOpen] = useState(false);
 
   const activeVideo =
-    cell.videos.find((v) => v.id === activeVideoId) ?? cell.videos[0];
+    cell.videos.find((v) => v.videoId === activeVideoId) ?? cell.videos[0];
   const duration = formatDuration(activeVideo?.durationSec);
 
   // 우측 컬럼이 목록을 상당 부분 덮으므로 Escape로도 닫을 수 있게 한다 (키보드 접근성)
@@ -112,16 +112,16 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
         <h3 className="text-fm-body-strong text-foreground">이 격자의 영상</h3>
         <ul className="flex flex-col gap-sm">
           {cell.videos.map((videoItem) => (
-            <li key={videoItem.id}>
+            <li key={videoItem.videoId}>
               <VideoRow
                 title={videoItem.title}
-                meta={`조회 ${formatViewCount(videoItem.viewCount)} · ${formatRelativeTime(videoItem.uploadedAt)}`}
-                thumbnailSrc={videoItem.thumbnailSrc}
-                aria-current={videoItem.id === activeVideo?.id}
-                onClick={() => selectVideo(videoItem.id)}
+                meta={`조회 ${formatViewCount(videoItem.viewCount)} · ${formatRelativeTime(videoItem.recordedAt)}`}
+                thumbnailSrc={videoItem.thumbnailUrl}
+                aria-current={videoItem.videoId === activeVideo?.videoId}
+                onClick={() => selectVideo(videoItem.videoId)}
                 className={cn(
                   "rounded-sm",
-                  videoItem.id === activeVideo?.id && "bg-surface",
+                  videoItem.videoId === activeVideo?.videoId && "bg-surface",
                 )}
               />
             </li>

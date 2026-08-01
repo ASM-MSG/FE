@@ -19,11 +19,11 @@ beforeAll(() => {
 /** 고정 픽스처 — 서면 목 관례 (부산 서면 MVP). 내 영상: M월 D일 분기 검증용 과거 고정 시각 */
 const MINE_SELECTION: VideoMiniSelection = {
   video: {
-    id: "A-14-v1",
+    videoId: 101,
     title: "거리 야경 감성 스팟",
     viewCount: 12000,
-    uploadedAt: "2026-07-15T12:00:00.000Z",
-    durationSec: 60,
+    recordedAt: "2026-07-15T12:00:00.000Z",
+    durationSec: 30,
     videoSrc: "https://mdn.github.io/shared-assets/videos/flower.mp4",
   },
   mine: true,
@@ -32,11 +32,11 @@ const MINE_SELECTION: VideoMiniSelection = {
 /** 타인 영상 — @핸들 분기 + 다른 videoSrc(교체 검증용) */
 const OTHER_SELECTION: VideoMiniSelection = {
   video: {
-    id: "A-15-v1",
+    videoId: 201,
     title: "숨은 골목 카페 투어",
     viewCount: 8410,
-    uploadedAt: "2026-07-29T12:00:00.000Z",
-    durationSec: 96,
+    recordedAt: "2026-07-29T12:00:00.000Z",
+    durationSec: 26,
     uploaderHandle: "@jeonpo_alley",
     videoSrc: "https://mdn.github.io/shared-assets/videos/friday.mp4",
   },

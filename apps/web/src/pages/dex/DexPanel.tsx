@@ -111,15 +111,15 @@ export const DexPanel = () => {
     [moveTo, enterGallery],
   );
 
-  // 썸네일 클릭 → 그 격자 상세 시트 + 클릭한 영상 활성 (AC 23). 격자 소스에 없는 cellId는
+  // 썸네일 클릭 → 그 격자 상세 시트 + 클릭한 영상 활성 (AC 23). 격자 소스에 없는 gridId는
   // no-op(방어). 같은 격자 재클릭이면 select는 no-op이지만 selectVideo가 활성을 갱신한다
   // (cell-detail-store 기존 계약 — 스펙 구현 계획 3)
   const handleVideoClick = useCallback(
     (video: CollectedVideo) => {
-      const cell = cells?.find((c) => c.id === video.cellId);
+      const cell = cells?.find((c) => c.id === video.gridId);
       if (!cell) return;
       selectDetailCell(cell);
-      selectDetailVideo(video.id);
+      selectDetailVideo(video.videoId);
     },
     [cells, selectDetailCell, selectDetailVideo],
   );
@@ -271,7 +271,7 @@ const RecentCellList = ({
     ) : (
       <ul className="flex flex-1 flex-col overflow-y-auto scrollbar-gutter-stable">
         {cells.map((cell) => (
-          <li key={cell.cellId}>
+          <li key={cell.gridId}>
             <RecentCellRow
               cell={cell}
               onSelect={onCellSelect}

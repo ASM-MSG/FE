@@ -3,7 +3,7 @@ import type { DexBadge } from "@/entities/dex";
 import { BADGE_PREVIEW_LIMIT, deriveBadgePreview } from "./badges";
 
 const badge = (i: number, earned = false): DexBadge => ({
-  id: `b-${String(i).padStart(2, "0")}`,
+  badgeId: i,
   name: `뱃지 ${i}`,
   earned,
 });
@@ -21,10 +21,10 @@ describe("deriveBadgePreview — 뱃지 프리뷰 파생 (MSG-123 AC 3·8)", () 
     const preview = deriveBadgePreview(catalog(12));
 
     expect(preview.badges.length).toBe(BADGE_PREVIEW_LIMIT);
-    expect(preview.badges.map((b) => b.id)).toEqual(
+    expect(preview.badges.map((b) => b.badgeId)).toEqual(
       catalog(12)
         .slice(0, 8)
-        .map((b) => b.id),
+        .map((b) => b.badgeId),
     );
     expect(preview.hasMore).toBe(true);
   });
@@ -35,7 +35,7 @@ describe("deriveBadgePreview — 뱃지 프리뷰 파생 (MSG-123 AC 3·8)", () 
     expect(exact.hasMore).toBe(false);
 
     const few = deriveBadgePreview(catalog(3));
-    expect(few.badges.map((b) => b.id)).toEqual(["b-00", "b-01", "b-02"]);
+    expect(few.badges.map((b) => b.badgeId)).toEqual([0, 1, 2]);
     expect(few.hasMore).toBe(false);
   });
 
@@ -51,13 +51,13 @@ describe("deriveBadgePreview — 뱃지 프리뷰 파생 (MSG-123 AC 3·8)", () 
     // 9번째(인덱스 9) 획득 뱃지는 프리뷰에 없다 — earned가 선별 기준이 아니다
     const preview = deriveBadgePreview(catalog(12, [0, 9]));
 
-    expect(preview.badges.map((b) => b.id)).toEqual(
+    expect(preview.badges.map((b) => b.badgeId)).toEqual(
       catalog(12)
         .slice(0, 8)
-        .map((b) => b.id),
+        .map((b) => b.badgeId),
     );
-    expect(preview.badges.filter((b) => b.earned).map((b) => b.id)).toEqual([
-      "b-00",
+    expect(preview.badges.filter((b) => b.earned).map((b) => b.badgeId)).toEqual([
+      0,
     ]);
   });
 
@@ -66,6 +66,6 @@ describe("deriveBadgePreview — 뱃지 프리뷰 파생 (MSG-123 AC 3·8)", () 
     deriveBadgePreview(input);
 
     expect(input.length).toBe(12);
-    expect(input.map((b) => b.id)).toEqual(catalog(12).map((b) => b.id));
+    expect(input.map((b) => b.badgeId)).toEqual(catalog(12).map((b) => b.badgeId));
   });
 });

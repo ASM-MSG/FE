@@ -102,38 +102,38 @@ const DEX: DexData = {
     nickname: "필맵퍼",
     totalExploredPct: 0.012,
     streakDays: 3,
-    collectedCellCount: 2,
+    totalGridCount: 2,
     badgeCount: 1,
   },
   collectedCells: [
     {
-      cellId: "A-14",
+      gridId: "A-14",
       label: "서면 A-14",
       district: "부산진구",
       center: { lat: 35.1573, lng: 129.0586 },
-      collectedAt: "2026-07-21T09:00:00.000Z",
+      firstCollectedAt: "2026-07-21T09:00:00.000Z",
       videoCount: 2,
     },
     {
-      cellId: "C-02",
+      gridId: "C-02",
       label: "광안리 C-02",
       district: "수영구",
       center: { lat: 35.1532, lng: 129.1187 },
-      collectedAt: "2026-07-19T09:00:00.000Z",
+      firstCollectedAt: "2026-07-19T09:00:00.000Z",
       videoCount: 1,
     },
   ],
   // 뱃지 탭 경유 케이스(④ AC 22)가 있어 1건 제공 — badgeCount(1)와 earned 수 정합 유지
-  badges: [{ id: "first-record", name: "첫 기록", earned: true }],
+  badges: [{ badgeId: 1, name: "첫 기록", earned: true }],
   regionExploredPctMap: { 부산진구: 22 },
 };
 
-const cellVideo = (id: string, title: string): CellVideo => ({
-  id,
+const cellVideo = (videoId: number, title: string): CellVideo => ({
+  videoId,
   title,
   viewCount: 100,
-  uploadedAt: "2026-07-20T00:00:00.000Z",
-  durationSec: 42,
+  recordedAt: "2026-07-20T00:00:00.000Z",
+  durationSec: 24,
 });
 
 /** 탐색과 동일 소스(["cells"]) 주입 격자 — 썸네일 클릭 → 상세 시트 매칭 대상 (AC 23, Q7) */
@@ -150,9 +150,9 @@ const CELLS: Cell[] = [
     fillRate: 88,
     viewCount: 24000,
     videos: [
-      cellVideo("C-02-v1", "광안리 골목 브이로그"),
-      cellVideo("C-02-v2", "광안리 카페 투어"),
-      cellVideo("C-02-v3", "광안리 야경 산책"),
+      cellVideo(501, "광안리 골목 브이로그"),
+      cellVideo(502, "광안리 카페 투어"),
+      cellVideo(503, "광안리 야경 산책"),
     ],
   },
   {
@@ -166,7 +166,7 @@ const CELLS: Cell[] = [
     recentUploadedAt: "2026-07-21T09:00:00.000Z",
     fillRate: 73,
     viewCount: 1400,
-    videos: [cellVideo("A-14-v1", "서면 거리 공연")],
+    videos: [cellVideo(101, "서면 거리 공연")],
   },
 ];
 
@@ -176,54 +176,54 @@ const seedClient = (client: QueryClient) => {
   client.setQueryData(["cells"], CELLS);
 };
 
-/** 갤러리 주입 데이터 — 썸네일 제공 2건 + 미제공(placeholder) 1건 (AC 10, id는 -v 체계 B3) */
+/** 갤러리 주입 데이터 — 썸네일 제공 2건 + 미제공(placeholder) 1건 (AC 10, videoId는 Cell.videos 체계 B3) */
 const GALLERY_VIDEOS: CollectedVideo[] = [
   {
-    id: "A-14-v1",
-    cellId: "A-14",
+    videoId: 101,
+    gridId: "A-14",
     cellLabel: "서면 A-14",
-    thumbnailSrc:
+    thumbnailUrl:
       "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E",
-    collectedAt: "2026-07-21T10:00:00.000Z",
+    createdAt: "2026-07-21T10:00:00.000Z",
   },
   {
-    id: "A-14-v2",
-    cellId: "A-14",
+    videoId: 102,
+    gridId: "A-14",
     cellLabel: "서면 A-14",
-    thumbnailSrc:
+    thumbnailUrl:
       "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E",
-    collectedAt: "2026-07-21T09:00:00.000Z",
+    createdAt: "2026-07-21T09:00:00.000Z",
   },
   {
-    id: "B-07-v1",
-    cellId: "B-07",
+    videoId: 301,
+    gridId: "B-07",
     cellLabel: "부전 B-07",
-    collectedAt: "2026-07-20T09:00:00.000Z",
+    createdAt: "2026-07-20T09:00:00.000Z",
   },
 ];
 
 /**
- * 수영구 갤러리 주입 데이터 — Cell.videos와 id 체계 일치(② B3, 활성 매칭) +
- * 격자 소스에 없는 cellId 1건(Z-99 — AC 23 no-op 방어 판정용)
+ * 수영구 갤러리 주입 데이터 — Cell.videos와 videoId 체계 일치(② B3, 활성 매칭) +
+ * 격자 소스에 없는 gridId 1건(Z-99 — AC 23 no-op 방어 판정용)
  */
 const SUYEONG_VIDEOS: CollectedVideo[] = [
   {
-    id: "C-02-v1",
-    cellId: "C-02",
+    videoId: 501,
+    gridId: "C-02",
     cellLabel: "광안리 C-02",
-    collectedAt: "2026-07-21T10:00:00.000Z",
+    createdAt: "2026-07-21T10:00:00.000Z",
   },
   {
-    id: "C-02-v2",
-    cellId: "C-02",
+    videoId: 502,
+    gridId: "C-02",
     cellLabel: "광안리 C-02",
-    collectedAt: "2026-07-21T09:00:00.000Z",
+    createdAt: "2026-07-21T09:00:00.000Z",
   },
   {
-    id: "Z-99-v1",
-    cellId: "Z-99",
+    videoId: 901,
+    gridId: "Z-99",
     cellLabel: "유령 Z-99",
-    collectedAt: "2026-07-20T09:00:00.000Z",
+    createdAt: "2026-07-20T09:00:00.000Z",
   },
 ];
 
@@ -309,7 +309,7 @@ describe("갤러리 뷰 스모크", () => {
     ).toBeTruthy();
   });
 
-  it("각 썸네일 타일이 격자 라벨 이름을 가진 button이고, thumbnailSrc 없는 항목은 placeholder 타일로 렌더된다 (AC 10 ② button화)", () => {
+  it("각 썸네일 타일이 격자 라벨 이름을 가진 button이고, thumbnailUrl 없는 항목은 placeholder 타일로 렌더된다 (AC 10 ② button화)", () => {
     const client = createClient();
     seedClient(client);
     client.setQueryData(["dex", "gallery", "사상구"], GALLERY_VIDEOS);
@@ -443,13 +443,13 @@ describe("갤러리 뷰 스모크", () => {
     fireEvent.click(screen.getByRole("button", { name: "유령 Z-99 수집 영상" }));
     expect(useCellDetailStore.getState().selectedCellId).toBeNull();
 
-    // 두 번째 타일(C-02-v2) 클릭 — 대표 영상(videos[0])이 아닌 "클릭한 영상"이 활성이어야 한다
+    // 두 번째 타일(videoId 502) 클릭 — 대표 영상(videos[0])이 아닌 "클릭한 영상"이 활성이어야 한다
     fireEvent.click(
       screen.getAllByRole("button", { name: "광안리 C-02 수집 영상" })[1],
     );
 
     expect(useCellDetailStore.getState().selectedCellId).toBe("C-02");
-    expect(useCellDetailStore.getState().activeVideoId).toBe("C-02-v2");
+    expect(useCellDetailStore.getState().activeVideoId).toBe(502);
     // 시트가 렌더된다 — 격자명 헤딩 + "이 격자의 영상" 리스트 (탐색 CellDetailSheet 동형, Q7)
     expect(screen.getByRole("heading", { name: "광안리 C-02" })).toBeTruthy();
     expect(screen.getByText("이 격자의 영상")).toBeTruthy();

@@ -11,20 +11,20 @@ import { deriveUploadHourBuckets } from "./upload-hours";
 const localIso = (hour: number, minute = 0): string =>
   new Date(2026, 6, 30, hour, minute).toISOString();
 
-const videoAt = (id: string, iso: string): CellVideo => ({
-  id,
+const videoAt = (videoId: number, iso: string): CellVideo => ({
+  videoId,
   title: "표본 영상",
   viewCount: 10,
-  uploadedAt: iso,
-  durationSec: 60,
+  recordedAt: iso,
+  durationSec: 30,
 });
 
 describe("deriveUploadHourBuckets — 3시간 단위 8버킷 집계 (AC 9)", () => {
   it("각 영상은 자기 로컬 시각의 버킷에 정확히 1회 집계된다 — 2시→0–3시, 14시→12–15시, 23시→21–24시", () => {
     const buckets = deriveUploadHourBuckets([
-      videoAt("v1", localIso(2)),
-      videoAt("v2", localIso(14)),
-      videoAt("v3", localIso(23)),
+      videoAt(1, localIso(2)),
+      videoAt(2, localIso(14)),
+      videoAt(3, localIso(23)),
     ]);
 
     expect(buckets).toEqual([
@@ -41,8 +41,8 @@ describe("deriveUploadHourBuckets — 3시간 단위 8버킷 집계 (AC 9)", () 
 
   it("버킷 경계 정각은 시작 버킷에 속한다 — 3시 정각은 3–6시, 21시 정각은 21–24시", () => {
     const buckets = deriveUploadHourBuckets([
-      videoAt("v1", localIso(3)),
-      videoAt("v2", localIso(21)),
+      videoAt(1, localIso(3)),
+      videoAt(2, localIso(21)),
     ]);
 
     expect(buckets.find((b) => b.startHour === 3)?.count).toBe(1);
@@ -52,8 +52,8 @@ describe("deriveUploadHourBuckets — 3시간 단위 8버킷 집계 (AC 9)", () 
 
   it("같은 버킷의 여러 영상은 누적된다 — 13시·13시 30분은 둘 다 12–15시", () => {
     const buckets = deriveUploadHourBuckets([
-      videoAt("v1", localIso(13)),
-      videoAt("v2", localIso(13, 30)),
+      videoAt(1, localIso(13)),
+      videoAt(2, localIso(13, 30)),
     ]);
 
     expect(buckets.find((b) => b.startHour === 12)?.count).toBe(2);

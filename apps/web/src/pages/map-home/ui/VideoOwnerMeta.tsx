@@ -15,7 +15,7 @@ export const VideoOwnerMeta = ({ video, mine }: VideoOwnerMetaProps) =>
   mine ? (
     <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
       <span className="text-fm-body-strong text-primary">내 영상</span>
-      {` · ${formatMonthDay(video.uploadedAt)}`}
+      {` · ${formatMonthDay(video.recordedAt)}`}
     </span>
   ) : (
     <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
@@ -25,7 +25,7 @@ export const VideoOwnerMeta = ({ video, mine }: VideoOwnerMetaProps) =>
         </span>
       )}
       {video.uploaderHandle
-        ? ` · ${formatRelativeTime(video.uploadedAt)}`
-        : formatRelativeTime(video.uploadedAt)}
+        ? ` · ${formatRelativeTime(video.recordedAt)}`
+        : formatRelativeTime(video.recordedAt)}
     </span>
   );

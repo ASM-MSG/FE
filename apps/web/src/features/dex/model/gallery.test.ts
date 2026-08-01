@@ -12,24 +12,24 @@ const cell = (
   district: string,
   overrides: Partial<CollectedCell> = {},
 ): CollectedCell => ({
-  cellId,
+  gridId: cellId,
   label: `격자 ${cellId}`,
   district,
   center: { lat: 35.16, lng: 129.06 },
-  collectedAt: "2026-07-01T09:00:00.000Z",
+  firstCollectedAt: "2026-07-01T09:00:00.000Z",
   videoCount: 1,
   ...overrides,
 });
 
 const video = (
-  id: string,
-  cellId: string,
-  collectedAt: string,
+  videoId: number,
+  gridId: string,
+  createdAt: string,
 ): CollectedVideo => ({
-  id,
-  cellId,
-  cellLabel: `격자 ${cellId}`,
-  collectedAt,
+  videoId,
+  gridId,
+  cellLabel: `격자 ${gridId}`,
+  createdAt,
 });
 
 const CELLS: CollectedCell[] = [
@@ -39,33 +39,33 @@ const CELLS: CollectedCell[] = [
 ];
 
 describe("selectRegionVideos — 지역 갤러리 영상 선별 (AC 1)", () => {
-  it("지정 지역 격자의 영상만 collectedAt 내림차순으로 반환하고, 다른 지역 영상은 포함하지 않는다", () => {
+  it("지정 지역 격자의 영상만 createdAt 내림차순으로 반환하고, 다른 지역 영상은 포함하지 않는다", () => {
     const videos = [
-      video("v1", "A-14", "2026-07-20T09:00:00.000Z"),
-      video("v2", "C-02", "2026-07-22T09:00:00.000Z"), // 수영구 — 제외 대상
-      video("v3", "B-08", "2026-07-21T09:00:00.000Z"),
+      video(1, "A-14", "2026-07-20T09:00:00.000Z"),
+      video(2, "C-02", "2026-07-22T09:00:00.000Z"), // 수영구 — 제외 대상
+      video(3, "B-08", "2026-07-21T09:00:00.000Z"),
     ];
 
     const result = selectRegionVideos(CELLS, videos, "부산진구");
 
-    expect(result.map((v) => v.id)).toEqual(["v3", "v1"]);
+    expect(result.map((v) => v.videoId)).toEqual([3, 1]);
   });
 
-  it("collectedAt 동률이면 id 오름차순으로 안정 정렬하고, 원본 배열은 변형하지 않는다", () => {
+  it("createdAt 동률이면 videoId 오름차순으로 안정 정렬하고, 원본 배열은 변형하지 않는다", () => {
     const same = "2026-07-20T09:00:00.000Z";
     const videos = [
-      video("v-b", "A-14", same),
-      video("v-a", "B-08", same),
+      video(2, "A-14", same),
+      video(1, "B-08", same),
     ];
 
     const result = selectRegionVideos(CELLS, videos, "부산진구");
 
-    expect(result.map((v) => v.id)).toEqual(["v-a", "v-b"]);
-    expect(videos.map((v) => v.id)).toEqual(["v-b", "v-a"]);
+    expect(result.map((v) => v.videoId)).toEqual([1, 2]);
+    expect(videos.map((v) => v.videoId)).toEqual([2, 1]);
   });
 
   it("수집이 없는 지역은 빈 배열을 반환한다", () => {
-    const videos = [video("v1", "A-14", "2026-07-20T09:00:00.000Z")];
+    const videos = [video(1, "A-14", "2026-07-20T09:00:00.000Z")];
 
     expect(selectRegionVideos(CELLS, videos, "사상구")).toEqual([]);
   });
@@ -75,7 +75,7 @@ describe("deriveGalleryPreview — 프리뷰 9개 + hasMore 파생 (AC 2)", () =
   const manyVideos = (n: number): CollectedVideo[] =>
     Array.from({ length: n }, (_, i) =>
       video(
-        `v-${String(i).padStart(2, "0")}`,
+        i,
         "A-14",
         new Date(Date.UTC(2026, 6, 1) + i * 60_000).toISOString(),
       ),
@@ -85,10 +85,10 @@ describe("deriveGalleryPreview — 프리뷰 9개 + hasMore 파생 (AC 2)", () =
     const preview = deriveGalleryPreview(manyVideos(10));
 
     expect(preview.videos.length).toBe(GALLERY_PREVIEW_LIMIT);
-    expect(preview.videos.map((v) => v.id)).toEqual(
+    expect(preview.videos.map((v) => v.videoId)).toEqual(
       manyVideos(10)
         .slice(0, 9)
-        .map((v) => v.id),
+        .map((v) => v.videoId),
     );
     expect(preview.hasMore).toBe(true);
   });
@@ -112,7 +112,7 @@ describe("deriveGalleryPreview — 프리뷰 9개 + hasMore 파생 (AC 2)", () =
 // 역지오코딩·디폴트 지역 폴백이 도달 불가한 죽은 코드가 되어 함수째 제거됐다 (B1·Q6).
 
 describe("districtOfCell — 격자 → 소속 지역 (AC 4)", () => {
-  it("cellId로 수집 격자의 소속 지역을 반환한다", () => {
+  it("gridId로 수집 격자의 소속 지역을 반환한다", () => {
     expect(districtOfCell(CELLS, "C-02")).toBe("수영구");
   });
 

@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import { MOCK_CELLS, type Cell, type CellVideo } from "@/entities/cell";
 import { deriveThemeFeed } from "./theme-feed";
 
-// ── 고정 픽스처 — mock 영상의 uploadedAt은 로드 시점 상대값이라 비결정적, 정렬·mine 단정은 픽스처로 ──
+// ── 고정 픽스처 — mock 영상의 recordedAt은 로드 시점 상대값이라 비결정적, 정렬·mine 단정은 픽스처로 ──
 
-const fixtureVideo = (id: string, uploadedAt: string): CellVideo => ({
-  id,
+const fixtureVideo = (videoId: number, recordedAt: string): CellVideo => ({
+  videoId,
   title: "표본 영상",
   viewCount: 100,
-  uploadedAt,
-  durationSec: 60,
+  recordedAt,
+  durationSec: 30,
   uploaderHandle: "@busan.vlog",
 });
 
@@ -55,46 +55,46 @@ describe("deriveThemeFeed — 테마 피드 파생 (AC 3·4)", () => {
     // 최신(7/29)을 목록 중간에 둔다 — 원본 순서를 그대로 두는 구현을 걸러낸다
     const pool = hotPool({
       "A-14": [
-        fixtureVideo("A-14-v1", "2026-07-25T12:00:00.000Z"),
-        fixtureVideo("A-14-v2", "2026-07-29T12:00:00.000Z"),
-        fixtureVideo("A-14-v3", "2026-07-27T12:00:00.000Z"),
+        fixtureVideo(101, "2026-07-25T12:00:00.000Z"),
+        fixtureVideo(102, "2026-07-29T12:00:00.000Z"),
+        fixtureVideo(103, "2026-07-27T12:00:00.000Z"),
       ],
     });
 
     const feed = deriveThemeFeed("hot", pool, []);
 
-    expect(feed.sections[0].videos.map((v) => v.id)).toEqual([
-      "A-14-v2",
-      "A-14-v3",
-      "A-14-v1",
+    expect(feed.sections[0].videos.map((v) => v.videoId)).toEqual([
+      102,
+      103,
+      101,
     ]);
   });
 
   it("수집 영상 id(myVideoIds)와 매칭되는 영상만 mine으로 표시된다 (AC 4)", () => {
     const pool = hotPool({
       "A-14": [
-        fixtureVideo("A-14-v1", "2026-07-29T12:00:00.000Z"),
-        fixtureVideo("A-14-v2", "2026-07-28T12:00:00.000Z"),
+        fixtureVideo(101, "2026-07-29T12:00:00.000Z"),
+        fixtureVideo(102, "2026-07-28T12:00:00.000Z"),
       ],
     });
 
-    const feed = deriveThemeFeed("hot", pool, ["A-14-v2"]);
+    const feed = deriveThemeFeed("hot", pool, [102]);
 
     expect(
-      feed.sections[0].videos.map((v) => ({ id: v.id, mine: v.mine })),
+      feed.sections[0].videos.map((v) => ({ id: v.videoId, mine: v.mine })),
     ).toEqual([
-      { id: "A-14-v1", mine: false },
-      { id: "A-14-v2", mine: true },
+      { id: 101, mine: false },
+      { id: 102, mine: true },
     ]);
   });
 
   it("totalCount는 섹션 영상 수 합과 일치한다 — 셀 videoCount 필드가 아니라 실제 나열 표본 수 (AC 2·3, 추정 7)", () => {
     const pool = hotPool({
       "A-14": [
-        fixtureVideo("A-14-v1", "2026-07-29T12:00:00.000Z"),
-        fixtureVideo("A-14-v2", "2026-07-28T12:00:00.000Z"),
+        fixtureVideo(101, "2026-07-29T12:00:00.000Z"),
+        fixtureVideo(102, "2026-07-28T12:00:00.000Z"),
       ],
-      "B-07": [fixtureVideo("B-07-v1", "2026-07-27T12:00:00.000Z")],
+      "B-07": [fixtureVideo(301, "2026-07-27T12:00:00.000Z")],
     });
 
     const feed = deriveThemeFeed("hot", pool, []);

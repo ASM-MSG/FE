@@ -12,11 +12,11 @@ import { FeedVideoCard } from "./FeedVideoCard";
 
 /** 고정 픽스처 — 서면 목 관례 (부산 서면 MVP) */
 const VIDEO: CellVideo = {
-  id: "A-14-v1",
+  videoId: 101,
   title: "거리 야경 감성 스팟",
   viewCount: 12000,
-  uploadedAt: "2026-07-29T12:00:00.000Z",
-  durationSec: 60,
+  recordedAt: "2026-07-29T12:00:00.000Z",
+  durationSec: 30,
   uploaderHandle: "@busan.vlog",
   videoSrc: "https://mdn.github.io/shared-assets/videos/flower.mp4",
 };

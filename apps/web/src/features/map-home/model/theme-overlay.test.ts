@@ -8,11 +8,11 @@ import {
   buildRouteOverlay,
 } from "./theme-overlay";
 
-const OCCUPIED = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
-  cellId,
+const OCCUPIED = MOCK_DEX.collectedCells.map(({ gridId, center }) => ({
+  gridId,
   center,
 }));
-const OCCUPIED_IDS = OCCUPIED.map((c) => c.cellId);
+const OCCUPIED_IDS = OCCUPIED.map((c) => c.gridId);
 
 describe("buildHomeOverlayCells — 기본 상태 (AC 2, MSG-263 개정 2 D9)", () => {
   it("활성 테마가 없으면 아무것도 게시하지 않는다 — 점령 셀 표시는 셸 상시 층(MapShell) 소유다", () => {

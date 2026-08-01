@@ -43,7 +43,7 @@ export const RecentCellRow = ({
           {cell.label}
         </span>
         <span className="truncate text-fm-caption text-foreground-muted">
-          {formatRelativeTime(cell.collectedAt)} · 영상 {cell.videoCount}개
+          {formatRelativeTime(cell.firstCollectedAt)} · 영상 {cell.videoCount}개
         </span>
       </span>
     </button>
@@ -53,7 +53,7 @@ export const RecentCellRow = ({
       onClick={(event) => {
         // 형제 구조라 실전파는 없지만, 조상 클릭 리스너가 생겨도 지도 이동 오발동을 막는다 (AC 25)
         event.stopPropagation();
-        onRemove(cell.cellId);
+        onRemove(cell.gridId);
       }}
       className="mr-xs flex size-8 shrink-0 items-center justify-center rounded-full text-foreground-muted transition-colors hover:bg-surface hover:text-foreground"
     >

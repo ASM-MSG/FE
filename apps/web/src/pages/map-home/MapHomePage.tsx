@@ -29,14 +29,14 @@ import { VideoMiniPanel } from "./ui/VideoMiniPanel";
 
 // 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 표시는 셸 상시 층(MSG-263 D9) 소유이고,
 // 홈은 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정에만 이 목록을 쓴다
-const OCCUPIED_CELLS = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
-  cellId,
+const OCCUPIED_CELLS = MOCK_DEX.collectedCells.map(({ gridId, center }) => ({
+  gridId,
   center,
 }));
-const OCCUPIED_IDS = OCCUPIED_CELLS.map((c) => c.cellId);
+const OCCUPIED_IDS = OCCUPIED_CELLS.map((c) => c.gridId);
 
 // 내 수집 영상 id 전체 — 테마 피드의 mine 판정 키 (MSG-277 AC 4). 영상 id는 셀 접두라 전역 유일
-const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.id);
+const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.videoId);
 
 /**
  * Escape 우선순위 래핑 (MSG-277 3차 AC 13) — 미니 패널이 열려 있으면 그것만 닫고,
