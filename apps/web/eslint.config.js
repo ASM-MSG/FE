@@ -7,7 +7,8 @@ import betterTailwindcss from 'eslint-plugin-better-tailwindcss'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // src/shared/api/generated: hey-api 생성 코드(MSG-289) — 수정 대상이 아니라 lint 제외 (typecheck·build에는 포함)
+  globalIgnores(['dist', 'src/shared/api/generated']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
