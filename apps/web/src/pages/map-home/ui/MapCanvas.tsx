@@ -18,6 +18,7 @@ import {
 import { semantic } from "@fillmap/design-tokens";
 import { Button } from "@fillmap/ui-web";
 import type { Bounds, LatLng } from "@/entities/cell";
+import { GRID_MIN_ZOOM } from "@/features/map-home/model/grid-overlay";
 import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
 import { buildHatchLines } from "@/features/map-home/model/theme-overlay";
 import type { Viewport } from "@/features/map-home/model/viewport-store";
@@ -71,6 +72,21 @@ export interface MapRouteOverlay {
   color: string;
 }
 
+/**
+ * 지도에 그릴 클러스터 마커 한 개 — 순수 데이터 (MSG-264). 파생(윈도 묶기·클램프)은 호출부 몫.
+ * bounds는 멤버 셀 합집합 — 클릭 줌 인(fitBounds) 대상.
+ */
+export interface MapClusterOverlay {
+  id: string;
+  position: LatLng;
+  count: number;
+  /** 배지 크기 3단계 (AC 5, A6 — 크기 단계 채택) */
+  tier: 1 | 2 | 3;
+  /** 배지 색 (테마 토큰 hex) — 미지정 시 primary (AC 9) */
+  color?: string;
+  bounds: Bounds;
+}
+
 interface MapCanvasProps {
   /** 초기 중심 좌표 (geolocation 결과 반영) */
   center: LatLng;
@@ -82,6 +98,8 @@ interface MapCanvasProps {
   gridLines?: MapGridLine[];
   /** 경로 오버레이 (MSG-252 AC 8) — 미제공이면 기존 동작과 동일 */
   route?: MapRouteOverlay;
+  /** 클러스터 마커 목록 (MSG-264) — 미제공/빈 배열이면 기존 동작과 동일 */
+  clusters?: MapClusterOverlay[];
   /** 오버레이 셀 클릭 (MSG-122 AC 14·18) — 미제공이면 표시 전용 기존 동작과 동일(R3) */
   onOverlayCellClick?: (cellId: string) => void;
 }
@@ -171,7 +189,15 @@ class MapLoadErrorBoundary extends Component<
  */
 export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
   (
-    { center, onViewportChange, overlayCells, gridLines, route, onOverlayCellClick },
+    {
+      center,
+      onViewportChange,
+      overlayCells,
+      gridLines,
+      route,
+      clusters,
+      onOverlayCellClick,
+    },
     ref,
   ) => {
     // 재시도 시 로드 경계·인증 상태를 다시 태우기 위해 하위 뷰를 remount
@@ -199,6 +225,7 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
         overlayCells={overlayCells}
         gridLines={gridLines}
         route={route}
+        clusters={clusters}
         onOverlayCellClick={onOverlayCellClick}
         onRetry={retry}
       />
@@ -250,6 +277,27 @@ const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
 const routeMarkerContent = (seq: number): string =>
   `<div class="flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-theme-route text-fm-body-strong text-primary-foreground shadow-raised">${seq}</div>`;
 
+// 클러스터 배지 크기 3단계 (MSG-264 AC 5, A6 — 크기 단계 채택). 최대 지름(tier 3, 44px)이
+// 클러스터 윈도 픽셀 등가(약 90px — cluster-overlay CLUSTER_WINDOW_CELL_FACTOR)의 절반
+// 이하라 중앙부 클램프(A1)와 함께 인접 마커가 겹치지 않는다 (AC 7)
+const CLUSTER_TIER_SIZE_CLASS: Record<MapClusterOverlay["tier"], string> = {
+  1: "size-7",
+  2: "size-9",
+  3: "size-11",
+};
+
+/** 배지 표시 캡 — 고정 크기 원(최대 44px)이라 세 자리부터는 "99+" (카카오·네이버 클러스터러 관례) */
+const formatClusterCount = (count: number): string =>
+  count > 99 ? "99+" : String(count);
+
+/**
+ * 클러스터 원형 배지 HTML (MSG-264 AC 3·5·9) — routeMarkerContent 선례를 따른 HtmlIcon content.
+ * 배지 색은 데이터로 받은 테마 토큰 hex(미지정 시 primary) — Polygon fillColor와 같은 관례라
+ * inline style로 지정한다(tailwind 색 임의값 클래스 금지 준수). count는 파생 로직의 숫자 전제.
+ */
+const clusterMarkerContent = ({ count, tier, color }: MapClusterOverlay): string =>
+  `<div class="flex ${CLUSTER_TIER_SIZE_CLASS[tier]} -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-fm-body-strong text-primary-foreground shadow-raised" style="background-color:${color ?? semantic.primary}">${formatClusterCount(count)}</div>`;
+
 const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
   (
     {
@@ -260,6 +308,7 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       overlayCells,
       gridLines,
       route,
+      clusters,
       onOverlayCellClick,
       onRetry,
     },
@@ -336,6 +385,28 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
     const pushViewport = () => {
       const map = mapRef.current;
       if (map) onViewportChange(toViewport(map));
+    };
+
+    // 클러스터 클릭 줌 인 (MSG-264 AC 8, A3) — SDK 접근은 이 경계 안에서만.
+    // 멤버 영역(bounds 합집합)으로 fitBounds하되, 단일 셀 클러스터는 100m 셀 과확대
+    // (zoom 21)를 막기 위해 셀 중심으로 GRID_MIN_ZOOM(15) 수준 줌 인한다.
+    const zoomToCluster = (cluster: MapClusterOverlay) => {
+      const map = mapRef.current;
+      if (!map) return;
+      const { sw, ne } = cluster.bounds;
+      if (cluster.count === 1) {
+        map.morph(
+          new naver.maps.LatLng((sw.lat + ne.lat) / 2, (sw.lng + ne.lng) / 2),
+          GRID_MIN_ZOOM,
+        );
+        return;
+      }
+      map.fitBounds(
+        new naver.maps.LatLngBounds(
+          new naver.maps.LatLng(sw.lat, sw.lng),
+          new naver.maps.LatLng(ne.lat, ne.lng),
+        ),
+      );
     };
 
     // 폴백 전환은 경계 내부 children 교체로만 한다 — 경계가 언마운트 순간의 라이브러리
@@ -432,6 +503,17 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                       />
                     )),
                   )}
+                {/* 클러스터 배지 마커 (MSG-264 AC 3·5·8) — zoom < GRID_MIN_ZOOM에서 셸이
+                    채움 대신 게시한다. title은 배지 숫자의 스크린리더 대체 텍스트(a11y) */}
+                {clusters?.map((cluster) => (
+                  <Marker
+                    key={cluster.id}
+                    position={cluster.position}
+                    title={`격자 ${cluster.count}개 클러스터`}
+                    icon={{ content: clusterMarkerContent(cluster) }}
+                    onClick={() => zoomToCluster(cluster)}
+                  />
+                ))}
                 {/* 경로추천 오버레이 (MSG-252 AC 8) — 연결선 + 번호 경유지 마커 */}
                 {route && (
                   <>
