@@ -3,12 +3,12 @@ import type { Cell, CellVideo } from "@/entities/cell";
 import { useCellDetailStore } from "./cell-detail-store";
 import { useExploreFilterStore } from "./explore-filter-store";
 
-const video = (id: string): CellVideo => ({
-  id,
-  title: `영상 ${id}`,
+const video = (videoId: number): CellVideo => ({
+  videoId,
+  title: `영상 ${videoId}`,
   viewCount: 100,
-  uploadedAt: "2026-07-20T00:00:00.000Z",
-  durationSec: 42,
+  recordedAt: "2026-07-20T00:00:00.000Z",
+  durationSec: 24,
 });
 
 const makeCell = (id: string, videos: CellVideo[]): Cell => ({
@@ -25,8 +25,8 @@ const makeCell = (id: string, videos: CellVideo[]): Cell => ({
   videos,
 });
 
-const cellA = makeCell("A", [video("A-v1"), video("A-v2"), video("A-v3")]);
-const cellB = makeCell("B", [video("B-v1"), video("B-v2")]);
+const cellA = makeCell("A", [video(11), video(12), video(13)]);
+const cellB = makeCell("B", [video(21), video(22)]);
 const emptyCell = makeCell("Z", []);
 
 const state = () => useCellDetailStore.getState();
@@ -45,7 +45,7 @@ describe("cell-detail-store 선택/영상 액션", () => {
   it("격자를 선택하면 selectedCellId와 대표 영상(activeVideoId=videos[0])이 설정된다", () => {
     state().select(cellA);
     expect(state().selectedCellId).toBe("A");
-    expect(state().activeVideoId).toBe("A-v1");
+    expect(state().activeVideoId).toBe(11);
   });
 
   it("close()는 선택을 해제한다 — selectedCellId=null (AC 4)", () => {
@@ -62,22 +62,22 @@ describe("cell-detail-store 선택/영상 액션", () => {
 
   it("리스트 영상 클릭은 activeVideoId를 그 영상으로 바꾼다 (AC 17)", () => {
     state().select(cellA);
-    state().selectVideo("A-v3");
-    expect(state().activeVideoId).toBe("A-v3");
+    state().selectVideo(13);
+    expect(state().activeVideoId).toBe(13);
   });
 
   it("다른 격자를 선택하면 activeVideoId가 새 격자의 대표 영상으로 초기화된다 (AC 20)", () => {
     state().select(cellA);
-    state().selectVideo("A-v3");
+    state().selectVideo(13);
     state().select(cellB);
-    expect(state().activeVideoId).toBe("B-v1");
+    expect(state().activeVideoId).toBe(21);
   });
 
   it("이미 열린 같은 격자를 재선택하면 no-op이다 — 선택해둔 영상이 대표 영상으로 리셋되지 않는다", () => {
     state().select(cellA);
-    state().selectVideo("A-v3");
+    state().selectVideo(13);
     state().select(cellA);
-    expect(state().activeVideoId).toBe("A-v3");
+    expect(state().activeVideoId).toBe(13);
     expect(state().selectedCellId).toBe("A");
   });
 });

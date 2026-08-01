@@ -11,7 +11,7 @@ interface GalleryThumbnailProps {
  * 클릭·Enter(네이티브 button)로 해당 영상의 격자 상세를 연다 — ② 개정으로 비인터랙티브 결정이
  * 번복됐고, 실제 재생만 후속(no-op)이다. 접근 가능한 이름은 격자 라벨 포함 aria-label이 제공하며
  * (기존 alt 문구 승계) 이미지·placeholder 두 경로 공통이다 (AC 10 ② — img alt는 비워 중복 방지).
- * thumbnailSrc 없으면 bg-surface placeholder 타일(ui-web VideoRow 관례).
+ * thumbnailUrl 없으면 bg-surface placeholder 타일(ui-web VideoRow 관례).
  * 첫 등장이라 로컬 구현 — 2번째 사용처 등장 시 ui-web 승격 검토 (스펙 승격 후보).
  */
 export const GalleryThumbnail = ({ video, onClick }: GalleryThumbnailProps) => (
@@ -21,9 +21,9 @@ export const GalleryThumbnail = ({ video, onClick }: GalleryThumbnailProps) => (
     onClick={() => onClick(video)}
     className="block w-full transition-[filter] active:brightness-[0.86]"
   >
-    {video.thumbnailSrc ? (
+    {video.thumbnailUrl ? (
       <img
-        src={video.thumbnailSrc}
+        src={video.thumbnailUrl}
         alt=""
         className="aspect-square w-full rounded-sm bg-surface object-cover"
       />

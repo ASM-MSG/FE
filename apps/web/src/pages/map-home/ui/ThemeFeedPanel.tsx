@@ -81,7 +81,7 @@ export const ThemeFeedPanel = ({
               <div className="flex flex-col gap-sm">
                 {section.videos.map((video) => (
                   <FeedVideoCard
-                    key={video.id}
+                    key={video.videoId}
                     video={video}
                     mine={video.mine}
                     onSelect={() => onVideoSelect(video, video.mine)}

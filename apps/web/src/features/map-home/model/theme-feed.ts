@@ -35,7 +35,7 @@ export interface ThemeFeed {
 export const deriveThemeFeed = (
   theme: ThemeId,
   cells: Cell[],
-  myVideoIds: string[],
+  myVideoIds: number[],
 ): ThemeFeed => {
   const sections = themeCellsOf(theme).flatMap<ThemeFeedSection>(({ id }) => {
     const cell = cells.find((c) => c.id === id);
@@ -47,10 +47,10 @@ export const deriveThemeFeed = (
         videos: [...cell.videos]
           .sort(
             (a, b) =>
-              new Date(b.uploadedAt).getTime() -
-              new Date(a.uploadedAt).getTime(),
+              new Date(b.recordedAt).getTime() -
+              new Date(a.recordedAt).getTime(),
           )
-          .map((video) => ({ ...video, mine: myVideoIds.includes(video.id) })),
+          .map((video) => ({ ...video, mine: myVideoIds.includes(video.videoId) })),
       },
     ];
   });

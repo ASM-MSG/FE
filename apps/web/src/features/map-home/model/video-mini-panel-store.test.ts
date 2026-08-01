@@ -5,17 +5,17 @@ import { useThemeFilterStore } from "./theme-filter-store";
 import { useVideoMiniPanelStore } from "./video-mini-panel-store";
 
 /** 최소 영상 픽스처 — 서면 목 관례 (부산 서면 MVP) */
-const buildVideo = (id: string): CellVideo => ({
-  id,
-  title: `표본 영상 ${id}`,
+const buildVideo = (videoId: number): CellVideo => ({
+  videoId,
+  title: `표본 영상 ${videoId}`,
   viewCount: 1200,
-  uploadedAt: "2026-07-29T12:00:00.000Z",
-  durationSec: 42,
+  recordedAt: "2026-07-29T12:00:00.000Z",
+  durationSec: 24,
   videoSrc: "https://mdn.github.io/shared-assets/videos/flower.mp4",
 });
 
-const VIDEO_A = buildVideo("A-14-v1");
-const VIDEO_B = buildVideo("A-14-v2");
+const VIDEO_A = buildVideo(101);
+const VIDEO_B = buildVideo(102);
 
 const resetStores = () => {
   useVideoMiniPanelStore.setState(

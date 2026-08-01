@@ -10,7 +10,7 @@ import {
   themeCellsOf,
 } from "./theme";
 
-const OCCUPIED_IDS = MOCK_DEX.collectedCells.map((c) => c.cellId);
+const OCCUPIED_IDS = MOCK_DEX.collectedCells.map((c) => c.gridId);
 
 describe("테마 메타 — 칩 4개의 순서·라벨·색 (AC 1·3)", () => {
   it("칩은 핫구역 · 지역축제 · 팝업스토어 · 경로추천 순서다 (AC 1)", () => {

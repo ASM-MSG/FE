@@ -121,7 +121,7 @@ export const buildOccupiedGridCells = (
   occupied
     .filter((cell) => isGridCellCenterInBusan(cell.center))
     .map((cell) => ({
-      id: cell.cellId,
+      id: cell.gridId,
       bounds: cellBoundsAt(cellIndexAt(cell.center)),
       occupied: true,
     }));

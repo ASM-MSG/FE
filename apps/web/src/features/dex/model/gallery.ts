@@ -8,8 +8,8 @@ import type { CollectedCell, CollectedVideo } from "@/entities/dex";
  */
 
 /**
- * 지정 지역(district) 격자의 영상만 collectedAt 내림차순으로 선별한다. [AC 1]
- * 동률 시 id 오름차순 안정 정렬, 원본 배열은 변형하지 않는다(sortByCollectedAtDesc 패턴).
+ * 지정 지역(district) 격자의 영상만 createdAt 내림차순으로 선별한다. [AC 1]
+ * 동률 시 videoId 오름차순 안정 정렬, 원본 배열은 변형하지 않는다(sortByCollectedAtDesc 패턴).
  * mock queryFn(fetchGalleryVideos)이 이 함수로 "서버 지역 필터"를 흉내 낸다 (A2).
  */
 export const selectRegionVideos = (
@@ -18,13 +18,13 @@ export const selectRegionVideos = (
   region: string,
 ): CollectedVideo[] => {
   const regionCellIds = new Set(
-    cells.filter((c) => c.district === region).map((c) => c.cellId),
+    cells.filter((c) => c.district === region).map((c) => c.gridId),
   );
   return videos
-    .filter((v) => regionCellIds.has(v.cellId))
+    .filter((v) => regionCellIds.has(v.gridId))
     .sort(
       (a, b) =>
-        b.collectedAt.localeCompare(a.collectedAt) || a.id.localeCompare(b.id),
+        b.createdAt.localeCompare(a.createdAt) || a.videoId - b.videoId,
     );
 };
 
@@ -50,10 +50,10 @@ export const deriveGalleryPreview = (
 });
 
 /**
- * cellId → 소속 지역(district). 수집 목록에 없는 id는 null — 오버레이 셀 클릭 no-op 방어. [AC 4]
+ * gridId → 소속 지역(district). 수집 목록에 없는 id는 null — 오버레이 셀 클릭 no-op 방어. [AC 4]
  */
 export const districtOfCell = (
   cells: CollectedCell[],
   cellId: string,
 ): string | null =>
-  cells.find((c) => c.cellId === cellId)?.district ?? null;
+  cells.find((c) => c.gridId === cellId)?.district ?? null;

@@ -33,7 +33,7 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
   // autoplay 정책·소스 로드 실패 시엔 무시하고 controls 수동 재생으로 폴백 (VideoPreview 관례)
   useEffect(() => {
     videoRef.current?.play()?.catch(() => {});
-  }, [video.id]);
+  }, [video.videoId]);
 
   return (
     <aside

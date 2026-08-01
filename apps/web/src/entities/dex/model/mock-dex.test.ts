@@ -15,28 +15,28 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
   it("격자별 갤러리 영상 수가 CollectedCell.videoCount와 일치한다", () => {
     for (const cell of MOCK_DEX.collectedCells) {
       const count = MOCK_COLLECTED_VIDEOS.filter(
-        (v) => v.cellId === cell.cellId,
+        (v) => v.gridId === cell.gridId,
       ).length;
-      expect(count, `${cell.cellId} 영상 수`).toBe(cell.videoCount);
+      expect(count, `${cell.gridId} 영상 수`).toBe(cell.videoCount);
     }
   });
 
-  it("모든 영상의 cellId가 수집 격자 목록에 존재한다", () => {
+  it("모든 영상의 gridId가 수집 격자 목록에 존재한다", () => {
     const collectedIds = new Set(
-      MOCK_DEX.collectedCells.map((c) => c.cellId),
+      MOCK_DEX.collectedCells.map((c) => c.gridId),
     );
     for (const video of MOCK_COLLECTED_VIDEOS) {
-      expect(collectedIds.has(video.cellId), `${video.id}의 cellId`).toBe(true);
+      expect(collectedIds.has(video.gridId), `${video.videoId}의 gridId`).toBe(true);
     }
   });
 
-  it("격자별 min(영상 collectedAt)이 격자 collectedAt과 같다 — 첫 영상 수집 = 격자 수집 (A9)", () => {
+  it("격자별 min(영상 createdAt)이 격자 firstCollectedAt과 같다 — 첫 영상 수집 = 격자 수집 (A9)", () => {
     for (const cell of MOCK_DEX.collectedCells) {
       const times = MOCK_COLLECTED_VIDEOS.filter(
-        (v) => v.cellId === cell.cellId,
-      ).map((v) => v.collectedAt);
+        (v) => v.gridId === cell.gridId,
+      ).map((v) => v.createdAt);
       const oldest = [...times].sort()[0];
-      expect(oldest, `${cell.cellId} 최고령 영상 시각`).toBe(cell.collectedAt);
+      expect(oldest, `${cell.gridId} 최고령 영상 시각`).toBe(cell.firstCollectedAt);
     }
   });
 
@@ -44,36 +44,36 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
     const busanjinCellIds = new Set(
       MOCK_DEX.collectedCells
         .filter((c) => c.district === "부산진구")
-        .map((c) => c.cellId),
+        .map((c) => c.gridId),
     );
     const busanjinCount = MOCK_COLLECTED_VIDEOS.filter((v) =>
-      busanjinCellIds.has(v.cellId),
+      busanjinCellIds.has(v.gridId),
     ).length;
     expect(busanjinCount).toBeGreaterThan(9);
   });
 
-  it("모든 수집 영상 id가 소속 격자 Cell.videos의 id로 존재한다 — 상세 시트 활성 매칭 정합 (② B3, AC 6 추가)", () => {
+  it("모든 수집 영상 videoId가 소속 격자 Cell.videos의 videoId로 존재한다 — 상세 시트 활성 매칭 정합 (② B3, AC 6 추가)", () => {
     for (const video of MOCK_COLLECTED_VIDEOS) {
-      const cell = MOCK_CELLS.find((c) => c.id === video.cellId);
+      const cell = MOCK_CELLS.find((c) => c.id === video.gridId);
       expect(
-        cell?.videos.some((v) => v.id === video.id),
-        `${video.id}가 ${video.cellId}의 Cell.videos에 존재`,
+        cell?.videos.some((v) => v.videoId === video.videoId),
+        `${video.videoId}가 ${video.gridId}의 Cell.videos에 존재`,
       ).toBe(true);
     }
   });
 
   it("썸네일 제공 항목과 미제공 항목이 모두 존재한다 — placeholder 경로 검증 가능 (A7)", () => {
     expect(
-      MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailSrc !== undefined),
+      MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailUrl !== undefined),
     ).toBe(true);
     expect(
-      MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailSrc === undefined),
+      MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailUrl === undefined),
     ).toBe(true);
   });
 
   it("수집 격자마다 district가 있고 값은 MOCK_CELLS 체계(구 이름)를 따른다", () => {
     for (const cell of MOCK_DEX.collectedCells) {
-      expect(cell.district, `${cell.cellId}의 district`).toMatch(/구$/);
+      expect(cell.district, `${cell.gridId}의 district`).toMatch(/구$/);
     }
   });
 

@@ -27,8 +27,8 @@ const OPEN_SEA_VIEWPORT: Bounds = {
   ne: { lat: 34.55, lng: 129.06 },
 };
 
-const OCCUPIED = MOCK_DEX.collectedCells.map(({ cellId, center }) => ({
-  cellId,
+const OCCUPIED = MOCK_DEX.collectedCells.map(({ gridId, center }) => ({
+  gridId,
   center,
 }));
 
@@ -101,10 +101,10 @@ describe("buildOccupiedGridCells — 점령 셀 격자 스냅 (MSG-263 AC 4·7, 
     const overlays = buildOccupiedGridCells(OCCUPIED);
 
     expect(overlays.map((o) => o.id).sort()).toEqual(
-      OCCUPIED.map((c) => c.cellId).sort(),
+      OCCUPIED.map((c) => c.gridId).sort(),
     );
     for (const cell of OCCUPIED) {
-      const overlay = overlays.find((o) => o.id === cell.cellId)!;
+      const overlay = overlays.find((o) => o.id === cell.gridId)!;
       expect(overlay.bounds).toEqual(cellBoundsAt(cellIndexAt(cell.center)));
       expect(overlay.occupied).toBe(true);
     }
@@ -113,7 +113,7 @@ describe("buildOccupiedGridCells — 점령 셀 격자 스냅 (MSG-263 AC 4·7, 
   it("셀 중심이 행정경계 밖인 셀은 점령 오버레이 대상이 아니다 (AC 4)", () => {
     const withSeaCell = [
       ...OCCUPIED,
-      { cellId: "SEA-1", center: { lat: 34.95, lng: 129.0 } },
+      { gridId: "SEA-1", center: { lat: 34.95, lng: 129.0 } },
     ];
     const overlays = buildOccupiedGridCells(withSeaCell);
 
@@ -127,13 +127,13 @@ describe("excludeSectionCells — 상시 점령 셀 ∩ 섹션 게시 셀 1회 �
 
   it("섹션 게시 셀과 id가 겹치는 상시 점령 셀은 렌더 대상에서 제외된다 — 교집합은 섹션(테마) 스타일로 1회만", () => {
     const sectionCells = [
-      { id: OCCUPIED[0].cellId },
-      { id: OCCUPIED[1].cellId },
+      { id: OCCUPIED[0].gridId },
+      { id: OCCUPIED[1].gridId },
     ];
     const visible = excludeSectionCells(persistent, sectionCells);
 
-    expect(visible.map((o) => o.id)).not.toContain(OCCUPIED[0].cellId);
-    expect(visible.map((o) => o.id)).not.toContain(OCCUPIED[1].cellId);
+    expect(visible.map((o) => o.id)).not.toContain(OCCUPIED[0].gridId);
+    expect(visible.map((o) => o.id)).not.toContain(OCCUPIED[1].gridId);
     expect(visible).toHaveLength(persistent.length - 2);
   });
 

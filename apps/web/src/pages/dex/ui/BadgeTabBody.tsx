@@ -51,7 +51,7 @@ export const BadgeTabBody = ({ badges }: BadgeTabBodyProps) => {
       </div>
       <ul className="grid min-h-0 grid-cols-4 content-start gap-x-xs gap-y-md overflow-y-auto scrollbar-gutter-stable">
         {shown.map((badge, i) => (
-          <BadgeCell key={badge.id} badge={badge} order={i} />
+          <BadgeCell key={badge.badgeId} badge={badge} order={i} />
         ))}
       </ul>
       {showExpand && (

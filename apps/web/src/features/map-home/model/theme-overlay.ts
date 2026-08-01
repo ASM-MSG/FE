@@ -36,7 +36,7 @@ export interface StyledCellOverlay extends CellOverlay {
 
 /** 내 점령 셀 입력 — CollectedCell(entities/dex)의 구조적 부분집합 */
 export interface OccupiedCell {
-  cellId: string;
+  gridId: string;
   center: LatLng;
 }
 
@@ -54,7 +54,7 @@ export const buildHomeOverlayCells = (
 ): StyledCellOverlay[] => {
   if (activeTheme === null) return [];
 
-  const occupiedIds = new Set(occupiedCells.map((c) => c.cellId));
+  const occupiedIds = new Set(occupiedCells.map((c) => c.gridId));
   return themeCells
     .filter((c) => isGridCellCenterInBusan(c.center))
     .map((c) => ({

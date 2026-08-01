@@ -94,7 +94,7 @@ export const HomeCellDetailPanel = ({
           <div className="flex flex-col gap-sm">
             {detail.myVideos.map((video) => (
               <FeedVideoCard
-                key={video.id}
+                key={video.videoId}
                 video={video}
                 mine
                 onSelect={() => onVideoSelect(video, true)}
@@ -102,7 +102,7 @@ export const HomeCellDetailPanel = ({
             ))}
             {detail.otherVideos.map((video) => (
               <FeedVideoCard
-                key={video.id}
+                key={video.videoId}
                 video={video}
                 mine={false}
                 onSelect={() => onVideoSelect(video, false)}

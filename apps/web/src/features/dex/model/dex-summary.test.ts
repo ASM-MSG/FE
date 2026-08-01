@@ -19,7 +19,7 @@ const summary = (overrides: Partial<DexSummary> = {}): DexSummary => ({
   nickname: "필맵퍼",
   totalExploredPct: 0.012,
   streakDays: 12,
-  collectedCellCount: 3,
+  totalGridCount: 3,
   badgeCount: 4,
   ...overrides,
 });
@@ -28,8 +28,8 @@ const REGION_PCT_MAP = { 부산진구: 52, 수영구: 34 };
 
 /** 뱃지 카탈로그 픽스처 — 획득·미획득 혼재 (MSG-123 패스스루 판정용) */
 const BADGES: DexBadge[] = [
-  { id: "first-record", name: "첫 기록", earned: true },
-  { id: "busan-conquest", name: "부산 정복", earned: false },
+  { badgeId: 1, name: "첫 기록", earned: true },
+  { badgeId: 4, name: "부산 정복", earned: false },
 ];
 
 const dexData = (
@@ -43,20 +43,20 @@ const dexData = (
 });
 
 const cell = (
-  cellId: string,
-  collectedAt: string,
+  gridId: string,
+  firstCollectedAt: string,
   overrides: Partial<CollectedCell> = {},
 ): CollectedCell => ({
-  cellId,
-  label: `격자 ${cellId}`,
+  gridId,
+  label: `격자 ${gridId}`,
   district: "부산진구",
   center: { lat: 35.16, lng: 129.06 },
-  collectedAt,
+  firstCollectedAt,
   videoCount: 1,
   ...overrides,
 });
 
-/** n개의 수집 격자를 생성 — 인덱스 i가 클수록 최신(collectedAt이 늦음) */
+/** n개의 수집 격자를 생성 — 인덱스 i가 클수록 최신(firstCollectedAt이 늦음) */
 const manyCells = (n: number): CollectedCell[] =>
   Array.from({ length: n }, (_, i) =>
     cell(
@@ -107,29 +107,29 @@ describe("formatExploredPct — 전체 진행률 포맷 (AC 20, 개정 D1·A12)"
 });
 
 describe("sortByCollectedAtDesc — 최근 수집 최신순 정렬 (AC 14)", () => {
-  it("collectedAt 내림차순(최신순)으로 정렬한다", () => {
+  it("firstCollectedAt 내림차순(최신순)으로 정렬한다", () => {
     const cells = [
       cell("A", "2026-07-19T09:00:00.000Z"),
       cell("B", "2026-07-21T09:00:00.000Z"),
       cell("C", "2026-07-20T09:00:00.000Z"),
     ];
 
-    expect(sortByCollectedAtDesc(cells).map((c) => c.cellId)).toEqual([
+    expect(sortByCollectedAtDesc(cells).map((c) => c.gridId)).toEqual([
       "B",
       "C",
       "A",
     ]);
   });
 
-  it("동률이면 cellId 오름차순으로 안정 정렬하고, 원본 배열은 변형하지 않는다", () => {
+  it("동률이면 gridId 오름차순으로 안정 정렬하고, 원본 배열은 변형하지 않는다", () => {
     const cells = [
       cell("B", "2026-07-20T09:00:00.000Z"),
       cell("A", "2026-07-20T09:00:00.000Z"),
     ];
     const sorted = sortByCollectedAtDesc(cells);
 
-    expect(sorted.map((c) => c.cellId)).toEqual(["A", "B"]);
-    expect(cells.map((c) => c.cellId)).toEqual(["B", "A"]);
+    expect(sorted.map((c) => c.gridId)).toEqual(["A", "B"]);
+    expect(cells.map((c) => c.gridId)).toEqual(["B", "A"]);
   });
 });
 
@@ -143,15 +143,15 @@ describe("selectRecentCells — 최신순 정렬 + 상한 30 (AC 14 개정 D3)",
     const recent = selectRecentCells(cells);
 
     expect(recent.length).toBe(30);
-    expect(recent[0].cellId).toBe("C-30"); // 최신이 맨 앞
-    expect(recent[29].cellId).toBe("C-01");
-    expect(recent.some((c) => c.cellId === "C-00")).toBe(false); // 최고령 탈락
+    expect(recent[0].gridId).toBe("C-30"); // 최신이 맨 앞
+    expect(recent[29].gridId).toBe("C-01");
+    expect(recent.some((c) => c.gridId === "C-00")).toBe(false); // 최고령 탈락
   });
 
   it("30개 이하 입력은 전체를 최신순으로 반환한다", () => {
     const recent = selectRecentCells(manyCells(3));
 
-    expect(recent.map((c) => c.cellId)).toEqual(["C-02", "C-01", "C-00"]);
+    expect(recent.map((c) => c.gridId)).toEqual(["C-02", "C-01", "C-00"]);
   });
 });
 
@@ -159,14 +159,14 @@ describe("excludeRemoved — 표시 목록에서 제거 항목 제외 (AC 23, �
   it("removedIds에 있는 항목만 제외하고 나머지 순서를 유지한다", () => {
     const visible = excludeRemoved(selectRecentCells(manyCells(3)), ["C-01"]);
 
-    expect(visible.map((c) => c.cellId)).toEqual(["C-02", "C-00"]);
+    expect(visible.map((c) => c.gridId)).toEqual(["C-02", "C-00"]);
   });
 
   it("정렬·상한 파생 이후에 적용된다 — 상위 30에서 1개 제거해도 31번째가 복귀하지 않는다", () => {
     const visible = excludeRemoved(selectRecentCells(manyCells(31)), ["C-30"]);
 
     expect(visible.length).toBe(29);
-    expect(visible.some((c) => c.cellId === "C-00")).toBe(false);
+    expect(visible.some((c) => c.gridId === "C-00")).toBe(false);
   });
 
   it("빈 removedIds면 입력을 그대로 반환한다", () => {
@@ -182,7 +182,7 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
       dexData([], {
         totalExploredPct: 0,
         streakDays: 0,
-        collectedCellCount: 0,
+        totalGridCount: 0,
         badgeCount: 0,
       }),
     );
@@ -198,7 +198,7 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
     const view = deriveDexView(dexData(manyCells(31)));
 
     expect(view.recentCells.length).toBe(30);
-    expect(view.recentCells[0].cellId).toBe("C-30");
+    expect(view.recentCells[0].gridId).toBe("C-30");
   });
 
   it("파생 뷰는 지도 오버레이를 만들지 않는다 — 도감 500m 오버레이는 MSG-263 D8로 제거, 지도 표시는 셸 상시 층 소유", () => {
@@ -233,7 +233,7 @@ describe("deriveDexView — 도감 화면 파생 (AC 7·14·17·23)", () => {
   });
 
   it("통계 파생의 입력은 제거 상태와 무관하다 — 같은 입력이면 같은 결과다 (AC 23·24)", () => {
-    const data = dexData(manyCells(3), { collectedCellCount: 3 });
+    const data = dexData(manyCells(3), { totalGridCount: 3 });
 
     const before = deriveDexView(data);
     // 표시 목록만 excludeRemoved로 줄어들 뿐, 파생 입력(DexData)은 불변이다

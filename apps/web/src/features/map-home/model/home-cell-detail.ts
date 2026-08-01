@@ -26,12 +26,12 @@ export const canOpenDetail = (
   return themeCellIds.includes(cellId);
 };
 
-/** 셀별 내 수집 영상 id 목록 — CollectedVideo.id는 Cell.videos(CellVideo.id)와 같은 체계 (A2) */
+/** 셀별 내 수집 영상 id 목록 — CollectedVideo.videoId는 Cell.videos(CellVideo.videoId)와 같은 체계 (A2) */
 export const myVideoIdsOf = (
-  collectedVideos: { id: string; cellId: string }[],
+  collectedVideos: { videoId: number; gridId: string }[],
   cellId: string,
-): string[] =>
-  collectedVideos.filter((v) => v.cellId === cellId).map((v) => v.id);
+): number[] =>
+  collectedVideos.filter((v) => v.gridId === cellId).map((v) => v.videoId);
 
 /** 상세 헤더 속성 배지 — id는 스타일 매핑 키(뷰), label은 표시 텍스트 (AC 9·10, MSG-277 route 포함) */
 export interface HomeCellBadge {
@@ -73,7 +73,7 @@ interface DeriveHomeCellDetailInput {
   /** 내 점령 셀 여부 — "내 점령" 배지·내 영상 섹션 기준 */
   occupied: boolean;
   /** 이 셀에서 내가 수집한 영상 id (myVideoIdsOf 결과) */
-  myVideoIds: string[];
+  myVideoIds: number[];
   /** 서브타이틀 "최근 24시간" 판정 기준 시각 — 테스트 결정성용 주입, 기본은 호출 시점 (AC 7) */
   now?: Date;
 }
@@ -90,15 +90,15 @@ const deriveSubtitle = (
   const myPart = `내 영상 ${myVideos.length}개`;
   if (activeTheme) {
     const recent24hCount = cell.videos.filter(
-      (v) => now.getTime() - new Date(v.uploadedAt).getTime() < DAY_MS,
+      (v) => now.getTime() - new Date(v.recordedAt).getTime() < DAY_MS,
     ).length;
     return `${myPart} · 최근 24시간 영상 +${recent24hCount}개`;
   }
   if (myVideos.length === 0) return myPart;
   const latest = myVideos.reduce((a, b) =>
-    new Date(a.uploadedAt).getTime() >= new Date(b.uploadedAt).getTime() ? a : b,
+    new Date(a.recordedAt).getTime() >= new Date(b.recordedAt).getTime() ? a : b,
   );
-  return `${myPart} · 마지막 업로드 ${formatMonthDay(latest.uploadedAt)}`;
+  return `${myPart} · 마지막 업로드 ${formatMonthDay(latest.recordedAt)}`;
 };
 
 /**
@@ -121,7 +121,7 @@ export const deriveHomeCellDetail = ({
       : []),
   ];
 
-  const myVideos = cell.videos.filter((v) => myVideoIds.includes(v.id));
+  const myVideos = cell.videos.filter((v) => myVideoIds.includes(v.videoId));
 
   return {
     cellId: cell.id,
@@ -130,7 +130,7 @@ export const deriveHomeCellDetail = ({
     badges,
     myVideos,
     otherVideos: activeTheme
-      ? cell.videos.filter((v) => !myVideoIds.includes(v.id))
+      ? cell.videos.filter((v) => !myVideoIds.includes(v.videoId))
       : [],
     showMashup: activeTheme !== null,
     statsLine: `영상 ${cell.videoCount}개 · 조회 ${formatViewCountKo(cell.viewCount)} · 담수율 ${cell.fillRate}%`,

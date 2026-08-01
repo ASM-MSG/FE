@@ -74,7 +74,7 @@ const EMPTY_DEX: DexData = {
     nickname: "새 사용자",
     totalExploredPct: 0,
     streakDays: 0,
-    collectedCellCount: 0,
+    totalGridCount: 0,
     badgeCount: 0,
   },
   collectedCells: [],
@@ -85,22 +85,22 @@ const EMPTY_DEX: DexData = {
 
 /** 수집 2건 주입 데이터 — 오버레이 게시·행 클릭·X 제거 배선 확인용 */
 const DEX_WITH_CELLS: DexData = {
-  summary: { ...EMPTY_DEX.summary, collectedCellCount: 2 },
+  summary: { ...EMPTY_DEX.summary, totalGridCount: 2 },
   collectedCells: [
     {
-      cellId: "A-14",
+      gridId: "A-14",
       label: "서면 A-14",
       district: "부산진구",
       center: { lat: 35.1573, lng: 129.0586 },
-      collectedAt: "2026-07-21T09:00:00.000Z",
+      firstCollectedAt: "2026-07-21T09:00:00.000Z",
       videoCount: 2,
     },
     {
-      cellId: "B-07",
+      gridId: "B-07",
       label: "부전 B-07",
       district: "부산진구",
       center: { lat: 35.1631, lng: 129.0604 },
-      collectedAt: "2026-07-20T09:00:00.000Z",
+      firstCollectedAt: "2026-07-20T09:00:00.000Z",
       videoCount: 1,
     },
   ],

@@ -17,7 +17,7 @@ describe("dex query (AC 19)", () => {
       nickname: expect.any(String),
       totalExploredPct: expect.any(Number),
       streakDays: expect.any(Number),
-      collectedCellCount: expect.any(Number),
+      totalGridCount: expect.any(Number),
       badgeCount: expect.any(Number),
     });
     // 개정 D2 — 지역별 탐험률 맵 (디폴트 지역 "부산진구" 키 포함, A13)
@@ -25,10 +25,10 @@ describe("dex query (AC 19)", () => {
     expect(data.collectedCells.length).toBeGreaterThan(0);
     for (const cell of data.collectedCells) {
       expect(cell).toMatchObject({
-        cellId: expect.any(String),
+        gridId: expect.any(String),
         label: expect.any(String),
         center: { lat: expect.any(Number), lng: expect.any(Number) },
-        collectedAt: expect.any(String),
+        firstCollectedAt: expect.any(String),
         videoCount: expect.any(Number),
       });
     }

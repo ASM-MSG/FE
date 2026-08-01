@@ -16,14 +16,14 @@ describe("gallery query (AC 7·9, A2)", () => {
     expect(videos.length).toBeGreaterThan(9); // A6 — 프리뷰 제한 시연 가능
     for (const video of videos) {
       expect(video).toMatchObject({
-        id: expect.any(String),
-        cellId: expect.any(String),
+        videoId: expect.any(Number),
+        gridId: expect.any(String),
         cellLabel: expect.any(String),
-        collectedAt: expect.any(String),
+        createdAt: expect.any(String),
       });
     }
     // 최신 수집순 (내림차순)
-    const times = videos.map((v) => v.collectedAt);
+    const times = videos.map((v) => v.createdAt);
     expect(times).toEqual([...times].sort().reverse());
   });
 

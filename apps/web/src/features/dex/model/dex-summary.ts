@@ -24,16 +24,16 @@ export const formatExploredPct = (value: number): string => {
 };
 
 /**
- * 수집 격자를 collectedAt 내림차순(최신순)으로 정렬한다. [AC 14]
- * 동률 시 cellId 오름차순 안정 정렬, 원본 배열은 변형하지 않는다(explore sortCells 패턴).
+ * 수집 격자를 firstCollectedAt 내림차순(최신순)으로 정렬한다. [AC 14]
+ * 동률 시 gridId 오름차순 안정 정렬, 원본 배열은 변형하지 않는다(explore sortCells 패턴).
  */
 export const sortByCollectedAtDesc = (
   cells: CollectedCell[],
 ): CollectedCell[] =>
   [...cells].sort(
     (a, b) =>
-      b.collectedAt.localeCompare(a.collectedAt) ||
-      a.cellId.localeCompare(b.cellId),
+      b.firstCollectedAt.localeCompare(a.firstCollectedAt) ||
+      a.gridId.localeCompare(b.gridId),
   );
 
 /** 최근 수집 목록 상한 (개정 D3 — 티켓 명시값) */
@@ -51,7 +51,7 @@ export const selectRecentCells = (cells: CollectedCell[]): CollectedCell[] =>
 export const excludeRemoved = (
   cells: CollectedCell[],
   removedIds: string[],
-): CollectedCell[] => cells.filter((c) => !removedIds.includes(c.cellId));
+): CollectedCell[] => cells.filter((c) => !removedIds.includes(c.gridId));
 
 /** 도감 화면이 소비하는 파생 뷰 모델 — 요약(클램프 적용) + 최신순·상한 목록 */
 export interface DexView {
@@ -86,7 +86,7 @@ export const deriveDexView = ({
   avatarSrc: summary.avatarSrc,
   totalExploredPct: clampPct(summary.totalExploredPct),
   streakDays: summary.streakDays,
-  collectedCellCount: summary.collectedCellCount,
+  collectedCellCount: summary.totalGridCount,
   badgeCount: summary.badgeCount,
   regionExploredPctMap,
   badges,

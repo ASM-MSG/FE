@@ -1,4 +1,10 @@
 import { MOCK_CELLS } from "@/entities/cell";
+import type {
+  CollectionGridResponseDto,
+  CollectionSummaryResponseDto,
+  MyBadgeResponseDto,
+  RegionVideoResponseDto,
+} from "@/shared/api/generated/types.gen";
 import type { CollectedCell, CollectedVideo, DexBadge, DexData } from "./dex";
 
 const MINUTE = 60_000;
@@ -15,13 +21,13 @@ const isoAgo = (ms: number) => new Date(Date.now() - ms).toISOString();
  * A-14 4·B-08 5는 MSG-122 상향(A6) — 부산진구 합계(11)가 프리뷰 9개 제한을 넘겨
  * "갤러리 전체 보기"를 시연할 수 있게 한다 (AC 6·13, R6).
  */
-const COLLECTED_SEEDS: { cellId: string; ago: number; videoCount: number }[] = [
-  { cellId: "A-14", ago: 2 * HOUR, videoCount: 4 },
-  { cellId: "B-08", ago: 5 * HOUR, videoCount: 5 },
-  { cellId: "B-07", ago: 1 * DAY, videoCount: 1 },
-  { cellId: "C-02", ago: 3 * DAY, videoCount: 4 },
-  { cellId: "A-15", ago: 6 * DAY, videoCount: 1 },
-  { cellId: "G-03", ago: 12 * DAY, videoCount: 2 },
+const COLLECTED_SEEDS: { gridId: string; ago: number; videoCount: number }[] = [
+  { gridId: "A-14", ago: 2 * HOUR, videoCount: 4 },
+  { gridId: "B-08", ago: 5 * HOUR, videoCount: 5 },
+  { gridId: "B-07", ago: 1 * DAY, videoCount: 1 },
+  { gridId: "C-02", ago: 3 * DAY, videoCount: 4 },
+  { gridId: "A-15", ago: 6 * DAY, videoCount: 1 },
+  { gridId: "G-03", ago: 12 * DAY, videoCount: 2 },
 ];
 
 const cellById = (id: string) => {
@@ -30,16 +36,23 @@ const cellById = (id: string) => {
   return cell;
 };
 
+/**
+ * 명세 대응 필드(gridId·firstCollectedAt·videoCount)는 satisfies로
+ * CollectionGridResponseDto에 연결한다 (MSG-289 AC 4). gridId 값은 mock 체계 "A-14" 유지
+ * (명세 "{gridY}_{gridX}" 체계 전환은 후속 — 질문 5 승인). label·district·center는 FE 확장.
+ */
 const MOCK_COLLECTED_CELLS: CollectedCell[] = COLLECTED_SEEDS.map(
-  ({ cellId, ago, videoCount }) => {
-    const { label, center, district } = cellById(cellId);
+  ({ gridId, ago, videoCount }) => {
+    const { label, center, district } = cellById(gridId);
     return {
-      cellId,
+      ...({
+        gridId,
+        firstCollectedAt: isoAgo(ago),
+        videoCount,
+      } satisfies CollectionGridResponseDto),
       label,
       district,
       center,
-      collectedAt: isoAgo(ago),
-      videoCount,
     };
   },
 );
@@ -80,25 +93,29 @@ const VIDEO_GAP = 10 * MINUTE;
 
 /**
  * 격자별 수집 영상 mock (MSG-122) — 정합 불변식(AC 6):
- * 격자당 videoCount개 생성, 첫 영상(i=0)의 collectedAt은 격자 collectedAt과 동일
+ * 격자당 videoCount개 생성, 첫 영상(i=0)의 createdAt은 격자 firstCollectedAt과 동일
  * ("첫 영상 수집 = 격자 수집", A9 — 갤러리 최신순과 최근 수집 목록 순서가 모순되지 않는다).
- * 격자당 3번째 영상(i=2)은 thumbnailSrc 미제공 — placeholder 타일 경로 검증용 (A7·AC 10).
- * id는 소속 Cell.videos(CellVideo)의 `-v` 체계와 일치(② B3) — "수집 영상 = 그 격자 영상의
- * 일부"의 mock 표현으로, 썸네일 클릭 → 상세 시트 활성 매칭 키가 된다. 전 수집 격자에서
- * videoCount ≤ sampleSize라 항상 매칭 가능하다 (AC 6 불변식, mock-dex.test).
+ * 격자당 3번째 영상(i=2)은 thumbnailUrl 미제공 — placeholder 타일 경로 검증용 (A7·AC 10).
+ * videoId는 소속 Cell.videos(CellVideo.videoId)에서 직접 가져온다(② B3) — "수집 영상 =
+ * 그 격자 영상의 일부"의 mock 표현으로, 썸네일 클릭 → 상세 시트 활성 매칭 키가 된다.
+ * 전 수집 격자에서 videoCount ≤ sampleSize라 항상 매칭 가능하다 (AC 6 불변식, mock-dex.test).
+ * 명세 대응 필드는 satisfies로 RegionVideoResponseDto에 연결한다 (MSG-289 AC 4) — cellLabel만 FE 확장.
  */
 export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
-  MOCK_COLLECTED_CELLS.flatMap((cell) =>
-    Array.from({ length: cell.videoCount }, (_, i): CollectedVideo => ({
-      id: `${cell.cellId}-v${i + 1}`,
-      cellId: cell.cellId,
+  MOCK_COLLECTED_CELLS.flatMap((cell) => {
+    const cellVideos = cellById(cell.gridId).videos;
+    return Array.from({ length: cell.videoCount }, (_, i): CollectedVideo => ({
+      ...({
+        videoId: cellVideos[i].videoId,
+        gridId: cell.gridId,
+        thumbnailUrl: i === 2 ? undefined : svgThumbnail(cell.label, i + 1),
+        createdAt: new Date(
+          Date.parse(cell.firstCollectedAt) + i * VIDEO_GAP,
+        ).toISOString(),
+      } satisfies RegionVideoResponseDto),
       cellLabel: cell.label,
-      collectedAt: new Date(
-        Date.parse(cell.collectedAt) + i * VIDEO_GAP,
-      ).toISOString(),
-      ...(i === 2 ? {} : { thumbnailSrc: svgThumbnail(cell.label, i + 1) }),
-    })),
-  );
+    }));
+  });
 
 /**
  * 지역(구)별 탐험률 mock 맵 (개정 D2, A5 개정) — 키는 MOCK_REGIONS(entities/region) 8개 구.
@@ -123,38 +140,44 @@ const MOCK_REGION_EXPLORED_PCT: Record<string, number> = {
  * 정의 순서 = 표시 순서(A2 — 획득 여부로 재정렬하지 않음, Figma도 컬러·회색 혼재 배치).
  * 획득 4개는 앞 8개(프리뷰 범위) 안에 배치해 프리뷰만 봐도 통계 카드 "획득 뱃지"와
  * 정합이 눈으로 확인된다 (AC 5). 획득 판정은 백엔드 소관(제외 범위) — earned는 고정값.
+ * badgeId는 명세대로 number(정의 순서 1~12 — 기존 슬러그 문자열 id에서 전환, MSG-289 추정 3).
+ * satisfies로 MyBadgeResponseDto에 연결한다 (MSG-289 AC 4).
  */
 export const MOCK_BADGES: DexBadge[] = [
-  { id: "first-record", name: "첫 기록", earned: true },
-  { id: "first-upload", name: "첫 업로드", earned: true },
-  { id: "explorer", name: "탐험가", earned: true },
-  { id: "busan-conquest", name: "부산 정복", earned: false },
-  { id: "passion-recorder", name: "열정 기록러", earned: true },
-  { id: "streak-30", name: "30일 스트릭", earned: false },
-  { id: "seomyeon-master", name: "서면 마스터", earned: false },
-  { id: "jeonpo-cafe", name: "전포 카페거리", earned: false },
-  { id: "night-collector", name: "야간 수집가", earned: false },
-  { id: "alley-explorer", name: "골목 탐험가", earned: false },
-  { id: "gwangalli-trip", name: "광안리 원정", earned: false },
-  { id: "cells-100", name: "격자 100칸", earned: false },
-];
+  { badgeId: 1, name: "첫 기록", earned: true },
+  { badgeId: 2, name: "첫 업로드", earned: true },
+  { badgeId: 3, name: "탐험가", earned: true },
+  { badgeId: 4, name: "부산 정복", earned: false },
+  { badgeId: 5, name: "열정 기록러", earned: true },
+  { badgeId: 6, name: "30일 스트릭", earned: false },
+  { badgeId: 7, name: "서면 마스터", earned: false },
+  { badgeId: 8, name: "전포 카페거리", earned: false },
+  { badgeId: 9, name: "야간 수집가", earned: false },
+  { badgeId: 10, name: "골목 탐험가", earned: false },
+  { badgeId: 11, name: "광안리 원정", earned: false },
+  { badgeId: 12, name: "격자 100칸", earned: false },
+] satisfies MyBadgeResponseDto[];
 
 /**
  * 개인 도감 mock 데이터 (MSG-121, 2026-07-22 개정 반영).
  * Figma의 닉네임·68%·148개·12개·23일 등은 전부 플레이스홀더(티켓 [참고] 명시) —
  * 여기 값이 화면의 유일한 출처다. 실 API 전환 시 use-dex-query의 queryFn 내부만 교체한다.
  * totalExploredPct는 전체 지도 기준 미소값 0.012 (개정 D1, A12 — "전체 지도 0.012% 탐험").
- * collectedCellCount는 수집 목록 길이와, badgeCount는 카탈로그 earned 수와 일치시켜
+ * totalGridCount는 수집 목록 길이와, badgeCount는 카탈로그 earned 수와 일치시켜
  * mock의 자기모순을 피한다 (MSG-123 AC 5 — badgeCount는 백엔드 표시값 계약 유지, R3:
  * 파생은 mock 정합 장치일 뿐 프론트 획득 판정 로직이 아니다).
  * 수집 목록은 6건 — 최근 목록 상한 30(개정 D3)은 mock으로 발동하지 않으며 vitest가 판정한다(AC 14).
+ * summary는 명세 대응 필드(totalGridCount)만 satisfies로 CollectionSummaryResponseDto에
+ * 연결한다 (MSG-289 AC 4 — 대응 필드 한정, 나머지는 FE 확장).
  */
 export const MOCK_DEX: DexData = {
   summary: {
+    ...({
+      totalGridCount: MOCK_COLLECTED_CELLS.length,
+    } satisfies CollectionSummaryResponseDto),
     nickname: "필맵퍼",
     totalExploredPct: 0.012,
     streakDays: 12,
-    collectedCellCount: MOCK_COLLECTED_CELLS.length,
     badgeCount: MOCK_BADGES.filter((b) => b.earned).length,
   },
   collectedCells: MOCK_COLLECTED_CELLS,
