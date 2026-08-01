@@ -286,13 +286,17 @@ const CLUSTER_TIER_SIZE_CLASS: Record<MapClusterOverlay["tier"], string> = {
   3: "size-11",
 };
 
+/** 배지 표시 캡 — 고정 크기 원(최대 44px)이라 세 자리부터는 "99+" (카카오·네이버 클러스터러 관례) */
+const formatClusterCount = (count: number): string =>
+  count > 99 ? "99+" : String(count);
+
 /**
  * 클러스터 원형 배지 HTML (MSG-264 AC 3·5·9) — routeMarkerContent 선례를 따른 HtmlIcon content.
  * 배지 색은 데이터로 받은 테마 토큰 hex(미지정 시 primary) — Polygon fillColor와 같은 관례라
  * inline style로 지정한다(tailwind 색 임의값 클래스 금지 준수). count는 파생 로직의 숫자 전제.
  */
 const clusterMarkerContent = ({ count, tier, color }: MapClusterOverlay): string =>
-  `<div class="flex ${CLUSTER_TIER_SIZE_CLASS[tier]} -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-fm-body-strong text-primary-foreground shadow-raised" style="background-color:${color ?? semantic.primary}">${count}</div>`;
+  `<div class="flex ${CLUSTER_TIER_SIZE_CLASS[tier]} -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-fm-body-strong text-primary-foreground shadow-raised" style="background-color:${color ?? semantic.primary}">${formatClusterCount(count)}</div>`;
 
 const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
   (

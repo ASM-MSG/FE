@@ -68,6 +68,16 @@ export const selectClusterSource = (
 const clampTo = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
+/** 마커를 윈도 중앙 1/2 영역에 클램프하는 반경 비율 (AC 7, A1) */
+const CLUSTER_CENTER_CLAMP_RATIO = 0.25;
+
+/** 윈도 스냅 묶음 — col·row는 윈도 좌표, members는 묶인 셀과 그 중심 */
+interface ClusterWindow {
+  col: number;
+  row: number;
+  members: { cell: StyledCellOverlay; center: LatLng }[];
+}
+
 /**
  * 채움 셀 → 그리드 윈도 클러스터 마커 목록 (AC 4·6·7·10·11).
  * - zoom ≥ GRID_MIN_ZOOM이면 빈 배열 — 채움이 표시되는 줌에서는 클러스터가 없다 (AC 1)
@@ -83,10 +93,7 @@ export const buildClusterMarkers = (
   if (zoom >= GRID_MIN_ZOOM) return [];
 
   const step = clusterWindowSteps(zoom);
-  const windows = new Map<
-    string,
-    { col: number; row: number; members: { cell: StyledCellOverlay; center: LatLng }[] }
-  >();
+  const windows = new Map<string, ClusterWindow>();
 
   for (const cell of cells) {
     const center = {
@@ -132,13 +139,13 @@ export const buildClusterMarkers = (
       position: {
         lat: clampTo(
           centroid.lat,
-          windowCenter.lat - step.lat / 4,
-          windowCenter.lat + step.lat / 4,
+          windowCenter.lat - step.lat * CLUSTER_CENTER_CLAMP_RATIO,
+          windowCenter.lat + step.lat * CLUSTER_CENTER_CLAMP_RATIO,
         ),
         lng: clampTo(
           centroid.lng,
-          windowCenter.lng - step.lng / 4,
-          windowCenter.lng + step.lng / 4,
+          windowCenter.lng - step.lng * CLUSTER_CENTER_CLAMP_RATIO,
+          windowCenter.lng + step.lng * CLUSTER_CENTER_CLAMP_RATIO,
         ),
       },
       count: members.length,
