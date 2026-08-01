@@ -84,6 +84,15 @@ describe("useVideoMiniPanelStore — 컨텍스트 닫힘 연동 (3차 AC 2·3)",
     expect(useVideoMiniPanelStore.getState().selected).toBeNull();
   });
 
+  it("같은 셀 재선택(select) 시 미니 패널 선택이 유지된다 — 상세 컨텍스트 불변 (리뷰 반영)", () => {
+    useHomeCellDetailStore.getState().select("A-14");
+    useVideoMiniPanelStore.getState().open(VIDEO_A, true);
+
+    useHomeCellDetailStore.getState().select("A-14");
+
+    expect(useVideoMiniPanelStore.getState().selected).not.toBeNull();
+  });
+
   // 아래 3케이스는 내부 배선(toggle→detail.close 체인)과 무관하게 결과 계약만 단정한다 (스펙 신규 로직 3)
   it("테마 칩 해제(toggle) 시 미니 패널 선택이 닫힌다 (AC 2)", () => {
     useThemeFilterStore.getState().toggle("hot");

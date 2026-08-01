@@ -1,11 +1,8 @@
 import { Play } from "lucide-react";
 import type { CellVideo } from "@/entities/cell";
 import { formatDuration } from "@/features/explore/model/explore-cells";
-import {
-  formatMonthDay,
-  formatRelativeTime,
-  formatViewCountKo,
-} from "@/shared/format";
+import { formatViewCountKo } from "@/shared/format";
+import { VideoOwnerMeta } from "./VideoOwnerMeta";
 
 interface FeedVideoCardProps {
   video: CellVideo;
@@ -41,23 +38,7 @@ export const FeedVideoCard = ({ video, mine, onSelect }: FeedVideoCardProps) => 
         )}
       </span>
       <span className="flex w-full items-center justify-between gap-sm">
-        {mine ? (
-          <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
-            <span className="text-fm-body-strong text-primary">내 영상</span>
-            {` · ${formatMonthDay(video.uploadedAt)}`}
-          </span>
-        ) : (
-          <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
-            {video.uploaderHandle && (
-              <span className="text-fm-body-strong text-foreground">
-                {video.uploaderHandle}
-              </span>
-            )}
-            {video.uploaderHandle
-              ? ` · ${formatRelativeTime(video.uploadedAt)}`
-              : formatRelativeTime(video.uploadedAt)}
-          </span>
-        )}
+        <VideoOwnerMeta video={video} mine={mine} />
         <span className="shrink-0 text-fm-caption text-foreground-muted">
           조회 {formatViewCountKo(video.viewCount)}
         </span>

@@ -20,9 +20,11 @@ interface HomeCellDetailState {
  * theme-filter→detail cross-store 관례).
  * 플랫폼 API(window/localStorage/router)를 참조하지 않는다 — RN 경계.
  */
-export const useHomeCellDetailStore = create<HomeCellDetailState>((set) => ({
+export const useHomeCellDetailStore = create<HomeCellDetailState>((set, get) => ({
   selectedCellId: null,
   select: (cellId) => {
+    // 같은 셀 재탭은 컨텍스트 불변 — 미니 패널을 닫을 근거가 없다 (리뷰 반영)
+    if (get().selectedCellId === cellId) return;
     useVideoMiniPanelStore.getState().close();
     set({ selectedCellId: cellId });
   },

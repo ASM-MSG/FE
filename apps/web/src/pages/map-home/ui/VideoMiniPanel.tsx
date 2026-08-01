@@ -1,11 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Film, X } from "lucide-react";
 import type { VideoMiniSelection } from "@/features/map-home/model/video-mini-panel-store";
-import {
-  formatMonthDay,
-  formatRelativeTime,
-  formatViewCountKo,
-} from "@/shared/format";
+import { formatViewCountKo } from "@/shared/format";
+import { VideoOwnerMeta } from "./VideoOwnerMeta";
 
 interface VideoMiniPanelProps {
   /** 미니 패널 선택 — 영상 데이터 + 내 영상 여부 (video-mini-panel-store) */
@@ -18,7 +15,7 @@ interface VideoMiniPanelProps {
  * 영상 미니 디테일 패널 (MSG-277 3차 AC 5·6·8~11) — 네이버 지도 PC 보조 패널 방식.
  * 좌측 패널(w-97) 오른쪽에 flush로 붙는 전고 보조 패널 — 배경 지도 조작은 차단하지 않는다
  * (백드롭 없음). 구성: 닫기 버튼 → 재생 영역(HTML5 video controls, videoSrc 없으면 Film
- * 플레이스홀더) → 메타(제목·소유 문구·시간·조회수 — FeedVideoCard와 동일 mine 분기, 추정 5).
+ * 플레이스홀더) → 메타(제목·소유 문구·시간·조회수 — 소유 문구는 VideoOwnerMeta 공용, 추정 5).
  * 열릴 때(마운트) 포커스를 닫기 버튼으로 옮기고, 카드 교체(리렌더)에는 옮기지 않는다 (AC 6).
  * 접힘 시에는 셸의 display:none 래퍼로 좌측 패널과 함께 숨는다 (추정 9).
  */
@@ -73,23 +70,7 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
       <div className="flex flex-col gap-xxs">
         <h2 className="text-fm-title text-foreground">{video.title}</h2>
         <div className="flex items-center justify-between gap-sm">
-          {mine ? (
-            <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
-              <span className="text-fm-body-strong text-primary">내 영상</span>
-              {` · ${formatMonthDay(video.uploadedAt)}`}
-            </span>
-          ) : (
-            <span className="min-w-0 truncate text-fm-caption text-foreground-muted">
-              {video.uploaderHandle && (
-                <span className="text-fm-body-strong text-foreground">
-                  {video.uploaderHandle}
-                </span>
-              )}
-              {video.uploaderHandle
-                ? ` · ${formatRelativeTime(video.uploadedAt)}`
-                : formatRelativeTime(video.uploadedAt)}
-            </span>
-          )}
+          <VideoOwnerMeta video={video} mine={mine} />
           <span className="shrink-0 text-fm-caption text-foreground-muted">
             조회 {formatViewCountKo(video.viewCount)}
           </span>
