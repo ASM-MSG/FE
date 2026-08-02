@@ -33,6 +33,7 @@
     "@eslint/js": "^10.0.1",
     "@fillmap/tailwind-preset": "workspace:*",
     "@hey-api/openapi-ts": "^0.99.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.2",
     "@testing-library/react": "^16.3.2",
     "@types/navermaps": "^3.9.2",
