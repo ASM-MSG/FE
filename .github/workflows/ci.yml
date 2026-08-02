@@ -79,7 +79,8 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter web exec playwright install --with-deps chromium
 
-      - name: Install Playwright OS dependencies (cache hit — 브라우저 바이너리만 캐시되고 apt 의존성은 캐시 경로 밖이라 매번 필요)
+      # cache hit 시: 브라우저 바이너리만 캐시되고 apt 의존성은 캐시 경로 밖이라 매번 재설치 필요
+      - name: Install Playwright OS dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm --filter web exec playwright install-deps chromium
 
