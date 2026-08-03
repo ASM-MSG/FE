@@ -28,6 +28,8 @@ pnpm lint           # 린트 검사
 pnpm storybook      # ui-web 스토리북 실행
 
 pnpm --filter mobile storybook   # ui-native on-device 스토리북 (EXPO_PUBLIC_STORYBOOK=1)
+
+pnpm check:duplication   # 코드 중복 감지(nose CLI 필요 — brew install corca-ai/tap/nose). CI는 advisory 게이트
 ```
 
 ## 문서
