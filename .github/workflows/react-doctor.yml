@@ -34,7 +34,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: millionco/react-doctor@v2
+      # 커밋 SHA로 고정(v2 태그는 mutable — 워크플로에 pull-requests/issues/statuses write 권한이
+      # 있어 태그가 재지정되면 다음 실행부터 임의 코드가 그 권한으로 돈다). SHA는 v2.2.8 시점.
+      # 업그레이드 시 `gh api repos/millionco/react-doctor/tags`로 새 태그의 커밋을 확인해 갱신할 것.
+      - uses: millionco/react-doctor@01820bb4fd4d0a4aebcd8df2b2a143a098649cb2 # v2.2.8
         # Advisory by default: React Doctor reports findings on every PR — a
         # sticky summary comment, inline review comments, and a commit status
         # with the health score — but never fails the check, so it won't red-X

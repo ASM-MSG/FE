@@ -10,13 +10,15 @@ react_doctor_scan_staged_files() {
     return
   fi
 
+  # package.json의 react-doctor 버전과 맞춰둔다(재현성) — 위 두 분기가 이미 실패한
+  # 드문 경우에만 타는 폴백이라, 버전 올릴 때 이 범위도 같이 갱신할 것.
   if command -v pnpm >/dev/null 2>&1; then
-    pnpm dlx react-doctor@latest --staged --blocking warning
+    pnpm dlx react-doctor@^0.9.3 --staged --blocking warning
     return
   fi
 
   if command -v npx >/dev/null 2>&1; then
-    npx --yes react-doctor@latest --staged --blocking warning
+    npx --yes react-doctor@^0.9.3 --staged --blocking warning
     return
   fi
 
