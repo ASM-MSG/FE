@@ -5,6 +5,7 @@
   "description": "FillMap 모노레포 — 웹(React) + 앱(React Native, 추후) 디자인 시스템 기반",
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "dev:mobile": "pnpm --filter mobile start",
     "build": "pnpm --filter web build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",

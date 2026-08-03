@@ -1,6 +1,6 @@
 # FillMap FE
 
-필맵(FillMap) 프론트엔드 모노레포입니다. 웹(React 19 + Vite)과 디자인 시스템 패키지를 함께 관리하며, React Native 앱으로 확장을 고려한 구조입니다.
+필맵(FillMap) 프론트엔드 모노레포입니다. 웹(React 19 + Vite)·앱(Expo + NativeWind)과 디자인 시스템 패키지를 함께 관리합니다.
 
 ## 프로젝트 구조
 
@@ -9,9 +9,11 @@ pnpm workspace 기반 모노레포입니다.
 | 경로 | 패키지 | 설명 |
 |------|--------|------|
 | `apps/web` | web | React 19 + Vite 웹 애플리케이션 (FSD 구조) |
+| `apps/mobile` | mobile | Expo(React Native) + NativeWind 앱 (expo-router, FSD 구조) |
 | `packages/design-tokens` | @fillmap/design-tokens | 색상·타이포·간격 등 디자인 토큰 |
-| `packages/tailwind-preset` | @fillmap/tailwind-preset | 토큰을 반영한 Tailwind 프리셋 |
-| `packages/ui-web` | @fillmap/ui-web | 공통 UI 컴포넌트 (Storybook 포함) |
+| `packages/tailwind-preset` | @fillmap/tailwind-preset | 토큰을 반영한 Tailwind 프리셋 (웹 v4 / 앱 NativeWind v3 공용, `/native` 서브패스) |
+| `packages/ui-web` | @fillmap/ui-web | 웹 공통 UI 컴포넌트 (Storybook 포함) |
+| `packages/ui-native` | @fillmap/ui-native | RN 공통 UI 컴포넌트 — ui-web과 variants.ts props API 공유 (on-device Storybook) |
 
 ## 시작하기
 
@@ -20,9 +22,12 @@ pnpm `10.17.1` 기준입니다.
 ```bash
 pnpm install        # 의존성 설치
 pnpm dev            # 웹 개발 서버 실행
+pnpm dev:mobile     # 앱(Expo) 개발 서버 실행
 pnpm build          # 웹 프로덕션 빌드
 pnpm lint           # 린트 검사
 pnpm storybook      # ui-web 스토리북 실행
+
+pnpm --filter mobile storybook   # ui-native on-device 스토리북 (EXPO_PUBLIC_STORYBOOK=1)
 ```
 
 ## 문서
