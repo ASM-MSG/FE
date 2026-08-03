@@ -37,6 +37,11 @@ export const Thumbnail = ({
   className,
 }: ThumbnailProps) => {
   const [errored, setErrored] = useState(false);
+  const [prevSrc, setPrevSrc] = useState(src);
+  if (src !== prevSrc) {
+    setPrevSrc(src);
+    setErrored(false);
+  }
   const showImage = !!src && !errored;
 
   return (

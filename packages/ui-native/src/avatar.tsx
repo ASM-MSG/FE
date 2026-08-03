@@ -27,6 +27,11 @@ interface AvatarProps extends AvatarBaseProps {
  */
 export const Avatar = ({ size = "lg", src, alt, fallback, className }: AvatarProps) => {
   const [errored, setErrored] = useState(false);
+  const [prevSrc, setPrevSrc] = useState(src);
+  if (src !== prevSrc) {
+    setPrevSrc(src);
+    setErrored(false);
+  }
   const showImage = !!src && !errored;
 
   return (
