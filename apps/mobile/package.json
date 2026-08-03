@@ -5,9 +5,9 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "ios": "expo start --ios",
-    "android": "expo start --android",
-    "storybook": "EXPO_PUBLIC_STORYBOOK=1 expo start",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "storybook": "EXPO_PUBLIC_STORYBOOK=1 expo start --dev-client",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
