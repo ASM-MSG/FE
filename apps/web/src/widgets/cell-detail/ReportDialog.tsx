@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { DialogShell, ModalCard, Toast } from "@fillmap/ui-web";
-import {
-  canSubmitReport,
-  submitReport,
-} from "@/features/explore/model/report";
+import { canSubmitReport, submitReport } from "@/features/explore/model/report";
 import { ReportReasonSelect } from "./ReportReasonSelect";
 
 interface ReportDialogProps {

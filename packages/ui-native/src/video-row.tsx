@@ -45,7 +45,10 @@ export const VideoRow = ({
         {title}
       </Text>
       {meta && (
-        <Text numberOfLines={1} className="text-fm-caption text-foreground-muted">
+        <Text
+          numberOfLines={1}
+          className="text-fm-caption text-foreground-muted"
+        >
           {meta}
         </Text>
       )}

@@ -23,7 +23,10 @@ interface GalleryTabBodyProps {
  * key={region}으로 리마운트해 지역 변경 시 프리뷰로 복귀한다 (A5).
  * 빈 상태는 ② 개정으로 UI 도달 불가지만 방어 분기로 존치한다 (AC 8, Q5).
  */
-export const GalleryTabBody = ({ region, onVideoClick }: GalleryTabBodyProps) => {
+export const GalleryTabBody = ({
+  region,
+  onVideoClick,
+}: GalleryTabBodyProps) => {
   const { data, isError, refetch } = useGalleryQuery(region);
   const [expanded, setExpanded] = useState(false);
 

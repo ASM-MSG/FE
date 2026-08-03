@@ -86,9 +86,9 @@ describe("canSubmitUpload", () => {
   // AC15: 선택되었어도 무효 파일이면 비활성으로 판정한다
   it("선택된 파일이 무효(확장자·용량 위반)면 false를 반환한다", () => {
     expect(canSubmitUpload({ name: "a.avi", size: 1000 })).toBe(false);
-    expect(
-      canSubmitUpload({ name: "a.mp4", size: MAX_UPLOAD_BYTES + 1 }),
-    ).toBe(false);
+    expect(canSubmitUpload({ name: "a.mp4", size: MAX_UPLOAD_BYTES + 1 })).toBe(
+      false,
+    );
   });
 });
 

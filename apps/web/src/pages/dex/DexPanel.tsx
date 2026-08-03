@@ -4,7 +4,10 @@ import { Button, cn } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
 import type { CollectedCell, CollectedVideo } from "@/entities/dex";
 import { resolveCurrentRegion } from "@/features/dex/model/current-region";
-import { deriveDexView, excludeRemoved } from "@/features/dex/model/dex-summary";
+import {
+  deriveDexView,
+  excludeRemoved,
+} from "@/features/dex/model/dex-summary";
 import { dexTabPath, parseDexTab } from "@/features/dex/model/dex-tab";
 import { districtOfCell } from "@/features/dex/model/gallery";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";

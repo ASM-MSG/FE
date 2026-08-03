@@ -168,7 +168,9 @@ const ExploreBody = ({
               ? `부산 ${district} 격자`
               : REGION_LABEL}
         </span>
-        <span className="text-fm-body text-foreground-muted">{cellCount}개</span>
+        <span className="text-fm-body text-foreground-muted">
+          {cellCount}개
+        </span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-md pt-xs pb-md scrollbar-gutter-stable">

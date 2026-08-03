@@ -19,7 +19,12 @@ interface AppHeaderProps {
  * @example
  * <AppHeader title="화면 타이틀" onBack={() => router.back()} />
  */
-export const AppHeader = ({ title, onBack, right, className }: AppHeaderProps) => (
+export const AppHeader = ({
+  title,
+  onBack,
+  right,
+  className,
+}: AppHeaderProps) => (
   <View
     className={cx(
       "h-12 w-full flex-row items-center gap-md border-b border-border bg-background px-lg",

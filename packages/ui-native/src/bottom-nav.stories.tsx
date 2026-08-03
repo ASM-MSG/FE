@@ -9,10 +9,26 @@ const buildItems = (activeKey: string) => {
   const color = (key: string) =>
     key === activeKey ? semantic.primary : semantic.muted;
   return [
-    { key: "map", label: "지도", icon: <MapIcon size={22} color={color("map")} /> },
-    { key: "search", label: "검색", icon: <Search size={22} color={color("search")} /> },
-    { key: "dex", label: "도감", icon: <BookImage size={22} color={color("dex")} /> },
-    { key: "profile", label: "프로필", icon: <User size={22} color={color("profile")} /> },
+    {
+      key: "map",
+      label: "지도",
+      icon: <MapIcon size={22} color={color("map")} />,
+    },
+    {
+      key: "search",
+      label: "검색",
+      icon: <Search size={22} color={color("search")} />,
+    },
+    {
+      key: "dex",
+      label: "도감",
+      icon: <BookImage size={22} color={color("dex")} />,
+    },
+    {
+      key: "profile",
+      label: "프로필",
+      icon: <User size={22} color={color("profile")} />,
+    },
   ];
 };
 

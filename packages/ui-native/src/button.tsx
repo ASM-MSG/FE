@@ -63,7 +63,9 @@ export const Button = ({
     className={cx(
       "items-center justify-center",
       containerSize[size],
-      disabled ? "bg-background" : cx(containerVariant[variant], "active:opacity-80"),
+      disabled
+        ? "bg-background"
+        : cx(containerVariant[variant], "active:opacity-80"),
       className,
     )}
   >

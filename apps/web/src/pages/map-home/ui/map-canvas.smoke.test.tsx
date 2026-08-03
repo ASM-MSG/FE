@@ -14,13 +14,7 @@
  * 프리플라이트가 전역을 재구축해도 지도가 이전 객체로 생성되는 결함의 재현 — 재시도
  * 리마운트의 지도 생성은 재구축된 새 네임스페이스를 통해 일어나야 한다.
  */
-import {
-  act,
-  cleanup,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import {
   afterEach,
   beforeAll,
@@ -102,7 +96,12 @@ afterEach(() => {
 });
 
 const renderMapCanvas = () =>
-  render(<MapCanvas center={{ lat: 35.1579, lng: 129.0594 }} onViewportChange={() => {}} />);
+  render(
+    <MapCanvas
+      center={{ lat: 35.1579, lng: 129.0594 }}
+      onViewportChange={() => {}}
+    />,
+  );
 
 const mountUntilMapReady = async () => {
   // React 19: use()로 suspend되는 트리는 awaited act 안에서 렌더해야 재개가 flush된다
@@ -150,7 +149,9 @@ describe("MapCanvas 스모크 — 인증 실패·내장 컨트롤", () => {
     await act(async () => {
       screen.getByRole("button", { name: "다시 시도" }).click();
     });
-    const injected = document.querySelector("script[data-naver-maps-preflight]");
+    const injected = document.querySelector(
+      "script[data-naver-maps-preflight]",
+    );
     expect(injected).not.toBeNull();
 
     // 재실행된 스크립트가 구축하는 새 네임스페이스(인증 실패 원인 해소 후의 정상 SDK)를 모사

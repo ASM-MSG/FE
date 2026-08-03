@@ -3,6 +3,7 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 import betterTailwindcss from "eslint-plugin-better-tailwindcss";
+import oxlint from "eslint-plugin-oxlint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 /** 디자인 시스템 1조(docs/DESIGN_SYSTEM.md) 기계 강제 — ui-web/apps-web과 동일 패턴 유지 */
@@ -54,4 +55,6 @@ export default defineConfig([
       globals: globals.node,
     },
   },
+  // oxlint가 이미 커버하는 룰은 ESLint에서 끈다(중복 리포트 방지) — 반드시 마지막에 위치
+  ...oxlint.configs["flat/recommended"],
 ]);

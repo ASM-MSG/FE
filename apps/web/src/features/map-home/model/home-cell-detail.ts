@@ -96,7 +96,9 @@ const deriveSubtitle = (
   }
   if (myVideos.length === 0) return myPart;
   const latest = myVideos.reduce((a, b) =>
-    new Date(a.recordedAt).getTime() >= new Date(b.recordedAt).getTime() ? a : b,
+    new Date(a.recordedAt).getTime() >= new Date(b.recordedAt).getTime()
+      ? a
+      : b,
   );
   return `${myPart} · 마지막 업로드 ${formatMonthDay(latest.recordedAt)}`;
 };
@@ -121,7 +123,8 @@ export const deriveHomeCellDetail = ({
       : []),
   ];
 
-  const myVideos = cell.videos.filter((v) => myVideoIds.includes(v.videoId));
+  const myVideoIdSet = new Set(myVideoIds);
+  const myVideos = cell.videos.filter((v) => myVideoIdSet.has(v.videoId));
 
   return {
     cellId: cell.id,
@@ -130,7 +133,7 @@ export const deriveHomeCellDetail = ({
     badges,
     myVideos,
     otherVideos: activeTheme
-      ? cell.videos.filter((v) => !myVideoIds.includes(v.videoId))
+      ? cell.videos.filter((v) => !myVideoIdSet.has(v.videoId))
       : [],
     showMashup: activeTheme !== null,
     statsLine: `영상 ${cell.videoCount}개 · 조회 ${formatViewCountKo(cell.viewCount)} · 담수율 ${cell.fillRate}%`,

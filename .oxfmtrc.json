@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "ignorePatterns": [
+    "apps/web/src/shared/api/generated/**",
+    "apps/mobile/.expo/**",
+    "apps/mobile/android/**",
+    "apps/mobile/ios/**",
+    "apps/mobile/.rnstorybook/storybook.requires.ts",
+    "**/storybook-static/**",
+    "**/dist/**"
+  ]
+}

@@ -19,7 +19,10 @@ afterEach(() => {
 describe("getCurrentPosition (L6)", () => {
   it("위치 권한 거부/조회 실패 시 서면 중심 좌표를 폴백으로 반환한다", async () => {
     setGeolocation({
-      getCurrentPosition: (_success: PositionCallback, error: PositionErrorCallback) => {
+      getCurrentPosition: (
+        _success: PositionCallback,
+        error: PositionErrorCallback,
+      ) => {
         error({ code: 1, message: "denied" } as GeolocationPositionError);
       },
     });

@@ -64,9 +64,7 @@ describe("deriveThemeFeed — 테마 피드 파생 (AC 3·4)", () => {
     const feed = deriveThemeFeed("hot", pool, []);
 
     expect(feed.sections[0].videos.map((v) => v.videoId)).toEqual([
-      102,
-      103,
-      101,
+      102, 103, 101,
     ]);
   });
 

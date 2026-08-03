@@ -32,8 +32,18 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # oxlint(Rust 기반)로 범용 룰을 먼저 빠르게 훑고, 커스텀 룰(토큰·RN 경계)은 계속 ESLint가 담당한다.
+      # eslint.config에서 eslint-plugin-oxlint로 겹치는 룰은 이미 꺼둬서 중복 리포트 없음.
+      - name: Lint (oxlint fast pass)
+        run: pnpm lint:oxlint
+
       - name: Lint
         run: pnpm lint
+
+      # oxfmt(Rust 기반 Prettier 호환 포매터) — 2026-08-03 전체 도입, printWidth 80(.oxfmtrc.json)으로
+      # 기존 코드 스타일과 정렬. --check만 실행(자동 수정 없음), 포맷 안 맞으면 실패.
+      - name: Format check (oxfmt)
+        run: pnpm format:check
 
       - name: Typecheck
         run: pnpm typecheck

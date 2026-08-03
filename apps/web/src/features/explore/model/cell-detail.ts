@@ -5,8 +5,7 @@
 
 /** 소수 첫째 자리까지, 10 이상이면 정수로 반올림해 문자열화 */
 const compact = (value: number): string => {
-  const rounded =
-    value < 10 ? Math.round(value * 10) / 10 : Math.round(value);
+  const rounded = value < 10 ? Math.round(value * 10) / 10 : Math.round(value);
   return String(rounded);
 };
 

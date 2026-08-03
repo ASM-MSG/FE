@@ -46,7 +46,10 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       const video = videoRef.current;
       if (!video) return;
       onTimeUpdate?.(video.currentTime);
-      if (stopAtRef.current !== null && video.currentTime >= stopAtRef.current) {
+      if (
+        stopAtRef.current !== null &&
+        video.currentTime >= stopAtRef.current
+      ) {
         video.pause();
         stopAtRef.current = null;
       }

@@ -98,9 +98,7 @@ describe("뱃지 탭 스모크", () => {
     renderPanel(client);
 
     expect(screen.queryByText(/준비 중이에요/)).toBeNull();
-    expect(
-      screen.getByRole("heading", { name: "뱃지 진열장" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "뱃지 진열장" })).toBeTruthy();
     // 헤더·통계·탭 칩이 지도 탭과 동일 구성으로 유지된다
     expect(screen.getByText("필맵퍼")).toBeTruthy();
     expect(screen.getByText("2개")).toBeTruthy(); // 획득 뱃지 통계 카드
@@ -119,16 +117,12 @@ describe("뱃지 탭 스모크", () => {
     client.setQueryData(["dex"], DEX_WITH_BADGES);
     renderPanel(client);
 
-    expect(
-      screen.getByRole("button", { name: "뱃지 전체 보기" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "뱃지 전체 보기" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "전체 보기" }));
 
     expect(screen.getAllByRole("listitem").length).toBe(10);
     expect(screen.queryByRole("button", { name: "전체 보기" })).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: "뱃지 전체 보기" }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "뱃지 전체 보기" })).toBeNull();
   });
 
   it("확장 후 지도 탭에 다녀오면 프리뷰 상태로 복귀한다 (AC 7)", () => {

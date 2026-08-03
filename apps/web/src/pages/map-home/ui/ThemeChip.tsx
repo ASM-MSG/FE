@@ -38,7 +38,10 @@ export const ThemeChip = ({
     )}
   >
     <Icon
-      className={cn("size-4", active ? "text-primary-foreground" : iconClassName)}
+      className={cn(
+        "size-4",
+        active ? "text-primary-foreground" : iconClassName,
+      )}
       aria-hidden="true"
     />
     {label}

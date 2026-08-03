@@ -27,8 +27,7 @@ const buttonVariants = cva(
 );
 
 interface ButtonProps
-  extends ButtonBaseProps,
-    ButtonHTMLAttributes<HTMLButtonElement> {
+  extends ButtonBaseProps, ButtonHTMLAttributes<HTMLButtonElement> {
   text: string;
 }
 

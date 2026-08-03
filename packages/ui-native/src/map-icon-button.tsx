@@ -1,7 +1,10 @@
 import { Pressable } from "react-native";
 import { ChevronLeft, Locate } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
-import type { MapIconButtonBaseProps, MapIconButtonIcon } from "@fillmap/design-tokens";
+import type {
+  MapIconButtonBaseProps,
+  MapIconButtonIcon,
+} from "@fillmap/design-tokens";
 import { cx } from "./lib/cx";
 
 /**

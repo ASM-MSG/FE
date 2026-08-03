@@ -31,7 +31,8 @@ export const GRID_LAT_STEP = GRID_CELL_METERS / METERS_PER_DEGREE_LAT;
 
 /** 동서(경도) 스텝 — 기준 위도에서 100m가 되도록 고정 (D1: 위도별 가변 아님) */
 export const GRID_LNG_STEP =
-  GRID_CELL_METERS / (METERS_PER_DEGREE_LAT * Math.cos(toRadians(GRID_REF_LAT)));
+  GRID_CELL_METERS /
+  (METERS_PER_DEGREE_LAT * Math.cos(toRadians(GRID_REF_LAT)));
 
 /** 격자 셀 인덱스 — 원점(GRID_ORIGIN) 기준 동쪽 col·북쪽 row (0부터, 음수 = 원점 남서쪽) */
 export interface GridCellIndex {

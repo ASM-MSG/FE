@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss'
+import oxlint from 'eslint-plugin-oxlint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
@@ -86,4 +87,6 @@ export default defineConfig([
       ],
     },
   },
+  // oxlint가 이미 커버하는 룰은 ESLint에서 끈다(중복 리포트 방지) — 반드시 마지막에 위치
+  ...oxlint.configs['flat/recommended'],
 ])

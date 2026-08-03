@@ -45,7 +45,10 @@ export const BottomSheet = ({
     )}
     {(title || actionLabel) && (
       <View className="flex-row items-center gap-xs">
-        <Text numberOfLines={1} className="flex-1 text-fm-title text-foreground">
+        <Text
+          numberOfLines={1}
+          className="flex-1 text-fm-title text-foreground"
+        >
           {title}
         </Text>
         {actionLabel && (

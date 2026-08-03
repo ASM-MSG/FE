@@ -38,7 +38,8 @@ export const lookupRegionName = (
             }
             // 구 이름은 region.area2.name (예: "부산진구") — admcode 결과 우선, 부재 시 첫 결과 (A4)
             const results = response.v2.results;
-            const item = results.find((r) => r.name === "admcode") ?? results[0];
+            const item =
+              results.find((r) => r.name === "admcode") ?? results[0];
             resolve(item?.region.area2.name || null);
           } catch {
             resolve(null);

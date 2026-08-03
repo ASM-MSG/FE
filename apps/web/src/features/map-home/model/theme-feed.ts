@@ -37,6 +37,7 @@ export const deriveThemeFeed = (
   cells: Cell[],
   myVideoIds: number[],
 ): ThemeFeed => {
+  const myVideoIdSet = new Set(myVideoIds);
   const sections = themeCellsOf(theme).flatMap<ThemeFeedSection>(({ id }) => {
     const cell = cells.find((c) => c.id === id);
     if (!cell) return []; // 테마 셀은 MOCK_CELLS와 동기화 보장(themeCellsFrom) — 풀 불일치 시 조용히 제외
@@ -44,13 +45,16 @@ export const deriveThemeFeed = (
       {
         cellId: cell.id,
         label: cell.label,
-        videos: [...cell.videos]
-          .sort(
+        videos: cell.videos
+          .toSorted(
             (a, b) =>
               new Date(b.recordedAt).getTime() -
               new Date(a.recordedAt).getTime(),
           )
-          .map((video) => ({ ...video, mine: myVideoIds.includes(video.videoId) })),
+          .map((video) => ({
+            ...video,
+            mine: myVideoIdSet.has(video.videoId),
+          })),
       },
     ];
   });

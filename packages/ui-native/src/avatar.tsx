@@ -25,7 +25,13 @@ interface AvatarProps extends AvatarBaseProps {
  * <Avatar src={user.profileUrl} alt={user.name} fallback="김" />
  * <Avatar size="sm" fallback="김" />
  */
-export const Avatar = ({ size = "lg", src, alt, fallback, className }: AvatarProps) => {
+export const Avatar = ({
+  size = "lg",
+  src,
+  alt,
+  fallback,
+  className,
+}: AvatarProps) => {
   const [errored, setErrored] = useState(false);
   const [prevSrc, setPrevSrc] = useState(src);
   if (src !== prevSrc) {

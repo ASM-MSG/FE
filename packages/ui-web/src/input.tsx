@@ -3,8 +3,7 @@ import type { InputBaseProps } from "@fillmap/design-tokens";
 import { cn } from "./lib/utils";
 
 interface InputProps
-  extends InputBaseProps,
-    Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {}
+  extends InputBaseProps, Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {}
 
 /**
  * SOURCE: Figma "FeelMap Input" (node 13429:695) — 텍스트 입력.

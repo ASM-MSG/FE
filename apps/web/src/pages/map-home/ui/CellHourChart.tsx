@@ -45,7 +45,11 @@ export const CellHourChart = ({
           영상 {sampleCount}개 기준
         </span>
       </h3>
-      <div role="img" aria-label={distributionLabel} className="flex flex-col gap-xs">
+      <div
+        role="img"
+        aria-label={distributionLabel}
+        className="flex flex-col gap-xs"
+      >
         <div aria-hidden className="flex h-16 items-end gap-1">
           {buckets.map((bucket) => (
             <div
@@ -61,7 +65,10 @@ export const CellHourChart = ({
             </div>
           ))}
         </div>
-        <div aria-hidden className="flex gap-1 text-fm-caption text-foreground-muted">
+        <div
+          aria-hidden
+          className="flex gap-1 text-fm-caption text-foreground-muted"
+        >
           {buckets.map((bucket) => (
             <span key={bucket.startHour} className="flex-1 text-center">
               {bucket.startHour % 6 === 0 ? `${bucket.startHour}시` : ""}

@@ -13,7 +13,10 @@ const DAY = 24 * HOUR;
  * 경과 시간을 "N분 전 / N시간 전 / N일 전"으로 변환한다.
  * 1분 미만은 "방금 전". `now`를 주입받아 결정적으로 테스트 가능하다.
  */
-export const formatRelativeTime = (iso: string, now: Date = new Date()): string => {
+export const formatRelativeTime = (
+  iso: string,
+  now: Date = new Date(),
+): string => {
   const elapsed = now.getTime() - new Date(iso).getTime();
   if (elapsed < MINUTE) return "방금 전";
   if (elapsed < HOUR) return `${Math.floor(elapsed / MINUTE)}분 전`;

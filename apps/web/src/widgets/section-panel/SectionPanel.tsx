@@ -18,7 +18,9 @@ export const SectionPanel = ({ title, children }: SectionPanelProps) => (
     </div>
     <div className="flex flex-1 items-center justify-center p-md">
       {children ?? (
-        <p className="text-fm-body text-foreground-muted">준비 중인 페이지예요</p>
+        <p className="text-fm-body text-foreground-muted">
+          준비 중인 페이지예요
+        </p>
       )}
     </div>
   </aside>

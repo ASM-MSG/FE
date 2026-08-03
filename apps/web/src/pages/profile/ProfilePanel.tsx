@@ -106,7 +106,9 @@ const ProfileSection = ({
 const ProfileErrorState = ({ onRetry }: { onRetry: () => void }) => (
   <div className="flex flex-1 flex-col items-center justify-center gap-md px-lg text-center">
     <div className="flex flex-col gap-xxs">
-      <p className="text-fm-title text-foreground">프로필을 불러오지 못했어요</p>
+      <p className="text-fm-title text-foreground">
+        프로필을 불러오지 못했어요
+      </p>
       <p className="text-fm-body text-foreground-muted">
         네트워크 상태를 확인하고 다시 시도해 주세요
       </p>

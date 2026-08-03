@@ -18,7 +18,11 @@ interface FeedVideoCardProps {
  * Figma 오탐 방지 1·5, 추정 8) 아래 메타 한 줄: 좌측 소유 구분 문구, 우측 "조회 {한국어 축약}".
  * 루트는 button — 카드에 제목 텍스트가 원래 없으므로 접근성 이름은 aria-label "{title} 재생"으로 부여.
  */
-export const FeedVideoCard = ({ video, mine, onSelect }: FeedVideoCardProps) => {
+export const FeedVideoCard = ({
+  video,
+  mine,
+  onSelect,
+}: FeedVideoCardProps) => {
   const duration = formatDuration(video.durationSec);
   return (
     <button

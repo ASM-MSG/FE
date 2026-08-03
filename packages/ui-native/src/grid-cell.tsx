@@ -22,7 +22,11 @@ interface GridCellProps extends GridCellBaseProps {
  * @example
  * <GridCell state="collected" className="size-32.5" onPress={onSelectCell} />
  */
-export const GridCell = ({ state = "default", onPress, className }: GridCellProps) => (
+export const GridCell = ({
+  state = "default",
+  onPress,
+  className,
+}: GridCellProps) => (
   <Pressable
     accessibilityRole="button"
     onPress={onPress}

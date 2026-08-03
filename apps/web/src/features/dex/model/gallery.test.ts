@@ -53,10 +53,7 @@ describe("selectRegionVideos — 지역 갤러리 영상 선별 (AC 1)", () => {
 
   it("createdAt 동률이면 videoId 오름차순으로 안정 정렬하고, 원본 배열은 변형하지 않는다", () => {
     const same = "2026-07-20T09:00:00.000Z";
-    const videos = [
-      video(2, "A-14", same),
-      video(1, "B-08", same),
-    ];
+    const videos = [video(2, "A-14", same), video(1, "B-08", same)];
 
     const result = selectRegionVideos(CELLS, videos, "부산진구");
 

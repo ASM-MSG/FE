@@ -4,9 +4,7 @@ import { semantic } from "@fillmap/design-tokens";
 import type { InputBaseProps } from "@fillmap/design-tokens";
 import { cx } from "./lib/cx";
 
-interface InputProps
-  extends InputBaseProps,
-    Omit<TextInputProps, "editable"> {}
+interface InputProps extends InputBaseProps, Omit<TextInputProps, "editable"> {}
 
 /**
  * SOURCE: Figma "FeelMap Input" (node 13429:695) — 텍스트 입력.

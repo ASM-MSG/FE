@@ -74,7 +74,9 @@ describe("pointInPolygon — 셀 중심 경계 내부 판정 (MSG-263 AC 4)", ()
   });
 
   it("홀(내수면) 안은 거짓이다", () => {
-    expect(pointInPolygon({ lat: 1.5, lng: 1.5 }, SQUARE_WITH_HOLE)).toBe(false);
+    expect(pointInPolygon({ lat: 1.5, lng: 1.5 }, SQUARE_WITH_HOLE)).toBe(
+      false,
+    );
     expect(pointInPolygon({ lat: 0.5, lng: 1.5 }, SQUARE_WITH_HOLE)).toBe(true);
   });
 });
@@ -148,7 +150,10 @@ describe("clipLineToBoundary — 격자선 경계 절단 (MSG-263 AC 3)", () => 
       clipLineToBoundary({ axis: "h", lat: 5, fromLng: -1, toLng: 4 }, U_SHAPE),
     ).toEqual([]);
     expect(
-      clipLineToBoundary({ axis: "v", lng: 8, fromLat: 0, toLat: 3 }, U_WITH_ISLAND),
+      clipLineToBoundary(
+        { axis: "v", lng: 8, fromLat: 0, toLat: 3 },
+        U_WITH_ISLAND,
+      ),
     ).toEqual([]);
   });
 });

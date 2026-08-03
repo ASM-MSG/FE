@@ -49,7 +49,9 @@ describe("로그인 모달 스모크", () => {
       screen.getByRole("button", { name: "카카오로 계속하기" }),
     ).toBeTruthy();
     expect(
-      screen.getByText("로그인 시 서비스 약관과 개인정보 처리 방침에 동의합니다"),
+      screen.getByText(
+        "로그인 시 서비스 약관과 개인정보 처리 방침에 동의합니다",
+      ),
     ).toBeTruthy();
     // 약관 문구는 플레인 텍스트 — 링크 연결은 제외 범위 (구 페이지 스모크 AC 7 계약 승계)
     expect(screen.queryAllByRole("link")).toEqual([]);

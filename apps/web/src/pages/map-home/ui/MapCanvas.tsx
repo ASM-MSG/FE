@@ -172,7 +172,10 @@ class MapLoadErrorBoundary extends Component<
 
   componentDidCatch(error: Error) {
     // 흡수한 예외를 관측 가능하게 남긴다 (PR #25 리뷰 반영) — 폴백 전환 사유의 조용한 유실 방지
-    console.error("[MapCanvas] 지도 SDK 하위 트리 예외를 흡수하고 폴백으로 전환:", error);
+    console.error(
+      "[MapCanvas] 지도 SDK 하위 트리 예외를 흡수하고 폴백으로 전환:",
+      error,
+    );
   }
 
   render() {
@@ -295,7 +298,11 @@ const formatClusterCount = (count: number): string =>
  * 배지 색은 데이터로 받은 테마 토큰 hex(미지정 시 primary) — Polygon fillColor와 같은 관례라
  * inline style로 지정한다(tailwind 색 임의값 클래스 금지 준수). count는 파생 로직의 숫자 전제.
  */
-const clusterMarkerContent = ({ count, tier, color }: MapClusterOverlay): string =>
+const clusterMarkerContent = ({
+  count,
+  tier,
+  color,
+}: MapClusterOverlay): string =>
   `<div class="flex ${CLUSTER_TIER_SIZE_CLASS[tier]} -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-fm-body-strong text-primary-foreground shadow-raised" style="background-color:${color ?? semantic.primary}">${formatClusterCount(count)}</div>`;
 
 const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
@@ -472,11 +479,15 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                     // occupied 셀은 Figma 점령 스타일(채움 18% + 실선 테두리 40% — MSG-263 AC 10)
                     strokeColor={cell.color ?? semantic.primary}
                     strokeOpacity={
-                      cell.occupied ? OCCUPIED_STROKE_OPACITY : OVERLAY_STROKE_OPACITY
+                      cell.occupied
+                        ? OCCUPIED_STROKE_OPACITY
+                        : OVERLAY_STROKE_OPACITY
                     }
                     fillColor={cell.color ?? semantic.primary}
                     fillOpacity={
-                      cell.occupied ? OCCUPIED_FILL_OPACITY : OVERLAY_FILL_OPACITY
+                      cell.occupied
+                        ? OCCUPIED_FILL_OPACITY
+                        : OVERLAY_FILL_OPACITY
                     }
                     // 네이버 Polygon은 clickable=false가 기본 — 핸들러가 있을 때만 클릭을 받는다.
                     // 핸들러 미등록이면 onClick도 없음 — 표시 전용 기존 동작 유지 (MSG-122, R3)

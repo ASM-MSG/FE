@@ -38,7 +38,9 @@ describe("피드 영상 카드 button화 (3차 AC 4)", () => {
     const onSelect = vi.fn();
     render(<FeedVideoCard video={VIDEO} mine onSelect={onSelect} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /거리 야경 감성 스팟/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /거리 야경 감성 스팟/ }),
+    );
 
     expect(onSelect).toHaveBeenCalledTimes(1);
   });

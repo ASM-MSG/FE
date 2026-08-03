@@ -56,9 +56,9 @@ describe("deriveBadgePreview — 뱃지 프리뷰 파생 (MSG-123 AC 3·8)", () 
         .slice(0, 8)
         .map((b) => b.badgeId),
     );
-    expect(preview.badges.filter((b) => b.earned).map((b) => b.badgeId)).toEqual([
-      0,
-    ]);
+    expect(
+      preview.badges.filter((b) => b.earned).map((b) => b.badgeId),
+    ).toEqual([0]);
   });
 
   it("원본 배열은 변형하지 않는다", () => {
@@ -66,6 +66,8 @@ describe("deriveBadgePreview — 뱃지 프리뷰 파생 (MSG-123 AC 3·8)", () 
     deriveBadgePreview(input);
 
     expect(input.length).toBe(12);
-    expect(input.map((b) => b.badgeId)).toEqual(catalog(12).map((b) => b.badgeId));
+    expect(input.map((b) => b.badgeId)).toEqual(
+      catalog(12).map((b) => b.badgeId),
+    );
   });
 });

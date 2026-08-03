@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 
 /**
@@ -19,7 +25,11 @@ const mockMeta = vi.hoisted(() => ({
 vi.mock("./use-video-duration", () => ({
   useVideoDuration: (file: File | null) =>
     file
-      ? { duration: mockMeta.duration, objectUrl: mockMeta.objectUrl, error: mockMeta.error }
+      ? {
+          duration: mockMeta.duration,
+          objectUrl: mockMeta.objectUrl,
+          error: mockMeta.error,
+        }
       : { duration: null, objectUrl: null, error: false },
 }));
 

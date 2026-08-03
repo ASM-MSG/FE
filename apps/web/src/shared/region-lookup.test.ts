@@ -72,7 +72,10 @@ describe("lookupRegionName — naver 역지오코딩 어댑터 (AC 6·R7 계약 
       callback(200, {
         v2: {
           results: [
-            { name: "legalcode", region: { area2: { name: "부산진구(법정동)" } } },
+            {
+              name: "legalcode",
+              region: { area2: { name: "부산진구(법정동)" } },
+            },
             { name: "admcode", region: { area2: { name: "부산진구" } } },
           ],
         },
@@ -88,7 +91,9 @@ describe("lookupRegionName — naver 역지오코딩 어댑터 (AC 6·R7 계약 
     stubNaver((_options, callback) => {
       callback(200, {
         v2: {
-          results: [{ name: "legalcode", region: { area2: { name: "수영구" } } }],
+          results: [
+            { name: "legalcode", region: { area2: { name: "수영구" } } },
+          ],
         },
       });
     });

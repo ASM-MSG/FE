@@ -20,7 +20,7 @@ const pointInRing = (point: LatLng, ring: BoundaryRing): boolean => {
     const a = ring[i];
     const b = ring[j];
     if (
-      (a.lat > point.lat) !== (b.lat > point.lat) &&
+      a.lat > point.lat !== b.lat > point.lat &&
       point.lng <
         ((b.lng - a.lng) * (point.lat - a.lat)) / (b.lat - a.lat) + a.lng
     ) {
@@ -72,7 +72,7 @@ export const clipLineToBoundary = (
         const b = ring[j];
         const aFixed = line.axis === "h" ? a.lat : a.lng;
         const bFixed = line.axis === "h" ? b.lat : b.lng;
-        if ((aFixed > fixed) !== (bFixed > fixed)) {
+        if (aFixed > fixed !== bFixed > fixed) {
           const aCross = line.axis === "h" ? a.lng : a.lat;
           const bCross = line.axis === "h" ? b.lng : b.lat;
           crossings.push(

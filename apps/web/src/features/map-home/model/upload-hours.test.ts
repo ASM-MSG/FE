@@ -73,7 +73,9 @@ describe("deriveUploadHourBuckets — 3시간 단위 8버킷 집계 (AC 9)", () 
     const buckets = deriveUploadHourBuckets([]);
 
     expect(buckets).toHaveLength(8);
-    expect(buckets.map((b) => b.startHour)).toEqual([0, 3, 6, 9, 12, 15, 18, 21]);
+    expect(buckets.map((b) => b.startHour)).toEqual([
+      0, 3, 6, 9, 12, 15, 18, 21,
+    ]);
     expect(buckets.every((b) => b.count === 0)).toBe(true);
   });
 });

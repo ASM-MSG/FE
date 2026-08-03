@@ -27,6 +27,7 @@
     "@types/react": "~19.2.2",
     "eslint": "^10.6.0",
     "eslint-plugin-better-tailwindcss": "^4.7.0",
+    "eslint-plugin-oxlint": "^1.76.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.7.0",
     "nativewind": "^4.2.6",

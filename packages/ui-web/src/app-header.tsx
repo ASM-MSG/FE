@@ -17,7 +17,12 @@ interface AppHeaderProps {
  * @example
  * <AppHeader title="화면 타이틀" onBack={() => navigate(-1)} />
  */
-export const AppHeader = ({ title, onBack, right, className }: AppHeaderProps) => (
+export const AppHeader = ({
+  title,
+  onBack,
+  right,
+  className,
+}: AppHeaderProps) => (
   <header
     className={cn(
       "flex h-12 w-full items-center gap-md border-b border-border bg-background px-lg",

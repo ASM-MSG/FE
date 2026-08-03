@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2023",
-    "lib": [
-      "ES2023"
-    ],
+    "lib": ["ES2023"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
@@ -14,8 +12,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": [
-    "index.ts",
-    "native.ts"
-  ]
+  "include": ["index.ts", "native.ts"]
 }

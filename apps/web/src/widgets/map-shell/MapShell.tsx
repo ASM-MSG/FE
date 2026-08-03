@@ -24,7 +24,9 @@ import type { MapShellContext } from "./use-map-shell";
 
 // 상시 점령 셀 (MSG-263 D3·D9) — mock(MOCK_DEX.collectedCells)의 center를 100m 격자로 스냅.
 // mock이 정적이라 모듈 스코프 1회 파생 — 섹션 전환·리렌더에 재계산이 없다
-const PERSISTENT_OCCUPIED_CELLS = buildOccupiedGridCells(MOCK_DEX.collectedCells);
+const PERSISTENT_OCCUPIED_CELLS = buildOccupiedGridCells(
+  MOCK_DEX.collectedCells,
+);
 
 /**
  * 지속 지도 셸 — siderail 전 섹션이 이 셸을 공유하므로 지도 인스턴스와

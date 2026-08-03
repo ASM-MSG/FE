@@ -23,8 +23,7 @@ const mapIconButtonVariants = cva(
 );
 
 interface MapIconButtonProps
-  extends MapIconButtonBaseProps,
-    ButtonHTMLAttributes<HTMLButtonElement> {}
+  extends MapIconButtonBaseProps, ButtonHTMLAttributes<HTMLButtonElement> {}
 
 /**
  * @example

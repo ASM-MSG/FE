@@ -52,9 +52,24 @@ describe("summarizeBlurRegions", () => {
 
   it("임의 감지 영역의 얼굴 수·번호판 수를 정확히 집계한다", () => {
     const regions = [
-      { id: "a", kind: "face" as const, label: "얼굴 1", box: { x: 0, y: 0, w: 1, h: 1 } },
-      { id: "b", kind: "plate" as const, label: "번호판 1", box: { x: 0, y: 0, w: 1, h: 1 } },
-      { id: "c", kind: "plate" as const, label: "번호판 2", box: { x: 0, y: 0, w: 1, h: 1 } },
+      {
+        id: "a",
+        kind: "face" as const,
+        label: "얼굴 1",
+        box: { x: 0, y: 0, w: 1, h: 1 },
+      },
+      {
+        id: "b",
+        kind: "plate" as const,
+        label: "번호판 1",
+        box: { x: 0, y: 0, w: 1, h: 1 },
+      },
+      {
+        id: "c",
+        kind: "plate" as const,
+        label: "번호판 2",
+        box: { x: 0, y: 0, w: 1, h: 1 },
+      },
     ];
     expect(summarizeBlurRegions(regions)).toEqual({ faces: 1, plates: 2 });
   });

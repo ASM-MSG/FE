@@ -6,7 +6,8 @@ const meta = {
   component: ModalCard,
   args: {
     title: "모달 타이틀",
-    description: "설명 텍스트가 들어갑니다. 상황에 맞는 안내 문구를 작성하세요.",
+    description:
+      "설명 텍스트가 들어갑니다. 상황에 맞는 안내 문구를 작성하세요.",
     cancelText: "취소",
     confirmText: "확인",
     onClose: () => {},

@@ -21,8 +21,9 @@ import {
 
 const SCRIPT_SELECTOR = "script[data-naver-maps-preflight]";
 
-const injectedScripts = () =>
-  [...document.querySelectorAll<HTMLScriptElement>(SCRIPT_SELECTOR)];
+const injectedScripts = () => [
+  ...document.querySelectorAll<HTMLScriptElement>(SCRIPT_SELECTOR),
+];
 
 /** 테스트용 naver.maps 대역 — jsContentLoaded 준비 상태와 SDK 콜백 슬롯을 흉내낸다 */
 interface FakeMaps {
@@ -35,8 +36,7 @@ const stubNaverGlobal = (maps: FakeMaps | null) => {
   vi.stubGlobal("naver", { maps });
 };
 
-const naverGlobalValue = () =>
-  (globalThis as { naver?: unknown }).naver;
+const naverGlobalValue = () => (globalThis as { naver?: unknown }).naver;
 
 /** promise가 아직 settle되지 않았음을 마이크로태스크 flush 후 단정하기 위한 플래그 */
 const settledFlag = (promise: Promise<unknown>) => {

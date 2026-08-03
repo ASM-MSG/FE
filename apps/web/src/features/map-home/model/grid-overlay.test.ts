@@ -53,7 +53,9 @@ describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6)", (
   it("줌 15 미만이면 빈 결과, 15 이상이면 반환한다 (AC 6, D4)", () => {
     expect(GRID_MIN_ZOOM).toBe(15);
     expect(buildGridLines(SEOMYEON_VIEWPORT, 14)).toEqual([]);
-    expect(buildGridLines(SEOMYEON_VIEWPORT, GRID_MIN_ZOOM).length).toBeGreaterThan(0);
+    expect(
+      buildGridLines(SEOMYEON_VIEWPORT, GRID_MIN_ZOOM).length,
+    ).toBeGreaterThan(0);
     expect(buildGridLines(SEOMYEON_VIEWPORT, 16).length).toBeGreaterThan(0);
   });
 

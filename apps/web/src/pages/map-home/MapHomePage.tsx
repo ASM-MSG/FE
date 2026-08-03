@@ -106,7 +106,8 @@ export const MapHomePage = () => {
   const handleCellTap = useCallback(
     (cellId: string) => {
       const themeCellIds = themeCells.map((c) => c.id);
-      if (!canOpenDetail(activeTheme, cellId, themeCellIds, OCCUPIED_IDS)) return;
+      if (!canOpenDetail(activeTheme, cellId, themeCellIds, OCCUPIED_IDS))
+        return;
       selectCell(cellId);
     },
     [activeTheme, themeCells, selectCell],
@@ -150,7 +151,9 @@ export const MapHomePage = () => {
   // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
   const themeFeed = useMemo(
     () =>
-      activeTheme ? deriveThemeFeed(activeTheme, MOCK_CELLS, MY_VIDEO_IDS) : null,
+      activeTheme
+        ? deriveThemeFeed(activeTheme, MOCK_CELLS, MY_VIDEO_IDS)
+        : null,
     [activeTheme],
   );
 
