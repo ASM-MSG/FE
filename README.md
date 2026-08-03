@@ -30,6 +30,7 @@ pnpm storybook      # ui-web 스토리북 실행
 pnpm --filter mobile storybook   # ui-native on-device 스토리북 (EXPO_PUBLIC_STORYBOOK=1)
 
 pnpm check:duplication   # 코드 중복 감지(nose CLI 필요 — brew install corca-ai/tap/nose). CI는 advisory 게이트
+pnpm doctor              # React 코드 상태 진단(성능·a11y·아키텍처 등, react-doctor). CI는 advisory, pre-commit은 staged 파일만 경고
 ```
 
 ## 문서
