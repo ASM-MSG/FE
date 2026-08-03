@@ -325,7 +325,8 @@ describe("갤러리 뷰 스모크", () => {
       name: "서면 A-14 수집 영상",
     });
     expect(withThumb.length).toBe(2);
-    for (const tile of withThumb) expect(tile.querySelector("img")).toBeTruthy();
+    for (const tile of withThumb)
+      expect(tile.querySelector("img")).toBeTruthy();
 
     // 미제공 항목 — img 없이 placeholder 타일이되 접근 가능한 이름은 유지한다
     const placeholder = screen.getByRole("button", {
@@ -411,7 +412,9 @@ describe("갤러리 뷰 스모크", () => {
     client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
     renderPanel(client);
 
-    fireEvent.click(screen.getByRole("button", { name: /광안리 C-02.*영상 1개/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /광안리 C-02.*영상 1개/ }),
+    );
 
     // 기존 지도 이동(MSG-121 AC 16) 유지 — 제거 금지
     expect(moveToSpy).toHaveBeenCalledWith({ lat: 35.1532, lng: 129.1187 });
@@ -440,7 +443,9 @@ describe("갤러리 뷰 스모크", () => {
     enterGalleryView("수영구");
 
     // 격자 소스(["cells"])에 없는 cellId — 시트를 열지 않는다 (방어)
-    fireEvent.click(screen.getByRole("button", { name: "유령 Z-99 수집 영상" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "유령 Z-99 수집 영상" }),
+    );
     expect(useCellDetailStore.getState().selectedCellId).toBeNull();
 
     // 두 번째 타일(videoId 502) 클릭 — 대표 영상(videos[0])이 아닌 "클릭한 영상"이 활성이어야 한다

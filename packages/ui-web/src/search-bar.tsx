@@ -2,8 +2,10 @@ import type { InputHTMLAttributes } from "react";
 import { Search } from "lucide-react";
 import { cn } from "./lib/utils";
 
-interface SearchBarProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+interface SearchBarProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "size"
+> {
   className?: string;
   /** 검색 아이콘 클릭 시 호출 — 지정하면 아이콘이 클릭 가능한 버튼이 된다(미지정 시 장식용) */
   onSearch?: () => void;

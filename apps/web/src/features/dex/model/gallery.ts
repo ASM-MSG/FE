@@ -23,8 +23,7 @@ export const selectRegionVideos = (
   return videos
     .filter((v) => regionCellIds.has(v.gridId))
     .sort(
-      (a, b) =>
-        b.createdAt.localeCompare(a.createdAt) || a.videoId - b.videoId,
+      (a, b) => b.createdAt.localeCompare(a.createdAt) || a.videoId - b.videoId,
     );
 };
 
@@ -55,5 +54,4 @@ export const deriveGalleryPreview = (
 export const districtOfCell = (
   cells: CollectedCell[],
   cellId: string,
-): string | null =>
-  cells.find((c) => c.gridId === cellId)?.district ?? null;
+): string | null => cells.find((c) => c.gridId === cellId)?.district ?? null;

@@ -18,9 +18,7 @@ export type ReportReasonId = (typeof REPORT_REASONS)[number]["id"];
  * 신고 제출 가능 여부를 판정한다. [L2·L3]
  * 사유가 선택되지 않았거나(null) 목록에 없는 id면 false, 유효한 id면 true.
  */
-export const canSubmitReport = (
-  reasonId: string | null,
-): reasonId is string =>
+export const canSubmitReport = (reasonId: string | null): reasonId is string =>
   reasonId !== null && REPORT_REASONS.some((r) => r.id === reasonId);
 
 /**

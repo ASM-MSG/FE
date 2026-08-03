@@ -6,7 +6,12 @@ import {
   topCellsByVideo,
 } from "./cell-viewport";
 
-const cell = (id: string, lat: number, lng: number, videoCount: number): Cell => ({
+const cell = (
+  id: string,
+  lat: number,
+  lng: number,
+  videoCount: number,
+): Cell => ({
   id,
   label: id,
   district: "부산진구",
@@ -32,7 +37,10 @@ describe("filterCellsInBounds (L1)", () => {
     const outsideLat = cell("outLat", 35.3, 129.05, 10);
     const outsideLng = cell("outLng", 35.15, 129.5, 10);
 
-    const result = filterCellsInBounds([inside, outsideLat, outsideLng], bounds);
+    const result = filterCellsInBounds(
+      [inside, outsideLat, outsideLng],
+      bounds,
+    );
 
     expect(result).toEqual([inside]);
   });

@@ -195,7 +195,7 @@ describe("selectExploreCells 검색+정렬 파이프라인 (L4)", () => {
     const popular = selectExploreCells(cells, { query, order: "popular" });
     const recent = selectExploreCells(cells, { query, order: "recent" });
 
-    const ids = (list: Cell[]) => [...list.map((c) => c.id)].sort();
+    const ids = (list: Cell[]) => list.map((c) => c.id).sort();
     expect(ids(popular)).toEqual(ids(recent));
   });
 

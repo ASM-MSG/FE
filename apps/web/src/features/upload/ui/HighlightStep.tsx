@@ -42,16 +42,14 @@ export const HighlightStep = ({
   onClose,
   onNext,
 }: HighlightStepProps) => {
-  const suggestions = useMemo(
-    () => buildMockHighlights(duration),
-    [duration],
-  );
+  const suggestions = useMemo(() => buildMockHighlights(duration), [duration]);
   const { state, chooseAi, chooseManual } = useHighlightSelection(duration);
   const previewRef = useRef<VideoPreviewHandle>(null);
   const [playhead, setPlayhead] = useState<number | null>(null);
 
   const selectedSegment = getSelectedSegment(state);
-  const selectedAiId = state.mode === "ai" ? state.selectedAi?.id ?? null : null;
+  const selectedAiId =
+    state.mode === "ai" ? (state.selectedAi?.id ?? null) : null;
 
   const playSegment = (segment: Segment) => {
     previewRef.current?.playSegment(segment);
@@ -83,7 +81,9 @@ export const HighlightStep = ({
       />
 
       <div className="flex w-full flex-col gap-xs">
-        <span className="text-fm-body-strong text-foreground">AI 추천 구간</span>
+        <span className="text-fm-body-strong text-foreground">
+          AI 추천 구간
+        </span>
         <SegmentList
           suggestions={suggestions}
           selectedId={selectedAiId}
@@ -93,7 +93,9 @@ export const HighlightStep = ({
       </div>
 
       <div className="flex w-full flex-col gap-xs">
-        <span className="text-fm-body-strong text-foreground">직접 구간 지정</span>
+        <span className="text-fm-body-strong text-foreground">
+          직접 구간 지정
+        </span>
         <SegmentTrimmer
           duration={duration}
           segment={state.manualSegment}

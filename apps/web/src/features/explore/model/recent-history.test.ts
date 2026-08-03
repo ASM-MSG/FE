@@ -25,7 +25,10 @@ describe("addRecentSearch (AC 11)", () => {
   });
 
   it("상한(10개)을 초과하면 가장 오래된 항목을 버린다", () => {
-    const full = Array.from({ length: MAX_RECENT_SEARCHES }, (_, i) => `검색${i}`);
+    const full = Array.from(
+      { length: MAX_RECENT_SEARCHES },
+      (_, i) => `검색${i}`,
+    );
     const result = addRecentSearch(full, "새검색");
     expect(result).toHaveLength(MAX_RECENT_SEARCHES);
     expect(result[0]).toBe("새검색");

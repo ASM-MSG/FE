@@ -13,7 +13,12 @@ interface FabProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * @example
  * <Fab aria-label="기록하기" onClick={onRecord} />
  */
-export const Fab = ({ icon, className, type = "button", ...props }: FabProps) => (
+export const Fab = ({
+  icon,
+  className,
+  type = "button",
+  ...props
+}: FabProps) => (
   <button
     type={type}
     className={cn(

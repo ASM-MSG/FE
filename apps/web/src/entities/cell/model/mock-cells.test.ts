@@ -11,7 +11,9 @@ describe("MOCK_CELLS videoSrc — CC0 샘플 순환 (3차 AC 7)", () => {
 
     expect(videos.length).toBeGreaterThan(0);
     for (const video of videos) {
-      expect(video.videoSrc, `${video.videoId}의 videoSrc`).toMatch(/^https:\/\//);
+      expect(video.videoSrc, `${video.videoId}의 videoSrc`).toMatch(
+        /^https:\/\//,
+      );
     }
   });
 

@@ -26,7 +26,10 @@ export const useCellDetailStore = create<CellDetailState>((set) => ({
     if (cell.videoCount === 0) return;
     set((state) => {
       if (state.selectedCellId === cell.id) return state;
-      return { selectedCellId: cell.id, activeVideoId: cell.videos[0]?.videoId ?? null };
+      return {
+        selectedCellId: cell.id,
+        activeVideoId: cell.videos[0]?.videoId ?? null,
+      };
     });
   },
   selectVideo: (videoId) => set({ activeVideoId: videoId }),

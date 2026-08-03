@@ -4,8 +4,7 @@ import type { ChipBaseProps } from "@fillmap/design-tokens";
 import { cn } from "./lib/utils";
 
 interface ChipProps
-  extends ChipBaseProps,
-    ButtonHTMLAttributes<HTMLButtonElement> {
+  extends ChipBaseProps, ButtonHTMLAttributes<HTMLButtonElement> {
   text: string;
 }
 

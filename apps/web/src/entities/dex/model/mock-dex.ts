@@ -104,17 +104,20 @@ const VIDEO_GAP = 10 * MINUTE;
 export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
   MOCK_COLLECTED_CELLS.flatMap((cell) => {
     const cellVideos = cellById(cell.gridId).videos;
-    return Array.from({ length: cell.videoCount }, (_, i): CollectedVideo => ({
-      ...({
-        videoId: cellVideos[i].videoId,
-        gridId: cell.gridId,
-        thumbnailUrl: i === 2 ? undefined : svgThumbnail(cell.label, i + 1),
-        createdAt: new Date(
-          Date.parse(cell.firstCollectedAt) + i * VIDEO_GAP,
-        ).toISOString(),
-      } satisfies RegionVideoResponseDto),
-      cellLabel: cell.label,
-    }));
+    return Array.from(
+      { length: cell.videoCount },
+      (_, i): CollectedVideo => ({
+        ...({
+          videoId: cellVideos[i].videoId,
+          gridId: cell.gridId,
+          thumbnailUrl: i === 2 ? undefined : svgThumbnail(cell.label, i + 1),
+          createdAt: new Date(
+            Date.parse(cell.firstCollectedAt) + i * VIDEO_GAP,
+          ).toISOString(),
+        } satisfies RegionVideoResponseDto),
+        cellLabel: cell.label,
+      }),
+    );
   });
 
 /**

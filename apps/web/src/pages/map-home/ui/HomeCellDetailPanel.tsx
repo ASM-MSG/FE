@@ -80,7 +80,9 @@ export const HomeCellDetailPanel = ({
             전체 보기
           </button>
         </div>
-        <p className="text-fm-caption text-foreground-muted">{detail.subtitle}</p>
+        <p className="text-fm-caption text-foreground-muted">
+          {detail.subtitle}
+        </p>
         {/* 지표 한 줄 — 셀 전체 지표(집계 필드), 서브타이틀(내 활동)과 별도 줄 유지 (2차 AC 1·2, 추정 2) */}
         <p className="text-fm-caption text-foreground">{detail.statsLine}</p>
       </header>
@@ -113,11 +115,17 @@ export const HomeCellDetailPanel = ({
           {/* 위치 정보 블록 — 아이콘 + 한 줄씩 (2차 AC 8, 네이버 주소·영업시간 블록 참고) */}
           <section className="flex flex-col gap-xs border-t border-border pt-md">
             <p className="flex items-center gap-xs text-fm-caption text-foreground">
-              <MapPin aria-hidden className="size-4 shrink-0 text-foreground-muted" />
+              <MapPin
+                aria-hidden
+                className="size-4 shrink-0 text-foreground-muted"
+              />
               {detail.locationLabel}
             </p>
             <p className="flex items-center gap-xs text-fm-caption text-foreground">
-              <Clock aria-hidden className="size-4 shrink-0 text-foreground-muted" />
+              <Clock
+                aria-hidden
+                className="size-4 shrink-0 text-foreground-muted"
+              />
               {detail.lastUploadText}
             </p>
           </section>

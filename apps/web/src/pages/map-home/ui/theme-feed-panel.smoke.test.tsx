@@ -64,7 +64,11 @@ describe("테마 피드 패널 스모크", () => {
 
   it("헤더에 테마 배지와 실제 나열 영상 총수가 보인다 (AC 2)", () => {
     render(
-      <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={() => {}} />,
+      <ThemeFeedPanel
+        feed={FEED}
+        onVideoSelect={() => {}}
+        onClose={() => {}}
+      />,
     );
 
     expect(screen.getByText("핫구역")).toBeTruthy();
@@ -73,7 +77,11 @@ describe("테마 피드 패널 스모크", () => {
 
   it("셀 라벨 섹션 헤더가 보인다 — 피드 내 셀 식별 (AC 7)", () => {
     render(
-      <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={() => {}} />,
+      <ThemeFeedPanel
+        feed={FEED}
+        onVideoSelect={() => {}}
+        onClose={() => {}}
+      />,
     );
 
     // 접근성 이름에 섹션 개수("· N개")가 합쳐진다 — 리뷰 반영(헤더 위계 승격)으로 부분 일치 단정
@@ -83,7 +91,11 @@ describe("테마 피드 패널 스모크", () => {
 
   it("버튼은 카드 재생 버튼뿐이고 '전체 보기'가 없다 — 순수 탐색 피드 (확정 4, 3차 AC 4 button화 반영 재작성)", () => {
     render(
-      <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={() => {}} />,
+      <ThemeFeedPanel
+        feed={FEED}
+        onVideoSelect={() => {}}
+        onClose={() => {}}
+      />,
     );
 
     // 나열 영상 3개 = 재생 버튼 3개 — 그 외 버튼(하단 CTA 등)이 없음을 총수로 고정
@@ -100,7 +112,11 @@ describe("테마 피드 패널 스모크", () => {
     render(
       <>
         <input aria-label="검색어" />
-        <ThemeFeedPanel feed={FEED} onVideoSelect={() => {}} onClose={onClose} />
+        <ThemeFeedPanel
+          feed={FEED}
+          onVideoSelect={() => {}}
+          onClose={onClose}
+        />
       </>,
     );
 

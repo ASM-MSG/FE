@@ -171,9 +171,8 @@ export const getSelectedSegment = (
 };
 
 /** 다음 단계로 진행 가능한지 — 구간이 하나라도 선택되면 true. [L6] */
-export const canProceedToNextStep = (
-  state: HighlightSelectionState,
-): boolean => getSelectedSegment(state) !== null;
+export const canProceedToNextStep = (state: HighlightSelectionState): boolean =>
+  getSelectedSegment(state) !== null;
 
 /** 초를 m:ss 형식으로 포맷한다 (예: 3 → "0:03", 75 → "1:15"). [L7] */
 export const formatTimecode = (seconds: number): string => {
@@ -188,7 +187,9 @@ export const formatTimecode = (seconds: number): string => {
  * 각 구간은 5~30초 길이·[0, duration] 범위를 만족한다(clampSegment로 보장).
  * 개수는 영상 길이에 따라 3(짧음)~5(김)로 가변.
  */
-export const buildMockHighlights = (duration: number): HighlightSuggestion[] => {
+export const buildMockHighlights = (
+  duration: number,
+): HighlightSuggestion[] => {
   const count = Math.max(3, Math.min(5, Math.floor(duration / 10) + 1));
   const desiredLength = clamp(
     Math.round(duration / count),
@@ -220,7 +221,8 @@ export const toSelectionResult = (
 };
 
 /** 초를 "Ns" 표기로 — 소수 최대 1자리, 정수는 소수점 생략(6→"6s", 6.25→"6.3s"). (MSG-120 Q1) */
-const formatSeconds = (value: number): string => `${Math.round(value * 10) / 10}s`;
+const formatSeconds = (value: number): string =>
+  `${Math.round(value * 10) / 10}s`;
 
 /**
  * 4/4 미리보기 하이라이트 카드용 구간 라벨. [MSG-120 L1]

@@ -1,4 +1,10 @@
-import { Flame, PartyPopper, Route, Store, type LucideIcon } from "lucide-react";
+import {
+  Flame,
+  PartyPopper,
+  Route,
+  Store,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@fillmap/ui-web";
 import {
   THEME_META,

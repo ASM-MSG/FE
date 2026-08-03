@@ -18,24 +18,40 @@ const cellOf = (id: string) => {
 
 describe("canOpenDetail — 셀 탭 → 상세 오픈 판정 (AC 9·10)", () => {
   it("핫구역·지역축제·팝업스토어 활성 상태에서 강조(테마) 셀 탭은 상세를 연다 (AC 9, A5 — 3테마 공통)", () => {
-    expect(canOpenDetail("hot", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(true);
-    expect(canOpenDetail("festival", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(true);
-    expect(canOpenDetail("popup", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(true);
+    expect(canOpenDetail("hot", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(
+      true,
+    );
+    expect(
+      canOpenDetail("festival", "A-14", THEME_CELL_IDS, OCCUPIED_IDS),
+    ).toBe(true);
+    expect(canOpenDetail("popup", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(
+      true,
+    );
   });
 
   it("테마 활성 중 강조 셀이 아닌 셀 탭은 무시된다 — 점령 셀이라도 열지 않는다", () => {
-    expect(canOpenDetail("hot", "C-02", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(false);
+    expect(canOpenDetail("hot", "C-02", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(
+      false,
+    );
   });
 
   it("칩 비활성 상태에서는 내 점령 셀 탭만 상세를 연다 (AC 10)", () => {
-    expect(canOpenDetail(null, "B-08", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(true);
-    expect(canOpenDetail(null, "E-05", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(false);
+    expect(canOpenDetail(null, "B-08", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(
+      true,
+    );
+    expect(canOpenDetail(null, "E-05", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(
+      false,
+    );
   });
 
   // MSG-277 AC 13: 경로추천도 상세를 연다 — route=false 단정 갱신은 스펙 승인 예외 (빌드 리포트 기록)
   it("경로추천 활성 중에도 강조 셀 탭은 상세를 연다 — 다른 테마와 동일 판정 (MSG-277 AC 13)", () => {
-    expect(canOpenDetail("route", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(true);
-    expect(canOpenDetail("route", "C-02", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(false);
+    expect(canOpenDetail("route", "A-14", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(
+      true,
+    );
+    expect(canOpenDetail("route", "C-02", THEME_CELL_IDS, OCCUPIED_IDS)).toBe(
+      false,
+    );
   });
 });
 
@@ -70,7 +86,9 @@ describe("deriveHomeCellDetail — 배지·영상 목록·버튼 파생 (AC 9·1
     ]);
     expect(detail.myVideos.map((v) => v.videoId)).toEqual(myIds);
     expect(detail.otherVideos.map((v) => v.videoId)).toEqual(
-      cell.videos.filter((v) => !myIds.includes(v.videoId)).map((v) => v.videoId),
+      cell.videos
+        .filter((v) => !myIds.includes(v.videoId))
+        .map((v) => v.videoId),
     );
     expect(detail.showMashup).toBe(true);
   });
@@ -199,9 +217,7 @@ describe("deriveHomeCellDetail — 서브타이틀 파생 (MSG-253 AC 6·7)", ()
   });
 
   it("내 영상이 0개면 날짜 부분 없이 '내 영상 0개'만 표기한다 (AC 6)", () => {
-    const cell = fixtureCell([
-      fixtureVideo(1, "2026-07-18T12:00:00.000Z"),
-    ]);
+    const cell = fixtureCell([fixtureVideo(1, "2026-07-18T12:00:00.000Z")]);
     const detail = deriveHomeCellDetail({
       cell,
       activeTheme: null,
@@ -276,9 +292,7 @@ describe("deriveHomeCellDetail — 지표 한 줄 파생 (MSG-277 2차 AC 1)", (
 describe("deriveHomeCellDetail — 위치 정보 블록 파생 (MSG-277 2차 AC 7)", () => {
   it("위치 문자열은 cell.location 그대로, 마지막 업로드는 recentUploadedAt의 상대시간이다 — now 주입 결정성", () => {
     // fixtureCell.recentUploadedAt = 2026-07-30T00:00Z, NOW = 동일 일 12:00Z → 12시간 전
-    const cell = fixtureCell([
-      fixtureVideo(1, "2026-07-18T12:00:00.000Z"),
-    ]);
+    const cell = fixtureCell([fixtureVideo(1, "2026-07-18T12:00:00.000Z")]);
     const detail = deriveHomeCellDetail({
       cell,
       activeTheme: null,
@@ -300,7 +314,9 @@ describe("deriveHomeCellDetail — 액센트 파생 (MSG-277 2차 AC 11)", () =>
       myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, "A-14"),
     };
 
-    expect(deriveHomeCellDetail({ ...base, activeTheme: "hot" }).accent).toBe("hot");
+    expect(deriveHomeCellDetail({ ...base, activeTheme: "hot" }).accent).toBe(
+      "hot",
+    );
     expect(deriveHomeCellDetail({ ...base, activeTheme: "route" }).accent).toBe(
       "route",
     );

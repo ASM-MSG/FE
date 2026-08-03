@@ -52,15 +52,17 @@ const themeCellsFrom = (ids: string[]): ThemeCell[] =>
  * 교집합·비교집합을 모두 포함해 빗금 구분(AC 7)이 시연 가능하게 구성한다.
  * 실 API 전환 시 서버 제공 목록으로 교체한다 (제외 범위 — 티켓 명시).
  */
-export const MOCK_THEME_CELLS: Record<Exclude<ThemeId, "route">, ThemeCell[]> =
-  {
-    // 교집합 A-14·A-15·B-07 / 비교집합 G-04
-    hot: themeCellsFrom(["A-14", "A-15", "B-07", "G-04"]),
-    // 교집합 C-02·B-08 / 비교집합 D-01
-    festival: themeCellsFrom(["C-02", "B-08", "D-01"]),
-    // 교집합 A-15 / 비교집합 E-06·H-11
-    popup: themeCellsFrom(["A-15", "E-06", "H-11"]),
-  };
+export const MOCK_THEME_CELLS: Record<
+  Exclude<ThemeId, "route">,
+  ThemeCell[]
+> = {
+  // 교집합 A-14·A-15·B-07 / 비교집합 G-04
+  hot: themeCellsFrom(["A-14", "A-15", "B-07", "G-04"]),
+  // 교집합 C-02·B-08 / 비교집합 D-01
+  festival: themeCellsFrom(["C-02", "B-08", "D-01"]),
+  // 교집합 A-15 / 비교집합 E-06·H-11
+  popup: themeCellsFrom(["A-15", "E-06", "H-11"]),
+};
 
 /** 추천 경로 경유지 — 번호 마커(1·2·3)의 데이터 (AC 8) */
 export interface RouteWaypoint {

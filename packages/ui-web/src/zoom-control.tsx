@@ -13,7 +13,11 @@ interface ZoomControlProps {
  * @example
  * <ZoomControl onZoomIn={zoomIn} onZoomOut={zoomOut} />
  */
-export const ZoomControl = ({ onZoomIn, onZoomOut, className }: ZoomControlProps) => (
+export const ZoomControl = ({
+  onZoomIn,
+  onZoomOut,
+  className,
+}: ZoomControlProps) => (
   <div
     className={cn(
       "flex w-10 flex-col items-center overflow-hidden rounded-md bg-background shadow-raised",

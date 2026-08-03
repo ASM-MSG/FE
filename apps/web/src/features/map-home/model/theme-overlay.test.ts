@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { cellBoundsAt, cellIndexAt } from "@/entities/cell";
 import { MOCK_DEX } from "@/entities/dex";
-import { MOCK_ROUTE, MOCK_THEME_CELLS, THEME_META, themeCellsOf } from "./theme";
+import {
+  MOCK_ROUTE,
+  MOCK_THEME_CELLS,
+  THEME_META,
+  themeCellsOf,
+} from "./theme";
 import {
   buildHatchLines,
   buildHomeOverlayCells,
@@ -21,11 +26,7 @@ describe("buildHomeOverlayCells — 기본 상태 (AC 2, MSG-263 개정 2 D9)", 
 });
 
 describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
-  const overlays = buildHomeOverlayCells(
-    "hot",
-    MOCK_THEME_CELLS.hot,
-    OCCUPIED,
-  );
+  const overlays = buildHomeOverlayCells("hot", MOCK_THEME_CELLS.hot, OCCUPIED);
 
   it("핫구역 활성 시 테마 셀들이 테마 색으로 강조된다 (AC 6)", () => {
     for (const cell of MOCK_THEME_CELLS.hot) {
@@ -156,8 +157,7 @@ describe("buildHatchLines — 셀 Bounds 안 사선 빗금 기하 (AC 7, R1)", (
     const dLat = bounds.ne.lat - bounds.sw.lat;
     const dLng = bounds.ne.lng - bounds.sw.lng;
     for (const [a, b] of buildHatchLines(bounds, 5)) {
-      const slope =
-        ((b.lat - a.lat) / dLat) / ((b.lng - a.lng) / dLng);
+      const slope = (b.lat - a.lat) / dLat / ((b.lng - a.lng) / dLng);
       expect(slope).toBeCloseTo(-1, 6);
     }
   });

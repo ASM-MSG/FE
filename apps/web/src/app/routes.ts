@@ -21,7 +21,6 @@ export const getActiveNavKey = (pathname: string): NavKey | undefined => {
   const entries = Object.entries(ROUTES) as [NavKey, string][];
   return entries.find(
     ([key, path]) =>
-      key !== "home" &&
-      (pathname === path || pathname.startsWith(`${path}/`)),
+      key !== "home" && (pathname === path || pathname.startsWith(`${path}/`)),
   )?.[0];
 };

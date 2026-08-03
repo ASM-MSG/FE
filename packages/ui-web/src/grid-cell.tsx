@@ -20,8 +20,7 @@ const gridCellVariants = cva("block transition-colors", {
 });
 
 interface GridCellProps
-  extends GridCellBaseProps,
-    ButtonHTMLAttributes<HTMLButtonElement> {}
+  extends GridCellBaseProps, ButtonHTMLAttributes<HTMLButtonElement> {}
 
 /**
  * @example

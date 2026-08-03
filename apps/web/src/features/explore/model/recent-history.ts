@@ -12,10 +12,7 @@ export const MAX_RECENT_SEARCHES = 10;
  * 이미 존재하는 검색어는 중복 없이 맨 앞(최신)으로 이동시키고, 상한을 넘으면 오래된 항목을 버린다.
  * 빈/공백 검색어는 무시한다.
  */
-export const addRecentSearch = (
-  searches: string[],
-  term: string,
-): string[] => {
+export const addRecentSearch = (searches: string[], term: string): string[] => {
   const t = term.trim();
   if (!t) return searches;
   return [t, ...searches.filter((s) => s !== t)].slice(0, MAX_RECENT_SEARCHES);

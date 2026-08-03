@@ -76,7 +76,8 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
         <div className="flex flex-col gap-xs">
           <h2 className="text-fm-title text-foreground">{cell.label}</h2>
           <p className="text-fm-body text-foreground-muted">
-            {cell.location} · 최근 업로드 {formatRelativeTime(cell.recentUploadedAt)}
+            {cell.location} · 최근 업로드{" "}
+            {formatRelativeTime(cell.recentUploadedAt)}
           </p>
         </div>
 
@@ -89,11 +90,7 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
 
         {/* 액션 버튼 (자리, no-op) — 업로드 / 공유 / 더보기 (AC 15) */}
         <div className="flex items-center gap-sm">
-          <Button
-            text="이 격자에 영상 업로드"
-            size="sm"
-            className="flex-1"
-          />
+          <Button text="이 격자에 영상 업로드" size="sm" className="flex-1" />
           <IconButton label="공유">
             <Share2 className="size-5" />
           </IconButton>

@@ -22,11 +22,11 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
   });
 
   it("모든 영상의 gridId가 수집 격자 목록에 존재한다", () => {
-    const collectedIds = new Set(
-      MOCK_DEX.collectedCells.map((c) => c.gridId),
-    );
+    const collectedIds = new Set(MOCK_DEX.collectedCells.map((c) => c.gridId));
     for (const video of MOCK_COLLECTED_VIDEOS) {
-      expect(collectedIds.has(video.gridId), `${video.videoId}의 gridId`).toBe(true);
+      expect(collectedIds.has(video.gridId), `${video.videoId}의 gridId`).toBe(
+        true,
+      );
     }
   });
 
@@ -36,7 +36,9 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
         (v) => v.gridId === cell.gridId,
       ).map((v) => v.createdAt);
       const oldest = [...times].sort()[0];
-      expect(oldest, `${cell.gridId} 최고령 영상 시각`).toBe(cell.firstCollectedAt);
+      expect(oldest, `${cell.gridId} 최고령 영상 시각`).toBe(
+        cell.firstCollectedAt,
+      );
     }
   });
 
