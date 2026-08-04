@@ -5,7 +5,8 @@
  * 실연동 티켓에서 이 함수 본문을 카카오 인가 요청으로 교체한다 — 교체 지점은 이 함수 하나다.
  */
 export const startKakaoLogin = (): void => {
-  if (__DEV__) {
+  // typeof 가드: __DEV__는 Metro 주입 전역이라 RN 밖(vitest node)에는 없다 — bare 참조는 ReferenceError
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
     console.log(
       "[auth] startKakaoLogin 호출 — 카카오 로그인 시작 (스텁, 실연동 전)",
     );
