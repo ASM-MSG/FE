@@ -47,7 +47,8 @@ export const createSearchStore = (
       return () => listeners.delete(listener);
     },
     submitSearch: (term) => setSearches(addRecentSearch(recentSearches, term)),
-    removeSearch: (term) => setSearches(removeRecentSearch(recentSearches, term)),
+    removeSearch: (term) =>
+      setSearches(removeRecentSearch(recentSearches, term)),
     clearSearches: () => setSearches(clearRecentSearches()),
   };
 };

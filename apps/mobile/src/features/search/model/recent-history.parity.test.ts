@@ -30,7 +30,10 @@ describe("recent-history 동등성 (AC 7)", () => {
     const samples: { searches: string[]; term: string }[] = [
       { searches: ["광안리", "서면"], term: "해운대" }, // 신규 → 맨 앞
       { searches: ["광안리", "서면", "해운대"], term: "서면" }, // 중복 → 맨 앞 이동
-      { searches: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], term: "k" }, // 상한 초과 → 오래된 항목 제거
+      {
+        searches: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+        term: "k",
+      }, // 상한 초과 → 오래된 항목 제거
       { searches: ["광안리"], term: "" }, // 빈 검색어 무시
       { searches: ["광안리"], term: "   " }, // 공백 검색어 무시
       { searches: [], term: "  서면  " }, // trim 후 추가
@@ -66,7 +69,9 @@ describe("recent-history 동등성 (AC 7)", () => {
     expect(mobileHistory.clearRecentSearches()).toEqual(
       webHistory.clearRecentSearches(),
     );
-    expect(mobileHistory.isHistoryEmpty([])).toBe(webHistory.isHistoryEmpty([]));
+    expect(mobileHistory.isHistoryEmpty([])).toBe(
+      webHistory.isHistoryEmpty([]),
+    );
     expect(mobileHistory.isHistoryEmpty(["서면"])).toBe(
       webHistory.isHistoryEmpty(["서면"]),
     );

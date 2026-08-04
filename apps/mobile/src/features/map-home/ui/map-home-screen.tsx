@@ -67,8 +67,11 @@ export const MapHomeScreen = () => {
   // 연속 선택해도 params가 달라져 재이동한다. 초기 현재 위치 이동보다 우선.
   useEffect(() => {
     if (typeof lat !== "string" || typeof lng !== "string" || !ts) return;
+    const target = { lat: Number(lat), lng: Number(lng) };
+    // 딥링크로 훼손된 params가 올 수 있다 — NaN을 네이티브 지도에 넘기지 않는다
+    if (!Number.isFinite(target.lat) || !Number.isFinite(target.lng)) return;
     movedToSearchTargetRef.current = true;
-    mapRef.current?.moveTo({ lat: Number(lat), lng: Number(lng) });
+    mapRef.current?.moveTo(target);
   }, [lat, lng, ts]);
 
   useEffect(() => {
@@ -121,7 +124,10 @@ export const MapHomeScreen = () => {
               className="flex-1 active:opacity-80"
             >
               <View pointerEvents="none">
-                <SearchBar placeholder="장소, 격자, 영상 검색" editable={false} />
+                <SearchBar
+                  placeholder="장소, 격자, 영상 검색"
+                  editable={false}
+                />
               </View>
             </Pressable>
             <Avatar size="md" fallback="나" />

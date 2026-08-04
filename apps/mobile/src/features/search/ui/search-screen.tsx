@@ -111,7 +111,12 @@ export const SearchScreen = () => {
               <Pressable
                 key={term}
                 accessibilityRole="button"
-                onPress={() => handleSubmit(term)}
+                // 탭한 검색어를 입력창에도 반영 — 불일치로 화면에 머무는 경우(D-Q1)
+                // 무엇을 검색했는지 보이게 (PR #37 리뷰)
+                onPress={() => {
+                  setQuery(term);
+                  handleSubmit(term);
+                }}
                 className="flex-row items-center gap-sm py-sm active:opacity-60"
               >
                 <Clock size={20} color={semantic.muted} />

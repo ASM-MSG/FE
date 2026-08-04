@@ -34,4 +34,14 @@ describe("matchRegion (AC 11, D-Q1)", () => {
     expect(matchRegion(regions, "")).toBeNull();
     expect(matchRegion(regions, "   ")).toBeNull();
   });
+
+  it("여러 구에 걸리는 모호한 검색어는 null — 첫 매칭으로 튕기지 않는다 (PR #37 리뷰)", () => {
+    // "구"는 부산 8개 구 이름 전부에 포함 — 자동 이동은 유일 매칭일 때만
+    expect(matchRegion(regions, "구")).toBeNull();
+  });
+
+  it("1자 검색어는 유일 매칭이라도 null — 미완성 입력의 자동 이동 방지", () => {
+    // "부"는 부산진구에만 포함되지만 한 글자로는 목적지를 확정하지 않는다
+    expect(matchRegion(regions, "부")).toBeNull();
+  });
 });
