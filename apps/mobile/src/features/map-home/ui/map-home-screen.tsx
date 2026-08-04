@@ -68,8 +68,9 @@ export const MapHomeScreen = () => {
   useEffect(() => {
     if (typeof lat !== "string" || typeof lng !== "string" || !ts) return;
     const target = { lat: Number(lat), lng: Number(lng) };
-    // 딥링크로 훼손된 params가 올 수 있다 — NaN을 네이티브 지도에 넘기지 않는다
-    if (!Number.isFinite(target.lat) || !Number.isFinite(target.lng)) return;
+    // 딥링크로 훼손된 params가 올 수 있다 — NaN·좌표 범위 밖 값을 네이티브 지도에 넘기지 않는다
+    if (!Number.isFinite(target.lat) || Math.abs(target.lat) > 90) return;
+    if (!Number.isFinite(target.lng) || Math.abs(target.lng) > 180) return;
     movedToSearchTargetRef.current = true;
     mapRef.current?.moveTo(target);
   }, [lat, lng, ts]);
