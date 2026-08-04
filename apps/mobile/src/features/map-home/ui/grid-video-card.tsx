@@ -10,52 +10,33 @@ const formatDuration = (sec: number) =>
 
 interface GridVideoCardProps {
   video: GridVideoSummary;
-  /** 썸네일 높이 — sm: 홈 피크 시트 가로 스크롤(h-16), lg: 2열 그리드(h-25) */
-  size?: "sm" | "lg";
-  /** 영상 길이 뱃지(mm:ss) 표시 — 격자 썸네일 뷰 전용 (AC 15) */
-  showDuration?: boolean;
   className?: string;
 }
 
 /**
- * 격자 영상 썸네일 카드 — 재생 아이콘·(선택) 길이 뱃지·격자명·영상 수.
- * 홈 피크 시트 가로 스크롤(AC 10)과 격자 썸네일 뷰 2열 그리드(AC 15) 공용.
+ * 격자 영상 썸네일 카드 — 재생 아이콘·길이 뱃지(mm:ss)·격자명·영상 수 (AC 15).
+ * 4차 콘텐츠 통일로 시트 2열 그리드가 유일 사용처 — 구 피크 가로 스크롤용
+ * sm 변형·showDuration 옵션은 고아 정리(두 번째 용례가 생기면 그때 재도입).
  * mock은 썸네일 이미지가 없어 Thumbnail 폴백(빈 박스) 상태로 표시한다 (Figma 오탐 방지 4).
  * 격자명·영상 수 등 도메인 결합이라 features에 둔다 — 승격 후보 아님 (스펙).
  */
-export const GridVideoCard = ({
-  video,
-  size = "sm",
-  showDuration = false,
-  className,
-}: GridVideoCardProps) => (
+export const GridVideoCard = ({ video, className }: GridVideoCardProps) => (
   <View className={cx("gap-1.5", className)}>
     <View className="w-full">
-      <Thumbnail className={cx("w-full", size === "lg" ? "h-25" : "h-16")} />
+      <Thumbnail className="h-25 w-full" />
       <View
         pointerEvents="none"
         className="absolute inset-0 items-center justify-center"
       >
-        <View
-          className={cx(
-            "items-center justify-center rounded-full bg-background shadow-raised",
-            size === "lg" ? "size-6.5" : "size-5",
-          )}
-        >
-          <Play
-            size={size === "lg" ? 12 : 10}
-            color={semantic.primary}
-            fill={semantic.primary}
-          />
+        <View className="size-6.5 items-center justify-center rounded-full bg-background shadow-raised">
+          <Play size={12} color={semantic.primary} fill={semantic.primary} />
         </View>
       </View>
-      {showDuration && (
-        <View className="absolute bottom-1.5 right-1.5 rounded-sm bg-foreground/75 px-1.5 py-0.5">
-          <Text className="text-fm-caption text-primary-foreground">
-            {formatDuration(video.durationSec)}
-          </Text>
-        </View>
-      )}
+      <View className="absolute bottom-1.5 right-1.5 rounded-sm bg-foreground/75 px-1.5 py-0.5">
+        <Text className="text-fm-caption text-primary-foreground">
+          {formatDuration(video.durationSec)}
+        </Text>
+      </View>
     </View>
     <View className="gap-0.5">
       <Text

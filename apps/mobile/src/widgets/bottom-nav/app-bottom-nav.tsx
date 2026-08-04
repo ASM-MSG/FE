@@ -1,5 +1,7 @@
+import { View } from "react-native";
 import { Compass, House, LayoutGrid, UserRound } from "lucide-react-native";
 import { usePathname, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { semantic } from "@fillmap/design-tokens";
 import { BottomNav, type BottomNavItem } from "@fillmap/ui-native";
 
@@ -30,8 +32,11 @@ interface AppBottomNavProps {
  * 앱 공용 바텀 내비 조립체 (widgets, AC 12·16) — 2차: activeKey 홈 고정(구 D3) 해제,
  * 현재 라우트 기반 활성 + 탭 내비게이션 연결. RN은 아이콘 색 상속이 없어
  * 활성 탭 아이콘 색을 여기서 지정한다 (ui-native BottomNav 계약).
+ * 4차: safe-area 하단 인셋 채움을 여기서 소유 — 내비 콘텐츠 높이는 유지하고
+ * 배경만 화면 맨 아래까지 연장해 인셋에 지도·시트가 비치지 않는다 (AC 16, 홈·스텁 공통).
  */
 export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
   const activeKey =
@@ -57,11 +62,12 @@ export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
   };
 
   return (
-    <BottomNav
-      items={items}
-      activeKey={activeKey}
-      onSelect={handleSelect}
-      className={className}
-    />
+    <View className={className}>
+      <BottomNav items={items} activeKey={activeKey} onSelect={handleSelect} />
+      {/* 시스템 제스처 인셋 배경 채움 (AC 16 4차) — 바 배경(canvas)의 연장 */}
+      <View
+        style={{ height: insets.bottom, backgroundColor: semantic.canvas }}
+      />
+    </View>
   );
 };

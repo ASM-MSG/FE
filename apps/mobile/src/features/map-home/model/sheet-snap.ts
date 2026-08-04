@@ -17,10 +17,11 @@ export const FULL_TOP_RATIO = 0.1;
 export const HALF_TOP_RATIO = 0.5;
 
 /**
- * 3단계(피크) 시트 노출 높이(px) — 핸들(10+4) + gap(12) + 요약 헤더(19) + gap(12)
- * + 가로 썸네일 카드(64+6+14+2+14) + 하단 여백(20) = 177의 근사 고정값.
+ * 3단계(피크) 시트 노출 높이(px) — 4차: 콘텐츠 통일(AC 10)로 통일 콘텐츠의
+ * 상단(헤더 "서면 격자"·정렬 칩)까지 보이는 수준. 상단 패딩(10) + 핸들(4) + gap(12)
+ * + 헤더(19) + gap(12) + 정렬 칩(32) = 89 + 하단 여유(15).
  */
-export const PEEK_HEIGHT = 180;
+export const PEEK_HEIGHT = 104;
 
 /** 단계별 시트 상단 y 위치 — 컨테이너 높이에서 파생 */
 export type SheetPositions = Record<SheetStage, number>;

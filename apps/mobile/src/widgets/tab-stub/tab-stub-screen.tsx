@@ -14,9 +14,8 @@ export const TabStubScreen = ({ title }: { title: string }) => {
       <View className="flex-1 items-center justify-center">
         <Text className="text-fm-title text-foreground">{title}</Text>
       </View>
-      <View style={{ paddingBottom: insets.bottom }}>
-        <AppBottomNav />
-      </View>
+      {/* 하단 인셋 배경 채움은 AppBottomNav가 소유 (AC 16 4차) */}
+      <AppBottomNav />
     </View>
   );
 };

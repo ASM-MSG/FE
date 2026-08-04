@@ -37,8 +37,9 @@ const NAV_BAR_HEIGHT = 64;
 
 /**
  * 지도 홈 (Figma 14094:3981, 2차: 한 화면 통합 — D9) — 네이버 지도 + 격자 오버레이 위에
- * 검색바·칩·내 위치·FAB·4단계 드래그 시트·바텀 내비를 얹는다 (AC 5~16·19).
- * 구 격자 썸네일 뷰(별도 라우트)의 콘텐츠는 시트 1~2단계로 이관되었다.
+ * 검색바·칩·내 위치·FAB·4단계 드래그 시트·바텀 내비를 얹는다 (AC 5~16).
+ * 구 격자 썸네일 뷰(별도 라우트)의 콘텐츠는 시트로 이관되었고, 4차부터 시트는
+ * 전 단계 동일 콘텐츠다 (AC 10 통일 — 구 AC 19 "전체 보기"는 폐기).
  */
 export const MapHomeScreen = () => {
   const insets = useSafeAreaInsets();
@@ -121,10 +122,8 @@ export const MapHomeScreen = () => {
 
         <HomeSheet ref={sheetRef} bottomOffset={bottomOffset} />
 
-        <View
-          className="absolute inset-x-0 bottom-0"
-          style={{ paddingBottom: insets.bottom }}
-        >
+        {/* 하단 인셋 배경 채움은 AppBottomNav가 소유 (AC 16 4차) — 여기서 padding 중복 금지 */}
+        <View className="absolute inset-x-0 bottom-0">
           <AppBottomNav onHomeRetap={handleHomeRetap} />
         </View>
       </View>

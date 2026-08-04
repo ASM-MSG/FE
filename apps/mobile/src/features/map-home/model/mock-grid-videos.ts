@@ -1,7 +1,7 @@
 /**
- * 지도 홈·격자 썸네일 뷰 mock 데이터 — 부산 서면 기준 (사용자 결정 5, 서울 지명 금지).
+ * 지도 홈 시트 mock 데이터 — 부산 서면 기준 (사용자 결정 5, 서울 지명 금지).
  * 격자명은 웹 mock-cells label 관례("서면 A-14" 등)를 따른다.
- * 시트 요약 수치·목록은 현 뷰포트와 무관한 고정 mock (D5) — 뷰포트 연동 집계는 API 연동 시.
+ * 시트 개수·목록은 현 뷰포트와 무관한 고정 mock (D5) — 뷰포트 연동 집계는 API 연동 시.
  * 영상 길이는 mock마다 다른 값 (D7 — Figma의 균일 "0:24"는 더미).
  */
 
@@ -62,11 +62,5 @@ export const MOCK_GRID_VIDEOS: GridVideoSummary[] = [
   },
 ];
 
-/** "이 지역 격자 N개 · 영상 M개" 요약의 N — mock 격자 수 (D5 고정 mock) */
+/** 시트 헤더 "서면 격자 · N개"의 N — mock 격자 수 (D5 고정 mock). 구 피크 요약의 MOCK_VIDEO_TOTAL은 4차 콘텐츠 통일로 고아 정리 */
 export const MOCK_GRID_COUNT = MOCK_GRID_VIDEOS.length;
-
-/** "이 지역 격자 N개 · 영상 M개" 요약의 M — mock 영상 수 합 (D5 고정 mock) */
-export const MOCK_VIDEO_TOTAL = MOCK_GRID_VIDEOS.reduce(
-  (sum, video) => sum + video.videoCount,
-  0,
-);

@@ -34,18 +34,18 @@ describe("AC 18 시트 스냅 판정 (sheet-snap)", () => {
     // 1~2 중간 = 240
     expect(snapStage(239, positions)).toBe(1);
     expect(snapStage(241, positions)).toBe(2);
-    // 2~3 중간 = 510 (PEEK_HEIGHT=180 기준 pos3=620)
-    expect(snapStage(509, positions)).toBe(2);
-    expect(snapStage(511, positions)).toBe(3);
-    // 3~4 중간 = 710
-    expect(snapStage(709, positions)).toBe(3);
-    expect(snapStage(711, positions)).toBe(4);
+    // 2~3 중간 = 548 (PEEK_HEIGHT=104 기준 pos3=696 — 4차: 통일 콘텐츠 헤더·정렬 칩 노출 높이)
+    expect(snapStage(547, positions)).toBe(2);
+    expect(snapStage(549, positions)).toBe(3);
+    // 3~4 중간 = 748
+    expect(snapStage(747, positions)).toBe(3);
+    expect(snapStage(749, positions)).toBe(4);
   });
 
   it("정확한 중간값에서는 더 펼쳐진(번호가 낮은) 단계로 스냅한다 — 결정적 동작", () => {
     expect(snapStage(240, positions)).toBe(1);
-    expect(snapStage(510, positions)).toBe(2);
-    expect(snapStage(710, positions)).toBe(3);
+    expect(snapStage(548, positions)).toBe(2);
+    expect(snapStage(748, positions)).toBe(3);
   });
 
   it("범위 밖: 1단계보다 위는 1단계, 4단계보다 아래는 4단계로 스냅한다 (드래그만으로 1~4 전부 도달 — AC 11의 판정 절반)", () => {

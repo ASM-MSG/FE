@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -9,11 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { Chip } from "@fillmap/ui-native";
-import {
-  MOCK_GRID_COUNT,
-  MOCK_GRID_VIDEOS,
-  MOCK_VIDEO_TOTAL,
-} from "../model/mock-grid-videos";
+import { MOCK_GRID_COUNT, MOCK_GRID_VIDEOS } from "../model/mock-grid-videos";
 import { sortGridVideos, type GridVideoSort } from "../model/sort-grid-videos";
 import {
   sheetStagePositions,
@@ -22,8 +18,12 @@ import {
 } from "../model/sheet-snap";
 import { GridVideoCard } from "./grid-video-card";
 
-/** 스냅 스프링 — 오버슈트 없이 빠르게 정착 */
-const SPRING = { damping: 28, stiffness: 260 };
+/**
+ * 스냅 스프링 (AC 11 4차 — 반응성 상향): 임계 감쇠(dampingRatio 1 = 오버슈트 없음)에
+ * 체감 시간을 직접 지정하는 duration 기반 구성 — 구 물리 파라미터(damping 28/stiffness 260)가
+ * 정착까지 굼뜨다는 실기기 피드백의 반영. 220ms면 손을 뗀 즉시 정착으로 체감된다.
+ */
+const SPRING = { duration: 220, dampingRatio: 1 };
 
 /**
  * 헤더 드래그 존(px) — 핸들(10+4)+gap(12)+타이틀(19)+gap(12)+정렬 칩(32)≈89.
@@ -44,12 +44,13 @@ interface HomeSheetProps {
 }
 
 /**
- * 4단계 드래그 바텀시트 (AC 10·11·13~16·19, D9) — 네이버 지도 앱 방식.
+ * 4단계 드래그 바텀시트 (AC 10·11·13~16, D9) — 네이버 지도 앱 방식.
  * RNGH Pan + reanimated로 손가락을 따라 연속 이동, 릴리즈 시 최근접 단계 스냅(sheet-snap).
  * ui-native BottomSheet는 정적 쉘이라 컨테이너는 자체 구현하되 핸들·라운드 등
  * 스타일 토큰 계열은 동일하게 유지한다 (스펙 구현 계획).
- * 콘텐츠: 1~2단계 = 확장(헤더·정렬 칩·2열 그리드), 3단계 = 피크(요약·전체 보기·가로 썸네일),
- * 4단계 = 완전 숨김(그립 없음 — 복귀는 홈 탭 재탭, D12).
+ * 콘텐츠: 전 단계 동일 목록(헤더 "서면 격자"·정렬 칩·2열 그리드 — 4차 통일, 구 피크 전용
+ * 요약·전체 보기·가로 썸네일 폐기·AC 19 소멸). 3단계(피크)는 그 상단(헤더·정렬 칩)만
+ * 보이는 높이(PEEK_HEIGHT)이고, 4단계 = 완전 숨김(그립 없음 — 복귀는 홈 탭 재탭, D12).
  * 단계 상태는 시트가 소유하고 부모는 ref 명령(snapTo·restoreIfHidden)만 내린다 —
  * prop 동기화 useEffect가 공유값 수정과 얽히는 것을 피한다 (react-hooks/immutability,
  * grid-map moveTo와 동일한 명령형 핸들 패턴).
@@ -73,11 +74,9 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
     const scrollY = useSharedValue(0);
     const fromHeader = useSharedValue(false);
 
-    /** 단계 전환 단일 경로 — 스냅 애니메이션 + 상태 갱신 (드래그·전체 보기·부모 명령 공용) */
+    /** 단계 전환 단일 경로 — 스냅 애니메이션 + 상태 갱신 (드래그·부모 명령 공용) */
     const goToStage = (next: SheetStage) => {
       setStage(next);
-      // 확장 콘텐츠(그리드)가 언마운트되면 스크롤 오프셋도 0으로 — 재확장 시 가드 오작동 방지
-      if (next >= 3) scrollY.value = 0;
       // 측정 전(마운트 직후 focus 리셋)이면 상태만 — 위치는 최초 onLayout이 잡는다
       if (containerH === 0) return;
       translateY.value = withSpring(positions[next], SPRING);
@@ -141,8 +140,6 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
       transform: [{ translateY: translateY.value }],
     }));
 
-    const expanded = stage <= 2;
-
     return (
       <View
         pointerEvents="box-none"
@@ -172,91 +169,52 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
                   <View className="h-1 w-9 rounded-full bg-hairline-strong" />
                 </View>
 
-                {expanded ? (
-                  <View className="flex-1 gap-sm">
-                    <View className="flex-row items-center">
-                      <Text className="flex-1 text-fm-title text-foreground">
-                        서면 격자
-                      </Text>
-                      <Text className="text-fm-label text-foreground-muted">
-                        {MOCK_GRID_COUNT}개
-                      </Text>
-                    </View>
-                    <View className="flex-row gap-xs">
-                      <Chip
-                        text="인기순"
-                        active={sort === "popular"}
-                        onPress={() => setSort("popular")}
-                      />
-                      <Chip
-                        text="최신순"
-                        active={sort === "latest"}
-                        onPress={() => setSort("latest")}
-                      />
-                    </View>
-                    <GestureDetector gesture={scrollGesture}>
-                      <ScrollView
-                        style={{ flex: 1 }}
-                        scrollEnabled={stage === 1}
-                        bounces={false}
-                        overScrollMode="never"
-                        scrollEventThrottle={16}
-                        showsVerticalScrollIndicator={false}
-                        onScroll={(event) => {
-                          scrollY.value = event.nativeEvent.contentOffset.y;
-                        }}
-                      >
-                        <View className="flex-row flex-wrap justify-between gap-y-md pb-9">
-                          {videos.map((video) => (
-                            <GridVideoCard
-                              key={video.id}
-                              video={video}
-                              size="lg"
-                              showDuration
-                              className="w-[48%]"
-                            />
-                          ))}
-                        </View>
-                      </ScrollView>
-                    </GestureDetector>
+                {/* 전 단계 동일 콘텐츠 (AC 10 4차 통일) — 3단계는 PEEK_HEIGHT가 헤더·정렬 칩까지만 노출 */}
+                <View className="flex-1 gap-sm">
+                  <View className="flex-row items-center">
+                    <Text className="flex-1 text-fm-title text-foreground">
+                      서면 격자
+                    </Text>
+                    <Text className="text-fm-label text-foreground-muted">
+                      {MOCK_GRID_COUNT}개
+                    </Text>
                   </View>
-                ) : (
-                  <View className="gap-sm">
-                    <View className="flex-row items-center gap-xs">
-                      <Text
-                        numberOfLines={1}
-                        className="flex-1 text-fm-title text-foreground"
-                      >
-                        이 지역 격자 {MOCK_GRID_COUNT}개 · 영상{" "}
-                        {MOCK_VIDEO_TOTAL}개
-                      </Text>
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() => goToStage(1)}
-                        className="active:opacity-60"
-                      >
-                        <Text className="text-fm-label text-primary">
-                          전체 보기
-                        </Text>
-                      </Pressable>
-                    </View>
+                  <View className="flex-row gap-xs">
+                    <Chip
+                      text="인기순"
+                      active={sort === "popular"}
+                      onPress={() => setSort("popular")}
+                    />
+                    <Chip
+                      text="최신순"
+                      active={sort === "latest"}
+                      onPress={() => setSort("latest")}
+                    />
+                  </View>
+                  <GestureDetector gesture={scrollGesture}>
                     <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerClassName="gap-2.5 pb-5"
+                      style={{ flex: 1 }}
+                      scrollEnabled={stage === 1}
+                      bounces={false}
+                      overScrollMode="never"
+                      scrollEventThrottle={16}
+                      showsVerticalScrollIndicator={false}
+                      onScroll={(event) => {
+                        scrollY.value = event.nativeEvent.contentOffset.y;
+                      }}
                     >
-                      {/* 피크 썸네일 mock 6건 고정(D5) — 규칙 문서 suppress-when(10행 미만 고정 배열) 해당 */}
-                      {/* react-doctor-disable-next-line react-doctor/rn-no-scrollview-mapped-list */}
-                      {MOCK_GRID_VIDEOS.map((video) => (
-                        <GridVideoCard
-                          key={video.id}
-                          video={video}
-                          className="w-28"
-                        />
-                      ))}
+                      <View className="flex-row flex-wrap justify-between gap-y-md pb-9">
+                        {videos.map((video) => (
+                          <GridVideoCard
+                            key={video.id}
+                            video={video}
+                            className="w-[48%]"
+                          />
+                        ))}
+                      </View>
                     </ScrollView>
-                  </View>
-                )}
+                  </GestureDetector>
+                </View>
               </View>
             </Animated.View>
           </GestureDetector>
