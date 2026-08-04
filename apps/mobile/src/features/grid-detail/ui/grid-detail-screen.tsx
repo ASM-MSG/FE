@@ -36,6 +36,7 @@ const CircleIconButton = ({
   <Pressable
     accessibilityRole="button"
     accessibilityLabel={label}
+    accessibilityHint="아직 준비 중인 기능입니다"
     className="size-9 items-center justify-center rounded-full bg-surface-soft active:opacity-60"
   >
     {children}
