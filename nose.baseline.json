@@ -2259,6 +2259,110 @@
           "is_fragment": false
         }
       ]
+    },
+    {
+      "id": "02a9c17ec3450cea",
+      "note": "MSG-296 D1 의도 중복 — 웹 shared/format.ts(formatRelativeTime)를 apps/mobile로 복제, format.parity.test.ts가 웹 원본 대조로 계약 고정 (승격 보류 근거는 스펙 D1 관례)",
+      "members": [
+        {
+          "id": "cf6bc01692d28aa9",
+          "source_digest": "fnv1a64:3d240a420fdb86b9",
+          "file": "apps/mobile/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 52,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e51f9458016091b6",
+          "source_digest": "fnv1a64:b417a8c83865c2da",
+          "file": "apps/web/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 45,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "f607809f9e2f6582",
+      "note": "MSG-296 D1 의도 중복 — 웹 mock-cells.ts의 시간 상수·isoAgo mock 관례를 mock-cell-details.ts로 이식 (mock은 화면별 소유 — 스펙 리스크 3, parity 대상 아님)",
+      "members": [
+        {
+          "id": "0033b8b05599472c",
+          "source_digest": "fnv1a64:8990ff6898cb5e90",
+          "file": "apps/web/src/entities/cell/model/mock-cells.ts",
+          "lang": "typescript",
+          "start_line": 4,
+          "end_line": 30,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e0fa7b72be208507",
+          "source_digest": "fnv1a64:580029e39f3261c0",
+          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
+          "lang": "typescript",
+          "start_line": 37,
+          "end_line": 62,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d2392477de0ee54a",
+      "note": "MSG-296 D1 의도 중복 — 웹 explore/cell-detail.ts(formatViewCount compact)를 apps/mobile shared/format.ts로 복제, format.parity.test.ts가 K/M 경계 대조로 계약 고정",
+      "members": [
+        {
+          "id": "cb4a58170825c45c",
+          "source_digest": "fnv1a64:a933b0dd0aca87a2",
+          "file": "apps/mobile/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 30,
+          "end_line": 48,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "10882055f32b545d",
+          "source_digest": "fnv1a64:ae114275d3f534f0",
+          "file": "apps/web/src/features/explore/model/cell-detail.ts",
+          "lang": "typescript",
+          "start_line": 7,
+          "end_line": 25,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "ab808c26e8a58e6f",
+      "note": "MSG-296 D1 의도 중복 — 웹 mock(mock-dex.ts 계열)과 공유하는 isoAgo mock 관례의 모바일 이식 (mock은 화면별 소유 — 스펙 리스크 3)",
+      "members": [
+        {
+          "id": "98e9d823267685e2",
+          "source_digest": "fnv1a64:b5af69fb71bd412c",
+          "file": "apps/web/src/entities/dex/model/mock-dex.ts",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 31,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "be7e4644c24b0b90",
+          "source_digest": "fnv1a64:fa5ea6f67a3dd6ef",
+          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
+          "lang": "typescript",
+          "start_line": 37,
+          "end_line": 51,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
     }
   ]
 }
