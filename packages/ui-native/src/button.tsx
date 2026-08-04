@@ -19,8 +19,18 @@ const containerVariant: Record<ButtonVariant, string> = {
 };
 
 const containerSize: Record<ButtonSize, string> = {
-  lg: "h-12 min-w-35 rounded-md px-lg",
-  sm: "h-9 min-w-26 rounded-sm px-md",
+  lg: "h-12 min-w-35 px-lg",
+  sm: "h-9 min-w-26 px-md",
+};
+
+/**
+ * 모서리는 shape 옵션이 단독 결정 — className 오버라이드로 rounded-*를 겹치면
+ * cx가 단순 join이라 승자가 비보장이므로, 충돌 자체가 없도록 내부에서 분기한다.
+ * (Dots activeShape와 동일한 API 관례 — MSG-292)
+ */
+const containerRounded: Record<ButtonShape, Record<ButtonSize, string>> = {
+  rounded: { lg: "rounded-md", sm: "rounded-sm" },
+  pill: { lg: "rounded-full", sm: "rounded-full" },
 };
 
 const textVariant: Record<ButtonVariant, string> = {
@@ -34,9 +44,13 @@ const textSize: Record<ButtonSize, string> = {
   sm: "text-fm-body-strong",
 };
 
+type ButtonShape = "rounded" | "pill";
+
 interface ButtonProps extends ButtonBaseProps {
   text: string;
   onPress?: () => void;
+  /** 모서리 모양. 기본 "rounded"(기존 렌더 불변) — 사이즈별 rounded-md/sm, "pill"은 rounded-full (온보딩 CTA 14133:544) */
+  shape?: ButtonShape;
   className?: string;
 }
 
@@ -46,11 +60,13 @@ interface ButtonProps extends ButtonBaseProps {
  * @example
  * <Button text="저장" variant="primary" onPress={onSave} />
  * <Button text="삭제" variant="danger" size="sm" />
+ * <Button text="시작하기" shape="pill" className="w-full" />
  */
 export const Button = ({
   text,
   variant = "primary",
   size = "lg",
+  shape = "rounded",
   disabled,
   onPress,
   className,
@@ -63,6 +79,7 @@ export const Button = ({
     className={cx(
       "items-center justify-center",
       containerSize[size],
+      containerRounded[shape][size],
       disabled
         ? "bg-background"
         : cx(containerVariant[variant], "active:opacity-80"),

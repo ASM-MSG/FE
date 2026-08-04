@@ -22,3 +22,14 @@ export const AllPositions: Story = {
     </View>
   ),
 };
+
+/** 활성 점만 가로 pill(16×6) — 온보딩 인디케이터 (MSG-292, 14133:540) */
+export const ActivePill: Story = {
+  render: () => (
+    <View className="gap-xs">
+      <Dots activeIndex={0} activeShape="pill" />
+      <Dots activeIndex={1} activeShape="pill" />
+      <Dots activeIndex={2} activeShape="pill" />
+    </View>
+  ),
+};

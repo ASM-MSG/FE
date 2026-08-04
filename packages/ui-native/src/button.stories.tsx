@@ -18,7 +18,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-/** Type × Size × State 매트릭스 — Figma와 나란히 비교용 */
+/** Type × Size × State × Shape 매트릭스 — Figma와 나란히 비교용 */
 export const AllVariants: Story = {
   render: () => (
     <View className="gap-md">
@@ -27,6 +27,7 @@ export const AllVariants: Story = {
           <Button text="버튼" variant={variant} />
           <Button text="버튼" variant={variant} size="sm" />
           <Button text="버튼" variant={variant} disabled />
+          <Button text="버튼" variant={variant} shape="pill" />
         </View>
       ))}
     </View>

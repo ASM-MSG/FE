@@ -30,6 +30,32 @@
       ]
     },
     {
+      "id": "0234f24efe1d2f6b",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "50a88a476b0af70c",
+          "source_digest": "fnv1a64:9c4b86cead4d651c",
+          "file": "apps/web/src/features/upload/ui/upload-wizard-flow.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 8,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "04e15c9df5a1b0fe",
+          "source_digest": "fnv1a64:1a9f942be08a08d1",
+          "file": "apps/mobile/src/features/onboarding/model/onboarding-storage.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 5,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "03628c47850d13c1",
       "note": "local duplication — extract a method from the repeated block",
       "members": [
@@ -1065,6 +1091,32 @@
       ]
     },
     {
+      "id": "8a97ed9b26fab3f3",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "cb6373ce99d70cee",
+          "source_digest": "fnv1a64:4c98366feacea1fe",
+          "file": "apps/web/src/pages/map-home/ui/map-canvas.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 18,
+          "end_line": 26,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "9a6c0952c9645e0a",
+          "source_digest": "fnv1a64:529d2c4bb0366a87",
+          "file": "apps/mobile/src/features/onboarding/model/onboarding-storage.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "8f86f3dec7f76511",
       "note": "consolidate `cell` — 2 copies — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -1424,6 +1476,34 @@
       ]
     },
     {
+      "id": "abf583f5063941b4",
+      "note": "consolidate `pressable` — 2 copies",
+      "members": [
+        {
+          "id": "6b9fab986ca8b48c",
+          "source_digest": "fnv1a64:5dab65b831a20a48",
+          "file": "packages/ui-native/src/button.tsx",
+          "lang": "typescript",
+          "start_line": 74,
+          "end_line": 97,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "fe7a3ae0cf28bf8f",
+          "source_digest": "fnv1a64:1ee5df1d4990fcfc",
+          "file": "packages/ui-native/src/modal-card.tsx",
+          "lang": "typescript",
+          "start_line": 98,
+          "end_line": 112,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "b10ae91739cbf8d8",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -1685,34 +1765,6 @@
           "start_line": 5,
           "end_line": 85,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "da0ac1fc8e3b0353",
-      "note": "consolidate `pressable` — 2 copies",
-      "members": [
-        {
-          "id": "1dfaca1bdee2f9a9",
-          "source_digest": "fnv1a64:27b80c4b2f5c7706",
-          "file": "packages/ui-native/src/button.tsx",
-          "lang": "typescript",
-          "start_line": 58,
-          "end_line": 80,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
-        {
-          "id": "fe7a3ae0cf28bf8f",
-          "source_digest": "fnv1a64:1ee5df1d4990fcfc",
-          "file": "packages/ui-native/src/modal-card.tsx",
-          "lang": "typescript",
-          "start_line": 98,
-          "end_line": 112,
-          "kind": "Block",
-          "name": "pressable",
           "is_fragment": false
         }
       ]
