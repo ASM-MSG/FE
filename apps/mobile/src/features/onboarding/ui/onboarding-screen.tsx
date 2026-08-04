@@ -1,11 +1,16 @@
 import { useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { Image } from "expo-image";
+import { cssInterop } from "nativewind";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Dots } from "@fillmap/ui-native";
 import { setOnboardingCompleted } from "../model/onboarding-storage";
 import illustrationFill from "../assets/onboarding-fill.png";
 import illustrationRecord from "../assets/onboarding-record.png";
 import illustrationExplore from "../assets/onboarding-explore.png";
+
+// expo-image는 서드파티 컴포넌트라 NativeWind className 해석에 cssInterop 등록이 필요 (v4 문서 관례)
+cssInterop(Image, { className: "style" });
 
 /**
  * SOURCE: Figma 온보딩 1~3 (node 14133:521 / 14133:546 / 14133:575).
@@ -56,11 +61,11 @@ export const OnboardingScreen = ({ onDone }: OnboardingScreenProps) => {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 items-center justify-center px-lg">
-        {/* 장식 일러스트 — 스크린리더 노출 제외 (기준 8) */}
+        {/* 장식 일러스트 — 스크린리더 노출 제외 (기준 8). expo-image: accessible 기본 false지만 장식 의도를 명시 */}
         <Image
           source={slide.illustration}
           accessible={false}
-          resizeMode="contain"
+          contentFit="contain"
           className="h-full w-full"
         />
       </View>
@@ -82,7 +87,8 @@ export const OnboardingScreen = ({ onDone }: OnboardingScreenProps) => {
         <Button
           text={slide.buttonLabel}
           onPress={handlePress}
-          className="w-full rounded-full"
+          shape="pill"
+          className="w-full"
         />
       </View>
     </SafeAreaView>
