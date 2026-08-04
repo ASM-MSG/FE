@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Flame, PartyPopper, Route, Store } from "lucide-react-native";
 import { palette } from "@fillmap/design-tokens";
 import {
@@ -43,8 +43,17 @@ const NAV_BAR_HEIGHT = 64;
  */
 export const MapHomeScreen = () => {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const mapRef = useRef<GridMapRef>(null);
   const sheetRef = useRef<HomeSheetRef>(null);
+  // 검색 복귀 params (MSG-297 AC 3·10·11) — 검색 화면이 navigate로 전달한 목적지 좌표
+  const { lat, lng, ts } = useLocalSearchParams<{
+    lat?: string;
+    lng?: string;
+    ts?: string;
+  }>();
+  /** 검색 목적지 이동이 발생하면 초기 현재 위치 이동을 건너뛴다 — 카메라 경합 방지 (스펙 리스크 2) */
+  const movedToSearchTargetRef = useRef(false);
 
   // 타 탭에 갔다가 홈 탭으로 복귀하면 시트 2단계 재시작 (AC 13, D9).
   // 최초 마운트에도 발화하지만 시트 초기 단계(2)와 동일해 무해하다.
@@ -54,10 +63,20 @@ export const MapHomeScreen = () => {
     }, []),
   );
 
+  // 검색 복귀 카메라 이동 (MSG-297 AC 3·10·11) — ts는 요청 식별자: 같은 구를
+  // 연속 선택해도 params가 달라져 재이동한다. 초기 현재 위치 이동보다 우선.
+  useEffect(() => {
+    if (typeof lat !== "string" || typeof lng !== "string" || !ts) return;
+    movedToSearchTargetRef.current = true;
+    mapRef.current?.moveTo({ lat: Number(lat), lng: Number(lng) });
+  }, [lat, lng, ts]);
+
   useEffect(() => {
     // 초기 중심 결정 (AC 2): 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만
-    // 현재 위치로 이동한다 — 폴백(SEOMYEON_CENTER)은 동일 객체 참조라 이동 생략
+    // 현재 위치로 이동한다 — 폴백(SEOMYEON_CENTER)은 동일 객체 참조라 이동 생략.
+    // 검색 목적지 이동이 먼저 발생했으면 늦게 도착한 위치 조회로 카메라를 덮지 않는다 (MSG-297)
     void resolveMapCenter().then((center) => {
+      if (movedToSearchTargetRef.current) return;
       if (center !== SEOMYEON_CENTER) mapRef.current?.moveTo(center);
     });
   }, []);
@@ -88,7 +107,18 @@ export const MapHomeScreen = () => {
           style={{ paddingTop: insets.top }}
         >
           <View className="flex-row items-center gap-sm px-md pt-sm">
-            <SearchBar className="flex-1" placeholder="장소, 격자, 영상 검색" />
+            {/* 검색바 = 검색 화면 진입점 (MSG-297 AC 1) — 홈에서는 타이핑 불가:
+                editable=false + pointerEvents 차단으로 탭 전체가 화면 전환만 한다 */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="검색 화면 열기"
+              onPress={() => router.push("/search")}
+              className="flex-1 active:opacity-80"
+            >
+              <View pointerEvents="none">
+                <SearchBar placeholder="장소, 격자, 영상 검색" editable={false} />
+              </View>
+            </Pressable>
             <Avatar size="md" fallback="나" />
           </View>
           <ScrollView
