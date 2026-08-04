@@ -2363,6 +2363,32 @@
           "is_fragment": false
         }
       ]
+    },
+    {
+      "id": "b20e712366813dbe",
+      "note": "MSG-297 D1 의도 중복 — 웹 explore/recent-history.ts를 apps/mobile로 복제, recent-history.parity.test.ts가 웹 원본 직접 import 동등성 단정으로 계약 고정 (승격 보류 근거는 스펙 D1 관례)",
+      "members": [
+        {
+          "id": "52c7fbcde9c21b90",
+          "source_digest": "fnv1a64:d01b183ab9d7dcf2",
+          "file": "apps/mobile/src/features/search/model/recent-history.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 35,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e64f295808e20253",
+          "source_digest": "fnv1a64:dcf017334c470fb2",
+          "file": "apps/web/src/features/explore/model/recent-history.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 33,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
     }
   ]
 }
