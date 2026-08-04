@@ -1,0 +1,14 @@
+/**
+ * 카카오 로그인 시작 스텁 (MSG-293 — OAuth 실연동은 제외 범위).
+ * 탭 호출을 관찰 가능하게 하는 no-op + __DEV__ 로그만 수행하며, 화면 전환·상태 변경은 없다
+ * (인증 스토어·세션 상태는 아직 만들지 않는다 — 단순성 우선).
+ * 실연동 티켓에서 이 함수 본문을 카카오 인가 요청으로 교체한다 — 교체 지점은 이 함수 하나다.
+ */
+export const startKakaoLogin = (): void => {
+  // typeof 가드: __DEV__는 Metro 주입 전역이라 RN 밖(vitest node)에는 없다 — bare 참조는 ReferenceError
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    console.log(
+      "[auth] startKakaoLogin 호출 — 카카오 로그인 시작 (스텁, 실연동 전)",
+    );
+  }
+};
