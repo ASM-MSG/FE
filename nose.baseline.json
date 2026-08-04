@@ -383,34 +383,6 @@
       ]
     },
     {
-      "id": "28add6e54cc17637",
-      "note": "consolidate `toRadians` — 2 copies",
-      "members": [
-        {
-          "id": "f644d873b7b51364",
-          "source_digest": "fnv1a64:2d266d33978f337d",
-          "file": "apps/web/src/entities/cell/model/grid.test.ts",
-          "lang": "typescript",
-          "start_line": 13,
-          "end_line": 13,
-          "kind": "Function",
-          "name": "toRadians",
-          "is_fragment": false
-        },
-        {
-          "id": "c0afb4b441847284",
-          "source_digest": "fnv1a64:2d266d33978f337d",
-          "file": "apps/web/src/entities/cell/model/grid.ts",
-          "lang": "typescript",
-          "start_line": 27,
-          "end_line": 27,
-          "kind": "Function",
-          "name": "toRadians",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "305c9395376f6359",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -2258,6 +2230,32 @@
           "end_line": 28,
           "kind": "Function",
           "name": "fixtureCell",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d6e0be2d85d6d01f",
+      "note": "MSG-294 D1 의도 중복 — 웹 grid.ts를 apps/mobile로 복제, grid.parity.test.ts 동등성 테스트가 계약 고정 (승격 보류 근거는 스펙 D1)",
+      "members": [
+        {
+          "id": "ba1cc548bd1c6a1b",
+          "source_digest": "fnv1a64:c89bb1bf81448cd5",
+          "file": "apps/web/src/entities/cell/model/grid.ts",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 59,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e99ef42f04b62981",
+          "source_digest": "fnv1a64:416c8683bf323609",
+          "file": "apps/mobile/src/entities/cell/model/grid.ts",
+          "lang": "typescript",
+          "start_line": 24,
+          "end_line": 67,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
