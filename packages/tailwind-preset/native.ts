@@ -8,9 +8,12 @@
 import type { Config } from "tailwindcss";
 import { preset } from "./index";
 
-/** ui-native가 사용하는 v3 기본 스케일 밖 숫자 스텝 (값 = n × 4px, v4 동적 스케일과 동일) */
+/**
+ * ui-native·apps/mobile이 사용하는 v3 기본 스케일 밖 숫자 스텝 (값 = n × 4px, v4 동적 스케일과 동일).
+ * 4.5(카카오 로고 18px)·15.5(카카오 버튼 62px)·52.5(로그인 halo 210px)는 MSG-293 로그인 화면 보충.
+ */
 const nativeSpacingSteps = [
-  0.75, 5.5, 7.5, 15, 19.5, 21, 22, 26, 35, 120,
+  0.75, 4.5, 5.5, 7.5, 15, 15.5, 19.5, 21, 22, 26, 35, 52.5, 120,
 ] as const;
 
 export const nativePreset: Omit<Config, "content"> = {
