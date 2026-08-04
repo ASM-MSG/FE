@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -66,7 +66,7 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
     /** 시트 단계 — 최초 진입 2단계 (AC 10, D11) */
     const [stage, setStage] = useState<SheetStage>(2);
     const [sort, setSort] = useState<GridVideoSort>("popular");
-    const videos = sortGridVideos(MOCK_GRID_VIDEOS, sort);
+    const videos = useMemo(() => sortGridVideos(MOCK_GRID_VIDEOS, sort), [sort]);
 
     const translateY = useSharedValue(0);
     const startY = useSharedValue(0);
@@ -165,6 +165,10 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
               ]}
             >
               <View className="flex-1 gap-sm rounded-t-xl bg-surface-elevated px-md pt-2.5 shadow-sheet">
+                {/* 핸들 탭 = 비제스처 확장/축소 경로 — "전체 보기" 폐기(구 AC 19)로 드래그 전용이 된
+                    1단계 도달의 동등 대체 수단 복원 (a11y). 터치 목표 48px(h-12) 확보를 위해
+                    투명 오버레이로 두고 핸들 바는 시각 전용 — 레이아웃(피크 높이 산식) 불변.
+                    터치 핸들러 없는 형제(핸들·타이틀)는 히트 테스트를 통과시키므로 탭이 여기 닿는다 */}
                 <View className="items-center">
                   <View className="h-1 w-9 rounded-full bg-hairline-strong" />
                 </View>
@@ -215,6 +219,16 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
                     </ScrollView>
                   </GestureDetector>
                 </View>
+                {/* 핸들 탭 = 비제스처 확장/축소 대체 수단 (a11y — 구 AC 19 "전체 보기" 폐기 보완).
+                    최상위(마지막 자식) 투명 오버레이로 터치 목표 48px 확보 — 시각·레이아웃 불변.
+                    칩 행은 y≈57부터라 48px 오버레이와 겹치지 않는다 */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={stage === 1 ? "시트 접기" : "시트 펼치기"}
+                  onPress={() => goToStage(stage === 1 ? 3 : 1)}
+                  className="absolute inset-x-0 top-0"
+                  style={{ height: 48 }}
+                />
               </View>
             </Animated.View>
           </GestureDetector>

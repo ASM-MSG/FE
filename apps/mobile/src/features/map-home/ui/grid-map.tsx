@@ -22,12 +22,6 @@ export const DEFAULT_ZOOM = 16;
 const CELL_OUTLINE_COLOR = `${semantic.primary}80`;
 const CELL_FILL_COLOR = `${semantic.primary}0D`;
 
-/** 카메라 스냅샷 — 격자 썸네일 뷰에 "직전 지도 영역"을 전달하기 위한 계약 (AC 13) */
-export interface GridMapCamera {
-  center: LatLng;
-  zoom: number;
-}
-
 export interface GridMapRef {
   /** 카메라를 해당 좌표로 애니메이션 이동 — 내 위치 버튼 (AC 8) */
   moveTo: (center: LatLng) => void;
@@ -36,12 +30,6 @@ export interface GridMapRef {
 interface GridMapProps {
   initialCenter: LatLng;
   initialZoom?: number;
-  /**
-   * 카메라 이동이 끝나 정착했을 때 통지 — 홈이 직전 카메라를 기억해 격자 썸네일
-   * 뷰로 넘긴다. 매 프레임 발화하는 onCameraChanged 대신 idle 시점만 쓴다
-   * (부모 재렌더 최소화 — 격자 갱신은 내부 onCameraChanged가 계속 담당).
-   */
-  onCameraIdle?: (camera: GridMapCamera) => void;
 }
 
 /**
@@ -50,7 +38,7 @@ interface GridMapProps {
  * 폴리곤 오버레이로 그린다 — 이동 시 격자가 새 뷰포트를 덮도록 갱신 (AC 6).
  */
 export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
-  { initialCenter, initialZoom = DEFAULT_ZOOM, onCameraIdle },
+  { initialCenter, initialZoom = DEFAULT_ZOOM },
   ref,
 ) {
   const mapRef = useRef<NaverMapViewRef>(null);
@@ -89,12 +77,6 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             zoom ?? initialZoom,
           ),
         );
-      }}
-      onCameraIdle={({ latitude, longitude, zoom }) => {
-        onCameraIdle?.({
-          center: { lat: latitude, lng: longitude },
-          zoom: zoom ?? initialZoom,
-        });
       }}
     >
       {cells.map((cell) => (
