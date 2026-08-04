@@ -1,11 +1,25 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import {
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   NaverMapPolygonOverlay,
+  NaverMapPolylineOverlay,
   NaverMapView,
   type NaverMapViewRef,
 } from "@mj-studio/react-native-naver-map";
 import { semantic } from "@fillmap/design-tokens";
-import type { LatLng } from "../../../entities/cell/model/grid";
+import {
+  cellBoundsAt,
+  cellIndexAt,
+  type GridCellIndex,
+  type LatLng,
+} from "../../../entities/cell/model/grid";
+import { cellIdFor } from "../../../entities/cell/model/cell-id";
+import { buildDashedRectOutline } from "../model/dashed-outline";
 import { buildVisibleCells, type VisibleCell } from "../model/visible-grid";
 
 /**
@@ -22,6 +36,10 @@ export const DEFAULT_ZOOM = 16;
 const CELL_OUTLINE_COLOR = `${semantic.primary}80`;
 const CELL_FILL_COLOR = `${semantic.primary}0D`;
 
+/** 선택 격자 강조 (MSG-296 AC 2) — Figma 14094:4194: primary 15% 채움 + primary 점선 2px */
+const HIGHLIGHT_FILL_COLOR = `${semantic.primary}26`;
+const HIGHLIGHT_OUTLINE_WIDTH = 2;
+
 export interface GridMapRef {
   /** 카메라를 해당 좌표로 애니메이션 이동 — 내 위치 버튼 (AC 8) */
   moveTo: (center: LatLng) => void;
@@ -30,6 +48,17 @@ export interface GridMapRef {
 interface GridMapProps {
   initialCenter: LatLng;
   initialZoom?: number;
+  /** 격자 전체 오버레이 표시 여부 (기본 true) — 상세 지도는 선택 격자만 표시 (MSG-296 추정 5) */
+  showCellGrid?: boolean;
+  /** SDK 기본 줌 컨트롤(+/−) 표시 여부 (기본 true — 홈 불변). 상세 지도는 Figma에 없어 숨긴다 (MSG-296 검증 재작업 2, 핀치 줌은 유지) */
+  showZoomControls?: boolean;
+  /** 격자 셀 탭 (MSG-296 AC 1) — 탭 좌표 → cellIndexAt → 인코딩 셀 id */
+  onCellTap?: (cellId: string, index: GridCellIndex) => void;
+  /**
+   * 점선 강조할 셀 (MSG-296 AC 2) — 폴리곤 outline이 점선 미지원이고 폴리라인
+   * pattern prop은 v2.9.0에서 네이티브로 전달되지 않아 dash 세그먼트 폴리라인으로 그린다.
+   */
+  highlightCell?: GridCellIndex;
 }
 
 /**
@@ -38,11 +67,32 @@ interface GridMapProps {
  * 폴리곤 오버레이로 그린다 — 이동 시 격자가 새 뷰포트를 덮도록 갱신 (AC 6).
  */
 export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
-  { initialCenter, initialZoom = DEFAULT_ZOOM },
+  {
+    initialCenter,
+    initialZoom = DEFAULT_ZOOM,
+    showCellGrid = true,
+    showZoomControls = true,
+    onCellTap,
+    highlightCell,
+  },
   ref,
 ) {
   const mapRef = useRef<NaverMapViewRef>(null);
   const [cells, setCells] = useState<VisibleCell[]>([]);
+
+  const highlight = useMemo(() => {
+    if (!highlightCell) return null;
+    const bounds = cellBoundsAt(highlightCell);
+    return {
+      fillCoords: [
+        { latitude: bounds.sw.lat, longitude: bounds.sw.lng },
+        { latitude: bounds.sw.lat, longitude: bounds.ne.lng },
+        { latitude: bounds.ne.lat, longitude: bounds.ne.lng },
+        { latitude: bounds.ne.lat, longitude: bounds.sw.lng },
+      ],
+      dashes: buildDashedRectOutline(bounds),
+    };
+  }, [highlightCell]);
 
   useImperativeHandle(ref, () => ({
     moveTo: (center) => {
@@ -64,7 +114,9 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         longitude: initialCenter.lng,
         zoom: initialZoom,
       }}
+      isShowZoomControls={showZoomControls}
       onCameraChanged={({ zoom, region }) => {
+        if (!showCellGrid) return;
         setCells(
           buildVisibleCells(
             {
@@ -78,6 +130,14 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
           ),
         );
       }}
+      onTapMap={
+        onCellTap
+          ? ({ latitude, longitude }) => {
+              const index = cellIndexAt({ lat: latitude, lng: longitude });
+              onCellTap(cellIdFor(index), index);
+            }
+          : undefined
+      }
     >
       {cells.map((cell) => (
         <NaverMapPolygonOverlay
@@ -93,6 +153,25 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
           outlineWidth={1}
         />
       ))}
+      {highlight && (
+        <>
+          <NaverMapPolygonOverlay
+            coords={highlight.fillCoords}
+            color={HIGHLIGHT_FILL_COLOR}
+          />
+          {highlight.dashes.map(([from, to]) => (
+            <NaverMapPolylineOverlay
+              key={`${from.lat},${from.lng}:${to.lat},${to.lng}`}
+              coords={[
+                { latitude: from.lat, longitude: from.lng },
+                { latitude: to.lat, longitude: to.lng },
+              ]}
+              color={semantic.primary}
+              width={HIGHLIGHT_OUTLINE_WIDTH}
+            />
+          ))}
+        </>
+      )}
     </NaverMapView>
   );
 });

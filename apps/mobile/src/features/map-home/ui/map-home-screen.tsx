@@ -42,8 +42,8 @@ const NAV_BAR_HEIGHT = 64;
  * 전 단계 동일 콘텐츠다 (AC 10 통일 — 구 AC 19 "전체 보기"는 폐기).
  */
 export const MapHomeScreen = () => {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<GridMapRef>(null);
   const sheetRef = useRef<HomeSheetRef>(null);
   // 검색 복귀 params (MSG-297 AC 3·10·11) — 검색 화면이 navigate로 전달한 목적지 좌표
@@ -98,7 +98,12 @@ export const MapHomeScreen = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-background">
         <View className="absolute inset-0">
-          <GridMap ref={mapRef} initialCenter={SEOMYEON_CENTER} />
+          {/* 격자 탭 → 격자 상세 진입 (MSG-296 AC 1) */}
+          <GridMap
+            ref={mapRef}
+            initialCenter={SEOMYEON_CENTER}
+            onCellTap={(cellId) => router.push(`/grid/${cellId}`)}
+          />
         </View>
 
         <View
