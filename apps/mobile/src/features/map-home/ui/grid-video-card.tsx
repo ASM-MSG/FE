@@ -2,11 +2,8 @@ import { Text, View } from "react-native";
 import { Play } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { Thumbnail, cx } from "@fillmap/ui-native";
+import { formatDuration } from "../../../shared/format";
 import type { GridVideoSummary } from "../model/mock-grid-videos";
-
-/** 초 → "m:ss" 뱃지 표기 (예: 24 → "0:24") — 표시 전용 포맷 */
-const formatDuration = (sec: number) =>
-  `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
 interface GridVideoCardProps {
   video: GridVideoSummary;

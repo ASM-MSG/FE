@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { ScrollView, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Flame, PartyPopper, Route, Store } from "lucide-react-native";
 import { palette } from "@fillmap/design-tokens";
 import {
@@ -42,6 +42,7 @@ const NAV_BAR_HEIGHT = 64;
  * 전 단계 동일 콘텐츠다 (AC 10 통일 — 구 AC 19 "전체 보기"는 폐기).
  */
 export const MapHomeScreen = () => {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<GridMapRef>(null);
   const sheetRef = useRef<HomeSheetRef>(null);
@@ -79,7 +80,12 @@ export const MapHomeScreen = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-background">
         <View className="absolute inset-0">
-          <GridMap ref={mapRef} initialCenter={SEOMYEON_CENTER} />
+          {/* 격자 탭 → 격자 상세 진입 (MSG-296 AC 1) */}
+          <GridMap
+            ref={mapRef}
+            initialCenter={SEOMYEON_CENTER}
+            onCellTap={(cellId) => router.push(`/grid/${cellId}`)}
+          />
         </View>
 
         <View
