@@ -1,47 +1,57 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ScrollView, View } from "react-native";
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
+import { Flame, PartyPopper, Route, Store } from "lucide-react-native";
+import { palette } from "@fillmap/design-tokens";
 import {
   Avatar,
-  BottomSheet,
   Chip,
   Fab,
   MapIconButton,
   SearchBar,
 } from "@fillmap/ui-native";
 import { SEOMYEON_CENTER, resolveMapCenter } from "../../../shared/geolocation";
-import {
-  MOCK_GRID_COUNT,
-  MOCK_GRID_VIDEOS,
-  MOCK_VIDEO_TOTAL,
-} from "../model/mock-grid-videos";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
-import { DEFAULT_ZOOM, GridMap } from "./grid-map";
-import type { GridMapCamera, GridMapRef } from "./grid-map";
-import { GridVideoCard } from "./grid-video-card";
-
-/** 카테고리 칩 4종 (AC 7) — 탭 동작은 검색·필터 제외 범위 */
-const CATEGORY_CHIPS = ["핫구역", "지역축제", "팝업스토어", "경로추천"];
+import { PEEK_HEIGHT } from "../model/sheet-snap";
+import { GridMap } from "./grid-map";
+import type { GridMapRef } from "./grid-map";
+import { HomeSheet } from "./home-sheet";
+import type { HomeSheetRef } from "./home-sheet";
 
 /**
- * 지도 홈 (Figma 14094:3981) — 네이버 지도 + 격자 오버레이 위에
- * 검색바·칩·내 위치·FAB·피크 바텀시트·바텀 내비를 얹는다 (AC 5~12).
+ * 카테고리 칩 4종 + 리딩 아이콘 (AC 7, D10) — 웹 정본 ThemeChipsBar CHIP_VIEW와
+ * 동일 매핑(핫구역=Flame·지역축제=PartyPopper·팝업스토어=Store·경로추천=Route,
+ * 테마 토큰 색). 탭 동작은 검색·필터 제외 범위.
+ */
+const CATEGORY_CHIPS = [
+  { label: "핫구역", Icon: Flame, color: palette["theme-hot"] },
+  { label: "지역축제", Icon: PartyPopper, color: palette["theme-festival"] },
+  { label: "팝업스토어", Icon: Store, color: palette["theme-popup"] },
+  { label: "경로추천", Icon: Route, color: palette["theme-route"] },
+] as const;
+
+/** BottomNav 바 실높이(h-16=64px) — 카메라 돌출부(상단 20px)는 시트 위로 겹친다 */
+const NAV_BAR_HEIGHT = 64;
+
+/**
+ * 지도 홈 (Figma 14094:3981, 2차: 한 화면 통합 — D9) — 네이버 지도 + 격자 오버레이 위에
+ * 검색바·칩·내 위치·FAB·4단계 드래그 시트·바텀 내비를 얹는다 (AC 5~16·19).
+ * 구 격자 썸네일 뷰(별도 라우트)의 콘텐츠는 시트 1~2단계로 이관되었다.
  */
 export const MapHomeScreen = () => {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<GridMapRef>(null);
-  /** 직전 카메라(정착 시점 스냅샷) — 격자 썸네일 뷰 상단 지도에 그대로 넘긴다 (AC 13) */
-  const [lastCamera, setLastCamera] = useState<GridMapCamera>({
-    center: SEOMYEON_CENTER,
-    zoom: DEFAULT_ZOOM,
-  });
+  const sheetRef = useRef<HomeSheetRef>(null);
+
+  // 타 탭에 갔다가 홈 탭으로 복귀하면 시트 2단계 재시작 (AC 13, D9).
+  // 최초 마운트에도 발화하지만 시트 초기 단계(2)와 동일해 무해하다.
+  useFocusEffect(
+    useCallback(() => {
+      sheetRef.current?.snapTo(2);
+    }, []),
+  );
 
   useEffect(() => {
     // 초기 중심 결정 (AC 2): 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만
@@ -56,39 +66,19 @@ export const MapHomeScreen = () => {
     void resolveMapCenter().then((center) => mapRef.current?.moveTo(center));
   };
 
-  /** 전체 보기·시트 스와이프 업 공용 진입 (AC 11) — 직전 카메라를 파라미터로 전달 */
-  const openGridVideos = () => {
-    const { center, zoom } = lastCamera;
-    router.push({
-      pathname: "/grid-videos",
-      params: {
-        lat: String(center.lat),
-        lng: String(center.lng),
-        zoom: String(zoom),
-      },
-    });
+  /** 4단계(숨김)에서 홈 탭 재탭 = 2단계 복귀 (AC 13, D12) — 그립이 없어 유일한 복귀 수단 */
+  const handleHomeRetap = () => {
+    sheetRef.current?.restoreIfHidden();
   };
 
-  // 시트 위로 스와이프 → 전체 보기와 동일 전환 (D4 — 연속 드래그 애니메이션은 범위 밖).
-  // 수직 위 방향에서만 활성화해 시트 안 가로 스크롤과 충돌하지 않게 한다.
-  const swipeUp = Gesture.Pan()
-    .runOnJS(true)
-    .activeOffsetY(-12)
-    .failOffsetY(12)
-    .failOffsetX([-16, 16])
-    .onEnd((event) => {
-      if (event.translationY < -24) openGridVideos();
-    });
+  /** 시트 컨테이너·바텀 내비 하단 오프셋 — 내비 바는 전 단계 상시 노출 (AC 16) */
+  const bottomOffset = insets.bottom + NAV_BAR_HEIGHT;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-background">
         <View className="absolute inset-0">
-          <GridMap
-            ref={mapRef}
-            initialCenter={SEOMYEON_CENTER}
-            onCameraIdle={setLastCamera}
-          />
+          <GridMap ref={mapRef} initialCenter={SEOMYEON_CENTER} />
         </View>
 
         <View
@@ -106,44 +96,36 @@ export const MapHomeScreen = () => {
             className="mt-sm"
             contentContainerClassName="gap-xs px-md"
           >
-            {CATEGORY_CHIPS.map((label) => (
-              <Chip key={label} text={label} className="shadow-raised" />
+            {/* 칩 4종 고정 배열 — 규칙 문서 suppress-when(10행 미만 고정 배열, 가상화 이득 없음) 해당 */}
+            {/* react-doctor-disable-next-line react-doctor/rn-no-scrollview-mapped-list */}
+            {CATEGORY_CHIPS.map(({ label, Icon, color }) => (
+              <Chip
+                key={label}
+                text={label}
+                icon={<Icon size={14} color={color} />}
+                className="shadow-raised"
+              />
             ))}
           </ScrollView>
         </View>
 
-        <View className="absolute inset-x-0 bottom-0">
-          <View
-            pointerEvents="box-none"
-            className="items-end gap-2.5 px-md pb-sm"
-          >
-            <MapIconButton icon="locate" onPress={handleLocate} />
-            <Fab accessibilityLabel="기록하기" />
-          </View>
-          <GestureDetector gesture={swipeUp}>
-            <BottomSheet
-              title={`이 지역 격자 ${MOCK_GRID_COUNT}개 · 영상 ${MOCK_VIDEO_TOTAL}개`}
-              actionLabel="전체 보기"
-              onAction={openGridVideos}
-            >
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerClassName="gap-2.5 pb-5"
-              >
-                {MOCK_GRID_VIDEOS.map((video) => (
-                  <GridVideoCard
-                    key={video.id}
-                    video={video}
-                    className="w-28"
-                  />
-                ))}
-              </ScrollView>
-            </BottomSheet>
-          </GestureDetector>
-          <View style={{ paddingBottom: insets.bottom }}>
-            <AppBottomNav className="-mt-5" />
-          </View>
+        {/* 내 위치·FAB — 피크 시트 바로 위 우하단. 뒤에 렌더되는 시트가 확장되면 덮인다 */}
+        <View
+          pointerEvents="box-none"
+          className="absolute inset-x-0 items-end gap-2.5 px-md"
+          style={{ bottom: bottomOffset + PEEK_HEIGHT + 12 }}
+        >
+          <MapIconButton icon="locate" onPress={handleLocate} />
+          <Fab accessibilityLabel="기록하기" />
+        </View>
+
+        <HomeSheet ref={sheetRef} bottomOffset={bottomOffset} />
+
+        <View
+          className="absolute inset-x-0 bottom-0"
+          style={{ paddingBottom: insets.bottom }}
+        >
+          <AppBottomNav onHomeRetap={handleHomeRetap} />
         </View>
       </View>
     </GestureHandlerRootView>

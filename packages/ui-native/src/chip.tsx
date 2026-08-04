@@ -1,4 +1,5 @@
 import { Pressable, Text } from "react-native";
+import type { ReactNode } from "react";
 import { Check } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import type { ChipBaseProps } from "@fillmap/design-tokens";
@@ -6,6 +7,11 @@ import { cx } from "./lib/cx";
 
 interface ChipProps extends ChipBaseProps {
   text: string;
+  /**
+   * 리딩 아이콘 슬롯 (MSG-294 D10) — 텍스트 왼쪽에 렌더된다. 미지정 시 렌더 불변.
+   * RN은 currentColor 상속이 없으므로 아이콘 색은 호출부가 design-tokens 값으로 전달한다.
+   */
+  icon?: ReactNode;
   onPress?: () => void;
   className?: string;
 }
@@ -17,9 +23,12 @@ interface ChipProps extends ChipBaseProps {
  *
  * @example
  * <Chip text="부산진구" active onPress={onToggle} />
+ * @example
+ * <Chip text="핫구역" icon={<Flame size={14} color={palette["theme-hot"]} />} />
  */
 export const Chip = ({
   text,
+  icon,
   active = false,
   disabled,
   onPress,
@@ -37,6 +46,7 @@ export const Chip = ({
       className,
     )}
   >
+    {icon}
     {active && <Check size={12} strokeWidth={3} color={semantic.onPrimary} />}
     <Text
       className={cx(

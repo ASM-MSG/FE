@@ -12,7 +12,9 @@ export const sortGridVideos = (
   videos: GridVideoSummary[],
   sort: GridVideoSort,
 ): GridVideoSummary[] =>
-  videos.toSorted((a, b) =>
+  // Hermes 0.17(RN 0.86)에 Array.prototype.toSorted 미구현 — 사용 시 런타임 크래시. 스프레드 복사+sort가 안전 경로
+  // react-doctor-disable-next-line js-tosorted-immutable
+  [...videos].sort((a, b) =>
     sort === "popular"
       ? b.videoCount - a.videoCount
       : Date.parse(b.registeredAt) - Date.parse(a.registeredAt),
