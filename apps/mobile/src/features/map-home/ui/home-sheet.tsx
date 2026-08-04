@@ -66,7 +66,10 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
     /** 시트 단계 — 최초 진입 2단계 (AC 10, D11) */
     const [stage, setStage] = useState<SheetStage>(2);
     const [sort, setSort] = useState<GridVideoSort>("popular");
-    const videos = useMemo(() => sortGridVideos(MOCK_GRID_VIDEOS, sort), [sort]);
+    const videos = useMemo(
+      () => sortGridVideos(MOCK_GRID_VIDEOS, sort),
+      [sort],
+    );
 
     const translateY = useSharedValue(0);
     const startY = useSharedValue(0);
@@ -165,10 +168,7 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
               ]}
             >
               <View className="flex-1 gap-sm rounded-t-xl bg-surface-elevated px-md pt-2.5 shadow-sheet">
-                {/* 핸들 탭 = 비제스처 확장/축소 경로 — "전체 보기" 폐기(구 AC 19)로 드래그 전용이 된
-                    1단계 도달의 동등 대체 수단 복원 (a11y). 터치 목표 48px(h-12) 확보를 위해
-                    투명 오버레이로 두고 핸들 바는 시각 전용 — 레이아웃(피크 높이 산식) 불변.
-                    터치 핸들러 없는 형제(핸들·타이틀)는 히트 테스트를 통과시키므로 탭이 여기 닿는다 */}
+                {/* 핸들 바 — 시각 전용. 탭 동작은 하단의 48px 오버레이 Pressable이 담당 */}
                 <View className="items-center">
                   <View className="h-1 w-9 rounded-full bg-hairline-strong" />
                 </View>
