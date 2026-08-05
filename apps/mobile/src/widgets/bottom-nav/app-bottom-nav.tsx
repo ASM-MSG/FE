@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { semantic } from "@fillmap/design-tokens";
 import { BottomNav, type BottomNavItem } from "@fillmap/ui-native";
 
-/** 탭 키 → 라우트 (AC 12) — 촬영은 BottomNav 내장 카메라 버튼이라 여기 없음(동작 없음, 제외 범위) */
+/** 탭 키 → 라우트 (AC 12) — 촬영은 BottomNav 내장 카메라 버튼: onCamera → /upload (MSG-302 AC 1) */
 const TAB_ROUTES = {
   home: "/home",
   explore: "/explore",
@@ -39,8 +39,11 @@ export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
-  const activeKey =
-    TAB_META.find((tab) => TAB_ROUTES[tab.key] === pathname)?.key ?? "home";
+  // 매칭 없는 라우트(/upload 등)에서는 활성 탭 없음 — 홈 폴백 제거 (MSG-302 리스크 3,
+  // 기존 탭 라우트에서는 항상 매칭되므로 동작 변화 없음)
+  const activeKey = TAB_META.find(
+    (tab) => TAB_ROUTES[tab.key] === pathname,
+  )?.key;
 
   const items: BottomNavItem[] = TAB_META.map(({ key, label, Icon }) => ({
     key,
@@ -63,7 +66,13 @@ export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
 
   return (
     <View className={className}>
-      <BottomNav items={items} activeKey={activeKey} onSelect={handleSelect} />
+      <BottomNav
+        items={items}
+        activeKey={activeKey}
+        onSelect={handleSelect}
+        // 중앙 카메라 버튼 → 영상 업로드 플로우 진입 (MSG-302 AC 1 — MSG-296 제외 범위였던 연결)
+        onCamera={() => router.navigate("/upload")}
+      />
       {/* 시스템 제스처 인셋 배경 채움 (AC 16 4차) — 바 배경(canvas)의 연장 */}
       <View
         style={{ height: insets.bottom, backgroundColor: semantic.canvas }}

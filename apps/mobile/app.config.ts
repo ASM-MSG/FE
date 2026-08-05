@@ -49,7 +49,18 @@ export default (_ctx: ConfigContext): ExpoConfig => ({
       },
     ],
     "expo-image",
+    // MSG-302: 갤러리 선택·카메라 촬영 권한 문구 (iOS Info.plist 주입)
+    [
+      "expo-image-picker",
+      {
+        photosPermission: "영상을 업로드하려면 갤러리 접근 권한이 필요해요.",
+        cameraPermission: "영상을 촬영하려면 카메라 접근 권한이 필요해요.",
+        microphonePermission: "영상을 촬영하려면 마이크 접근 권한이 필요해요.",
+      },
+    ],
     "expo-location",
+    // MSG-304: 블러 확인 화면 프리뷰 재생 (expo install 안내에 따른 플러그인 등록)
+    "expo-video",
     [
       "@mj-studio/react-native-naver-map",
       {
