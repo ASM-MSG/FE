@@ -2417,25 +2417,25 @@
       ]
     },
     {
-      "id": "102471f44c875b00",
+      "id": "ad73329c59b8f374",
       "note": "local duplication — extract a method from the repeated block — high-parameter (8 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
         {
-          "id": "bc898de7a91154e6",
-          "source_digest": "fnv1a64:085e3458ddd063d2",
+          "id": "a36245123dc6b441",
+          "source_digest": "fnv1a64:31f13b706ab86d85",
           "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
           "lang": "typescript",
-          "start_line": 1,
+          "start_line": 20,
           "end_line": 62,
           "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "3318de1007b14deb",
-          "source_digest": "fnv1a64:7846252f9dc908a5",
+          "id": "357604d8f1abaf20",
+          "source_digest": "fnv1a64:830e2751866efefe",
           "file": "apps/mobile/src/features/map-home/ui/grid-video-card.tsx",
           "lang": "typescript",
-          "start_line": 1,
+          "start_line": 20,
           "end_line": 50,
           "kind": "Block",
           "is_fragment": false
@@ -2528,6 +2528,120 @@
           "lang": "typescript",
           "start_line": 6,
           "end_line": 85,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "0251ae3ec2217b2a",
+      "note": "MSG-300 의도 중복 — Pressable+Text 마크업 골격 3곳(dex 갤러리 전체 보기 링크·modal-card 취소 버튼·bottom-sheet 액션 라벨). 0 shared lines·onPress/스타일/문구 전부 상이 — 공통화는 억지 추상화 (MSG-301: dex-screen 라인 이동으로 갱신 재등재)",
+      "members": [
+        {
+          "id": "0294601d0fbea2c1",
+          "source_digest": "fnv1a64:d5152ff6e816ec8b",
+          "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
+          "lang": "typescript",
+          "start_line": 166,
+          "end_line": 174,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "1802a8aa9d352219",
+          "source_digest": "fnv1a64:cb10de51230de7b3",
+          "file": "packages/ui-native/src/modal-card.tsx",
+          "lang": "typescript",
+          "start_line": 87,
+          "end_line": 95,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "19d1904fcad97b00",
+          "source_digest": "fnv1a64:3c1322d76b72004f",
+          "file": "packages/ui-native/src/bottom-sheet.tsx",
+          "lang": "typescript",
+          "start_line": 55,
+          "end_line": 61,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "2c22a4a00aebba80",
+      "note": "MSG-299 의도 중복 — 라벨+값 세로 칼럼 뷰 3곳(dex StatItem·방문 기록 행 제목부·grid-detail 스탯). 타이포·데이터 형태가 서로 달라 공통화는 억지 추상화 (nose 제안도 'data shape 일치 시에만') (MSG-301: dex-screen 라인 이동으로 갱신 재등재)",
+      "members": [
+        {
+          "id": "872eee6e6ce2b2d0",
+          "source_digest": "fnv1a64:8ae424d7b7e58170",
+          "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
+          "lang": "typescript",
+          "start_line": 146,
+          "end_line": 153,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "f6b815fc5100c9a4",
+          "source_digest": "fnv1a64:824e716c1ae6c7e1",
+          "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 35,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "6452c2aa4d86ba12",
+          "source_digest": "fnv1a64:53c2fc3fc37da918",
+          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
+          "lang": "typescript",
+          "start_line": 22,
+          "end_line": 25,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "7b21e36675799c4d",
+      "note": "MSG-301 의도 중복 — 뱃지 mock 리터럴(구현 vs 테스트 단정: 테스트가 곧 스펙 번역이라 리터럴 중복이 의도)과 SEOUL_PLACE_NAMES 가드 목록(이전 티켓 테스트 파일 불변 원칙에 따른 복제 — mock-collection·mock-gallery 테스트와 동일 선례, 스펙 리스크 항목 승인)",
+      "members": [
+        {
+          "id": "1a16b5742620029f",
+          "source_digest": "fnv1a64:cd492b9b3ade820e",
+          "file": "apps/mobile/src/features/dex/model/mock-badges.test.ts",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 21,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "d4fc940e2ce91b41",
+          "source_digest": "fnv1a64:aa6e9aaff1c8f45f",
+          "file": "apps/mobile/src/features/dex/model/badge-grid.test.ts",
+          "lang": "typescript",
+          "start_line": 3,
+          "end_line": 21,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "026fbba36d4d728b",
+          "source_digest": "fnv1a64:3a000b983cf5ddb7",
+          "file": "apps/mobile/src/features/dex/model/mock-badges.ts",
+          "lang": "typescript",
+          "start_line": 14,
+          "end_line": 21,
           "kind": "Block",
           "is_fragment": false
         }

@@ -1,6 +1,6 @@
-import { TabStubScreen } from "../widgets/tab-stub/tab-stub-screen";
+import { DexScreen } from "../features/dex/ui/dex-screen";
 
-/** 도감 스텁 라우트 (AC 12) — 실화면은 티켓 제외 범위 */
+/** 개인 도감 라우트 (MSG-299) — 스텁을 실화면으로 교체 */
 export default function Dex() {
-  return <TabStubScreen title="도감" />;
+  return <DexScreen />;
 }
