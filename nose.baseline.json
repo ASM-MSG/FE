@@ -2417,25 +2417,25 @@
       ]
     },
     {
-      "id": "102471f44c875b00",
+      "id": "ad73329c59b8f374",
       "note": "local duplication — extract a method from the repeated block — high-parameter (8 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
         {
-          "id": "bc898de7a91154e6",
-          "source_digest": "fnv1a64:085e3458ddd063d2",
+          "id": "a36245123dc6b441",
+          "source_digest": "fnv1a64:31f13b706ab86d85",
           "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
           "lang": "typescript",
-          "start_line": 1,
+          "start_line": 20,
           "end_line": 62,
           "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "3318de1007b14deb",
-          "source_digest": "fnv1a64:7846252f9dc908a5",
+          "id": "357604d8f1abaf20",
+          "source_digest": "fnv1a64:830e2751866efefe",
           "file": "apps/mobile/src/features/map-home/ui/grid-video-card.tsx",
           "lang": "typescript",
-          "start_line": 1,
+          "start_line": 20,
           "end_line": 50,
           "kind": "Block",
           "is_fragment": false
@@ -2534,27 +2534,27 @@
       ]
     },
     {
-      "id": "af430a40a0606770",
-      "note": "MSG-299 의도 중복 — 라벨+값 세로 칼럼 뷰 3곳(dex StatItem·방문 기록 행 제목부·grid-detail 스탯). 타이포·데이터 형태가 서로 달라 공통화는 억지 추상화 (nose 제안도 'data shape 일치 시에만')",
+      "id": "6373e142dbf72ce0",
+      "note": "MSG-299 의도 중복 — 라벨+값 세로 칼럼 뷰 3곳(dex StatItem·방문 기록 행 제목부·grid-detail 스탯). 타이포·데이터 형태가 서로 달라 공통화는 억지 추상화 (nose 제안도 'data shape 일치 시에만') (MSG-300: dex-screen 라인 이동으로 갱신 재등재)",
       "members": [
         {
-          "id": "699b7be2d4e9d23e",
+          "id": "e52c481419b0020a",
           "source_digest": "fnv1a64:8ae424d7b7e58170",
           "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
           "lang": "typescript",
-          "start_line": 115,
-          "end_line": 122,
+          "start_line": 145,
+          "end_line": 152,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
         },
         {
-          "id": "e025407da5170c26",
+          "id": "3fb78bbb7d69229a",
           "source_digest": "fnv1a64:824e716c1ae6c7e1",
           "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
           "lang": "typescript",
-          "start_line": 29,
-          "end_line": 32,
+          "start_line": 31,
+          "end_line": 34,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -2568,6 +2568,45 @@
           "end_line": 25,
           "kind": "Block",
           "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "8eacce3010a78b8a",
+      "note": "MSG-300 의도 중복 — Pressable+Text 마크업 골격 3곳(dex 갤러리 전체 보기 링크·modal-card 취소 버튼·bottom-sheet 액션 라벨). 0 shared lines·onPress/스타일/문구 전부 상이 — 공통화는 억지 추상화 (nose 제안도 'data shape 일치 시에만')",
+      "members": [
+        {
+          "id": "ba9820890d247121",
+          "source_digest": "fnv1a64:d5152ff6e816ec8b",
+          "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
+          "lang": "typescript",
+          "start_line": 165,
+          "end_line": 173,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "1802a8aa9d352219",
+          "source_digest": "fnv1a64:cb10de51230de7b3",
+          "file": "packages/ui-native/src/modal-card.tsx",
+          "lang": "typescript",
+          "start_line": 87,
+          "end_line": 95,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "19d1904fcad97b00",
+          "source_digest": "fnv1a64:3c1322d76b72004f",
+          "file": "packages/ui-native/src/bottom-sheet.tsx",
+          "lang": "typescript",
+          "start_line": 55,
+          "end_line": 61,
+          "kind": "Block",
+          "name": "pressable",
           "is_fragment": false
         }
       ]
