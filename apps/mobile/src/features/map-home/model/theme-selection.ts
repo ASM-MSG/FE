@@ -5,6 +5,9 @@
  * useSyncExternalStore로 구독한다 — zustand 등 신규 의존성 금지(단순성 우선).
  * 세션 내 유지면 충분(앱 재시작 간 영속 요구 없음 — AsyncStorage 불사용).
  * X·< 전체 복귀(AC 2·3)는 setSelectedTheme(null)로 모듈 상태까지 리셋한다.
+ *
+ * 테스트 주의: 진짜 전역 싱글턴이므로 이 모듈을 (간접) import하는 테스트는
+ * beforeEach에서 setSelectedTheme(null)로 리셋해야 케이스 간 상태가 새지 않는다.
  */
 import { useSyncExternalStore } from "react";
 import type { ThemeId } from "./themes";

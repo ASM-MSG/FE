@@ -212,9 +212,11 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
           : undefined
       }
     >
+      {/* key 네임스페이스: cells·occupied·theme가 같은 "col:row" 셀 키를 쓰는 형제 목록이라
+          접두사 없이는 동일 key 충돌 (점령 셀은 기본 뷰포트 안이라 상시 겹침) */}
       {cells.map((cell) => (
         <NaverMapPolygonOverlay
-          key={cell.id}
+          key={`grid:${cell.id}`}
           coords={rectCoords(cell.bounds)}
           color={CELL_FILL_COLOR}
           outlineColor={CELL_OUTLINE_COLOR}
@@ -224,7 +226,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       {/* 내 점령 셀 — 기본 상태에도 상시 primary 채움 (AC 6, 확정 8) */}
       {occupiedPolygons.map(({ key, coords }) => (
         <NaverMapPolygonOverlay
-          key={key}
+          key={`occupied:${key}`}
           coords={coords}
           color={OCCUPIED_FILL_COLOR}
           outlineColor={OCCUPIED_OUTLINE_COLOR}
@@ -235,7 +237,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       {themeColor &&
         themePolygons.map(({ key, coords }) => (
           <NaverMapPolygonOverlay
-            key={key}
+            key={`theme:${key}`}
             coords={coords}
             color={`${themeColor}${THEME_FILL_ALPHA}`}
             outlineColor={`${themeColor}${THEME_OUTLINE_ALPHA}`}
@@ -246,7 +248,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       {themeColor &&
         hatchLines.map(({ key, segment: [from, to] }) => (
           <NaverMapPolylineOverlay
-            key={key}
+            key={`hatch:${key}`}
             coords={[
               { latitude: from.lat, longitude: from.lng },
               { latitude: to.lat, longitude: to.lng },
