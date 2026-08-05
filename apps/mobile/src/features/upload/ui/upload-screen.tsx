@@ -132,7 +132,7 @@ export const UploadScreen = () => {
             <Toast
               variant="light"
               title="AI 하이라이트 자동 추천"
-              description="5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
+              description="5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3개 구간을 추천해요"
             />
             <Toast
               variant="light"

@@ -44,16 +44,16 @@ describe("upload-flow-store (MSG-302 AC 3·10, MSG-303 AC 6·7, MSG-305 AC 3·7)
     const store = createUploadFlowStore();
     store.selectSegment(MOCK_SEGMENTS[1].id);
     expect(store.getState().selectedSegmentId).toBe(MOCK_SEGMENTS[1].id);
-    store.selectSegment(MOCK_SEGMENTS[4].id);
-    expect(store.getState().selectedSegmentId).toBe(MOCK_SEGMENTS[4].id);
+    store.selectSegment(MOCK_SEGMENTS[2].id);
+    expect(store.getState().selectedSegmentId).toBe(MOCK_SEGMENTS[2].id);
   });
 
   it("selectSelectedSegment: 선택된 구간의 시간 범위·사유를 해석한다 — 303에서 고른 구간이 305에 보인다 (305 AC 3)", () => {
     const store = createUploadFlowStore();
-    store.selectSegment(MOCK_SEGMENTS[3].id);
+    store.selectSegment(MOCK_SEGMENTS[2].id);
     const segment = selectSelectedSegment(store.getState());
-    expect(segment.timeRange).toBe("0:25 – 0:30");
-    expect(segment.reason).toBe("색감·구도 안정적");
+    expect(segment.timeRange).toBe("0:21 – 0:26");
+    expect(segment.reason).toBe("조회수 예측 상위");
   });
 
   it("selectSelectedSegment: 알 수 없는 id는 첫 구간으로 폴백한다 (305 구현 계획 — 첫 구간 폴백)", () => {
