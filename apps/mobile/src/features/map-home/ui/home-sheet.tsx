@@ -1,22 +1,26 @@
-import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
+import { Pressable, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import type { NativeGesture } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Chip } from "@fillmap/ui-native";
-import { MOCK_GRID_COUNT, MOCK_GRID_VIDEOS } from "../model/mock-grid-videos";
-import { sortGridVideos, type GridVideoSort } from "../model/sort-grid-videos";
+import type { ReactNode } from "react";
 import {
   sheetStagePositions,
   snapStage,
   type SheetStage,
 } from "../model/sheet-snap";
-import { GridVideoCard } from "./grid-video-card";
 
 /**
  * 스냅 스프링 (AC 11 4차 — 반응성 상향): 임계 감쇠(dampingRatio 1 = 오버슈트 없음)에
@@ -26,8 +30,9 @@ import { GridVideoCard } from "./grid-video-card";
 const SPRING = { duration: 220, dampingRatio: 1 };
 
 /**
- * 헤더 드래그 존(px) — 핸들(10+4)+gap(12)+타이틀(19)+gap(12)+정렬 칩(32)≈89.
- * 이 안에서 시작한 드래그는 그리드 스크롤 가드를 우회한다(헤더 드래그는 항상 시트 이동).
+ * 헤더 드래그 존(px) — 핸들(10+4)+gap(12)+헤더 행(19)+gap(12)+다음 행(32)≈89.
+ * 이 안에서 시작한 드래그는 콘텐츠 스크롤 가드를 우회한다(헤더 드래그는 항상 시트 이동).
+ * 기본·테마 콘텐츠 모두 상단 두 행 구조라 공용 근사값으로 둔다 (MSG-298 쉘 분리).
  */
 const HEADER_DRAG_ZONE = 92;
 
@@ -38,25 +43,39 @@ export interface HomeSheetRef {
   restoreIfHidden: () => void;
 }
 
+/**
+ * 시트 콘텐츠가 쉘과 접속하는 계약 (MSG-298 — 쉘/콘텐츠 분리).
+ * 콘텐츠의 스크롤 뷰는 scrollGesture로 감싸고, scrollEnabled를 따르며,
+ * 마운트 시 0과 스크롤마다 오프셋을 onScrollOffsetChange로 보고한다 —
+ * 1단계 시트 축소 가드(리스크 1·3)가 이 보고값으로 판정한다.
+ */
+export interface HomeSheetContentContext {
+  /** 콘텐츠 네이티브 스크롤을 시트 Pan과 동시 인식시키는 제스처 */
+  scrollGesture: NativeGesture;
+  /** 1단계(전체 확장)에서만 콘텐츠 스크롤 허용 */
+  scrollEnabled: boolean;
+  /** 콘텐츠 스크롤 오프셋 보고 — 콘텐츠 교체(재마운트) 시 0 보고로 가드 스테일 방지 */
+  onScrollOffsetChange: (offsetY: number) => void;
+}
+
 interface HomeSheetProps {
   /** 컨테이너 하단 오프셋 — 바텀 내비 바 높이 + safe area (내비는 전 단계 상시 노출, AC 16) */
   bottomOffset: number;
+  /** 콘텐츠 렌더 슬롯 — 쉘은 콘텐츠를 모른다 (MSG-298 구현 계획, 후속 셀 선택 콘텐츠 수용) */
+  children: (context: HomeSheetContentContext) => ReactNode;
 }
 
 /**
- * 4단계 드래그 바텀시트 (AC 10·11·13~16, D9) — 네이버 지도 앱 방식.
+ * 4단계 드래그 바텀시트 쉘 (AC 10·11·13~16, D9) — 네이버 지도 앱 방식.
  * RNGH Pan + reanimated로 손가락을 따라 연속 이동, 릴리즈 시 최근접 단계 스냅(sheet-snap).
- * ui-native BottomSheet는 정적 쉘이라 컨테이너는 자체 구현하되 핸들·라운드 등
- * 스타일 토큰 계열은 동일하게 유지한다 (스펙 구현 계획).
- * 콘텐츠: 전 단계 동일 목록(헤더 "서면 격자"·정렬 칩·2열 그리드 — 4차 통일, 구 피크 전용
- * 요약·전체 보기·가로 썸네일 폐기·AC 19 소멸). 3단계(피크)는 그 상단(헤더·정렬 칩)만
- * 보이는 높이(PEEK_HEIGHT)이고, 4단계 = 완전 숨김(그립 없음 — 복귀는 홈 탭 재탭, D12).
+ * MSG-298에서 쉘(드래그·스냅·핸들)과 콘텐츠를 분리했다 — 콘텐츠는 children 슬롯이
+ * 렌더하고(기본: DefaultSheetContent, 테마: ThemeSheetContent), 쉘은 콘텐츠를 모른다.
  * 단계 상태는 시트가 소유하고 부모는 ref 명령(snapTo·restoreIfHidden)만 내린다 —
  * prop 동기화 useEffect가 공유값 수정과 얽히는 것을 피한다 (react-hooks/immutability,
  * grid-map moveTo와 동일한 명령형 핸들 패턴).
  */
 export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
-  function HomeSheet({ bottomOffset }, ref) {
+  function HomeSheet({ bottomOffset, children }, ref) {
     const [containerH, setContainerH] = useState(0);
     const positions = useMemo(
       () => sheetStagePositions(containerH),
@@ -65,15 +84,10 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
 
     /** 시트 단계 — 최초 진입 2단계 (AC 10, D11) */
     const [stage, setStage] = useState<SheetStage>(2);
-    const [sort, setSort] = useState<GridVideoSort>("popular");
-    const videos = useMemo(
-      () => sortGridVideos(MOCK_GRID_VIDEOS, sort),
-      [sort],
-    );
 
     const translateY = useSharedValue(0);
     const startY = useSharedValue(0);
-    /** 그리드 스크롤 오프셋 — 최상단(0)에서만 아래 드래그가 시트 축소로 이어진다 (리스크 1) */
+    /** 콘텐츠 스크롤 오프셋 — 최상단(0)에서만 아래 드래그가 시트 축소로 이어진다 (리스크 1) */
     const scrollY = useSharedValue(0);
     const fromHeader = useSharedValue(false);
 
@@ -104,8 +118,16 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
       goToStage(snapStage(releaseY, positions));
     };
 
-    // 그리드의 네이티브 스크롤을 RNGH 체계에 편입 — Pan과 동시 인식 (리스크 1)
-    const scrollGesture = Gesture.Native();
+    // 콘텐츠의 네이티브 스크롤을 RNGH 체계에 편입 — Pan과 동시 인식 (리스크 1)
+    const scrollGesture = useMemo(() => Gesture.Native(), []);
+
+    /** 콘텐츠 → 쉘 스크롤 오프셋 보고 — 안정 참조(콘텐츠 마운트 효과의 재발화 방지) */
+    const handleScrollOffsetChange = useCallback(
+      (offsetY: number) => {
+        scrollY.value = offsetY;
+      },
+      [scrollY],
+    );
 
     const pan = Gesture.Pan()
       .activeOffsetY([-8, 8])
@@ -118,7 +140,7 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
         startY.value = translateY.value;
       })
       .onUpdate((event) => {
-        // 1단계에서 그리드가 스크롤된 상태면 시트는 고정(스크롤이 소비) — 그리드가
+        // 1단계에서 콘텐츠가 스크롤된 상태면 시트는 고정(스크롤이 소비) — 콘텐츠가
         // 최상단(0)으로 돌아온 뒤부터 아래 드래그가 시트 축소로 이어지도록
         // 시작점을 계속 재보정한다. 헤더에서 시작한 드래그는 항상 시트를 움직인다.
         if (
@@ -173,55 +195,15 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
                   <View className="h-1 w-9 rounded-full bg-hairline-strong" />
                 </View>
 
-                {/* 전 단계 동일 콘텐츠 (AC 10 4차 통일) — 3단계는 PEEK_HEIGHT가 헤더·정렬 칩까지만 노출 */}
-                <View className="flex-1 gap-sm">
-                  <View className="flex-row items-center">
-                    <Text className="flex-1 text-fm-title text-foreground">
-                      서면 격자
-                    </Text>
-                    <Text className="text-fm-label text-foreground-muted">
-                      {MOCK_GRID_COUNT}개
-                    </Text>
-                  </View>
-                  <View className="flex-row gap-xs">
-                    <Chip
-                      text="인기순"
-                      active={sort === "popular"}
-                      onPress={() => setSort("popular")}
-                    />
-                    <Chip
-                      text="최신순"
-                      active={sort === "latest"}
-                      onPress={() => setSort("latest")}
-                    />
-                  </View>
-                  <GestureDetector gesture={scrollGesture}>
-                    <ScrollView
-                      style={{ flex: 1 }}
-                      scrollEnabled={stage === 1}
-                      bounces={false}
-                      overScrollMode="never"
-                      scrollEventThrottle={16}
-                      showsVerticalScrollIndicator={false}
-                      onScroll={(event) => {
-                        scrollY.value = event.nativeEvent.contentOffset.y;
-                      }}
-                    >
-                      <View className="flex-row flex-wrap justify-between gap-y-md pb-9">
-                        {videos.map((video) => (
-                          <GridVideoCard
-                            key={video.id}
-                            video={video}
-                            className="w-[48%]"
-                          />
-                        ))}
-                      </View>
-                    </ScrollView>
-                  </GestureDetector>
-                </View>
+                {/* 콘텐츠 슬롯 — 3단계는 PEEK_HEIGHT가 콘텐츠 상단(헤더 행)까지만 노출 */}
+                {children({
+                  scrollGesture,
+                  scrollEnabled: stage === 1,
+                  onScrollOffsetChange: handleScrollOffsetChange,
+                })}
                 {/* 핸들 탭 = 비제스처 확장/축소 대체 수단 (a11y — 구 AC 19 "전체 보기" 폐기 보완).
                     최상위(마지막 자식) 투명 오버레이로 터치 목표 48px 확보 — 시각·레이아웃 불변.
-                    칩 행은 y≈57부터라 48px 오버레이와 겹치지 않는다 */}
+                    콘텐츠 행은 y≈57부터라 48px 오버레이와 겹치지 않는다 */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={stage === 1 ? "시트 접기" : "시트 펼치기"}

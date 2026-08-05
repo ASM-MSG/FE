@@ -25,3 +25,15 @@ export const AllStates: Story = {
     </View>
   ),
 };
+
+/** 테마 검색어 바 (MSG-298) — 좌측 뒤로가기(onBack) + 우측 지우기(onClear), 표시 전용 */
+export const ThemeQuery: Story = {
+  render: () => (
+    <SearchBar
+      value="핫구역"
+      editable={false}
+      onBack={() => {}}
+      onClear={() => {}}
+    />
+  ),
+};
