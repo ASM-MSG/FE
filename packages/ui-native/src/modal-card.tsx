@@ -21,6 +21,8 @@ interface ModalCardProps {
   onConfirm?: () => void;
   /** 지정하면 우측 상단 닫기 버튼 표시 */
   onClose?: () => void;
+  /** 지정하면 딤(오버레이) 영역 탭으로 닫기 지원 — 미지정 시 기존 렌더·동작 불변 (MSG-306) */
+  onOverlayPress?: () => void;
   className?: string;
 }
 
@@ -44,76 +46,90 @@ export const ModalCard = ({
   onCancel,
   onConfirm,
   onClose,
+  onOverlayPress,
   className,
-}: ModalCardProps) => (
-  <Modal
-    visible={visible}
-    transparent
-    animationType="fade"
-    onRequestClose={onClose ?? onCancel}
-  >
-    <View className="flex-1 items-center justify-center bg-navy-900/40 p-lg">
-      <View
-        accessibilityViewIsModal
-        className={cx(
-          "w-full max-w-120 gap-md rounded-[20px] bg-surface-elevated p-7 shadow-modal",
-          className,
+}: ModalCardProps) => {
+  const overlayClassName =
+    "flex-1 items-center justify-center bg-navy-900/40 p-lg";
+  const card = (
+    <View
+      accessibilityViewIsModal
+      // 딤 탭 닫기 모드에서 카드 내부(비인터랙티브 영역) 탭이 오버레이 Pressable로
+      // 새지 않게 responder를 카드가 선점한다 — 버튼 등 더 깊은 자식이 우선 협상하므로
+      // 카드 안 인터랙션에는 영향 없다
+      onStartShouldSetResponder={() => true}
+      className={cx(
+        "w-full max-w-120 gap-md rounded-[20px] bg-surface-elevated p-7 shadow-modal",
+        className,
+      )}
+    >
+      <View className="flex-row items-center">
+        <Text className="flex-1 text-fm-display text-foreground">{title}</Text>
+        {onClose && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="닫기"
+            onPress={onClose}
+            className="active:opacity-60"
+          >
+            <X size={16} color={semantic.muted} />
+          </Pressable>
         )}
-      >
-        <View className="flex-row items-center">
-          <Text className="flex-1 text-fm-display text-foreground">
-            {title}
-          </Text>
-          {onClose && (
+      </View>
+      {description && (
+        <Text className="text-fm-body text-foreground-body">{description}</Text>
+      )}
+      {children}
+      {(cancelText || confirmText) && (
+        <View className="flex-row gap-2.5">
+          {cancelText && (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="닫기"
-              onPress={onClose}
-              className="active:opacity-60"
+              onPress={onCancel}
+              className="h-12 flex-1 items-center justify-center rounded-full border border-border active:opacity-80"
             >
-              <X size={16} color={semantic.muted} />
+              <Text className="text-fm-title text-foreground-body">
+                {cancelText}
+              </Text>
+            </Pressable>
+          )}
+          {confirmText && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !!confirmDisabled }}
+              disabled={confirmDisabled}
+              onPress={onConfirm}
+              className={cx(
+                "h-12 flex-1 items-center justify-center rounded-full active:opacity-80",
+                confirmVariant === "danger" ? "bg-error" : "bg-primary",
+                confirmDisabled && "opacity-50",
+              )}
+            >
+              <Text className="text-fm-title text-primary-foreground">
+                {confirmText}
+              </Text>
             </Pressable>
           )}
         </View>
-        {description && (
-          <Text className="text-fm-body text-foreground-body">
-            {description}
-          </Text>
-        )}
-        {children}
-        {(cancelText || confirmText) && (
-          <View className="flex-row gap-2.5">
-            {cancelText && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onCancel}
-                className="h-12 flex-1 items-center justify-center rounded-full border border-border active:opacity-80"
-              >
-                <Text className="text-fm-title text-foreground-body">
-                  {cancelText}
-                </Text>
-              </Pressable>
-            )}
-            {confirmText && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !!confirmDisabled }}
-                disabled={confirmDisabled}
-                onPress={onConfirm}
-                className={cx(
-                  "h-12 flex-1 items-center justify-center rounded-full active:opacity-80",
-                  confirmVariant === "danger" ? "bg-error" : "bg-primary",
-                  confirmDisabled && "opacity-50",
-                )}
-              >
-                <Text className="text-fm-title text-primary-foreground">
-                  {confirmText}
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        )}
-      </View>
+      )}
     </View>
-  </Modal>
-);
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose ?? onCancel}
+    >
+      {onOverlayPress ? (
+        // 딤 탭 닫기 (MSG-306 AC 18) — 오버레이만 Pressable로 승격, 카드는 responder 선점
+        <Pressable onPress={onOverlayPress} className={overlayClassName}>
+          {card}
+        </Pressable>
+      ) : (
+        <View className={overlayClassName}>{card}</View>
+      )}
+    </Modal>
+  );
+};
