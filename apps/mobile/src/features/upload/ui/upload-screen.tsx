@@ -43,8 +43,9 @@ export const UploadScreen = () => {
       setDeniedNotice(DENIED_NOTICE[source]);
       return;
     }
-    if (outcome.kind === "canceled") return;
+    // 권한이 확인된 경로(취소 포함)에 진입한 순간 이전 거부 안내는 무효
     setDeniedNotice(null);
+    if (outcome.kind === "canceled") return;
     uploadFlowStore.setVideo(outcome.video);
     router.navigate("/upload/highlight");
   };
