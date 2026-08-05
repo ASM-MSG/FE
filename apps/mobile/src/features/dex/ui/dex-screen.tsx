@@ -24,6 +24,7 @@ import {
   MOCK_COLLECTION_SUMMARY,
   MOCK_VISIT_RECORDS,
 } from "../model/mock-collection";
+import { BadgeShelf } from "./badge-shelf";
 import { GalleryView } from "./gallery-view";
 
 /** 스탯 카드 1칸 — 라벨(캡션) 위, 값(타이틀) 아래 (AC 6) */
@@ -37,8 +38,8 @@ const StatItem = ({ label, value }: { label: string; value: string }) => (
 /**
  * SOURCE: Figma "개인 도감 — 지도 탭" (node 14094:4734, 2026-08-05 개정판) — MSG-299.
  * 헤더 + 스탯 카드 + [지도|뱃지] 전환 칩 + 지도 탭 콘텐츠(지도 프리뷰 플레이스홀더·
- * 지역별 방문 기록) 조립. mock 데이터 기반 UI만 — 뱃지 진열장(MSG-301)·API 연동
- * 제외 범위. 칩 상태는 화면 로컬·비영속 (추정 5).
+ * 지역별 방문 기록) 조립. mock 데이터 기반 UI만 — API 연동 제외 범위. 뱃지 탭은
+ * 뱃지 진열장(MSG-301, badge-shelf). 칩 상태는 화면 로컬·비영속 (추정 5).
  * 시안의 "Image" 라벨은 플레이스홀더라 넣지 않는다 (추정 1, 오탐 방지 1).
  *
  * 갤러리(MSG-300)는 별도 라우트가 아닌 화면 내 상태 — galleryScope가 있으면 지도
@@ -173,15 +174,8 @@ export const DexScreen = () => {
               </Pressable>
             </>
           ) : (
-            <>
-              {/* 뱃지 진열장 콘텐츠는 MSG-301 — 그 전까지 빈 상태 플레이스홀더 (추정 2, AC 11) */}
-              <Text className="mt-md text-fm-title text-foreground">
-                뱃지 진열장
-              </Text>
-              <Text className="mt-sm text-fm-body text-foreground-muted">
-                뱃지 진열장을 준비 중이에요
-              </Text>
-            </>
+            // 뱃지 진열장 (MSG-301 AC 3~5) — 콘텐츠 조립은 badge-shelf로 분리 (AC 7)
+            <BadgeShelf />
           )}
         </View>
       </ScrollView>
