@@ -2532,6 +2532,45 @@
           "is_fragment": false
         }
       ]
+    },
+    {
+      "id": "af430a40a0606770",
+      "note": "MSG-299 의도 중복 — 라벨+값 세로 칼럼 뷰 3곳(dex StatItem·방문 기록 행 제목부·grid-detail 스탯). 타이포·데이터 형태가 서로 달라 공통화는 억지 추상화 (nose 제안도 'data shape 일치 시에만')",
+      "members": [
+        {
+          "id": "699b7be2d4e9d23e",
+          "source_digest": "fnv1a64:8ae424d7b7e58170",
+          "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
+          "lang": "typescript",
+          "start_line": 115,
+          "end_line": 122,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "e025407da5170c26",
+          "source_digest": "fnv1a64:824e716c1ae6c7e1",
+          "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
+          "lang": "typescript",
+          "start_line": 29,
+          "end_line": 32,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "6452c2aa4d86ba12",
+          "source_digest": "fnv1a64:53c2fc3fc37da918",
+          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
+          "lang": "typescript",
+          "start_line": 22,
+          "end_line": 25,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        }
+      ]
     }
   ]
 }
