@@ -27,6 +27,8 @@ const ModalCardDemo = ({ danger = false }: { danger?: boolean }) => {
         confirmVariant={danger ? "danger" : "primary"}
         onCancel={() => setOpen(false)}
         onConfirm={() => setOpen(false)}
+        // 딤 영역 탭 닫기 (MSG-306 계약 확장) — 미지정 시 딤 탭은 무동작(기존 계약)
+        onOverlayPress={() => setOpen(false)}
       />
     </View>
   );

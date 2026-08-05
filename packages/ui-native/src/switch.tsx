@@ -6,6 +6,8 @@ import { cx } from "./lib/cx";
 interface SwitchProps extends SwitchBaseProps {
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  /** 스크린리더용 이름 — 시각 라벨이 별도 Text로 떨어져 있을 때 필수 */
+  accessibilityLabel?: string;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export const Switch = ({
   defaultChecked,
   disabled,
   onCheckedChange,
+  accessibilityLabel,
   className,
 }: SwitchProps) => {
   const [internal, setInternal] = useState(defaultChecked ?? false);
@@ -35,6 +38,7 @@ export const Switch = ({
   return (
     <Pressable
       accessibilityRole="switch"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ checked: isOn, disabled: !!disabled }}
       disabled={disabled}
       onPress={toggle}
