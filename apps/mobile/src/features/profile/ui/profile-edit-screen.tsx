@@ -75,6 +75,7 @@ export const ProfileEditScreen = () => {
               <Switch
                 checked={locationEnabled}
                 onCheckedChange={setLocationEnabled}
+                accessibilityLabel="위치정보 사용"
               />
               <Text className="text-fm-body text-foreground-muted">
                 {locationStatusLabel(locationEnabled)}

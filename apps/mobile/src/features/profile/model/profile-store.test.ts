@@ -42,6 +42,12 @@ describe("profile-store (AC 12·14)", () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
+  it("save: 앞뒤 공백이 섞인 닉네임은 trim해 저장한다 — 공백 선두 닉네임이 아바타 이니셜을 빈 칸으로 만드는 결함 방지 (리뷰 반영)", () => {
+    const store = createProfileStore();
+    store.save({ nickname: " 필맵퍼 ", locationEnabled: true });
+    expect(store.getState().nickname).toBe("필맵퍼");
+  });
+
   it("unsubscribe 후에는 save가 더 이상 통지하지 않는다 (AC 12 — 구독 해제 계약)", () => {
     const store = createProfileStore();
     const listener = vi.fn();

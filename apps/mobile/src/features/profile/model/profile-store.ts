@@ -39,7 +39,8 @@ export const createProfileStore = (
       return () => listeners.delete(listener);
     },
     save: (next) => {
-      state = { ...next };
+      // trim: 공백 선두 닉네임이 avatarFallback 이니셜을 빈 칸으로 만드는 것 방지
+      state = { ...next, nickname: next.nickname.trim() };
       listeners.forEach((listener) => listener());
     },
   };
