@@ -2056,6 +2056,52 @@
       ]
     },
     {
+      "id": "9f596a0990128b14",
+      "note": "local duplication — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "a2f4c619a726a61b",
+          "source_digest": "fnv1a64:db92e731aa6c0425",
+          "file": "apps/mobile/src/features/upload/model/mock-segments.test.ts",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 19,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "766df388ae40d372",
+          "source_digest": "fnv1a64:f533a03caf887a40",
+          "file": "apps/mobile/src/features/upload/model/upload-flow-store.test.ts",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 19,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "9916e633c5e79b64",
+          "source_digest": "fnv1a64:89302a478d05a2fa",
+          "file": "apps/mobile/src/features/upload/model/upload-flow-store.ts",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 19,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "3ad216811df3e364",
+          "source_digest": "fnv1a64:4749dbeba3980299",
+          "file": "apps/mobile/src/features/upload/model/mock-segments.ts",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 19,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "a234fabe11d227ab",
       "note": "local duplication — extract a shared base class / mixin — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -2468,52 +2514,6 @@
           "end_line": 69,
           "kind": "Function",
           "name": "Selector",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "c18399399f91dbdc",
-      "note": "local duplication — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "ee4a51693acb9b21",
-          "source_digest": "fnv1a64:6d950271d554c30d",
-          "file": "apps/mobile/src/features/upload/model/mock-segments.test.ts",
-          "lang": "typescript",
-          "start_line": 2,
-          "end_line": 21,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "198a73f15eeb63cc",
-          "source_digest": "fnv1a64:8bcaf4d382c11f29",
-          "file": "apps/mobile/src/features/upload/model/upload-flow-store.test.ts",
-          "lang": "typescript",
-          "start_line": 2,
-          "end_line": 21,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "6beb8b7689c71c4a",
-          "source_digest": "fnv1a64:a60e44d993b491a8",
-          "file": "apps/mobile/src/features/upload/model/upload-flow-store.ts",
-          "lang": "typescript",
-          "start_line": 2,
-          "end_line": 21,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "0da6bbc3e1d3644a",
-          "source_digest": "fnv1a64:3e9cf41eb342c7c8",
-          "file": "apps/mobile/src/features/upload/model/mock-segments.ts",
-          "lang": "typescript",
-          "start_line": 15,
-          "end_line": 21,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
