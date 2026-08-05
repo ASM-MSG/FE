@@ -1,0 +1,14 @@
+# duplication gate — CI(check:duplication)와 동일 게이트를 push 시점에 (MSG-298 CI 실패 환류).
+# nose 전체 스캔은 수 초 걸려 커밋마다는 과해서 pre-push에 둔다. 의도 중복은
+# 베이스라인 등재 커밋으로 통과시킨다 (MSG-294 관례).
+# nose는 성공 시에도 탐색 리포트 전문을 출력하므로, 게이트답게 실패 시에만 보여준다.
+nose_output=$(mktemp "${TMPDIR:-/tmp}/nose-pre-push.XXXXXX")
+if pnpm check:duplication > "$nose_output" 2>&1; then
+  rm -f "$nose_output"
+else
+  nose_exit_code=$?
+  cat "$nose_output" >&2
+  rm -f "$nose_output"
+  printf '%s\n' "nose: 베이스라인에 없는 신규 중복 — 추출로 해소하거나, 의도 중복이면 베이스라인 등재 후 다시 push하세요." >&2
+  exit "$nose_exit_code"
+fi

@@ -2389,6 +2389,149 @@
           "is_fragment": false
         }
       ]
+    },
+    {
+      "id": "068799dd6be5a3c9",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (7 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "70327f3397baf8b1",
+          "source_digest": "fnv1a64:c2702dc8cdd14d63",
+          "file": "apps/mobile/src/features/map-home/model/mock-theme-data.ts",
+          "lang": "typescript",
+          "start_line": 79,
+          "end_line": 115,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "42310d643a72d7bd",
+          "source_digest": "fnv1a64:895dddee54df7c9c",
+          "file": "apps/mobile/src/features/map-home/model/mock-theme-data.ts",
+          "lang": "typescript",
+          "start_line": 166,
+          "end_line": 202,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "102471f44c875b00",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (8 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "bc898de7a91154e6",
+          "source_digest": "fnv1a64:085e3458ddd063d2",
+          "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 62,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "3318de1007b14deb",
+          "source_digest": "fnv1a64:7846252f9dc908a5",
+          "file": "apps/mobile/src/features/map-home/ui/grid-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 50,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "112794a15228ccd1",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "99bbfa819b73c43c",
+          "source_digest": "fnv1a64:aa59d09f6bb4bd19",
+          "file": "apps/mobile/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 11,
+          "end_line": 33,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "89ad6b2c729dea34",
+          "source_digest": "fnv1a64:f2ae139037fd0b0e",
+          "file": "apps/web/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 9,
+          "end_line": 31,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "9df7a812e1199bf5",
+      "note": "repeated across 3 directories — extract a shared abstraction",
+      "members": [
+        {
+          "id": "26213d48ffc614cf",
+          "source_digest": "fnv1a64:4bab348a04995c23",
+          "file": "apps/mobile/src/features/map-home/model/theme-format.ts",
+          "lang": "typescript",
+          "start_line": 39,
+          "end_line": 49,
+          "kind": "Function",
+          "name": "formatUploadTime",
+          "is_fragment": false
+        },
+        {
+          "id": "a026ef3ce47e493e",
+          "source_digest": "fnv1a64:02162705f9760013",
+          "file": "apps/mobile/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 18,
+          "end_line": 27,
+          "kind": "Function",
+          "name": "formatRelativeTime",
+          "is_fragment": false
+        },
+        {
+          "id": "d38e80c74a283232",
+          "source_digest": "fnv1a64:02162705f9760013",
+          "file": "apps/web/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 25,
+          "kind": "Function",
+          "name": "formatRelativeTime",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d4bebd4264555f36",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (11 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "9753e4e3d1f17b44",
+          "source_digest": "fnv1a64:b49847e7754181ae",
+          "file": "packages/ui-native/src/bottom-nav.tsx",
+          "lang": "typescript",
+          "start_line": 8,
+          "end_line": 91,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "abb5d2f2829811a1",
+          "source_digest": "fnv1a64:84ff9d3f3254dcd1",
+          "file": "packages/ui-web/src/bottom-nav.tsx",
+          "lang": "typescript",
+          "start_line": 6,
+          "end_line": 85,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
     }
   ]
 }
