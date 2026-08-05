@@ -44,7 +44,10 @@ describe("AC 8 테마·점령 셀 3분류 (theme-cells)", () => {
   });
 
   it("같은 col·row 값이면 객체 참조가 달라도 같은 셀로 판정한다", () => {
-    const { both } = classifyCells([{ col: 7, row: -2 }], [{ col: 7, row: -2 }]);
+    const { both } = classifyCells(
+      [{ col: 7, row: -2 }],
+      [{ col: 7, row: -2 }],
+    );
     expect(both).toEqual([c(7, -2)]);
   });
 });

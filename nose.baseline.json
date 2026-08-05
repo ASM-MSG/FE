@@ -30,32 +30,6 @@
       ]
     },
     {
-      "id": "0234f24efe1d2f6b",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "50a88a476b0af70c",
-          "source_digest": "fnv1a64:9c4b86cead4d651c",
-          "file": "apps/web/src/features/upload/ui/upload-wizard-flow.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 8,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "04e15c9df5a1b0fe",
-          "source_digest": "fnv1a64:1a9f942be08a08d1",
-          "file": "apps/mobile/src/features/onboarding/model/onboarding-storage.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 5,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "03628c47850d13c1",
       "note": "local duplication — extract a method from the repeated block",
       "members": [
@@ -76,6 +50,32 @@
           "lang": "typescript",
           "start_line": 145,
           "end_line": 149,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "0535cf717ca5ddf2",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "de470b193955c235",
+          "source_digest": "fnv1a64:a7707c05504e789b",
+          "file": "apps/mobile/src/features/map-home/model/dashed-outline.test.ts",
+          "lang": "typescript",
+          "start_line": 29,
+          "end_line": 34,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "00450d0fe3f5e402",
+          "source_digest": "fnv1a64:7b98dcb0c72e729b",
+          "file": "apps/mobile/src/features/map-home/model/hatch-pattern.test.ts",
+          "lang": "typescript",
+          "start_line": 21,
+          "end_line": 26,
           "kind": "Block",
           "is_fragment": false
         }
@@ -134,6 +134,32 @@
       ]
     },
     {
+      "id": "068799dd6be5a3c9",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (7 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "70327f3397baf8b1",
+          "source_digest": "fnv1a64:c2702dc8cdd14d63",
+          "file": "apps/mobile/src/features/map-home/model/mock-theme-data.ts",
+          "lang": "typescript",
+          "start_line": 79,
+          "end_line": 115,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "42310d643a72d7bd",
+          "source_digest": "fnv1a64:895dddee54df7c9c",
+          "file": "apps/mobile/src/features/map-home/model/mock-theme-data.ts",
+          "lang": "typescript",
+          "start_line": 166,
+          "end_line": 202,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "0851292d6de4a94b",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -183,6 +209,97 @@
           "end_line": 28,
           "kind": "Block",
           "name": "div",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "0eb0e606c04664c6",
+      "note": "consolidate `isoAgo` — 3 copies",
+      "members": [
+        {
+          "id": "97dca20595578bbf",
+          "source_digest": "fnv1a64:83efa939d2d05911",
+          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
+          "lang": "typescript",
+          "start_line": 42,
+          "end_line": 42,
+          "kind": "Function",
+          "name": "isoAgo",
+          "is_fragment": false
+        },
+        {
+          "id": "a4cebbf066a57753",
+          "source_digest": "fnv1a64:83efa939d2d05911",
+          "file": "apps/web/src/entities/cell/model/mock-cells.ts",
+          "lang": "typescript",
+          "start_line": 9,
+          "end_line": 9,
+          "kind": "Function",
+          "name": "isoAgo",
+          "is_fragment": false
+        },
+        {
+          "id": "17887465b6fce76e",
+          "source_digest": "fnv1a64:83efa939d2d05911",
+          "file": "apps/web/src/entities/dex/model/mock-dex.ts",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 15,
+          "kind": "Function",
+          "name": "isoAgo",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "102471f44c875b00",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (8 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "bc898de7a91154e6",
+          "source_digest": "fnv1a64:085e3458ddd063d2",
+          "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 62,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "3318de1007b14deb",
+          "source_digest": "fnv1a64:7846252f9dc908a5",
+          "file": "apps/mobile/src/features/map-home/ui/grid-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 50,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "112794a15228ccd1",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "99bbfa819b73c43c",
+          "source_digest": "fnv1a64:aa59d09f6bb4bd19",
+          "file": "apps/mobile/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 11,
+          "end_line": 33,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "89ad6b2c729dea34",
+          "source_digest": "fnv1a64:f2ae139037fd0b0e",
+          "file": "apps/web/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 9,
+          "end_line": 31,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -383,6 +500,60 @@
       ]
     },
     {
+      "id": "2f0f931e60b1a0ed",
+      "note": "consolidate `selectRegions` — 2 copies",
+      "members": [
+        {
+          "id": "7f534f1afc991c53",
+          "source_digest": "fnv1a64:4b6560505c9ea56c",
+          "file": "apps/mobile/src/entities/region/model/regions.ts",
+          "lang": "typescript",
+          "start_line": 43,
+          "end_line": 43,
+          "kind": "Function",
+          "name": "selectRegions",
+          "is_fragment": false
+        },
+        {
+          "id": "dfbae680f2dc0987",
+          "source_digest": "fnv1a64:4b6560505c9ea56c",
+          "file": "apps/web/src/entities/region/model/regions.ts",
+          "lang": "typescript",
+          "start_line": 34,
+          "end_line": 34,
+          "kind": "Function",
+          "name": "selectRegions",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "2f3a6bc9d45ebe5d",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "de470b193955c235",
+          "source_digest": "fnv1a64:a7707c05504e789b",
+          "file": "apps/mobile/src/features/map-home/model/dashed-outline.test.ts",
+          "lang": "typescript",
+          "start_line": 29,
+          "end_line": 34,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "f37b2c85cf27e34d",
+          "source_digest": "fnv1a64:b874a8c95b98219b",
+          "file": "apps/web/src/features/map-home/model/theme-overlay.test.ts",
+          "lang": "typescript",
+          "start_line": 147,
+          "end_line": 152,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "305c9395376f6359",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -404,6 +575,73 @@
           "start_line": 24,
           "end_line": 29,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "30df48cc28e32797",
+      "note": "duplicated across 2 directories — extract a helper",
+      "members": [
+        {
+          "id": "2b6b1ea4a7c0f9b1",
+          "source_digest": "fnv1a64:094d77c8cee0ec67",
+          "file": "apps/web/src/features/upload/model/blur-detection.ts",
+          "lang": "typescript",
+          "start_line": 88,
+          "end_line": 91,
+          "kind": "Function",
+          "name": "toBlurConfirmResult",
+          "is_fragment": false
+        },
+        {
+          "id": "76d491732e48715f",
+          "source_digest": "fnv1a64:e62e4228892446ef",
+          "file": "apps/mobile/src/features/map-home/model/theme-cells.test.ts",
+          "lang": "typescript",
+          "start_line": 5,
+          "end_line": 5,
+          "kind": "Function",
+          "name": "c",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "3277a90b80526244",
+      "note": "consolidate `toRadians` — 3 copies",
+      "members": [
+        {
+          "id": "2272bd67d98bbbac",
+          "source_digest": "fnv1a64:2d266d33978f337d",
+          "file": "apps/mobile/src/entities/cell/model/grid.ts",
+          "lang": "typescript",
+          "start_line": 35,
+          "end_line": 35,
+          "kind": "Function",
+          "name": "toRadians",
+          "is_fragment": false
+        },
+        {
+          "id": "f644d873b7b51364",
+          "source_digest": "fnv1a64:2d266d33978f337d",
+          "file": "apps/web/src/entities/cell/model/grid.test.ts",
+          "lang": "typescript",
+          "start_line": 13,
+          "end_line": 13,
+          "kind": "Function",
+          "name": "toRadians",
+          "is_fragment": false
+        },
+        {
+          "id": "c0afb4b441847284",
+          "source_digest": "fnv1a64:2d266d33978f337d",
+          "file": "apps/web/src/entities/cell/model/grid.ts",
+          "lang": "typescript",
+          "start_line": 27,
+          "end_line": 27,
+          "kind": "Function",
+          "name": "toRadians",
           "is_fragment": false
         }
       ]
@@ -435,6 +673,32 @@
       ]
     },
     {
+      "id": "33ed637fb371aebb",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "8b9c38b49e56497b",
+          "source_digest": "fnv1a64:1d8e5e9da5ff4343",
+          "file": "apps/mobile/src/features/grid-detail/model/cell-detail.ts",
+          "lang": "typescript",
+          "start_line": 51,
+          "end_line": 108,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "49fe2d1c97149c79",
+          "source_digest": "fnv1a64:8cc0173dc2f2ec51",
+          "file": "apps/mobile/src/features/map-home/model/mock-theme-data.ts",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 44,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "352f793e8dc86f65",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -456,6 +720,89 @@
           "start_line": 79,
           "end_line": 80,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "364a0c52118837df",
+      "note": "consolidate `view` — 7 copies",
+      "members": [
+        {
+          "id": "fdd3c247edd405c3",
+          "source_digest": "fnv1a64:375873ad3f9e31b6",
+          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
+          "lang": "typescript",
+          "start_line": 140,
+          "end_line": 144,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "0c95fc9ed81594d2",
+          "source_digest": "fnv1a64:ae9a38e7fecf1561",
+          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
+          "lang": "typescript",
+          "start_line": 19,
+          "end_line": 23,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "c61876af3cb6c5b6",
+          "source_digest": "fnv1a64:f5d4c559285a787f",
+          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
+          "lang": "typescript",
+          "start_line": 41,
+          "end_line": 45,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "4cdb6274c7c3638d",
+          "source_digest": "fnv1a64:9e523e2d29bba48e",
+          "file": "apps/mobile/src/features/map-home/ui/grid-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 36,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "e22a266676e09ad5",
+          "source_digest": "fnv1a64:9e71f966ef1a000c",
+          "file": "apps/mobile/src/features/map-home/ui/theme-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 49,
+          "end_line": 53,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "b8925259ede25ea4",
+          "source_digest": "fnv1a64:9e523e2d29bba48e",
+          "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 36,
+          "end_line": 40,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "09366c3401a2769a",
+          "source_digest": "fnv1a64:52a74b57b038db3a",
+          "file": "apps/mobile/src/widgets/tab-stub/tab-stub-screen.tsx",
+          "lang": "typescript",
+          "start_line": 14,
+          "end_line": 16,
+          "kind": "Block",
+          "name": "view",
           "is_fragment": false
         }
       ]
@@ -541,6 +888,56 @@
       ]
     },
     {
+      "id": "4380ce2dc9b29914",
+      "note": "consolidate `text` — 4 copies",
+      "members": [
+        {
+          "id": "854fc5b88338a7a5",
+          "source_digest": "fnv1a64:9030a7043cac8437",
+          "file": "apps/mobile/src/features/map-home/ui/default-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 34,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "667ec91836443485",
+          "source_digest": "fnv1a64:1de0fa0a2dd42eea",
+          "file": "apps/mobile/src/features/map-home/ui/grid-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 45,
+          "end_line": 47,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "3673ae39a186cf90",
+          "source_digest": "fnv1a64:5b34b1b1d845b429",
+          "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 53,
+          "end_line": 55,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "c150402d82975723",
+          "source_digest": "fnv1a64:70050e71e6dd12cd",
+          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
+          "lang": "typescript",
+          "start_line": 162,
+          "end_line": 164,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "49cac252dde13f14",
       "note": "local duplication — extract a method from the repeated block",
       "members": [
@@ -587,6 +984,112 @@
           "lang": "typescript",
           "start_line": 44,
           "end_line": 45,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "4ea245a181784054",
+      "note": "duplicated across 2 directories — extract a helper — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "fa4555de6268ecd7",
+          "source_digest": "fnv1a64:f34f4d66bd000b9a",
+          "file": "apps/mobile/src/features/grid-detail/model/cell-detail.test.ts",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 14,
+          "kind": "Function",
+          "name": "mockById",
+          "is_fragment": false
+        },
+        {
+          "id": "9b3428fce11dcfea",
+          "source_digest": "fnv1a64:564dba27dc1625b6",
+          "file": "apps/web/src/features/map-home/model/home-cell-detail.test.ts",
+          "lang": "typescript",
+          "start_line": 13,
+          "end_line": 17,
+          "kind": "Function",
+          "name": "cellOf",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "51c033aa5857990c",
+      "note": "local duplication — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "429b7e97da35e4f7",
+          "source_digest": "fnv1a64:fc0a0d8d650e9e81",
+          "file": "apps/mobile/src/features/map-home/model/sort-grid-videos.test.ts",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 63,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "5066de287dc7b000",
+          "source_digest": "fnv1a64:ebcff4818dccfae1",
+          "file": "apps/mobile/src/features/map-home/model/mock-grid-videos.ts",
+          "lang": "typescript",
+          "start_line": 20,
+          "end_line": 66,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "540296f9a3fdc2af",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "cb6373ce99d70cee",
+          "source_digest": "fnv1a64:4c98366feacea1fe",
+          "file": "apps/web/src/pages/map-home/ui/map-canvas.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 18,
+          "end_line": 26,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "6f2c2fa2920ae246",
+          "source_digest": "fnv1a64:529d2c4bb0366a87",
+          "file": "apps/mobile/src/features/map-home/model/theme-selection.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 1,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "5b36d3a519d1f18e",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "aac4dac2df2dc966",
+          "source_digest": "fnv1a64:057f68436e08a413",
+          "file": "apps/mobile/src/entities/cell/model/grid.parity.test.ts",
+          "lang": "typescript",
+          "start_line": 49,
+          "end_line": 58,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "c15136f32dae19ed",
+          "source_digest": "fnv1a64:9b8db77cbaeb3dec",
+          "file": "apps/mobile/src/entities/cell/model/cell-id.test.ts",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 17,
           "kind": "Block",
           "is_fragment": false
         }
@@ -736,32 +1239,6 @@
       ]
     },
     {
-      "id": "6f4b1f9f465f3f4a",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "98e9d823267685e2",
-          "source_digest": "fnv1a64:b5af69fb71bd412c",
-          "file": "apps/web/src/entities/dex/model/mock-dex.ts",
-          "lang": "typescript",
-          "start_line": 10,
-          "end_line": 31,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "7bbd59a65b55c04d",
-          "source_digest": "fnv1a64:10f2efd9fbf219a4",
-          "file": "apps/web/src/entities/cell/model/mock-cells.ts",
-          "lang": "typescript",
-          "start_line": 4,
-          "end_line": 17,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "719a0434dc2a160b",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -864,6 +1341,36 @@
       ]
     },
     {
+      "id": "734168402d8f9ec1",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "5b04040dc6c23100",
+          "source_digest": "fnv1a64:38da301271ca95d9",
+          "file": "apps/mobile/src/features/map-home/model/visible-grid.ts",
+          "lang": "typescript",
+          "start_line": 36,
+          "end_line": 36,
+          "kind": "Block",
+          "is_fragment": true,
+          "fragment_kind": "conditional-guard",
+          "reason_code": "exact-conditional-guard"
+        },
+        {
+          "id": "9f2aed8a3c542970",
+          "source_digest": "fnv1a64:38da301271ca95d9",
+          "file": "apps/web/src/features/map-home/model/grid-overlay.ts",
+          "lang": "typescript",
+          "start_line": 63,
+          "end_line": 63,
+          "kind": "Block",
+          "is_fragment": true,
+          "fragment_kind": "conditional-guard",
+          "reason_code": "exact-conditional-guard"
+        }
+      ]
+    },
+    {
       "id": "7439bc0a959bbcbe",
       "note": "local duplication — extract a method from the repeated block",
       "members": [
@@ -885,6 +1392,34 @@
           "start_line": 16,
           "end_line": 27,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "7ad8fbafc4b55bed",
+      "note": "consolidate `text` — 2 copies",
+      "members": [
+        {
+          "id": "4849aef7a6b08c0d",
+          "source_digest": "fnv1a64:752a90393572faf8",
+          "file": "apps/mobile/src/features/map-home/ui/theme-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 44,
+          "end_line": 46,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "34fcb8123aae5905",
+          "source_digest": "fnv1a64:d2f4e5048ba590b2",
+          "file": "apps/mobile/src/features/map-home/ui/theme-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 78,
+          "end_line": 80,
+          "kind": "Block",
+          "name": "text",
           "is_fragment": false
         }
       ]
@@ -1058,32 +1593,6 @@
           "end_line": 56,
           "kind": "Block",
           "name": "div",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "8a97ed9b26fab3f3",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "cb6373ce99d70cee",
-          "source_digest": "fnv1a64:4c98366feacea1fe",
-          "file": "apps/web/src/pages/map-home/ui/map-canvas.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 18,
-          "end_line": 26,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "9a6c0952c9645e0a",
-          "source_digest": "fnv1a64:529d2c4bb0366a87",
-          "file": "apps/mobile/src/features/onboarding/model/onboarding-storage.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 1,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -1291,6 +1800,42 @@
       ]
     },
     {
+      "id": "9c46cee319c48cf5",
+      "note": "repeated across 3 directories — extract a shared abstraction — high-parameter (12 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "b5e1f8442ec8e5c7",
+          "source_digest": "fnv1a64:9112bbed70f6425e",
+          "file": "apps/mobile/src/features/onboarding/model/onboarding-storage.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 62,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e613395287d95fb6",
+          "source_digest": "fnv1a64:921742389930b1e5",
+          "file": "apps/mobile/src/shared/geolocation.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 60,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1829dd25743ba19c",
+          "source_digest": "fnv1a64:8afebd98be10d321",
+          "file": "apps/mobile/src/features/map-home/model/theme-selection.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 51,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "9d6426ecd7798eb8",
       "note": "consolidate `span` — 3 copies",
       "members": [
@@ -1325,6 +1870,45 @@
           "end_line": 43,
           "kind": "Block",
           "name": "span",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "9df7a812e1199bf5",
+      "note": "repeated across 3 directories — extract a shared abstraction",
+      "members": [
+        {
+          "id": "26213d48ffc614cf",
+          "source_digest": "fnv1a64:4bab348a04995c23",
+          "file": "apps/mobile/src/features/map-home/model/theme-format.ts",
+          "lang": "typescript",
+          "start_line": 39,
+          "end_line": 49,
+          "kind": "Function",
+          "name": "formatUploadTime",
+          "is_fragment": false
+        },
+        {
+          "id": "a026ef3ce47e493e",
+          "source_digest": "fnv1a64:02162705f9760013",
+          "file": "apps/mobile/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 18,
+          "end_line": 27,
+          "kind": "Function",
+          "name": "formatRelativeTime",
+          "is_fragment": false
+        },
+        {
+          "id": "d38e80c74a283232",
+          "source_digest": "fnv1a64:02162705f9760013",
+          "file": "apps/web/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 25,
+          "kind": "Function",
+          "name": "formatRelativeTime",
           "is_fragment": false
         }
       ]
@@ -1448,6 +2032,32 @@
       ]
     },
     {
+      "id": "ab808c26e8a58e6f",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "98e9d823267685e2",
+          "source_digest": "fnv1a64:b5af69fb71bd412c",
+          "file": "apps/web/src/entities/dex/model/mock-dex.ts",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 31,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "be7e4644c24b0b90",
+          "source_digest": "fnv1a64:fa5ea6f67a3dd6ef",
+          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
+          "lang": "typescript",
+          "start_line": 37,
+          "end_line": 51,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "abf583f5063941b4",
       "note": "consolidate `pressable` — 2 copies",
       "members": [
@@ -1497,6 +2107,60 @@
           "start_line": 19,
           "end_line": 46,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "b20e712366813dbe",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "52c7fbcde9c21b90",
+          "source_digest": "fnv1a64:d01b183ab9d7dcf2",
+          "file": "apps/mobile/src/features/search/model/recent-history.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 35,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e64f295808e20253",
+          "source_digest": "fnv1a64:dcf017334c470fb2",
+          "file": "apps/web/src/features/explore/model/recent-history.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 33,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "b5dee2347a6c8292",
+      "note": "consolidate `CellSeed` — 2 copies",
+      "members": [
+        {
+          "id": "9f86914dac35fb9a",
+          "source_digest": "fnv1a64:3337121a3a703e12",
+          "file": "apps/web/src/entities/cell/model/mock-cells.ts",
+          "lang": "typescript",
+          "start_line": 64,
+          "end_line": 78,
+          "kind": "Class",
+          "name": "CellSeed",
+          "is_fragment": false
+        },
+        {
+          "id": "a09af7b7ef17119d",
+          "source_digest": "fnv1a64:6b5a41f0d3cf9452",
+          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
+          "lang": "typescript",
+          "start_line": 64,
+          "end_line": 75,
+          "kind": "Class",
+          "name": "CellSeed",
           "is_fragment": false
         }
       ]
@@ -1603,6 +2267,34 @@
           "start_line": 5,
           "end_line": 28,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "c54c754416470819",
+      "note": "duplicated across 2 directories — extract a helper",
+      "members": [
+        {
+          "id": "80e4d81d7a86b294",
+          "source_digest": "fnv1a64:47c2cdcf273dde81",
+          "file": "apps/mobile/src/features/map-home/model/theme-cells.ts",
+          "lang": "typescript",
+          "start_line": 17,
+          "end_line": 17,
+          "kind": "Function",
+          "name": "keyOf",
+          "is_fragment": false
+        },
+        {
+          "id": "60e701ecfbbe626c",
+          "source_digest": "fnv1a64:f15bf3548a8d1f62",
+          "file": "apps/mobile/src/features/map-home/ui/grid-map.tsx",
+          "lang": "typescript",
+          "start_line": 103,
+          "end_line": 103,
+          "kind": "Function",
+          "name": "cellKey",
           "is_fragment": false
         }
       ]
@@ -1716,26 +2408,104 @@
       ]
     },
     {
-      "id": "d8f5060552882c94",
+      "id": "d2392477de0ee54a",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "cb4a58170825c45c",
+          "source_digest": "fnv1a64:a933b0dd0aca87a2",
+          "file": "apps/mobile/src/shared/format.ts",
+          "lang": "typescript",
+          "start_line": 30,
+          "end_line": 48,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "10882055f32b545d",
+          "source_digest": "fnv1a64:ae114275d3f534f0",
+          "file": "apps/web/src/features/explore/model/cell-detail.ts",
+          "lang": "typescript",
+          "start_line": 7,
+          "end_line": 25,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d4bebd4264555f36",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (11 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
         {
-          "id": "3403a57bde0e35bd",
-          "source_digest": "fnv1a64:545a4d48140cf585",
+          "id": "9753e4e3d1f17b44",
+          "source_digest": "fnv1a64:b49847e7754181ae",
           "file": "packages/ui-native/src/bottom-nav.tsx",
           "lang": "typescript",
-          "start_line": 7,
+          "start_line": 8,
           "end_line": 91,
           "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "fe7ced36e62eb9ac",
-          "source_digest": "fnv1a64:aab32a947bbd7f36",
+          "id": "abb5d2f2829811a1",
+          "source_digest": "fnv1a64:84ff9d3f3254dcd1",
           "file": "packages/ui-web/src/bottom-nav.tsx",
           "lang": "typescript",
-          "start_line": 5,
+          "start_line": 6,
           "end_line": 85,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d6e0be2d85d6d01f",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "ba1cc548bd1c6a1b",
+          "source_digest": "fnv1a64:c89bb1bf81448cd5",
+          "file": "apps/web/src/entities/cell/model/grid.ts",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 59,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e99ef42f04b62981",
+          "source_digest": "fnv1a64:416c8683bf323609",
+          "file": "apps/mobile/src/entities/cell/model/grid.ts",
+          "lang": "typescript",
+          "start_line": 24,
+          "end_line": 67,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d84ea7b88c656c10",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "5047469848a36d53",
+          "source_digest": "fnv1a64:761740f6fa687a30",
+          "file": "apps/mobile/src/features/grid-detail/model/cell-detail.test.ts",
+          "lang": "typescript",
+          "start_line": 11,
+          "end_line": 12,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "0d615f029faeb86e",
+          "source_digest": "fnv1a64:f700cd8035e11517",
+          "file": "apps/web/src/features/map-home/model/theme.ts",
+          "lang": "typescript",
+          "start_line": 44,
+          "end_line": 45,
           "kind": "Block",
           "is_fragment": false
         }
@@ -1793,6 +2563,34 @@
           "start_line": 1,
           "end_line": 47,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "df57f56b079acd5a",
+      "note": "duplicated across 2 directories — extract a helper",
+      "members": [
+        {
+          "id": "fa4555de6268ecd7",
+          "source_digest": "fnv1a64:f34f4d66bd000b9a",
+          "file": "apps/mobile/src/features/grid-detail/model/cell-detail.test.ts",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 14,
+          "kind": "Function",
+          "name": "mockById",
+          "is_fragment": false
+        },
+        {
+          "id": "4607b9c35ea60bb0",
+          "source_digest": "fnv1a64:7bac29d8d2fb4f87",
+          "file": "apps/web/src/entities/dex/model/mock-dex.ts",
+          "lang": "typescript",
+          "start_line": 33,
+          "end_line": 37,
+          "kind": "Function",
+          "name": "cellById",
           "is_fragment": false
         }
       ]
@@ -1904,6 +2702,34 @@
       ]
     },
     {
+      "id": "eae205873d215b4f",
+      "note": "local duplication — extract a helper — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "51146f61bd725313",
+          "source_digest": "fnv1a64:221f9e5ba41dfc64",
+          "file": "apps/mobile/src/shared/format.parity.test.ts",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 17,
+          "kind": "Function",
+          "name": "loadWebFormat",
+          "is_fragment": false
+        },
+        {
+          "id": "02d06fa9885fdbf9",
+          "source_digest": "fnv1a64:58d7a019bcf88983",
+          "file": "apps/mobile/src/shared/format.parity.test.ts",
+          "lang": "typescript",
+          "start_line": 19,
+          "end_line": 21,
+          "kind": "Function",
+          "name": "loadWebCellDetail",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "ec490ea4864dfa5e",
       "note": "consolidate `renderPanel` — 3 copies — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -1992,6 +2818,32 @@
           "end_line": 17,
           "kind": "Function",
           "name": "cellOf",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "efdf34db14035195",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "9c9a9b18b4434744",
+          "source_digest": "fnv1a64:c0c50108b218bbe0",
+          "file": "apps/mobile/src/features/map-home/model/visible-grid.test.ts",
+          "lang": "typescript",
+          "start_line": 63,
+          "end_line": 68,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "0118b048fa59f4a6",
+          "source_digest": "fnv1a64:167914121d94bca8",
+          "file": "apps/mobile/src/features/map-home/model/visible-grid.test.ts",
+          "lang": "typescript",
+          "start_line": 94,
+          "end_line": 99,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -2099,6 +2951,58 @@
           "lang": "typescript",
           "start_line": 2,
           "end_line": 11,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "f607809f9e2f6582",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "0033b8b05599472c",
+          "source_digest": "fnv1a64:8990ff6898cb5e90",
+          "file": "apps/web/src/entities/cell/model/mock-cells.ts",
+          "lang": "typescript",
+          "start_line": 4,
+          "end_line": 30,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e0fa7b72be208507",
+          "source_digest": "fnv1a64:580029e39f3261c0",
+          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
+          "lang": "typescript",
+          "start_line": 37,
+          "end_line": 62,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "f763e65f5b23990e",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "50a88a476b0af70c",
+          "source_digest": "fnv1a64:9c4b86cead4d651c",
+          "file": "apps/web/src/features/upload/ui/upload-wizard-flow.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 8,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "fbaac6127b7f8993",
+          "source_digest": "fnv1a64:eace2e022760e682",
+          "file": "apps/mobile/src/features/map-home/model/theme-selection.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 6,
           "kind": "Block",
           "is_fragment": false
         }
@@ -2230,162 +3134,6 @@
           "end_line": 28,
           "kind": "Function",
           "name": "fixtureCell",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "d6e0be2d85d6d01f",
-      "note": "MSG-294 D1 의도 중복 — 웹 grid.ts를 apps/mobile로 복제, grid.parity.test.ts 동등성 테스트가 계약 고정 (승격 보류 근거는 스펙 D1)",
-      "members": [
-        {
-          "id": "ba1cc548bd1c6a1b",
-          "source_digest": "fnv1a64:c89bb1bf81448cd5",
-          "file": "apps/web/src/entities/cell/model/grid.ts",
-          "lang": "typescript",
-          "start_line": 2,
-          "end_line": 59,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e99ef42f04b62981",
-          "source_digest": "fnv1a64:416c8683bf323609",
-          "file": "apps/mobile/src/entities/cell/model/grid.ts",
-          "lang": "typescript",
-          "start_line": 24,
-          "end_line": 67,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "02a9c17ec3450cea",
-      "note": "MSG-296 D1 의도 중복 — 웹 shared/format.ts(formatRelativeTime)를 apps/mobile로 복제, format.parity.test.ts가 웹 원본 대조로 계약 고정 (승격 보류 근거는 스펙 D1 관례)",
-      "members": [
-        {
-          "id": "cf6bc01692d28aa9",
-          "source_digest": "fnv1a64:3d240a420fdb86b9",
-          "file": "apps/mobile/src/shared/format.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 52,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e51f9458016091b6",
-          "source_digest": "fnv1a64:b417a8c83865c2da",
-          "file": "apps/web/src/shared/format.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 45,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "f607809f9e2f6582",
-      "note": "MSG-296 D1 의도 중복 — 웹 mock-cells.ts의 시간 상수·isoAgo mock 관례를 mock-cell-details.ts로 이식 (mock은 화면별 소유 — 스펙 리스크 3, parity 대상 아님)",
-      "members": [
-        {
-          "id": "0033b8b05599472c",
-          "source_digest": "fnv1a64:8990ff6898cb5e90",
-          "file": "apps/web/src/entities/cell/model/mock-cells.ts",
-          "lang": "typescript",
-          "start_line": 4,
-          "end_line": 30,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e0fa7b72be208507",
-          "source_digest": "fnv1a64:580029e39f3261c0",
-          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
-          "lang": "typescript",
-          "start_line": 37,
-          "end_line": 62,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "d2392477de0ee54a",
-      "note": "MSG-296 D1 의도 중복 — 웹 explore/cell-detail.ts(formatViewCount compact)를 apps/mobile shared/format.ts로 복제, format.parity.test.ts가 K/M 경계 대조로 계약 고정",
-      "members": [
-        {
-          "id": "cb4a58170825c45c",
-          "source_digest": "fnv1a64:a933b0dd0aca87a2",
-          "file": "apps/mobile/src/shared/format.ts",
-          "lang": "typescript",
-          "start_line": 30,
-          "end_line": 48,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "10882055f32b545d",
-          "source_digest": "fnv1a64:ae114275d3f534f0",
-          "file": "apps/web/src/features/explore/model/cell-detail.ts",
-          "lang": "typescript",
-          "start_line": 7,
-          "end_line": 25,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "ab808c26e8a58e6f",
-      "note": "MSG-296 D1 의도 중복 — 웹 mock(mock-dex.ts 계열)과 공유하는 isoAgo mock 관례의 모바일 이식 (mock은 화면별 소유 — 스펙 리스크 3)",
-      "members": [
-        {
-          "id": "98e9d823267685e2",
-          "source_digest": "fnv1a64:b5af69fb71bd412c",
-          "file": "apps/web/src/entities/dex/model/mock-dex.ts",
-          "lang": "typescript",
-          "start_line": 10,
-          "end_line": 31,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "be7e4644c24b0b90",
-          "source_digest": "fnv1a64:fa5ea6f67a3dd6ef",
-          "file": "apps/mobile/src/features/grid-detail/model/mock-cell-details.ts",
-          "lang": "typescript",
-          "start_line": 37,
-          "end_line": 51,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "b20e712366813dbe",
-      "note": "MSG-297 D1 의도 중복 — 웹 explore/recent-history.ts를 apps/mobile로 복제, recent-history.parity.test.ts가 웹 원본 직접 import 동등성 단정으로 계약 고정 (승격 보류 근거는 스펙 D1 관례)",
-      "members": [
-        {
-          "id": "52c7fbcde9c21b90",
-          "source_digest": "fnv1a64:d01b183ab9d7dcf2",
-          "file": "apps/mobile/src/features/search/model/recent-history.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 35,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e64f295808e20253",
-          "source_digest": "fnv1a64:dcf017334c470fb2",
-          "file": "apps/web/src/features/explore/model/recent-history.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 33,
-          "kind": "Block",
           "is_fragment": false
         }
       ]

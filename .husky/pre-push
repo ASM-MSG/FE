@@ -1,0 +1,7 @@
+# duplication gate — CI(check:duplication)와 동일 게이트를 push 시점에 (MSG-298 CI 실패 환류).
+# nose 전체 스캔은 수 초 걸려 커밋마다는 과해서 pre-push에 둔다. 의도 중복은
+# `pnpm check:duplication -- --write-baseline` 등재 커밋으로 통과시킨다 (MSG-294 관례).
+pnpm check:duplication || {
+  printf '%s\n' "nose: 베이스라인에 없는 신규 중복 — 추출로 해소하거나, 의도 중복이면 베이스라인 등재 후 다시 push하세요." >&2
+  exit 1
+}

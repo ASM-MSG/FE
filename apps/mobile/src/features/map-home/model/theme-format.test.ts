@@ -38,7 +38,9 @@ describe("AC 15 업로드 시점 표기 (theme-format.formatUploadTime)", () => 
 
   it('24시간 미만은 "N시간 전"', () => {
     expect(formatUploadTime("2026-08-04T13:00:00+09:00", now)).toBe("2시간 전");
-    expect(formatUploadTime("2026-08-03T15:30:00+09:00", now)).toBe("23시간 전");
+    expect(formatUploadTime("2026-08-03T15:30:00+09:00", now)).toBe(
+      "23시간 전",
+    );
   });
 
   it('24시간 이상은 "M월 D일" — KST 기준 날짜 (실행 환경 타임존과 무관)', () => {

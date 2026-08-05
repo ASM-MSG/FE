@@ -23,7 +23,10 @@ describe("AC 5 홈 상단 상태 파생 (themes)", () => {
   });
 
   it("테마 미선택(null)이면 기본 모드 — 칩 행 표시", () => {
-    expect(deriveHomeTopBar(null)).toEqual({ mode: "default", showChips: true });
+    expect(deriveHomeTopBar(null)).toEqual({
+      mode: "default",
+      showChips: true,
+    });
   });
 
   it("테마 선택이면 테마 검색어 바 모드 — 칩 행 숨김 + 검색어 = 테마명", () => {

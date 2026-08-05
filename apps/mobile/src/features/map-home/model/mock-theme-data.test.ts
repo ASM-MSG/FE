@@ -15,7 +15,13 @@ import {
  * AC 10: 경로추천 웨이포인트 순번은 mock 좌표 배열 순서와 일치한다.
  */
 describe("확정 2 테마 mock 배치 (mock-theme-data)", () => {
-  const withinDefaultViewport = ({ col, row }: { col: number; row: number }) => {
+  const withinDefaultViewport = ({
+    col,
+    row,
+  }: {
+    col: number;
+    row: number;
+  }) => {
     expect(Math.abs(col - SEOMYEON_CENTER_CELL.col)).toBeLessThanOrEqual(3);
     expect(Math.abs(row - SEOMYEON_CENTER_CELL.row)).toBeLessThanOrEqual(6);
   };

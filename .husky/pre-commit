@@ -36,3 +36,10 @@ else
   exit "$react_doctor_exit_code"
 fi
 # react-doctor hook end
+
+# format gate start — CI(format:check)와 동일 게이트를 커밋 시점에 (MSG-298 CI 실패 환류)
+pnpm format:check || {
+  printf '%s\n' "oxfmt: 포맷 불일치 — 'pnpm format'으로 정리 후 다시 커밋하세요." >&2
+  exit 1
+}
+# format gate end

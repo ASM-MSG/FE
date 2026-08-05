@@ -59,11 +59,7 @@ export const DefaultSheetContent = ({
         >
           <View className="flex-row flex-wrap justify-between gap-y-md pb-9">
             {videos.map((video) => (
-              <GridVideoCard
-                key={video.id}
-                video={video}
-                className="w-[48%]"
-              />
+              <GridVideoCard key={video.id} video={video} className="w-[48%]" />
             ))}
           </View>
         </ScrollView>
