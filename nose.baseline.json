@@ -1129,6 +1129,42 @@
       ]
     },
     {
+      "id": "5c180cb442bd2849",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (16 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "95f58431a2b9673c",
+          "source_digest": "fnv1a64:23f4d94bc413f2a7",
+          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 175,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "ab3df50d7bcd3191",
+          "source_digest": "fnv1a64:f3322f9d47e0156d",
+          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 154,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "39ee22a7634c65ea",
+          "source_digest": "fnv1a64:b8d94a31f820b401",
+          "file": "apps/mobile/src/features/profile/ui/profile-edit-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 108,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "606ecb3c83e79d7f",
       "note": "consolidate `createClient` — 3 copies — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -1614,32 +1650,6 @@
       ]
     },
     {
-      "id": "840f113fdd941cec",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "bf60440f8843f347",
-          "source_digest": "fnv1a64:53111b7d01bd948d",
-          "file": "apps/mobile/src/features/upload/model/upload-flow-store.ts",
-          "lang": "typescript",
-          "start_line": 55,
-          "end_line": 67,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "210c63f83cce614c",
-          "source_digest": "fnv1a64:6db177040eaf2679",
-          "file": "apps/mobile/src/features/profile/model/profile-store.ts",
-          "lang": "typescript",
-          "start_line": 35,
-          "end_line": 45,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "8510c7c1d2149b3a",
       "note": "repeated across 3 directories — extract a shared abstraction",
       "members": [
@@ -1696,34 +1706,6 @@
           "end_line": 85,
           "kind": "Function",
           "name": "formatBlurCount",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "870cfda63fff1625",
-      "note": "local duplication — consolidate one shared interface/protocol contract",
-      "members": [
-        {
-          "id": "88b86557ce8fe63f",
-          "source_digest": "fnv1a64:da8dee700526ffe8",
-          "file": "packages/ui-web/src/selector.tsx",
-          "lang": "typescript",
-          "start_line": 27,
-          "end_line": 32,
-          "kind": "Class",
-          "name": "SelectorProps",
-          "is_fragment": false
-        },
-        {
-          "id": "3db79e8011cb24b7",
-          "source_digest": "fnv1a64:7849cc686f8f4278",
-          "file": "packages/ui-web/src/switch.tsx",
-          "lang": "typescript",
-          "start_line": 5,
-          "end_line": 10,
-          "kind": "Class",
-          "name": "SwitchProps",
           "is_fragment": false
         }
       ]
@@ -1791,6 +1773,34 @@
           "end_line": 56,
           "kind": "Block",
           "name": "div",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "89f571c65b999630",
+      "note": "local duplication — extract a helper — high-parameter (8 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "cb6bd93e87c7e029",
+          "source_digest": "fnv1a64:fd6367e2e6885601",
+          "file": "packages/ui-native/src/switch.tsx",
+          "lang": "typescript",
+          "start_line": 22,
+          "end_line": 60,
+          "kind": "Function",
+          "name": "Switch",
+          "is_fragment": false
+        },
+        {
+          "id": "37c2c5cc09888dfe",
+          "source_digest": "fnv1a64:99e39e051bea7636",
+          "file": "packages/ui-native/src/selector.tsx",
+          "lang": "typescript",
+          "start_line": 34,
+          "end_line": 69,
+          "kind": "Function",
+          "name": "Selector",
           "is_fragment": false
         }
       ]
@@ -2603,34 +2613,6 @@
       ]
     },
     {
-      "id": "bcb62cf540be67c2",
-      "note": "local duplication — extract a helper — high-parameter (7 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "2cd949de2390c2b3",
-          "source_digest": "fnv1a64:38666e1b21c4f97c",
-          "file": "packages/ui-native/src/switch.tsx",
-          "lang": "typescript",
-          "start_line": 20,
-          "end_line": 56,
-          "kind": "Function",
-          "name": "Switch",
-          "is_fragment": false
-        },
-        {
-          "id": "37c2c5cc09888dfe",
-          "source_digest": "fnv1a64:99e39e051bea7636",
-          "file": "packages/ui-native/src/selector.tsx",
-          "lang": "typescript",
-          "start_line": 34,
-          "end_line": 69,
-          "kind": "Function",
-          "name": "Selector",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "c0c93de5772f4ceb",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -2959,6 +2941,45 @@
       ]
     },
     {
+      "id": "ddf1ae87ecba0e39",
+      "note": "duplicated across 2 directories — consolidate one shared interface/protocol contract",
+      "members": [
+        {
+          "id": "348338e0e6f8f9d1",
+          "source_digest": "fnv1a64:e3e5f3d6509356e9",
+          "file": "packages/ui-native/src/switch.tsx",
+          "lang": "typescript",
+          "start_line": 6,
+          "end_line": 12,
+          "kind": "Class",
+          "name": "SwitchProps",
+          "is_fragment": false
+        },
+        {
+          "id": "88b86557ce8fe63f",
+          "source_digest": "fnv1a64:da8dee700526ffe8",
+          "file": "packages/ui-web/src/selector.tsx",
+          "lang": "typescript",
+          "start_line": 27,
+          "end_line": 32,
+          "kind": "Class",
+          "name": "SelectorProps",
+          "is_fragment": false
+        },
+        {
+          "id": "3db79e8011cb24b7",
+          "source_digest": "fnv1a64:7849cc686f8f4278",
+          "file": "packages/ui-web/src/switch.tsx",
+          "lang": "typescript",
+          "start_line": 5,
+          "end_line": 10,
+          "kind": "Class",
+          "name": "SwitchProps",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "ddf95029adf9a142",
       "note": "local duplication — extract a method from the repeated block — high-parameter (12 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -3110,42 +3131,6 @@
       ]
     },
     {
-      "id": "e72204703a176b6b",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (15 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "95f58431a2b9673c",
-          "source_digest": "fnv1a64:e5f802cd01e6ca41",
-          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 175,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "ab3df50d7bcd3191",
-          "source_digest": "fnv1a64:f3322f9d47e0156d",
-          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 154,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "34c1ac996b97c784",
-          "source_digest": "fnv1a64:d588da56923c08c3",
-          "file": "apps/mobile/src/features/profile/ui/profile-edit-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 106,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "e78135efea3b6eb0",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -3244,6 +3229,32 @@
           "lang": "typescript",
           "start_line": 37,
           "end_line": 50,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "e8ce43c9389a514b",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "bf60440f8843f347",
+          "source_digest": "fnv1a64:53111b7d01bd948d",
+          "file": "apps/mobile/src/features/upload/model/upload-flow-store.ts",
+          "lang": "typescript",
+          "start_line": 55,
+          "end_line": 67,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1c9516f9d6422599",
+          "source_digest": "fnv1a64:b837d23b62448214",
+          "file": "apps/mobile/src/features/profile/model/profile-store.ts",
+          "lang": "typescript",
+          "start_line": 35,
+          "end_line": 46,
           "kind": "Block",
           "is_fragment": false
         }
