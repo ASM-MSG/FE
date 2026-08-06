@@ -10,6 +10,7 @@ const fixtureVideo = (videoId: number, recordedAt: string): CellVideo => ({
   viewCount: 100,
   recordedAt,
   durationSec: 30,
+  thumbnailUrl: "data:,thumb",
   uploaderHandle: "@busan.vlog",
 });
 

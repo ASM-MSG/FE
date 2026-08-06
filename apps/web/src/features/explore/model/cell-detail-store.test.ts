@@ -9,6 +9,7 @@ const video = (videoId: number): CellVideo => ({
   viewCount: 100,
   recordedAt: "2026-07-20T00:00:00.000Z",
   durationSec: 24,
+  thumbnailUrl: "data:,thumb",
 });
 
 const makeCell = (id: string, videos: CellVideo[]): Cell => ({

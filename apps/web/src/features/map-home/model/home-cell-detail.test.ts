@@ -181,6 +181,7 @@ const fixtureVideo = (videoId: number, recordedAt: string): CellVideo => ({
   viewCount: 10,
   recordedAt,
   durationSec: 30,
+  thumbnailUrl: "data:,thumb",
 });
 
 const fixtureCell = (videos: CellVideo[]): Cell => ({

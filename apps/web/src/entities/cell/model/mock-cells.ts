@@ -41,6 +41,23 @@ const VIDEO_SOURCES = [
 ];
 
 /**
+ * 썸네일 mock — 단색 SVG data URI 순환 (mock-dex svgThumbnail 패턴의 최소형).
+ * 명세 갱신(2026-08-06)으로 thumbnailUrl이 응답 필수가 되어 전 표본에 부여한다.
+ * 색상 풀은 UI 스타일이 아니라 "대표 프레임 이미지의 내용물"(데이터)이라 토큰 대상이 아니다.
+ */
+const svgThumb = (fill: string): string =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="240" height="240" fill="${fill}"/></svg>`,
+  )}`;
+const VIDEO_THUMBS = [
+  "#5b7ff2",
+  "#4fae8f",
+  "#d98a4b",
+  "#a26bd4",
+  "#c95f7d",
+].map(svgThumb);
+
+/**
  * 격자당 대표 리스트에 노출할 개별 영상 표본을 만든다 (전체 videoCount와 별개인 최근 표본).
  * 명세 대응 필드는 satisfies로 GridGlobalVideoResponseDto에 연결한다 (MSG-289 AC 3) —
  * 명세 필드명 변경·타입 변경 시 재생성 후 여기서 typecheck가 실패한다.
@@ -54,6 +71,7 @@ const buildVideos = (videoIdBase: number, sampleSize: number): CellVideo[] =>
       viewCount: VIDEO_VIEWS[i % VIDEO_VIEWS.length],
       recordedAt: isoAgo(VIDEO_AGES[i % VIDEO_AGES.length]),
       durationSec: VIDEO_DURATIONS[i % VIDEO_DURATIONS.length],
+      thumbnailUrl: VIDEO_THUMBS[i % VIDEO_THUMBS.length],
     } satisfies GridGlobalVideoResponseDto),
     // FE 확장 필드 (CellVideoExtension) — 명세 대응 없음
     title: VIDEO_TITLES[i % VIDEO_TITLES.length],
