@@ -23,6 +23,7 @@ import {
   MOCK_THEME_GRIDS,
   buildRouteWaypoints,
 } from "../model/mock-theme-data";
+import { hasCellVideos } from "../../grid-detail/model/cell-detail";
 import { classifyCells } from "../model/theme-cells";
 import { setSelectedTheme, useSelectedTheme } from "../model/theme-selection";
 import { buildThemeSheet } from "../model/theme-sheet";
@@ -168,11 +169,14 @@ export const MapHomeScreen = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-background">
         <View className="absolute inset-0">
-          {/* 격자 탭 → 격자 상세 진입 (MSG-296 AC 1) */}
+          {/* 격자 탭 → 격자 상세 진입 (MSG-296 AC 1) — 영상 보유 격자만, 빈 격자·
+              미등재 셀은 no-op (MSG-317 AC 15, 사용자 확정 — 웹 상세 선택 no-op 관례 정합) */}
           <GridMap
             ref={mapRef}
             initialCenter={SEOMYEON_CENTER}
-            onCellTap={(cellId) => router.push(`/grid/${cellId}`)}
+            onCellTap={(cellId) => {
+              if (hasCellVideos(cellId)) router.push(`/grid/${cellId}`);
+            }}
             occupiedCells={MOCK_OCCUPIED_CELLS}
             themeCells={classification?.themeOnly}
             themeColor={themeId ? THEME_META[themeId].color : undefined}

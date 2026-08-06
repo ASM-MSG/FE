@@ -36,10 +36,10 @@ export interface CellDetailView {
   recentUploadText: string | null;
   /** 통계 3종 표시 문자열 (AC 7) */
   stats: { fillRate: string; videoCount: string; viewCount: string };
-  /** 대표 영상(목록 첫 영상) 길이 mm:ss — 영상 없으면 null = 미리보기 빈 상태 (AC 4·10) */
+  /** 대표 영상(목록 첫 영상) 길이 mm:ss — 표본 없으면 null = 미리보기 빈 상태 (AC 4·10) */
   previewDurationLabel: string | null;
   videos: CellDetailVideoView[];
-  /** 빈 상태 판정 (AC 10) */
+  /** 빈 상태 판정 (AC 10) — 전체 영상 수 기준(표본 아님, MSG-317 AC 8 재정의) */
   isEmpty: boolean;
 }
 
@@ -53,10 +53,23 @@ const boundsCenter = (index: GridCellIndex): LatLng => {
   return { lat: (sw.lat + ne.lat) / 2, lng: (sw.lng + ne.lng) / 2 };
 };
 
-/** 인코딩 셀 id → 상세 표시 모델. 인코딩 형식이 아니면 null. `now` 주입으로 결정적 테스트 */
+/**
+ * 영상 보유 격자 판정 (MSG-317 AC 15) — 지도 홈 격자 탭 게이트용.
+ * 등록 mock 셀이면서 전체 영상 수(videoCount — 표본 아님, AC 8 재정의와 동일 기준)가
+ * 있는 격자만 true (미등재·영상 0개는 상세 진입 차단).
+ */
+export const hasCellVideos = (cellId: string): boolean =>
+  (REGISTERED_BY_INDEX.get(cellId)?.videoCount ?? 0) > 0;
+
+/**
+ * 인코딩 셀 id → 상세 표시 모델. 인코딩 형식이 아니면 null. `now` 주입으로 결정적 테스트.
+ * `excludedVideoIds`(MSG-317 AC 7·8) — 삭제된 영상 id를 제외하고 목록·미리보기 길이
+ * 라벨·영상 수 통계를 재파생한다. 영상 id는 원본 인덱스 기준이라 제외 후에도 불변.
+ */
 export const deriveCellDetail = (
   cellId: string,
   now: Date = new Date(),
+  excludedVideoIds?: readonly string[],
 ): CellDetailView | null => {
   const index = parseCellId(cellId);
   if (!index) return null;
@@ -82,7 +95,17 @@ export const deriveCellDetail = (
     };
   }
 
-  const isEmpty = registered.videos.length === 0;
+  // 영상 id는 원본 인덱스로 먼저 부여 — 제외 후에도 잔여 영상 id가 밀리지 않는다 (AC 7)
+  const excluded = new Set(excludedVideoIds);
+  const remaining = registered.videos
+    .map((video, i) => ({ id: `${cellId}-v${i + 1}`, video }))
+    .filter(({ id }) => !excluded.has(id));
+  const excludedCount = registered.videos.length - remaining.length;
+
+  // 빈 상태 판정은 전체 영상 수 기준 (AC 8 재정의 — 리뷰 반영): videos는 최근
+  // 표본이라 표본 소진 ≠ 격자의 영상 소진 — videoCount 통계와 동일 기준으로 정합
+  const totalRemaining = registered.videoCount - excludedCount;
+  const isEmpty = totalRemaining === 0;
   return {
     ...base,
     label: registered.label,
@@ -92,14 +115,17 @@ export const deriveCellDetail = (
       : null,
     stats: {
       fillRate: `${registered.fillRate}%`,
-      videoCount: `${registered.videoCount}개`,
+      // 제외 수만큼 감소 (추정 2 — 담수율·조회는 mock 재산정 근거 없어 유지)
+      videoCount: `${totalRemaining}개`,
       viewCount: formatViewCount(registered.viewCount),
     },
-    previewDurationLabel: isEmpty
-      ? null
-      : formatDuration(registered.videos[0].durationSec),
-    videos: registered.videos.map((video, i) => ({
-      id: `${cellId}-v${i + 1}`,
+    // 미리보기는 표본 기준 — 표본 소진 시 빈 표본(null), isEmpty와 별개 (AC 8 재정의)
+    previewDurationLabel:
+      remaining.length === 0
+        ? null
+        : formatDuration(remaining[0].video.durationSec),
+    videos: remaining.map(({ id, video }) => ({
+      id,
       title: video.title,
       meta: `조회 ${formatViewCount(video.viewCount)} · ${formatRelativeTime(video.recordedAt, now)}`,
     })),

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cellBoundsAt, cellIndexAt } from "../../../entities/cell/model/grid";
 import { cellIdFor } from "../../../entities/cell/model/cell-id";
 import { MOCK_CELL_DETAILS } from "./mock-cell-details";
-import { deriveCellDetail } from "./cell-detail";
+import { deriveCellDetail, hasCellVideos } from "./cell-detail";
 
 /** mock isoAgo는 모듈 로드 시점 기준 — 실행 시점 now 주입으로 상대시간 단정을 안정화 */
 const NOW = new Date();
@@ -90,6 +90,76 @@ describe("deriveCellDetail — 빈 상태·미등록 셀 (AC 10, 질문 2-a)", (
 
   it("인코딩 형식이 아닌 id는 null (지도 탭 외 진입 경로 없음)", () => {
     expect(deriveCellDetail("seomyeon-a-14", NOW)).toBeNull();
+  });
+});
+
+describe("deriveCellDetail — 제외 영상 id 재파생 (MSG-317 AC 7·8)", () => {
+  it("제외 미지정(빈 목록) 시 기존 파생 결과와 동일하다 (AC 7)", () => {
+    const cellId = tapIdFor("seomyeon-a-14");
+    expect(deriveCellDetail(cellId, NOW, [])).toEqual(
+      deriveCellDetail(cellId, NOW),
+    );
+  });
+
+  it("대표 영상 id를 제외하면 목록에서 빠지고 다음 영상이 대표가 된다 — 잔여 영상 id는 불변 (AC 7)", () => {
+    const cellId = tapIdFor("seomyeon-a-14");
+    const base = deriveCellDetail(cellId, NOW);
+    const firstId = base?.videos[0]?.id;
+    if (!firstId) throw new Error("대표 영상 없음");
+
+    const derived = deriveCellDetail(cellId, NOW, [firstId]);
+    expect(derived?.videos).toEqual(base?.videos.slice(1));
+    expect(derived?.videos[0]?.id).toBe(`${cellId}-v2`);
+  });
+
+  it('대표 영상 제외 시 미리보기 길이 라벨이 다음 영상 기준("0:26")으로 재파생된다 (AC 7)', () => {
+    const cellId = tapIdFor("seomyeon-a-14");
+    const derived = deriveCellDetail(cellId, NOW, [`${cellId}-v1`]);
+    expect(derived?.previewDurationLabel).toBe("0:26");
+  });
+
+  it("영상 수 통계는 제외 수만큼 감소하고 담수율·조회 통계는 유지된다 (AC 7, 추정 2)", () => {
+    const cellId = tapIdFor("seomyeon-a-14");
+    const derived = deriveCellDetail(cellId, NOW, [`${cellId}-v1`]);
+    expect(derived?.stats).toEqual({
+      fillRate: "73%",
+      videoCount: "137개",
+      viewCount: "1.4K",
+    });
+  });
+
+  it("표본을 전부 제외해도 전체 잔여(videoCount−제외 수)가 남으면 isEmpty=false — 목록·미리보기만 빈 표본, 통계는 잔여 수 (AC 8 재정의)", () => {
+    // 서면 A-14: 전체 138개 중 표본 5개 — 표본 소진 ≠ 격자의 영상 소진
+    const cellId = tapIdFor("seomyeon-a-14");
+    const base = deriveCellDetail(cellId, NOW);
+    const allSampleIds = base?.videos.map((video) => video.id) ?? [];
+
+    const derived = deriveCellDetail(cellId, NOW, allSampleIds);
+    expect(derived?.isEmpty).toBe(false);
+    expect(derived?.videos).toEqual([]);
+    expect(derived?.previewDurationLabel).toBeNull();
+    expect(derived?.stats.videoCount).toBe("133개");
+  });
+
+  it("빈 상태 판정은 전체 영상 수 기준 — 전체 0개 등록 격자는 제외 유무와 무관하게 isEmpty=true (AC 8 재정의)", () => {
+    const derived = deriveCellDetail(tapIdFor("beomcheon-i-01"), NOW, []);
+    expect(derived?.isEmpty).toBe(true);
+    expect(derived?.previewDurationLabel).toBeNull();
+  });
+});
+
+describe("hasCellVideos — 영상 보유 격자 판정 (MSG-317 AC 15, 지도 홈 탭 게이트)", () => {
+  it("영상이 있는 등록 격자는 true — 격자 상세 진입 허용", () => {
+    expect(hasCellVideos(tapIdFor("seomyeon-a-14"))).toBe(true);
+  });
+
+  it("영상 0개 등록 격자(범천 I-01)는 false — 진입 차단(no-op)", () => {
+    expect(hasCellVideos(tapIdFor("beomcheon-i-01"))).toBe(false);
+  });
+
+  it("미등재 셀은 false — 진입 차단(no-op)", () => {
+    const index = cellIndexAt({ lat: 35.2, lng: 129.0 }); // mock 셀과 무관한 좌표
+    expect(hasCellVideos(cellIdFor(index))).toBe(false);
   });
 });
 
