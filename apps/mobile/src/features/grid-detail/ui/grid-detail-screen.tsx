@@ -74,7 +74,9 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportToastVisible, setReportToastVisible] = useState(false);
+  /** 신고 접수 토스트 표시 카운터 — 0이면 숨김. boolean이면 표시 중 재제출 시 동일 값
+   * 재설정으로 이펙트가 재실행되지 않아 타이머가 연장되지 않는다 (리뷰 반영) */
+  const [reportToastCount, setReportToastCount] = useState(0);
   /** 삭제된 영상 id (AC 5) — deriveCellDetail 재파생 입력 */
   const [excludedVideoIds, setExcludedVideoIds] = useState<string[]>([]);
   const detail = useMemo(
@@ -82,15 +84,12 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
     [cellId, excludedVideoIds],
   );
 
-  // 접수 토스트 자동 소멸 (AC 12) — 재제출 시 상태가 다시 true로 바뀌며 타이머 재설정
+  // 접수 토스트 자동 소멸 (AC 12) — 재제출 시 카운터 증가로 이펙트가 재실행되어 타이머 재설정
   useEffect(() => {
-    if (!reportToastVisible) return;
-    const timer = setTimeout(
-      () => setReportToastVisible(false),
-      REPORT_TOAST_MS,
-    );
+    if (reportToastCount === 0) return;
+    const timer = setTimeout(() => setReportToastCount(0), REPORT_TOAST_MS);
     return () => clearTimeout(timer);
-  }, [reportToastVisible]);
+  }, [reportToastCount]);
 
   // 유일한 진입 경로(지도 탭)는 항상 인코딩 id를 만든다 — 형식 밖 param은 렌더 없음
   if (!detail) return null;
@@ -112,7 +111,7 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
   /** 신고 제출 (AC 12) — mock: 서버 전송 없이 접수 토스트만 */
   const handleReportSubmit = () => {
     setReportOpen(false);
-    setReportToastVisible(true);
+    setReportToastCount((count) => count + 1);
   };
 
   return (
@@ -248,7 +247,7 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
       />
 
       {/* 신고 접수 토스트 (AC 12, 추정 4) — 홈 인디케이터 위 오버레이, 자동 소멸 */}
-      {reportToastVisible && (
+      {reportToastCount > 0 && (
         <View
           pointerEvents="none"
           className="absolute inset-x-0 px-md"

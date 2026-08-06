@@ -75,7 +75,12 @@ export const ReportModal = ({
           >
             {selectedLabel ?? "신고 유형을 선택해주세요"}
           </Text>
-          <ChevronDown size={16} color={semantic.muted} />
+          {/* 펼침 상태 회전 어포던스 (리뷰 반영) — 펼침 UI는 Figma 부재 자체 구성(추정 3) */}
+          <ChevronDown
+            size={16}
+            color={semantic.muted}
+            style={{ transform: [{ rotate: expanded ? "180deg" : "0deg" }] }}
+          />
         </Pressable>
         {expanded && (
           <View className="rounded-md border border-border">
