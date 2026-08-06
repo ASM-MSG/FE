@@ -32,6 +32,16 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # 커밋된 스냅샷(openapi/api-docs.json)으로 재생성해 생성물 드리프트를 검사한다 (MSG-323).
+      # 생성물 수기 수정·재생성 누락 시 실패. diff는 추적 파일만 잡으므로 신규 untracked
+      # 파일은 git status --porcelain으로 병행 검출한다. 라이브 명세 curl은 CI에서 하지
+      # 않는다(스냅샷 갱신은 사람이 의도적으로). Lint 이전 배치 — 이후 게이트가 재생성본 기준.
+      - name: OpenAPI codegen drift check
+        run: |
+          pnpm openapi-ts
+          git diff --exit-code -- apps/web/src/shared/api/generated
+          test -z "$(git status --porcelain apps/web/src/shared/api/generated)"
+
       # oxlint(Rust 기반)로 범용 룰을 먼저 빠르게 훑고, 커스텀 룰(토큰·RN 경계)은 계속 ESLint가 담당한다.
       # eslint.config에서 eslint-plugin-oxlint로 겹치는 룰은 이미 꺼둬서 중복 리포트 없음.
       - name: Lint (oxlint fast pass)

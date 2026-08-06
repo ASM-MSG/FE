@@ -1,5 +1,8 @@
 {
   "$schema": "https://react.doctor/schema/config.json",
+  "ignore": {
+    "files": ["apps/web/src/shared/api/generated/**"]
+  },
   "rules": {
     "react-doctor/js-combine-iterations": "off"
   }
