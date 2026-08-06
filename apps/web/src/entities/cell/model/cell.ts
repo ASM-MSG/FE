@@ -2,8 +2,8 @@ import type { GridGlobalVideoResponseDto } from "@/shared/api/generated/types.ge
 
 /**
  * 위경도 좌표 (플랫폼 중립).
- * 명세(shared/api/generated)의 동명 `LatLng`(미션 도형용, `lon` 사용)과 다른 타입이다 —
- * 프론트 도메인은 `lng`를 쓴다. import 시 혼동 주의 (MSG-289 리스크 3).
+ * 명세(shared/api/generated)의 동명 `LatLng`(미션 도형용)와 별개 타입이다 —
+ * 필드명은 명세의 lon→lng 통일(2026-08-06, MSG-322)로 일치하나 용도가 다르니 import 시 혼동 주의 (MSG-289 리스크 3).
  */
 export interface LatLng {
   lat: number;

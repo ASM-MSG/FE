@@ -13,13 +13,13 @@ export type VideoReplaceRequestDto = {
      */
     s3Key: string;
     /**
-     * 위도 (선택). lon과 함께 보내거나 둘 다 생략
+     * 위도 (선택). lng와 함께 보내거나 둘 다 생략
      */
     lat?: number | null;
     /**
      * 경도 (선택). lat과 함께 보내거나 둘 다 생략
      */
-    lon?: number | null;
+    lng?: number | null;
     /**
      * 영상 길이(초). 1~30초
      */
@@ -137,7 +137,7 @@ export type VideoUploadRequestDto = {
     /**
      * 촬영 위치 경도 (격자 매핑에 사용)
      */
-    lon: number;
+    lng: number;
     /**
      * 영상 길이(초). 1~30초
      */
@@ -901,7 +901,7 @@ export type BoxShape = MissionShape & {
 export type Cell = {
     gridId: string;
     lat: number;
-    lon: number;
+    lng: number;
 };
 
 /**
@@ -916,7 +916,7 @@ export type CellsShape = MissionShape & {
  */
 export type LatLng = {
     lat: number;
-    lon: number;
+    lng: number;
 };
 
 /**
@@ -985,7 +985,7 @@ export type RegionShape = MissionShape & {
 export type Spot = {
     gridId: string;
     lat: number;
-    lon: number;
+    lng: number;
     /**
      * 코스 내 순번 — mission_grids.seq 는 NULL 허용 컬럼이라 없을 수 있다
      */
@@ -2099,15 +2099,15 @@ export type GetStatsResponse = GetStatsResponses[keyof GetStatsResponses];
 export type GetStatByPointData = {
     body?: never;
     path?: never;
-    query?: {
+    query: {
         /**
          * 위도
          */
-        lat?: number;
+        lat: number;
         /**
          * 경도
          */
-        lon?: number;
+        lng: number;
     };
     url: '/api/regions/stats/by-point';
 };
@@ -2124,11 +2124,11 @@ export type GetStatByPointResponse = GetStatByPointResponses[keyof GetStatByPoin
 export type GetStatByGridData = {
     body?: never;
     path?: never;
-    query?: {
+    query: {
         /**
          * 격자 ID "{grid_y}_{grid_x}"
          */
-        gridId?: string;
+        gridId: string;
     };
     url: '/api/regions/stats/by-grid';
 };
@@ -2145,15 +2145,15 @@ export type GetStatByGridResponse = GetStatByGridResponses[keyof GetStatByGridRe
 export type ReverseGeocodeData = {
     body?: never;
     path?: never;
-    query?: {
+    query: {
         /**
          * 위도
          */
-        lat?: number;
+        lat: number;
         /**
          * 경도
          */
-        lon?: number;
+        lng: number;
     };
     url: '/api/regions/reverse-geocode';
 };
@@ -2251,23 +2251,23 @@ export type GetHotZonesResponse = GetHotZonesResponses[keyof GetHotZonesResponse
 export type GetOccupiedInViewportData = {
     body?: never;
     path?: never;
-    query?: {
+    query: {
         /**
          * 남서 모서리 위도
          */
-        swLat?: number;
+        swLat: number;
         /**
          * 남서 모서리 경도
          */
-        swLng?: number;
+        swLng: number;
         /**
          * 북동 모서리 위도
          */
-        neLat?: number;
+        neLat: number;
         /**
          * 북동 모서리 경도
          */
-        neLng?: number;
+        neLng: number;
         /**
          * 다음 페이지 커서 (직전 응답의 nextCursor). 첫 페이지는 생략
          */
@@ -2426,23 +2426,23 @@ export type GetFriendGridsData = {
     path: {
         userId: number;
     };
-    query?: {
+    query: {
         /**
          * 남서 모서리 위도
          */
-        swLat?: number;
+        swLat: number;
         /**
          * 남서 모서리 경도
          */
-        swLng?: number;
+        swLng: number;
         /**
          * 북동 모서리 위도
          */
-        neLat?: number;
+        neLat: number;
         /**
          * 북동 모서리 경도
          */
-        neLng?: number;
+        neLng: number;
         /**
          * 다음 페이지 커서 (직전 응답의 nextCursor). 첫 페이지는 생략
          */
