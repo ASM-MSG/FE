@@ -213,7 +213,15 @@ export const MapHomeScreen = () => {
                 />
               </View>
             )}
-            <Avatar size="md" fallback="나" />
+            {/* 프로필 진입 (MSG-317 AC 18) — 바텀 내비 프로필 탭과 같은 목적지 */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="프로필 열기"
+              onPress={() => router.navigate("/profile")}
+              className="active:opacity-80"
+            >
+              <Avatar size="md" fallback="나" />
+            </Pressable>
           </View>
           {/* 칩 행 — 테마 선택 시 행 전체 숨김 (AC 1, 네이버 지도 방식) */}
           {topBar.showChips && (
