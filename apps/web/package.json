@@ -19,6 +19,7 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@tanstack/react-query": "^5.101.2",
     "clsx": "^2.1.1",
+    "ky": "^2.0.2",
     "lucide-react": "^1.24.0",
     "radix-ui": "^1.6.2",
     "react": "^19.2.7",
