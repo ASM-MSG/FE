@@ -115,7 +115,7 @@ export type FeaturedBadgeResponseDto = {
     /**
      * 아이콘 URL (에셋 확정 전 null)
      */
-    iconUrl?: string;
+    iconUrl: string | null;
     /**
      * 표시 순서 (1·2)
      */
@@ -193,13 +193,13 @@ export type EarnedBadgeResponseDto = {
      */
     name: string;
     /**
-     * 설명
+     * 설명 — badges.description 은 NULL 허용 컬럼이다
      */
-    description?: string;
+    description: string | null;
     /**
      * 아이콘 URL (에셋 확정 전 null)
      */
-    iconUrl?: string;
+    iconUrl: string | null;
 };
 
 /**
@@ -230,6 +230,40 @@ export type VideoUploadResponseDto = {
      * 이 업로드로 완료된 미션 스탬프 목록 — 없으면 빈 배열
      */
     completedMissions: Array<CompletedMissionResponseDto>;
+};
+
+/**
+ * 영상 신고 접수 요청. 사유 5종 중 하나와 선택적 상세 설명.
+ */
+export type ReportCreateRequestDto = {
+    /**
+     * 신고 사유. INAPPROPRIATE, PRIVACY, SPAM, COPYRIGHT, OTHER 중 하나 (대소문자 무관)
+     */
+    reason: string;
+    /**
+     * 상세 설명. OTHER 사유는 필수, 나머지 사유는 선택. 최대 500자
+     */
+    detail?: string;
+};
+
+export type ApiResponseDtoReportCreateResponseDto = {
+    developCode: number;
+    message: string;
+    data: ReportCreateResponseDto;
+};
+
+/**
+ * 영상 신고 접수 응답.
+ */
+export type ReportCreateResponseDto = {
+    /**
+     * 접수된 신고 ID
+     */
+    reportId: number;
+    /**
+     * 신고 처리 상태. 접수 직후라 항상 PENDING
+     */
+    status: string;
 };
 
 /**
@@ -391,7 +425,7 @@ export type ReissueResponseDto = {
     /**
      * 회전된 새 리프레시 토큰. 앱(X-Client-Type: app)만 값이 채워지고, 웹은 HttpOnly 쿠키(Set-Cookie)로 재설정되므로 null 이다.
      */
-    refreshToken?: string;
+    refreshToken: string | null;
 };
 
 /**
@@ -421,7 +455,7 @@ export type LoginResponseDto = {
     /**
      * 발급된 리프레시 토큰. 앱(X-Client-Type: app)만 값이 채워지고, 웹은 HttpOnly 쿠키(Set-Cookie)로 내려가므로 null 이다.
      */
-    refreshToken?: string;
+    refreshToken: string | null;
 };
 
 /**
@@ -523,11 +557,11 @@ export type CategoryPreferenceDto = {
     /**
      * 알림 카테고리
      */
-    category?: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY';
+    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY';
     /**
      * 수신 여부 — off 행 부재면 true (opt-out 기본 전부 on)
      */
-    enabled?: boolean;
+    enabled: boolean;
 };
 
 /**
@@ -537,7 +571,7 @@ export type NotificationPreferenceResponseDto = {
     /**
      * 카테고리별 수신 상태 (BADGE·HOTZONE·REMIND 고정 3종)
      */
-    preferences?: Array<CategoryPreferenceDto>;
+    preferences: Array<CategoryPreferenceDto>;
 };
 
 export type ApiResponseDtoListZoneResponseDto = {
@@ -561,7 +595,7 @@ export type ZoneResponseDto = {
     /**
      * 소속 행정동 코드 (zones.region_code, nullable)
      */
-    regionCode?: string;
+    regionCode: string | null;
     /**
      * 사각형 남단 행 (zones.min_grid_y)
      */
@@ -601,11 +635,11 @@ export type VideoPlaybackResponseDto = {
     /**
      * 재생본 presigned GET URL. READY 아님·BLINDED(소유자)면 null
      */
-    playbackUrl?: string | null;
+    playbackUrl: string | null;
     /**
      * 썸네일 presigned GET URL. 썸네일 key 없음(READY 이전)이면 null
      */
-    thumbnailUrl?: string | null;
+    thumbnailUrl: string | null;
     /**
      * 이 영상이 속한 격자 ID
      */
@@ -637,7 +671,7 @@ export type VideoPlaybackResponseDto = {
     /**
      * playbackUrl presign TTL(초). playbackUrl=null 이면 null
      */
-    expiresInSec?: number | null;
+    expiresInSec: number | null;
 };
 
 export type ApiResponseDtoListTrendingKeywordResponseDto = {
@@ -721,7 +755,7 @@ export type ExploreGridResponseDto = {
     /**
      * 커버 썸네일 presigned GET URL. READY 게이트라 non-null 기대(null 이면 null 통과)
      */
-    coverThumbnailUrl?: string;
+    coverThumbnailUrl: string | null;
     /**
      * 커버 영상 길이(초) — duration 뱃지
      */
@@ -739,7 +773,7 @@ export type RegionExploreResponseDto = {
     /**
      * 행정동 이름 — 미존재 코드면 null
      */
-    regionName?: string | null;
+    regionName: string | null;
     /**
      * 게이트 통과 영상 ≥1 격자 수 — "이 지역 격자 N개"
      */
@@ -773,9 +807,9 @@ export type RegionStatResponseDto = {
      */
     regionName: string;
     /**
-     * 상위 시군구 코드 (regions.parent_code)
+     * 상위 시군구 코드 (regions.parent_code) — NULL 허용 컬럼이라 최상위 행은 null
      */
-    parentCode?: string;
+    parentCode: string | null;
     /**
      * 점령(수집)한 격자 수
      */
@@ -819,9 +853,9 @@ export type RegionResponseDto = {
      */
     regionName: string;
     /**
-     * 상위 시군구 코드 (regions.parent_code)
+     * 상위 시군구 코드 (regions.parent_code) — NULL 허용 컬럼이라 최상위 행은 null
      */
-    parentCode?: string;
+    parentCode: string | null;
 };
 
 export type ApiResponseDtoListRegionGridCountResponseDto = {
@@ -908,11 +942,11 @@ export type MissionResponseDto = {
     /**
      * 시작 시각. NULL = 무기간(상시)
      */
-    startAt?: string;
+    startAt: string | null;
     /**
      * 종료 시각. NULL = 무기간(상시)
      */
-    endAt?: string;
+    endAt: string | null;
     /**
      * 유형별 렌더 shape 하나(type 에 대응하는 PATH/BOX/CELLS/REGION)
      */
@@ -929,9 +963,9 @@ export type MissionShape = unknown;
  */
 export type PathShape = MissionShape & {
     /**
-     * 코스 라인 GeoJSON LineString 원문
+     * 코스 라인 GeoJSON LineString 원문 — missions.path 는 NULL 허용 컬럼이라 없을 수 있다
      */
-    line?: string;
+    line: string | null;
     spots: Array<Spot>;
 };
 
@@ -939,7 +973,10 @@ export type PathShape = MissionShape & {
  * 구역(AREA) — region_code 만(경계는 region API 로 별도 조회)
  */
 export type RegionShape = MissionShape & {
-    regionCode?: string;
+    /**
+     * 행정동 코드 — missions.region_code 는 NULL 허용 컬럼이라 없을 수 있다
+     */
+    regionCode: string | null;
 };
 
 /**
@@ -949,7 +986,10 @@ export type Spot = {
     gridId: string;
     lat: number;
     lon: number;
-    seq?: number;
+    /**
+     * 코스 내 순번 — mission_grids.seq 는 NULL 허용 컬럼이라 없을 수 있다
+     */
+    seq: number | null;
 };
 
 export type ApiResponseDtoHotZoneListResponseDto = {
@@ -1007,7 +1047,7 @@ export type OccupiedGridPageResponseDto = {
     /**
      * 다음 페이지 조회용 커서. 다음 요청 cursor 파라미터에 넣는다. 마지막 페이지면 null.
      */
-    nextCursor?: string | null;
+    nextCursor: string | null;
 };
 
 /**
@@ -1099,7 +1139,7 @@ export type GridVideoPageResponseDto = {
     /**
      * 다음 페이지 조회용 opaque 커서. 다음 요청 cursor 파라미터에 넣는다. 마지막 페이지면 null.
      */
-    nextCursor?: string | null;
+    nextCursor: string | null;
 };
 
 export type ApiResponseDtoListGridVideoResponseDto = {
@@ -1119,7 +1159,7 @@ export type GridVideoResponseDto = {
     /**
      * 썸네일 presigned GET URL. READY 아니면(썸네일 key 없음) null
      */
-    thumbnailUrl?: string | null;
+    thumbnailUrl: string | null;
     /**
      * 영상 처리 상태 (UPLOADED/ENCODING/BLURRING/READY/FAILED)
      */
@@ -1187,7 +1227,7 @@ export type FriendListItemResponseDto = {
     /**
      * 친구의 프로필 이미지 URL — 미설정이면 null
      */
-    profileImageUrl?: string | null;
+    profileImageUrl: string | null;
     /**
      * 친구의 도감 색상 — 지도에서 친구가 수집한 격자를 칠하는 색
      */
@@ -1249,11 +1289,11 @@ export type FriendCollectionGridResponseDto = {
     /**
      * 썸네일 presigned GET URL — 재생 허용 영상이 없으면 null
      */
-    thumbnailUrl?: string | null;
+    thumbnailUrl: string | null;
     /**
      * 격자 중심점 행정동 이름(무귀속/미판정이면 null)
      */
-    regionName?: string | null;
+    regionName: string | null;
 };
 
 /**
@@ -1267,7 +1307,7 @@ export type FriendProfileResponseDto = {
     /**
      * 친구의 프로필 이미지 URL — 미설정이면 null
      */
-    profileImageUrl?: string | null;
+    profileImageUrl: string | null;
     /**
      * 친구의 도감 색상
      */
@@ -1299,7 +1339,7 @@ export type FriendGridVideoResponseDto = {
     /**
      * 썸네일 presigned GET URL. 썸네일 key 가 없으면 null
      */
-    thumbnailUrl?: string | null;
+    thumbnailUrl: string | null;
     /**
      * 영상 길이(초, 최대 30)
      */
@@ -1331,7 +1371,7 @@ export type ReceivedFriendRequestResponseDto = {
     /**
      * 보낸 사용자의 프로필 이미지 URL — 미설정이면 null
      */
-    profileImageUrl?: string | null;
+    profileImageUrl: string | null;
     /**
      * 요청 시각
      */
@@ -1391,7 +1431,7 @@ export type RegionVideoResponseDto = {
     /**
      * 썸네일 presigned GET URL. READY 아니면(썸네일 key 없음) null
      */
-    thumbnailUrl?: string | null;
+    thumbnailUrl: string | null;
     /**
      * 영상 처리 상태 (UPLOADED/ENCODING/BLURRING/READY/FAILED)
      */
@@ -1449,15 +1489,15 @@ export type CollectionGridResponseDto = {
     /**
      * cover 영상 ID(없으면 null)
      */
-    coverVideoId?: number | null;
+    coverVideoId: number | null;
     /**
      * cover 썸네일 presigned GET URL(없거나 READY 이전이면 null)
      */
-    coverThumbnailUrl?: string | null;
+    coverThumbnailUrl: string | null;
     /**
      * 격자 중심점 행정동 이름(무귀속/미판정이면 null)
      */
-    regionName?: string | null;
+    regionName: string | null;
 };
 
 export type ApiResponseDtoListMyBadgeResponseDto = {
@@ -1483,13 +1523,13 @@ export type MyBadgeResponseDto = {
      */
     name: string;
     /**
-     * 설명
+     * 설명 — badges.description 은 NULL 허용 컬럼이다
      */
-    description?: string;
+    description: string | null;
     /**
      * 아이콘 URL (에셋 확정 전 null)
      */
-    iconUrl?: string;
+    iconUrl: string | null;
     /**
      * 획득 여부
      */
@@ -1497,7 +1537,7 @@ export type MyBadgeResponseDto = {
     /**
      * 획득 시각 — 미획득이면 null
      */
-    earnedAt?: string;
+    earnedAt: string | null;
     /**
      * 미확인(새 뱃지) 여부 — 미획득이면 false
      */
@@ -1505,7 +1545,7 @@ export type MyBadgeResponseDto = {
     /**
      * 대표 뱃지 순서(1·2) — 대표 아니면 null
      */
-    featuredRank?: number;
+    featuredRank: number | null;
 };
 
 export type DeleteData = {
@@ -1616,6 +1656,27 @@ export type UploadResponses = {
 };
 
 export type UploadResponse = UploadResponses[keyof UploadResponses];
+
+export type ReportData = {
+    body: ReportCreateRequestDto;
+    path: {
+        /**
+         * 신고할 영상 ID
+         */
+        videoId: number;
+    };
+    query?: never;
+    url: '/api/videos/{videoId}/reports';
+};
+
+export type ReportResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoReportCreateResponseDto;
+};
+
+export type ReportResponse = ReportResponses[keyof ReportResponses];
 
 export type IssuePresignedUrlData = {
     body: PresignedUrlRequestDto;

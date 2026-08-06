@@ -3,7 +3,8 @@ import { avatarFallback } from "@/entities/profile";
 
 interface ProfileHeaderProps {
   nickname: string;
-  email: string;
+  /** 가입 이메일 — 카카오 가입은 미수집이라 null (명세 계약, MSG-322). null이면 세그먼트 생략 */
+  email: string | null;
   /** 표시용 가입일 — formatJoinedDate 결과 "YYYY.MM.DD" (AC 3) */
   joinedDateLabel: string;
   /** 아바타 이미지 URL — 없으면 이니셜 fallback (Figma 그라데이션 원은 플레이스홀더) */
@@ -24,29 +25,37 @@ export const ProfileHeader = ({
   joinedDateLabel,
   avatarSrc,
   onEdit,
-}: ProfileHeaderProps) => (
-  <div className="flex items-center gap-sm">
-    <Avatar
-      size="lg"
-      src={avatarSrc}
-      alt={nickname}
-      fallback={avatarFallback(nickname)}
-    />
-    <div className="flex min-w-0 flex-1 flex-col gap-xxs">
-      <p className="truncate text-fm-title text-foreground">{nickname}</p>
-      <p
-        className="truncate text-fm-body text-foreground-muted"
-        title={`가입일 ${joinedDateLabel} · ${email}`}
-      >
-        가입일 {joinedDateLabel} · {email}
-      </p>
+}: ProfileHeaderProps) => {
+  // 이메일 null(카카오 가입)이면 "· {email}" 세그먼트 생략 — 가입일만 표시 (MSG-322 추정 1 승인)
+  const metaLabel =
+    email === null
+      ? `가입일 ${joinedDateLabel}`
+      : `가입일 ${joinedDateLabel} · ${email}`;
+
+  return (
+    <div className="flex items-center gap-sm">
+      <Avatar
+        size="lg"
+        src={avatarSrc}
+        alt={nickname}
+        fallback={avatarFallback(nickname)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-xxs">
+        <p className="truncate text-fm-title text-foreground">{nickname}</p>
+        <p
+          className="truncate text-fm-body text-foreground-muted"
+          title={metaLabel}
+        >
+          {metaLabel}
+        </p>
+      </div>
+      <Button
+        text="편집"
+        variant="primary"
+        size="sm"
+        className="shrink-0"
+        onClick={onEdit}
+      />
     </div>
-    <Button
-      text="편집"
-      variant="primary"
-      size="sm"
-      className="shrink-0"
-      onClick={onEdit}
-    />
-  </div>
-);
+  );
+};
