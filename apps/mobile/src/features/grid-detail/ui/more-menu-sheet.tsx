@@ -2,10 +2,10 @@ import { Modal, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Flag, Pencil, Trash2 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
-import { semantic } from "@fillmap/design-tokens";
+import { palette, semantic } from "@fillmap/design-tokens";
 import { BottomSheet } from "@fillmap/ui-native";
 
-/** 메뉴 1행 — 좌측 아이콘 + 라벨, 삭제는 error 색 (AC 1, Figma 14094:4885) */
+/** 메뉴 1행 — 좌측 아이콘 + 라벨. 삭제는 red-600 — 흰 배경 위 텍스트 AA 대비 (환류 반영, 토큰 주석 참조) */
 const MenuRow = ({
   icon: Icon,
   label,
@@ -22,10 +22,13 @@ const MenuRow = ({
     onPress={onPress}
     className="flex-row items-center gap-sm rounded-md px-xs py-3.5 active:bg-surface-soft"
   >
-    <Icon size={20} color={danger ? semantic.error : semantic.textPrimary} />
+    <Icon
+      size={20}
+      color={danger ? palette["red-600"] : semantic.textPrimary}
+    />
     <Text
       className={
-        danger ? "text-fm-body text-error" : "text-fm-body text-foreground"
+        danger ? "text-fm-body text-red-600" : "text-fm-body text-foreground"
       }
     >
       {label}
