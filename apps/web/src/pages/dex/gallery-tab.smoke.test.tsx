@@ -199,6 +199,7 @@ const GALLERY_VIDEOS: CollectedVideo[] = [
     videoId: 301,
     gridId: "B-07",
     cellLabel: "부전 B-07",
+    thumbnailUrl: null,
     createdAt: "2026-07-20T09:00:00.000Z",
   },
 ];
@@ -212,18 +213,21 @@ const SUYEONG_VIDEOS: CollectedVideo[] = [
     videoId: 501,
     gridId: "C-02",
     cellLabel: "광안리 C-02",
+    thumbnailUrl: null,
     createdAt: "2026-07-21T10:00:00.000Z",
   },
   {
     videoId: 502,
     gridId: "C-02",
     cellLabel: "광안리 C-02",
+    thumbnailUrl: null,
     createdAt: "2026-07-21T09:00:00.000Z",
   },
   {
     videoId: 901,
     gridId: "Z-99",
     cellLabel: "유령 Z-99",
+    thumbnailUrl: null,
     createdAt: "2026-07-20T09:00:00.000Z",
   },
 ];

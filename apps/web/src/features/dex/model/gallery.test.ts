@@ -29,6 +29,7 @@ const video = (
   videoId,
   gridId,
   cellLabel: `격자 ${gridId}`,
+  thumbnailUrl: null,
   createdAt,
 });
 

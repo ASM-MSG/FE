@@ -116,7 +116,7 @@ export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
         ...({
           videoId: cellVideos[i].videoId,
           gridId: cell.gridId,
-          thumbnailUrl: i === 2 ? undefined : svgThumbnail(cell.label, i + 1),
+          thumbnailUrl: i === 2 ? null : svgThumbnail(cell.label, i + 1),
           createdAt: new Date(
             Date.parse(cell.firstCollectedAt) + i * VIDEO_GAP,
           ).toISOString(),

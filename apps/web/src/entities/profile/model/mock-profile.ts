@@ -10,11 +10,10 @@ import type { ProfileData } from "./profile";
  * 전체 지도 탐험률·구 단위 탐험률과는 다른 제3의 축이라 정합 대상이 아니다 (R2).
  * 실 API 전환 시 use-profile-query의 queryFn 내부만 교체한다.
  *
- * [MSG-289] 명세 대응 스키마 부재 — satisfies 연결 없음 (추정 스키마를 발명하지 않는다).
- * 프로필 조회(GET /users/me류) 엔드포인트 자체가 OpenAPI 명세에 없다:
- * nickname·email·createdAt은 SignupResponseDto(가입 응답)에만 존재하고, streakDays는
- * 명세 전체 부재, collectionRate(시 단위)는 대응 축 없음, appVersion·locationEnabled는
- * 클라이언트 전용이다. 프로필 조회 API 신설은 백엔드 환류 후보 (스펙 리스크 6).
+ * [MSG-322] 명세 대응: `UserProfileResponseDto`(email·nickname) 신설로 ProfileData가
+ * 생성 타입에 앵커됐다(profile.ts — MSG-289 당시 "스키마 부재"에서 현행화). 나머지 필드
+ * (joinedAt·streakDays·collectionRate·appVersion·locationEnabled)는 여전히 명세 부재 —
+ * 출처·환류 후보 표기는 profile.ts의 ProfileExtension 필드 주석 참조.
  */
 export const MOCK_PROFILE: ProfileData = {
   nickname: MOCK_DEX.summary.nickname,

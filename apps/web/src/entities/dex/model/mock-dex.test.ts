@@ -65,12 +65,13 @@ describe("갤러리 mock 정합성 (AC 6)", () => {
   });
 
   it("썸네일 제공 항목과 미제공 항목이 모두 존재한다 — placeholder 경로 검증 가능 (A7)", () => {
-    expect(
-      MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailUrl !== undefined),
-    ).toBe(true);
-    expect(
-      MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailUrl === undefined),
-    ).toBe(true);
+    // 미제공 표현은 undefined → null (MSG-322 명세 required 승격 — 필드는 항상 존재, 값만 null)
+    expect(MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailUrl !== null)).toBe(
+      true,
+    );
+    expect(MOCK_COLLECTED_VIDEOS.some((v) => v.thumbnailUrl === null)).toBe(
+      true,
+    );
   });
 
   it("수집 격자마다 district가 있고 값은 MOCK_CELLS 체계(구 이름)를 따른다", () => {
