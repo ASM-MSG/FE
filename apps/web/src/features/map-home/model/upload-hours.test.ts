@@ -17,6 +17,7 @@ const videoAt = (videoId: number, iso: string): CellVideo => ({
   viewCount: 10,
   recordedAt: iso,
   durationSec: 30,
+  thumbnailUrl: "data:,thumb",
 });
 
 describe("deriveUploadHourBuckets — 3시간 단위 8버킷 집계 (AC 9)", () => {

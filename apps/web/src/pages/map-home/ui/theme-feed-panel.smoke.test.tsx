@@ -25,6 +25,7 @@ const FEED: ThemeFeed = {
           viewCount: 12000,
           recordedAt: "2026-07-29T12:00:00.000Z",
           durationSec: 30,
+          thumbnailUrl: "data:,thumb",
           mine: true,
         },
         {
@@ -33,6 +34,7 @@ const FEED: ThemeFeed = {
           viewCount: 8410,
           recordedAt: "2026-07-28T12:00:00.000Z",
           durationSec: 24,
+          thumbnailUrl: "data:,thumb",
           uploaderHandle: "@busan.vlog",
           mine: false,
         },
@@ -48,6 +50,7 @@ const FEED: ThemeFeed = {
           viewCount: 640,
           recordedAt: "2026-07-27T12:00:00.000Z",
           durationSec: 26,
+          thumbnailUrl: "data:,thumb",
           uploaderHandle: "@jeonpo_alley",
           mine: false,
         },

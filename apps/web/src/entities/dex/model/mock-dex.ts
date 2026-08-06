@@ -40,6 +40,8 @@ const cellById = (id: string) => {
  * 명세 대응 필드(gridId·firstCollectedAt·videoCount)는 satisfies로
  * CollectionGridResponseDto에 연결한다 (MSG-289 AC 4). gridId 값은 mock 체계 "A-14" 유지
  * (명세 "{gridY}_{gridX}" 체계 전환은 후속 — 질문 5 승인). label·district·center는 FE 확장.
+ * 명세 갱신(2026-08-06)으로 필수가 된 gridX·gridY·lastUploadedAt은 화면 미소비라
+ * Pick으로 대응 필드만 한정한다 — 소비하는 티켓에서 도메인 타입과 함께 추가한다.
  */
 const MOCK_COLLECTED_CELLS: CollectedCell[] = COLLECTED_SEEDS.map(
   ({ gridId, ago, videoCount }) => {
@@ -49,7 +51,10 @@ const MOCK_COLLECTED_CELLS: CollectedCell[] = COLLECTED_SEEDS.map(
         gridId,
         firstCollectedAt: isoAgo(ago),
         videoCount,
-      } satisfies CollectionGridResponseDto),
+      } satisfies Pick<
+        CollectionGridResponseDto,
+        "gridId" | "firstCollectedAt" | "videoCount"
+      >),
       label,
       district,
       center,
@@ -100,6 +105,7 @@ const VIDEO_GAP = 10 * MINUTE;
  * 그 격자 영상의 일부"의 mock 표현으로, 썸네일 클릭 → 상세 시트 활성 매칭 키가 된다.
  * 전 수집 격자에서 videoCount ≤ sampleSize라 항상 매칭 가능하다 (AC 6 불변식, mock-dex.test).
  * 명세 대응 필드는 satisfies로 RegionVideoResponseDto에 연결한다 (MSG-289 AC 4) — cellLabel만 FE 확장.
+ * 명세 갱신(2026-08-06)으로 필수가 된 durationSec·processingStatus는 화면 미소비라 Pick으로 한정.
  */
 export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
   MOCK_COLLECTED_CELLS.flatMap((cell) => {
@@ -114,7 +120,10 @@ export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
           createdAt: new Date(
             Date.parse(cell.firstCollectedAt) + i * VIDEO_GAP,
           ).toISOString(),
-        } satisfies RegionVideoResponseDto),
+        } satisfies Pick<
+          RegionVideoResponseDto,
+          "videoId" | "gridId" | "thumbnailUrl" | "createdAt"
+        >),
         cellLabel: cell.label,
       }),
     );
@@ -144,7 +153,8 @@ const MOCK_REGION_EXPLORED_PCT: Record<string, number> = {
  * 획득 4개는 앞 8개(프리뷰 범위) 안에 배치해 프리뷰만 봐도 통계 카드 "획득 뱃지"와
  * 정합이 눈으로 확인된다 (AC 5). 획득 판정은 백엔드 소관(제외 범위) — earned는 고정값.
  * badgeId는 명세대로 number(정의 순서 1~12 — 기존 슬러그 문자열 id에서 전환, MSG-289 추정 3).
- * satisfies로 MyBadgeResponseDto에 연결한다 (MSG-289 AC 4).
+ * satisfies로 MyBadgeResponseDto에 연결한다 (MSG-289 AC 4) — 명세 갱신(2026-08-06)으로
+ * 필수가 된 code·isNew는 화면 미소비라 Pick으로 대응 필드만 한정.
  */
 export const MOCK_BADGES: DexBadge[] = [
   { badgeId: 1, name: "첫 기록", earned: true },
@@ -159,7 +169,7 @@ export const MOCK_BADGES: DexBadge[] = [
   { badgeId: 10, name: "골목 탐험가", earned: false },
   { badgeId: 11, name: "광안리 원정", earned: false },
   { badgeId: 12, name: "격자 100칸", earned: false },
-] satisfies MyBadgeResponseDto[];
+] satisfies Pick<MyBadgeResponseDto, "badgeId" | "name" | "earned">[];
 
 /**
  * 개인 도감 mock 데이터 (MSG-121, 2026-07-22 개정 반영).
@@ -171,13 +181,14 @@ export const MOCK_BADGES: DexBadge[] = [
  * 파생은 mock 정합 장치일 뿐 프론트 획득 판정 로직이 아니다).
  * 수집 목록은 6건 — 최근 목록 상한 30(개정 D3)은 mock으로 발동하지 않으며 vitest가 판정한다(AC 14).
  * summary는 명세 대응 필드(totalGridCount)만 satisfies로 CollectionSummaryResponseDto에
- * 연결한다 (MSG-289 AC 4 — 대응 필드 한정, 나머지는 FE 확장).
+ * 연결한다 (MSG-289 AC 4 — 대응 필드 한정 Pick, 나머지는 FE 확장. 명세 갱신 2026-08-06으로
+ * 필수가 된 totalVideoCount·visitedRegionCount는 화면 미소비 — 소비 티켓에서 추가).
  */
 export const MOCK_DEX: DexData = {
   summary: {
     ...({
       totalGridCount: MOCK_COLLECTED_CELLS.length,
-    } satisfies CollectionSummaryResponseDto),
+    } satisfies Pick<CollectionSummaryResponseDto, "totalGridCount">),
     nickname: "필맵퍼",
     totalExploredPct: 0.012,
     streakDays: 12,

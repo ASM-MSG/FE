@@ -18,22 +18,22 @@ export interface Bounds {
 
 /**
  * 명세 대응 필드 (MSG-289) — `GridGlobalVideoResponseDto`에서 type-only 파생.
- * 응답 DTO는 전 필드 optional이라(백엔드 required 미명시) 화면 계약이 요구하는
- * 필드를 Required로 승격한다. 명세 필드명 변경·제거 시 이 Pick이 typecheck로 잡는다.
+ * 2026-08-06 명세 갱신으로 백엔드가 응답 required를 명시해 전 대응 필드가 명세상 필수다 —
+ * Required 승격은 명세가 다시 optional로 회귀해도 화면 계약을 지키는 안전망으로 존치한다.
+ * 명세 필드명 변경·제거 시 이 Pick이 typecheck로 잡는다.
  * - videoId: 영상 ID (number) — 단건 재생(GET /api/videos/{videoId}) 진입 키
  * - viewCount: 조회수(원시 값) — 표시 시 formatViewCount로 축약
  * - recordedAt: 촬영 시각 (date-time) — 표시 시 formatRelativeTime으로 상대 시간화.
  *   명세는 타임존 없는 로컬 표기("2026-07-20T18:03:11"), 목은 UTC ISO — 실연동 시 오차 여지 (리스크 4)
  * - durationSec: 영상 길이(초, 명세상 최대 30)
- * - thumbnailUrl: 썸네일 URL — 없으면 placeholder 표시
+ * - thumbnailUrl: 썸네일 URL — 명세 필수 확정(2026-08-06)으로 optional에서 승격
  */
 type CellVideoSpecFields = Required<
   Pick<
     GridGlobalVideoResponseDto,
-    "videoId" | "viewCount" | "recordedAt" | "durationSec"
+    "videoId" | "viewCount" | "recordedAt" | "durationSec" | "thumbnailUrl"
   >
-> &
-  Pick<GridGlobalVideoResponseDto, "thumbnailUrl">;
+>;
 
 /**
  * FE 확장 필드 — 명세(GridGlobalVideoResponseDto)에 대응이 없는 화면 전용 필드 (MSG-289).

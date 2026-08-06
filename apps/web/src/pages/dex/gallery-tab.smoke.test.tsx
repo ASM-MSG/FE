@@ -134,6 +134,7 @@ const cellVideo = (videoId: number, title: string): CellVideo => ({
   viewCount: 100,
   recordedAt: "2026-07-20T00:00:00.000Z",
   durationSec: 24,
+  thumbnailUrl: "data:,thumb",
 });
 
 /** 탐색과 동일 소스(["cells"]) 주입 격자 — 썸네일 클릭 → 상세 시트 매칭 대상 (AC 23, Q7) */

@@ -17,6 +17,7 @@ const VIDEO: CellVideo = {
   viewCount: 12000,
   recordedAt: "2026-07-29T12:00:00.000Z",
   durationSec: 30,
+  thumbnailUrl: "data:,thumb",
   uploaderHandle: "@busan.vlog",
   videoSrc: "https://mdn.github.io/shared-assets/videos/flower.mp4",
 };

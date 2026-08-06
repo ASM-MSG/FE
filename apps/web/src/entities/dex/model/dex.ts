@@ -8,9 +8,9 @@ import type {
 
 /*
  * MSG-289: 명세 대응 필드는 생성 타입(shared/api/generated)에서 type-only 파생한다.
- * 응답 DTO는 전 필드 optional이라(백엔드 required 미명시) 화면 계약이 요구하는 필드를
- * Required로 승격한다 — 명세 필드명 변경·제거 시 Pick이 typecheck로 잡는다.
- * 명세에 없는 화면 전용 필드는 FE 확장으로 분리해 교차(&)한다.
+ * 2026-08-06 명세 갱신으로 백엔드가 응답 required를 명시했다 — Required 승격은 명세가
+ * optional로 회귀해도 화면 계약을 지키는 안전망으로 존치하며, 명세 필드명 변경·제거 시
+ * Pick이 typecheck로 잡는다. 명세에 없는 화면 전용 필드는 FE 확장으로 분리해 교차(&)한다.
  */
 
 /**

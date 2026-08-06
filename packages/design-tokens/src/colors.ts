@@ -35,6 +35,11 @@ export const palette = {
   "theme-festival": "#AF52DE",
   "theme-popup": "#FF9500",
   "theme-route": "#34C759",
+  // 밝은 배경 위 error "텍스트"용 진한 단계 (MSG-317) — red-500(#EF4444)은 흰 배경 대비
+  // 3.76:1로 WCAG AA(4.5:1) 미달, 텍스트 용도만 이 값(4.54:1)을 쓴다. 채움(fill) 용도는
+  // error(red-500) 유지. Figma 변수 미등록 상태의 선등록(theme-* 선례) — 더보기 메뉴
+  // 프레임(14094:4885)은 동일 값으로 동기함.
+  "red-600": "#DC2626",
 } as const;
 
 /** 시맨틱 토큰 — Figma "FeelMap Color" 컬렉션과 1:1. 컴포넌트에서는 이것을 우선 사용 */
