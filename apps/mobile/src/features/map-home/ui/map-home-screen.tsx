@@ -5,13 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Flame, PartyPopper, Route, Store } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
-import {
-  Avatar,
-  Chip,
-  Fab,
-  MapIconButton,
-  SearchBar,
-} from "@fillmap/ui-native";
+import { Avatar, Chip, MapIconButton, SearchBar } from "@fillmap/ui-native";
 import { SEOMYEON_CENTER, resolveMapCenter } from "../../../shared/geolocation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { PEEK_HEIGHT } from "../model/sheet-snap";
@@ -247,14 +241,14 @@ export const MapHomeScreen = () => {
           )}
         </View>
 
-        {/* 내 위치·FAB — 피크 시트 바로 위 우하단. 뒤에 렌더되는 시트가 확장되면 덮인다 */}
+        {/* 내 위치 — 피크 시트 바로 위 우하단. 뒤에 렌더되는 시트가 확장되면 덮인다.
+            FAB(기록하기)는 바텀 내비 카메라와 기능 중복으로 제거 (MSG-317 AC 16, 사용자 결정) */}
         <View
           pointerEvents="box-none"
           className="absolute inset-x-0 items-end gap-2.5 px-md"
           style={{ bottom: bottomOffset + PEEK_HEIGHT + 12 }}
         >
           <MapIconButton icon="locate" onPress={handleLocate} />
-          <Fab accessibilityLabel="기록하기" />
         </View>
 
         {/* 시트 쉘/콘텐츠 분리 (MSG-298) — 쉘은 콘텐츠를 모르고, 여기서 테마 여부로 스위칭 */}
