@@ -3,46 +3,74 @@ import { webStorage } from "@/shared/storage";
 import { AUTH_STORAGE_KEY, createAuthStore, useAuthStore } from "./auth-store";
 
 /**
- * 목 인증 스토어 (MSG-46 후속 3 P1, test-first) — F1의 "비영속" 계약을 영속화로 대체.
- * codex 지적("테스트가 수동 상태 설정으로 비영속을 가림") 해소: 수동 setState가 아니라
- * "이전 세션이 스토리지에 남긴 상태가 새 스토어 생성(=새 로드) 시 재수화된다"를 직접
- * 단정한다. 스토리지 접근은 shared/storage 어댑터 경유 — localStorage 직접 참조는
- * RN 경계 lint가 막는다.
+ * 실인증 스토어 (MSG-324 수용 기준 10, test-first) — 목 스토어의 "기본 true" 계약을
+ * "토큰 유무 유도"로 대체한다. 기존 "데모 기본값 true" 단정의 수정은 티켓 명시 요구
+ * ("현행 mock 기본값 true 제거")에 근거한 계약 변경 — 이전 티켓 테스트 불변 원칙의
+ * 명시적 예외 (빌드 리포트 기록).
+ * 새 로드(재수화) 의미론은 기존과 동일하게 createAuthStore 팩토리로 재현하고,
+ * 스토리지 접근은 shared/storage 어댑터 경유(RN 경계).
  */
-describe("목 인증 스토어 영속화 (P1)", () => {
+describe("인증 스토어 — 토큰 유도 (MSG-324 기준 10)", () => {
   beforeEach(() => {
-    // 싱글턴 상태 초기화 후 스토리지를 비워 "저장된 세션 없음"에서 시작한다
-    useAuthStore.setState({ isAuthenticated: true });
+    // 싱글턴을 비로그인 기준선으로 되돌린 뒤 스토리지를 비운다
+    useAuthStore.setState({ accessToken: null, isAuthenticated: false });
     webStorage.removeItem(AUTH_STORAGE_KEY);
   });
 
-  it("저장된 세션이 없는 첫 로드의 초기값은 로그인 상태(true)다 — 데모 기본값", () => {
+  it("저장 토큰이 없는 새 로드는 비로그인이다 — mock 기본 true 제거", () => {
     const freshLoad = createAuthStore();
 
-    expect(freshLoad.getState().isAuthenticated).toBe(true);
+    expect(freshLoad.getState().accessToken).toBeNull();
+    expect(freshLoad.getState().isAuthenticated).toBe(false);
   });
 
-  it("logout() 호출 시 로그아웃 상태(false)로 바뀐다", () => {
-    useAuthStore.getState().logout();
+  it("setAccessToken() 저장 시 isAuthenticated가 true로 유도된다", () => {
+    useAuthStore.getState().setAccessToken("token-a");
 
-    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(useAuthStore.getState().accessToken).toBe("token-a");
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
   });
 
-  it("로그아웃 후 새 로드(새 스토어 재수화)에도 로그아웃이 유지된다 — 가드가 새 로드를 실제로 막는 전제 (P1)", () => {
-    useAuthStore.getState().logout();
+  it("토큰이 저장된 새 로드는 재수화로 로그인 상태가 된다 — 토큰·인증 모두 복원", async () => {
+    useAuthStore.getState().setAccessToken("token-b");
 
-    // 새 로드 의미론: 초기값 true로 생성되는 새 스토어가 스토리지에서 false를 재수화한다
     const nextLoad = createAuthStore();
+    // persist 재수화는 비동기일 수 있다 — 완료를 명시적으로 기다린다
+    await nextLoad.persist.rehydrate();
 
+    expect(nextLoad.getState().accessToken).toBe("token-b");
+    expect(nextLoad.getState().isAuthenticated).toBe(true);
+  });
+
+  it("토큰 저장은 shared/storage(webStorage) 어댑터를 경유한다 — 스토리지 키에 토큰이 실린다", () => {
+    useAuthStore.getState().setAccessToken("token-c");
+
+    expect(webStorage.getItem(AUTH_STORAGE_KEY)).toContain("token-c");
+  });
+
+  it("logout()은 토큰·인증 상태를 비우고, 새 로드에도 비로그인이 유지된다", async () => {
+    useAuthStore.getState().setAccessToken("token-d");
+    useAuthStore.getState().logout();
+
+    expect(useAuthStore.getState().accessToken).toBeNull();
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+
+    const nextLoad = createAuthStore();
+    await nextLoad.persist.rehydrate();
     expect(nextLoad.getState().isAuthenticated).toBe(false);
   });
 
-  it("login() 후 새 로드에도 로그인이 유지된다 — 카카오 목 로그인 루프의 영속 (P1·P2)", () => {
-    useAuthStore.getState().logout();
-    useAuthStore.getState().login();
+  it("구 shape({isAuthenticated: true})의 스토리지는 실토큰이 없으므로 폐기된다 — 비로그인 시작 (추정 5)", async () => {
+    // 구 버전(version 0) 목 스토어가 남긴 영속 상태 — 토큰 없는 인증 플래그
+    webStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ state: { isAuthenticated: true }, version: 0 }),
+    );
 
-    const nextLoad = createAuthStore();
+    const migratedLoad = createAuthStore();
+    await migratedLoad.persist.rehydrate();
 
-    expect(nextLoad.getState().isAuthenticated).toBe(true);
+    expect(migratedLoad.getState().accessToken).toBeNull();
+    expect(migratedLoad.getState().isAuthenticated).toBe(false);
   });
 });
