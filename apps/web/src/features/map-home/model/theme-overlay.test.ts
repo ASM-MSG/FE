@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellBoundsAt, cellIndexAt } from "@/entities/cell";
+import { cellBoundsAt, cellIndexAt, encodeGridId } from "@/entities/cell";
 import { MOCK_DEX } from "@/entities/dex";
 import {
   MOCK_ROUTE,
@@ -7,30 +7,35 @@ import {
   THEME_META,
   themeCellsOf,
 } from "./theme";
+import { canOpenDetail } from "./home-cell-detail";
 import {
   buildHatchLines,
   buildHomeOverlayCells,
   buildRouteOverlay,
+  themeCellGridIds,
 } from "./theme-overlay";
 
-const OCCUPIED = MOCK_DEX.collectedCells.map(({ gridId, center }) => ({
-  gridId,
-  center,
-}));
-const OCCUPIED_IDS = OCCUPIED.map((c) => c.gridId);
+// MSG-325: 점령 셀 입력이 서버 gridId 목록으로 바뀌었다 — 목 셀도 center 좌표에서 같은 체계로 파생한다
+const OCCUPIED_IDS = MOCK_DEX.collectedCells.map(({ center }) =>
+  encodeGridId(center),
+);
 
 describe("buildHomeOverlayCells — 기본 상태 (AC 2, MSG-263 개정 2 D9)", () => {
   it("활성 테마가 없으면 아무것도 게시하지 않는다 — 점령 셀 표시는 셸 상시 층(MapShell) 소유다", () => {
-    expect(buildHomeOverlayCells(null, [], OCCUPIED)).toEqual([]);
+    expect(buildHomeOverlayCells(null, [], OCCUPIED_IDS)).toEqual([]);
   });
 });
 
 describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
-  const overlays = buildHomeOverlayCells("hot", MOCK_THEME_CELLS.hot, OCCUPIED);
+  const overlays = buildHomeOverlayCells(
+    "hot",
+    MOCK_THEME_CELLS.hot,
+    OCCUPIED_IDS,
+  );
 
   it("핫구역 활성 시 테마 셀들이 테마 색으로 강조된다 (AC 6)", () => {
     for (const cell of MOCK_THEME_CELLS.hot) {
-      const overlay = overlays.find((o) => o.id === cell.id);
+      const overlay = overlays.find((o) => o.id === encodeGridId(cell.center));
       expect(overlay).toBeDefined();
       expect(overlay!.color).toBe(THEME_META.hot.color);
     }
@@ -38,15 +43,18 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
 
   it("테마 셀 ∩ 내 점령 셀만 빗금 표시된다 (AC 7)", () => {
     for (const cell of MOCK_THEME_CELLS.hot) {
-      const overlay = overlays.find((o) => o.id === cell.id)!;
-      expect(overlay.hatched).toBe(OCCUPIED_IDS.includes(cell.id));
+      const overlay = overlays.find((o) => o.id === encodeGridId(cell.center))!;
+      expect(overlay.hatched).toBe(
+        OCCUPIED_IDS.includes(encodeGridId(cell.center)),
+      );
     }
   });
 
   it("테마에 속하지 않는 내 점령 셀은 게시하지 않는다 — 셸 상시 층이 그린다 (MSG-263 개정 2 AC 8, D9)", () => {
-    const outside = OCCUPIED_IDS.filter(
-      (id) => !MOCK_THEME_CELLS.hot.some((c) => c.id === id),
+    const themeGridIds = MOCK_THEME_CELLS.hot.map((c) =>
+      encodeGridId(c.center),
     );
+    const outside = OCCUPIED_IDS.filter((id) => !themeGridIds.includes(id));
     expect(outside.length).toBeGreaterThan(0);
     for (const id of outside) {
       expect(overlays.find((o) => o.id === id)).toBeUndefined();
@@ -56,12 +64,14 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
   it("게시 목록은 테마 셀뿐이고 중복이 없다 — 교집합 셀은 테마 스타일로 1회만 (개정 2 AC 8)", () => {
     const ids = overlays.map((o) => o.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids.sort()).toEqual(MOCK_THEME_CELLS.hot.map((c) => c.id).sort());
+    expect(ids.sort()).toEqual(
+      MOCK_THEME_CELLS.hot.map((c) => encodeGridId(c.center)).sort(),
+    );
   });
 
   it("테마 셀 bounds도 100m 격자 스냅이다 — 500m/100m 혼재 불허 (MSG-263 D5·AC 8)", () => {
     for (const cell of MOCK_THEME_CELLS.hot) {
-      const overlay = overlays.find((o) => o.id === cell.id)!;
+      const overlay = overlays.find((o) => o.id === encodeGridId(cell.center))!;
       expect(overlay.bounds).toEqual(cellBoundsAt(cellIndexAt(cell.center)));
     }
   });
@@ -71,9 +81,11 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
       ...MOCK_THEME_CELLS.hot,
       { id: "SEA-CELL", center: { lat: 34.95, lng: 129.0 } },
     ];
-    const result = buildHomeOverlayCells("hot", withSeaCell, OCCUPIED);
+    const result = buildHomeOverlayCells("hot", withSeaCell, OCCUPIED_IDS);
 
-    expect(result.map((o) => o.id)).not.toContain("SEA-CELL");
+    expect(result.map((o) => o.id)).not.toContain(
+      encodeGridId({ lat: 34.95, lng: 129.0 }),
+    );
   });
 
   it("지역축제·팝업스토어도 같은 규칙으로 각 테마 색을 쓴다 (AC 6)", () => {
@@ -81,14 +93,66 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
       const themed = buildHomeOverlayCells(
         theme,
         MOCK_THEME_CELLS[theme],
-        OCCUPIED,
+        OCCUPIED_IDS,
       );
       for (const cell of MOCK_THEME_CELLS[theme]) {
-        expect(themed.find((o) => o.id === cell.id)!.color).toBe(
-          THEME_META[theme].color,
-        );
+        expect(
+          themed.find((o) => o.id === encodeGridId(cell.center))!.color,
+        ).toBe(THEME_META[theme].color);
       }
     }
+  });
+});
+
+describe("themeCellGridIds — 탭 판정 id = 게시 id (MSG-325 회귀 방지)", () => {
+  // 목 소스 3테마(지역축제·팝업스토어·경로추천)는 셀 id가 목 라벨("A-14")인데 게시 id는
+  // 좌표 유래 서버 gridId다. 탭 판정에 목 라벨을 쓰면 상세가 영영 안 열린다 (Codex 리뷰 지적).
+  const MOCK_SOURCE_THEMES = ["festival", "popup", "route"] as const;
+
+  it("목 라벨 id로 판정하면 상세가 열리지 않는다 — 회귀 재현", () => {
+    for (const theme of MOCK_SOURCE_THEMES) {
+      const cells = themeCellsOf(theme);
+      const overlays = buildHomeOverlayCells(theme, cells, []);
+      const mockLabelIds = cells.map((c) => c.id);
+
+      expect(
+        canOpenDetail(theme, overlays[0].id, mockLabelIds, []),
+        `${theme}: 목 라벨 id는 게시 id와 다른 체계여야 회귀가 성립한다`,
+      ).toBe(false);
+    }
+  });
+
+  it("themeCellGridIds가 만든 판정 id 집합은 게시 id 집합과 정확히 같다 — 목·API 소스 공통", () => {
+    for (const theme of [...MOCK_SOURCE_THEMES, "hot"] as const) {
+      const cells = themeCellsOf(theme);
+      const overlays = buildHomeOverlayCells(theme, cells, []);
+
+      expect(themeCellGridIds(cells).sort()).toEqual(
+        overlays.map((o) => o.id).sort(),
+      );
+      for (const overlay of overlays) {
+        expect(
+          canOpenDetail(theme, overlay.id, themeCellGridIds(cells), []),
+          `${theme}: 게시된 셀은 탭으로 상세가 열려야 한다`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("부산 경계 밖 테마 셀은 판정 집합에도 없다 — 게시되지 않은 셀이 탭으로 열리면 안 된다 (MSG-263 AC 4 정합)", () => {
+    const SEA_CELL = { id: "SEA-CELL", center: { lat: 34.95, lng: 129.0 } };
+    const seaGridId = encodeGridId(SEA_CELL.center);
+    const cells = [...MOCK_THEME_CELLS.hot, SEA_CELL];
+    const overlays = buildHomeOverlayCells("hot", cells, []);
+
+    expect(overlays.map((o) => o.id)).not.toContain(seaGridId);
+    expect(themeCellGridIds(cells)).not.toContain(seaGridId);
+    expect(themeCellGridIds(cells).sort()).toEqual(
+      overlays.map((o) => o.id).sort(),
+    );
+    expect(canOpenDetail("hot", seaGridId, themeCellGridIds(cells), [])).toBe(
+      false,
+    );
   });
 });
 
@@ -97,18 +161,22 @@ describe("buildHomeOverlayCells — 경로추천 (AC 8)", () => {
     const overlays = buildHomeOverlayCells(
       "route",
       themeCellsOf("route"),
-      OCCUPIED,
+      OCCUPIED_IDS,
     );
 
     for (const cell of MOCK_ROUTE.cells) {
-      const overlay = overlays.find((o) => o.id === cell.id)!;
+      const overlay = overlays.find((o) => o.id === encodeGridId(cell.center))!;
       expect(overlay.color).toBe(THEME_META.route.color);
-      expect(overlay.hatched).toBe(OCCUPIED_IDS.includes(cell.id));
+      expect(overlay.hatched).toBe(
+        OCCUPIED_IDS.includes(encodeGridId(cell.center)),
+      );
     }
 
     // 목 경로 셀 3개는 전부 내 점령 — 교집합 케이스가 실제로 시연되는지 고정
     expect(
-      MOCK_ROUTE.cells.filter((c) => OCCUPIED_IDS.includes(c.id)).length,
+      MOCK_ROUTE.cells.filter((c) =>
+        OCCUPIED_IDS.includes(encodeGridId(c.center)),
+      ).length,
     ).toBeGreaterThan(0);
   });
 });

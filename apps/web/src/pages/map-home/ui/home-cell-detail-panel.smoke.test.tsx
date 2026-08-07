@@ -16,25 +16,20 @@ import { HomeCellDetailPanel } from "./HomeCellDetailPanel";
 // Escape 단정 2케이스는 불변
 // MSG-277 2차: additive 필드(statsLine·locationLabel·lastUploadText·accent) 추가에 따른
 // 픽스처 갱신만 — Escape 단정 2케이스는 여전히 불변
+// MSG-325: 표시 모델이 실 API 파생으로 바뀌어(결정 B①) 필드가 줄어든 데 따른 픽스처 갱신만 —
+// Escape 단정 2케이스는 여전히 불변
 const DETAIL: HomeCellDetail = {
-  cellId: "A-14",
+  gridId: "39064_112221",
   label: "서면 A-14",
   subtitle: "내 영상 0개",
   badges: [],
-  myVideos: [],
-  otherVideos: [],
-  showMashup: false,
-  statsLine: "영상 138개 · 조회 1,400 · 담수율 73%",
-  locationLabel: "부산 부산진구 서면",
-  lastUploadText: "마지막 업로드 방금 전",
+  regionLabel: "부산광역시 부산진구 부전1동",
+  coverVideo: null,
   accent: "primary",
 };
 
 /** onViewAll 필수 prop 신설(MSG-253 AC 11)에 따른 렌더 인자 — Escape 단정과 무관한 no-op */
 const noopViewAll = () => {};
-
-/** onVideoSelect 필수 prop 신설(MSG-277 3차 AC 4·9)에 따른 렌더 인자 — Escape 단정과 무관한 no-op */
-const noopVideoSelect = () => {};
 
 describe("홈 셀 상세 패널 Escape 배선", () => {
   afterEach(() => {
@@ -48,7 +43,6 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
         <input aria-label="검색어" />
         <HomeCellDetailPanel
           detail={DETAIL}
-          onVideoSelect={noopVideoSelect}
           onClose={onClose}
           onViewAll={noopViewAll}
         />
@@ -65,7 +59,6 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
     render(
       <HomeCellDetailPanel
         detail={DETAIL}
-        onVideoSelect={noopVideoSelect}
         onClose={onClose}
         onViewAll={noopViewAll}
       />,

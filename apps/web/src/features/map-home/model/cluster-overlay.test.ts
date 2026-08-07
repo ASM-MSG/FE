@@ -6,7 +6,6 @@ import {
   type Bounds,
   type LatLng,
 } from "@/entities/cell";
-import { MOCK_DEX } from "@/entities/dex";
 import {
   buildClusterMarkers,
   clusterWindowSteps,
@@ -15,12 +14,10 @@ import {
   tierOf,
   type ClusterMarker,
 } from "./cluster-overlay";
-import {
-  GRID_MIN_ZOOM,
-  buildGridLines,
-  buildOccupiedGridCells,
-} from "./grid-overlay";
+import { GRID_MIN_ZOOM, buildGridLines } from "./grid-overlay";
+import { toOccupiedOverlays } from "./occupied-grid-overlay";
 import type { StyledCellOverlay } from "./theme-overlay";
+import { MOCK_OCCUPIED_GRIDS } from "@/test/occupied-grids";
 
 /** 서면 일대 뷰포트 — grid-overlay.test와 동일 기준 (AC 2 격자선 게이트 단정용) */
 const SEOMYEON_VIEWPORT: Bounds = {
@@ -29,7 +26,7 @@ const SEOMYEON_VIEWPORT: Bounds = {
 };
 
 /** 셸과 동일 입력 경로의 상시 점령 셀 — 경계 내부 필터 완료본 (MSG-263 D3·D9) */
-const PERSISTENT = buildOccupiedGridCells(MOCK_DEX.collectedCells);
+const PERSISTENT = toOccupiedOverlays(MOCK_OCCUPIED_GRIDS);
 
 /** center가 속한 100m 격자 셀로 스냅된 오버레이 셀 — 파생물 입력 형태와 동일 */
 const overlayAt = (

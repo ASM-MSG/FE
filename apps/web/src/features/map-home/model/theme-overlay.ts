@@ -1,6 +1,7 @@
 import {
   cellBoundsAt,
   cellIndexAt,
+  encodeGridId,
   type Bounds,
   type CellOverlay,
   type LatLng,
@@ -20,7 +21,7 @@ import {
  * 렌더링(naver Polygon·Polyline·Marker)은 MapCanvas 경계 안에서 하고, 여기는 데이터만 만든다.
  * MSG-263 개정(D5): 셀 bounds는 500m 근사(cellToBounds)가 아니라 100m 격자 스냅
  * (cellBoundsAt∘cellIndexAt)이고, 셀 중심이 부산 행정경계 밖인 셀은 대상에서 제외한다(AC 4).
- * MSG-263 개정 2(D9): 기본 점령 셀은 셸 상시 층(MapShell → buildOccupiedGridCells)으로 분리 —
+ * MSG-263 개정 2(D9): 기본 점령 셀은 셸 상시 층(MapShell → toOccupiedOverlays)으로 분리 —
  * 여기서는 테마 셀(빗금 포함)만 게시한다. 교집합 1회 렌더는 셸의 excludeSectionCells가 맡는다(AC 8).
  */
 
@@ -34,36 +35,54 @@ export interface StyledCellOverlay extends CellOverlay {
   occupied?: boolean;
 }
 
-/** 내 점령 셀 입력 — CollectedCell(entities/dex)의 구조적 부분집합 */
-export interface OccupiedCell {
-  gridId: string;
-  center: LatLng;
-}
+/**
+ * 게시 대상 테마 셀 — 중심이 부산 행정경계 밖인 셀은 제외한다 (MSG-263 AC 4).
+ * 게시 목록(`buildHomeOverlayCells`)과 탭 판정 id(`themeCellGridIds`)가 **이 하나의
+ * 필터된 소스**에서 파생돼야 한다 — 한쪽만 필터하면 게시되지 않은 셀이 판정 집합에 남아
+ * "강조된 테마 셀만 상세를 연다"(AC 9)가 깨진다.
+ */
+const renderableThemeCells = (themeCells: ThemeCell[]): ThemeCell[] =>
+  themeCells.filter((c) => isGridCellCenterInBusan(c.center));
 
 /**
- * 활성 테마 + 테마 셀 + 내 점령 셀 → 지도 게시용 테마 오버레이 목록. [AC 2·6·7·8]
+ * 활성 테마 + 테마 셀 + 내 점령 격자 id → 지도 게시용 테마 오버레이 목록. [AC 2·6·7·8]
  * - 비활성: 빈 목록 — 기본 점령 표시는 셸 상시 층 소유 (MSG-263 개정 2 D9)
  * - 핫구역·지역축제·팝업스토어: 테마 셀을 테마 색으로, 교집합(∩ 내 점령)은 빗금
  * - 경로추천: 경로 주변 셀을 경로 색으로 — 교집합 빗금 규칙 동일 (Figma 정본 13848:8440, 검증 재작업 1)
  * 교집합 셀은 테마 스타일 쪽으로만 1회 그려진다 — 셸이 게시 id와 겹치는 상시 점령 셀을 제외한다(AC 8).
+ *
+ * MSG-325: 오버레이 id는 목 라벨("A-14")이 아니라 **서버 격자 id 체계**다 — 목 테마 셀도
+ * 자기 center를 encodeGridId한 값을 쓴다. 점령 격자가 API에서 오므로 두 층의 id 체계가
+ * 같아야 교집합(빗금)·중복 제거가 성립한다. 목 데이터 파일은 그대로 둔다.
  */
 export const buildHomeOverlayCells = (
   activeTheme: ThemeId | null,
   themeCells: ThemeCell[],
-  occupiedCells: OccupiedCell[],
+  occupiedGridIds: string[],
 ): StyledCellOverlay[] => {
   if (activeTheme === null) return [];
 
-  const occupiedIds = new Set(occupiedCells.map((c) => c.gridId));
-  return themeCells
-    .filter((c) => isGridCellCenterInBusan(c.center))
-    .map((c) => ({
-      id: c.id,
+  const occupiedIds = new Set(occupiedGridIds);
+  return renderableThemeCells(themeCells).map((c) => {
+    const gridId = encodeGridId(c.center);
+    return {
+      id: gridId,
       bounds: cellBoundsAt(cellIndexAt(c.center)),
       color: THEME_META[activeTheme].color,
-      hatched: occupiedIds.has(c.id),
-    }));
+      hatched: occupiedIds.has(gridId),
+    };
+  });
 };
+
+/**
+ * 게시된 테마 셀의 격자 id 목록 — 셀 탭 상세 열림 판정(`canOpenDetail`)의 입력.
+ * `buildHomeOverlayCells`와 같은 필터·같은 인코딩(`renderableThemeCells` → `encodeGridId`)을
+ * 거치므로 **판정 집합 ≡ 게시 집합**이 구성상 보장된다. 두 축의 어긋남이 각각 결함이었다:
+ * ① 목 소스 테마의 `ThemeCell.id`는 목 라벨("A-14")이라 그대로 쓰면 상세가 영영 안 열리고,
+ * ② 경계 필터를 한쪽만 적용하면 게시되지 않은 셀이 판정에 남는다.
+ */
+export const themeCellGridIds = (themeCells: ThemeCell[]): string[] =>
+  renderableThemeCells(themeCells).map((c) => encodeGridId(c.center));
 
 /** 지도 게시용 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (AC 8) */
 export interface RouteOverlay {
