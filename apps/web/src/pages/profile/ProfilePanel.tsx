@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@fillmap/ui-web";
-import { useAuthStore } from "@/features/auth/model/auth-store";
+import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
 import { ProfileEditModal } from "@/features/profile/ui/ProfileEditModal";
@@ -14,7 +14,7 @@ import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
  * 홈·탐색·도감과 동일한 전고 사이드탭(w-97) 패턴을 따른다 — Figma에서는 섹션 구성·콘텐츠만.
  * 구성: 프로필 헤더 → "내 활동" 카드 → "설정" 3행 → "계정" 3행(앱 버전은 정보 행) → [로그아웃].
  * 전부 mock이고 › 행은 렌더만 — 실동작 없음 (핸들러 미배선, A4).
- * [로그아웃]은 목 인증 스토어 logout()에 배선 — MSG-124 A5 "미배선"의 의도적 해제 (MSG-46 후속 F2).
+ * [로그아웃]은 useLogout 훅(/api/auth/logout + 로컬 우선 종료)에 배선 (MSG-324 기준 12 — 구 목 스토어 배선 대체).
  * [편집]은 프로필 편집 모달을 연다 (MSG-125 AC 1) — 모달 open 상태는 이 패널이 보유.
  * 본문은 패널 내부 세로 스크롤(AC 11), [로그아웃]은 본문 마지막 항목 + 콘텐츠가 짧으면
  * mt-auto로 패널 하단 정렬 (A6). 로딩/오류 게이트는 use-dex-query 패턴 미러링 (A7).
@@ -22,7 +22,7 @@ import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
 export const ProfilePanel = () => {
   const { data, isLoading, isError, refetch } = useProfileQuery();
   const [editOpen, setEditOpen] = useState(false);
-  const logout = useAuthStore((s) => s.logout);
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
@@ -65,13 +65,15 @@ export const ProfilePanel = () => {
               <SettingRow label="개인정보 처리방침" />
             </ProfileSection>
 
-            {/* [로그아웃] — 목 인증 상태 전환만, 화면 전환 없음(패널에 머묾이 의도) (F2) */}
+            {/* [로그아웃] — logout API + 로컬 세션 종료, 화면 전환 없음(패널에 머묾이 의도) (F2 → MSG-324) */}
             <div className="mt-auto flex flex-col pt-md">
               <Button
                 text="로그아웃"
                 variant="danger"
                 className="w-full"
-                onClick={logout}
+                onClick={() => logout()}
+                disabled={isLoggingOut}
+                aria-busy={isLoggingOut}
               />
             </div>
           </div>

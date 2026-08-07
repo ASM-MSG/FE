@@ -1,7 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOCK_PROFILE } from "@/entities/profile";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { ProfilePanel } from "./ProfilePanel";
@@ -13,8 +19,9 @@ import { ProfilePanel } from "./ProfilePanel";
  * 정보 행 비포커스(AC 8), no-op 클릭이 URL을 바꾸지 않음(AC 7·9).
  * [편집]은 MSG-125에서 프로필 편집 모달로 배선됨 — no-op 목록에서 제외하고
  * 모달 열림·초기값 채움을 별도 케이스로 고정한다 (MSG-125 AC 1·3).
- * [로그아웃]은 MSG-46 후속(F2)에서 목 인증 스토어에 배선됨 — no-op 목록에서 제외하고
- * 상태 전환 + URL 불변을 별도 케이스로 고정한다.
+ * [로그아웃]은 MSG-46 후속(F2)에서 목 스토어 배선 → MSG-324에서 useLogout 훅(logout API +
+ * 로컬 우선 종료)으로 교체됨 — no-op 목록에서 제외하고 API 호출 + 상태 전환 + URL 불변을
+ * 별도 케이스로 고정한다.
  * 스타일·간격 단정은 넣지 않는다 — 픽셀 판정은 브라우저 검증의 몫.
  */
 
@@ -36,7 +43,10 @@ const renderPanel = () =>
     </QueryClientProvider>,
   );
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("프로필 패널 스모크", () => {
   beforeEach(() => {
@@ -93,14 +103,23 @@ describe("프로필 패널 스모크", () => {
     expect(screen.getByText(MOCK_PROFILE.nickname)).toBeTruthy();
   });
 
-  it("[로그아웃] 클릭 시 목 인증 상태가 로그아웃으로 바뀌고, 화면 전환 없이 패널에 머문다 (F2)", async () => {
+  it("[로그아웃] 클릭 시 /api/auth/logout 호출 후 비로그인 상태가 되고, 화면 전환 없이 패널에 머문다 (F2 → MSG-324 기준 12)", async () => {
+    // MSG-324에서 목 스토어 배선 → useLogout 훅(API + 로컬 우선 종료)으로 교체돼 네트워크를 탄다 — fetch 목 보강
+    const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
+      async () => new Response(null, { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
     renderPanel();
     await screen.findByText(MOCK_PROFILE.nickname);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
 
     fireEvent.click(screen.getByRole("button", { name: "로그아웃" }));
 
-    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    await waitFor(() =>
+      expect(useAuthStore.getState().isAuthenticated).toBe(false),
+    );
+    const [requested] = fetchMock.mock.calls[0];
+    expect(new URL(requested.url).pathname).toBe("/api/auth/logout");
     // 로그아웃 직후 화면 전환 없음(패널에 머묾)이 의도 — 이후 프로필 클릭 시 로그인 모달 (G1)
     expect(screen.getByTestId("location").textContent).toBe("/profile");
     expect(screen.getByText(MOCK_PROFILE.nickname)).toBeTruthy();
