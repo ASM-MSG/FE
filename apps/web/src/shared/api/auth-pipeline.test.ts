@@ -97,6 +97,47 @@ describe("토큰 주입 (기준 1) · credentials (기준 6)", () => {
   });
 });
 
+describe("auth 엔드포인트 토큰 미주입 (기준 1 — 실서버 회귀)", () => {
+  /**
+   * 재발급이 필요한 시점의 액세스 토큰은 정의상 무효다. 그런데 서버는 reissue에
+   * Authorization이 붙어 있으면 그 토큰을 검증해 401(2401)로 거부한다 — 실서버 실측:
+   * 헤더 없음 200 / 무효 토큰 401 2401 / 유효 토큰 200. 즉 헤더를 붙이면 재발급이
+   * 필요한 바로 그 순간에만 실패한다. afterResponse의 제외 목록과 대칭을 맞춘다.
+   */
+  it.each([
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/auth/reissue",
+    "/api/auth/dev/social-login",
+  ])("%s 요청에는 저장 토큰이 주입되지 않는다", async (path) => {
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    configure(configureAuthPipeline, () => "stale-token");
+    const { received } = stubFetch(() => envelopeResponse({ ok: true }));
+
+    await httpClient.post(`${API_BASE}${path}`, { json: {} });
+
+    expect(received[0].headers.get("Authorization")).toBeNull();
+    // 쿠키 리프레시 토큰은 계속 실려야 한다 (기준 6)
+    expect(received[0].credentials).toBe("include");
+  });
+
+  /**
+   * logout은 계약상 Authorization이 필수라 제외 목록에 없다 — 의도된 비대칭이다.
+   * 제외 목록에 logout을 추가하면 이 단정이 깨지며 알린다.
+   */
+  it("logout은 Authorization이 필수이므로 계속 주입된다", async () => {
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    configure(configureAuthPipeline, () => "stored-access-token");
+    const { received } = stubFetch(() => envelopeResponse({ ok: true }));
+
+    await httpClient.post(`${API_BASE}/api/auth/logout`, { json: {} });
+
+    expect(received[0].headers.get("Authorization")).toBe(
+      "Bearer stored-access-token",
+    );
+  });
+});
+
 describe("401 재발급 후 1회 재시도 (기준 2)", () => {
   it("보호 API 401 → reissue(X-Client-Type: web) → 새 토큰 스토어 반영 → 원요청 1회 재시도 응답이 반환된다", async () => {
     const { configureAuthPipeline, httpClient } = await loadPipeline();

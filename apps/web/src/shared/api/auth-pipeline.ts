@@ -70,15 +70,24 @@ const reissueAccessToken = async (): Promise<string | null> => {
   }
 };
 
-/** 수용 기준 1 — 저장 토큰이 있으면 Authorization: Bearer 주입, 없으면 헤더 미부착 */
+/**
+ * 수용 기준 1 — 저장 토큰이 있으면 Authorization: Bearer 주입, 없으면 헤더 미부착.
+ *
+ * 단, AUTH_ENDPOINT_PATHS에는 주입하지 않는다: 재발급이 필요한 시점의 액세스 토큰은
+ * 정의상 무효인데, 서버는 reissue에 Authorization이 붙어 있으면 그 토큰을 검증해
+ * 401(2401)로 거부한다(실서버 실측: 헤더 없음 200 / 무효 토큰 401 / 유효 토큰 200).
+ * 붙이면 재발급이 필요한 바로 그 순간에만 재발급이 실패한다.
+ * logout은 Authorization이 필수라 이 목록에 없다 — 의도된 비대칭(테스트가 고정).
+ */
 export const authBeforeRequest: BeforeRequestHook = ({ request }) => {
+  if (isAuthEndpoint(request.url)) {
+    return;
+  }
   const accessToken = config?.getAccessToken() ?? null;
   if (accessToken !== null) {
     request.headers.set("Authorization", `Bearer ${accessToken}`);
   }
-  if (!isAuthEndpoint(request.url)) {
-    retryClones.set(request, request.clone());
-  }
+  retryClones.set(request, request.clone());
 };
 
 /**
