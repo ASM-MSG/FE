@@ -22,7 +22,7 @@ import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
 export const ProfilePanel = () => {
   const { data, isLoading, isError, refetch } = useProfileQuery();
   const [editOpen, setEditOpen] = useState(false);
-  const { mutate: logout } = useLogout();
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
@@ -72,6 +72,8 @@ export const ProfilePanel = () => {
                 variant="danger"
                 className="w-full"
                 onClick={() => logout()}
+                disabled={isLoggingOut}
+                aria-busy={isLoggingOut}
               />
             </div>
           </div>

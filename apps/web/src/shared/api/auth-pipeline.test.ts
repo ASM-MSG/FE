@@ -109,6 +109,8 @@ describe("auth 엔드포인트 토큰 미주입 (기준 1 — 실서버 회귀)"
     "/api/auth/signup",
     "/api/auth/reissue",
     "/api/auth/dev/social-login",
+    // provider가 경로 파라미터 — 정확 일치가 아니라 접두사로 걸러야 한다
+    "/api/auth/oauth/kakao",
   ])("%s 요청에는 저장 토큰이 주입되지 않는다", async (path) => {
     const { configureAuthPipeline, httpClient } = await loadPipeline();
     configure(configureAuthPipeline, () => "stale-token");
@@ -240,6 +242,8 @@ describe("auth 엔드포인트 401 제외 (기준 4)", () => {
     "/api/auth/signup",
     "/api/auth/reissue",
     "/api/auth/dev/social-login",
+    // 실 소셜 로그인 — 401(2421 id_token 검증 실패 등)은 로그인 실패지 세션 만료가 아니다
+    "/api/auth/oauth/kakao",
   ])("%s의 401은 재발급을 트리거하지 않고 그대로 반환된다", async (path) => {
     const { configureAuthPipeline, httpClient } = await loadPipeline();
     const { onSessionExpired } = configure(
@@ -315,4 +319,51 @@ describe("재발급 실패 = 세션 만료 (기준 5)", () => {
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(401);
   });
+});
+
+/**
+ * 리뷰 반영 — 재시도 fetch가 던지는 경우의 의미론을 고정한다.
+ * 제안된 "throw 시 onSessionExpired" 는 채택하지 않는다: 이 시점엔 재발급이 이미
+ * 성공해 새 토큰이 저장된 상태라 세션은 유효하다. 취소(언마운트)나 일시적 네트워크
+ * 장애로 로그아웃시키면 오히려 해롭다. 오류를 그대로 전파해 취소는 Query가 취소로,
+ * 네트워크 오류는 shouldRetryQuery의 재시도 대상으로 다루게 둔다.
+ */
+describe("재시도 fetch 실패 시 의미론 (리뷰 반영)", () => {
+  it.each([
+    ["네트워크 장애", () => new TypeError("Failed to fetch")],
+    ["요청 취소", () => new DOMException("Aborted", "AbortError")],
+  ])(
+    "%s로 재시도가 실패하면 오류가 전파되고 세션 만료 처리는 하지 않는다",
+    async (_label, makeError) => {
+      const { configureAuthPipeline, httpClient } = await loadPipeline();
+      let token: string | null = "stale-token";
+      const { onTokenRefreshed, onSessionExpired } = configure(
+        configureAuthPipeline,
+        () => token,
+      );
+      onTokenRefreshed.mockImplementation((next: string) => {
+        token = next;
+      });
+
+      let protectedCalls = 0;
+      stubFetch((request) => {
+        if (pathnameOf(request) === "/api/auth/reissue") {
+          return envelopeResponse({
+            accessToken: "reissued-token",
+            refreshToken: null,
+          });
+        }
+        protectedCalls += 1;
+        if (protectedCalls === 1) return unauthorizedResponse();
+        throw makeError();
+      });
+
+      await expect(httpClient.get(`${API_BASE}/api/videos`)).rejects.toThrow();
+      // 재발급은 성공했다 = 세션은 유효하다. 만료 처리는 하지 않는다
+      expect(onTokenRefreshed).toHaveBeenCalledExactlyOnceWith(
+        "reissued-token",
+      );
+      expect(onSessionExpired).not.toHaveBeenCalled();
+    },
+  );
 });

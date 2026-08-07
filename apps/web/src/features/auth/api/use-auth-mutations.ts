@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 // 생성 mutation 옵션은 barrel(generated/index.ts) 미재수출 — 직접 경로 import (MSG-323 관례)
 import {
@@ -33,11 +33,13 @@ const logoutFn = logoutMutation().mutationFn!;
  */
 export const useDevSocialLogin = () => {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (_variables: void, context) =>
       socialLoginFn({ body: { oid: DEV_SOCIAL_LOGIN_OID } }, context),
     onSuccess: (envelope) => {
       setAccessToken(unwrapEnvelope(envelope).accessToken);
+      queryClient.clear();
     },
   });
 };
@@ -45,10 +47,12 @@ export const useDevSocialLogin = () => {
 /** 이메일 로그인 (기준 7·8) — 성공 시 accessToken 스토어 저장까지. 화면 배선은 후속 티켓 (추정 7) */
 export const useEmailLogin = () => {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const queryClient = useQueryClient();
   return useMutation({
     ...loginMutation(),
     onSuccess: (envelope) => {
       setAccessToken(unwrapEnvelope(envelope).accessToken);
+      queryClient.clear();
     },
   });
 };
@@ -67,6 +71,13 @@ export const useSignup = () =>
  * 로그아웃 (기준 9) — `/api/auth/logout` 호출 후 성공·실패와 무관하게(onSettled)
  * 로컬 토큰·인증 상태를 비운다 (로컬 우선 종료). 응답은 봉투 없음(unknown)이라 언랩 비대상.
  * X-Device-Id 미전송 = 서버가 전 디바이스 세션 삭제 (추정 4).
+ */
+/**
+ * 리뷰 반영 — 로그아웃은 쿼리 캐시를 비우지 않는다. 교차 사용자 노출은 로그인 쪽
+ * clear()가 이미 막고(다음 세션은 항상 빈 캐시에서 시작), 비로그인 상태의 /profile
+ * 직접 진입은 RequireAuth가 막는다. 반대로 여기서 비우면 로그아웃 직후 화면에 남아
+ * 있는 패널이 로딩 → 401 오류 상태로 떨어진다 — "화면 전환 없이 패널에 머문다"는
+ * MSG-124 F2 계약을 깨는 회귀(스모크 테스트가 검출).
  */
 export const useLogout = () => {
   const clearLocalSession = useAuthStore((s) => s.logout);

@@ -38,8 +38,17 @@ const AUTH_ENDPOINT_PATHS = new Set([
   "/api/auth/dev/social-login",
 ]);
 
-const isAuthEndpoint = (url: string): boolean =>
-  AUTH_ENDPOINT_PATHS.has(new URL(url).pathname);
+/** provider가 경로 파라미터인 엔드포인트 — `/api/auth/oauth/{provider}` (실 소셜 로그인) */
+const AUTH_ENDPOINT_PREFIXES = ["/api/auth/oauth/"];
+
+/** `/api/auth/logout`은 Authorization이 필수라 의도적으로 제외 대상이 아니다 (테스트가 고정) */
+const isAuthEndpoint = (url: string): boolean => {
+  const { pathname } = new URL(url);
+  return (
+    AUTH_ENDPOINT_PATHS.has(pathname) ||
+    AUTH_ENDPOINT_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
+};
 
 /**
  * 401 재시도용 요청 사본 — fetch가 원 Request의 body를 소모하므로(POST 등)
@@ -122,6 +131,9 @@ export const authAfterResponse: AfterResponseHook = async ({
   const retryRequest = retryClones.get(request) ?? request;
   retryClones.delete(request);
   retryRequest.headers.set("Authorization", `Bearer ${accessToken}`);
+  // 이 fetch가 던지면(취소·네트워크 장애) 오류를 그대로 전파한다 — 재발급이 이미 성공해
+  // 세션은 유효하므로 만료 처리 대상이 아니다. 취소는 Query가 취소로, 네트워크 오류는
+  // shouldRetryQuery의 재시도 대상으로 다룬다 (테스트가 고정).
   const retryResponse = await fetch(retryRequest);
   if (retryResponse.status === 401) {
     // 새 토큰으로도 401 — 세션 만료 처리, 재시도는 1회로 끝 (수용 기준 5)

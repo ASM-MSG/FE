@@ -15,7 +15,7 @@ import { useLoginModalStore } from "../model/login-modal-store";
  */
 export const KakaoLoginButton = () => {
   const closeModal = useLoginModalStore((s) => s.closeModal);
-  const { mutate: devSocialLogin } = useDevSocialLogin();
+  const { mutate: devSocialLogin, isPending } = useDevSocialLogin();
 
   const handleClick = () => {
     devSocialLogin(undefined, { onSuccess: () => closeModal() });
@@ -25,7 +25,9 @@ export const KakaoLoginButton = () => {
     <button
       type="button"
       onClick={handleClick}
-      className="flex h-15.5 w-full items-center justify-center gap-xs rounded-full bg-kakao-yellow text-fm-heading font-bold text-kakao-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      disabled={isPending}
+      aria-busy={isPending}
+      className="flex h-15.5 w-full items-center justify-center gap-xs rounded-full bg-kakao-yellow text-fm-heading font-bold text-kakao-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
     >
       <img src={kakaoLogo} alt="" className="w-4.5" />
       카카오로 계속하기

@@ -210,3 +210,67 @@ describe("useLogout (기준 9)", () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });
+
+/**
+ * 리뷰 반영 — 인증 상태가 바뀌면 이전 사용자의 쿼리 캐시가 남아선 안 된다.
+ * 로그아웃 후 캐시에 남은 프로필이 다음 사용자에게 보이는 것을 막는다.
+ * 회원가입은 자동 로그인을 하지 않아(추정 7) 인증 상태를 바꾸지 않으므로 대상이 아니다.
+ */
+describe("인증 상태 전이 시 쿼리 캐시 초기화 (리뷰 반영)", () => {
+  const seededClient = () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(["profile"], { nickname: "이전 사용자" });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    return { queryClient, wrapper };
+  };
+
+  it("로그인 성공 시 이전 세션의 쿼리 캐시가 비워진다", async () => {
+    stubFetch(() =>
+      envelopeResponse({ accessToken: "new-token", refreshToken: null }),
+    );
+    const { queryClient, wrapper } = seededClient();
+
+    const { result } = renderHook(() => useDevSocialLogin(), { wrapper });
+    act(() => result.current.mutate());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(queryClient.getQueryData(["profile"])).toBeUndefined();
+  });
+
+  /**
+   * 로그아웃은 비우지 않는다 — 교차 사용자 노출은 로그인 쪽 clear()가 막고,
+   * 여기서 비우면 화면에 남은 프로필 패널이 로딩→오류로 떨어져 "패널에 머문다"는
+   * MSG-124 F2 계약이 깨진다. 이 단정이 그 결정을 고정한다.
+   */
+  it("로그아웃은 캐시를 비우지 않는다 (다음 로그인이 비운다)", async () => {
+    stubFetch(() => new Response(null, { status: 200 }));
+    const { queryClient, wrapper } = seededClient();
+
+    const { result } = renderHook(() => useLogout(), { wrapper });
+    act(() => result.current.mutate());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(queryClient.getQueryData(["profile"])).toEqual({
+      nickname: "이전 사용자",
+    });
+  });
+
+  it("회원가입은 인증 상태를 바꾸지 않으므로 캐시를 유지한다", async () => {
+    stubFetch(() => envelopeResponse({ userId: 1 }));
+    const { queryClient, wrapper } = seededClient();
+
+    const { result } = renderHook(() => useSignup(), { wrapper });
+    act(() =>
+      result.current.mutate({
+        body: { email: "a@b.c", password: "pw", nickname: "n" },
+      }),
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(queryClient.getQueryData(["profile"])).toEqual({
+      nickname: "이전 사용자",
+    });
+  });
+});
