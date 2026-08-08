@@ -19,3 +19,15 @@ export const mapQueryPolicy = {
   staleTime: MAP_QUERY_STALE_TIME,
   placeholderData: keepPreviousData,
 } as const;
+
+/**
+ * **단일 엔티티 조회용** 정책 — `placeholderData`가 없다.
+ *
+ * `keepPreviousData`는 "같은 종류 데이터의 연속적 갱신"(뷰포트 이동)에나 맞는다.
+ * 격자를 바꿔 탭하는 것처럼 키가 **다른 엔티티**를 가리키면, 새 응답이 오기 전까지
+ * 직전 격자의 배지·영상수·대표 영상이 새 격자 자리에 그대로 남는다(리뷰 지적).
+ * 게다가 조합 쿼리는 각자 다른 시점에 도착해 서로 다른 격자의 값이 섞일 수 있다.
+ */
+export const entityQueryPolicy = {
+  staleTime: MAP_QUERY_STALE_TIME,
+} as const;

@@ -6,7 +6,7 @@ import {
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { deriveHomeCellDetail, type HomeCellDetail } from "./home-cell-detail";
-import { mapQueryPolicy } from "./map-query-policy";
+import { entityQueryPolicy } from "./map-query-policy";
 import type { ThemeId } from "./theme";
 
 /**
@@ -28,19 +28,19 @@ export const useGridDetailQuery = (
     ...getCellOptions({ path }),
     select: unwrapEnvelope,
     enabled,
-    ...mapQueryPolicy,
+    ...entityQueryPolicy,
   });
   const cover = useQuery({
     ...getGridCoverOptions({ path }),
     select: unwrapEnvelope,
     enabled,
-    ...mapQueryPolicy,
+    ...entityQueryPolicy,
   });
   const stat = useQuery({
     ...getStatByGridOptions({ query: { gridId: gridId ?? "" } }),
     select: unwrapEnvelope,
     enabled,
-    ...mapQueryPolicy,
+    ...entityQueryPolicy,
   });
 
   if (!cell.data) return null;

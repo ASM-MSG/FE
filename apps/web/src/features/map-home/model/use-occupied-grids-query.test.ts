@@ -2,7 +2,11 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import type { ApiResponseDtoOccupiedGridPageResponseDto } from "@/shared/api/generated";
 import { occupiedGridOf } from "@/test/occupied-grids";
-import { MAP_QUERY_STALE_TIME, mapQueryPolicy } from "./map-query-policy";
+import {
+  MAP_QUERY_STALE_TIME,
+  entityQueryPolicy,
+  mapQueryPolicy,
+} from "./map-query-policy";
 import {
   MAX_GRID_PAGES,
   flattenGridPages,
@@ -64,5 +68,10 @@ describe("지도 계열 쿼리 정책 (MSG-325 기준 9)", () => {
 
   it("재조회 중 직전 데이터를 유지한다 — 지도 이동 시 오버레이 깜빡임 방지", () => {
     expect(mapQueryPolicy.placeholderData).toBe(keepPreviousData);
+  });
+
+  it("단일 엔티티 조회 정책에는 placeholderData가 없다 — 키가 다른 격자를 가리키면 직전 상세가 남는다 (리뷰 반영)", () => {
+    expect(entityQueryPolicy.staleTime).toBe(MAP_QUERY_STALE_TIME);
+    expect("placeholderData" in entityQueryPolicy).toBe(false);
   });
 });
