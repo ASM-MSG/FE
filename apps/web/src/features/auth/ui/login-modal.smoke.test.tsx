@@ -52,6 +52,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.clearAllMocks();
+  oauthStateStorage.clear();
   useAuthStore.setState({ accessToken: null, isAuthenticated: false });
   webStorage.removeItem(AUTH_STORAGE_KEY);
 });
@@ -151,6 +152,6 @@ describe("로그인 모달 스모크", () => {
     // state는 콜백에서 대조할 수 있도록 저장돼 있어야 한다 (CSRF)
     const state = url.searchParams.get("state");
     expect(state).toBeTruthy();
-    expect(oauthStateStorage.consume()).toBe(state);
+    expect(oauthStateStorage.peek()).toBe(state);
   });
 });

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
@@ -13,11 +13,12 @@ type CallbackView =
 
 /**
  * 카카오 인가 결과를 해석해 표시 모델로 바꾼다.
- * state는 소비형이라 렌더당 1회만 읽어야 한다 — 호출부가 useMemo로 고정한다.
+ * 저장된 state는 **읽기만** 한다(peek) — 여러 번 실행돼도 같은 결과여야 하기 때문이다.
+ * 폐기(clear)는 판정과 분리해 효과에서 1회 수행한다.
  */
 const resolveCallback = (search: string): CallbackView => {
   const result = parseKakaoCallback(search);
-  const savedState = oauthStateStorage.consume();
+  const savedState = oauthStateStorage.peek();
 
   if (result.status === "invalid") {
     return { kind: "failed", reason: "잘못된 접근이에요" };
@@ -52,8 +53,12 @@ const MESSAGE: Record<CallbackView["kind"], string> = {
 export const KakaoCallbackPage = () => {
   const { search } = useLocation();
   const navigate = useNavigate();
-  // state 소비가 1회여야 하므로 검색 문자열이 바뀔 때만 재평가한다
-  const view = useMemo(() => resolveCallback(search), [search]);
+  // 판정은 진입 시점 1회로 고정한다 — state를 지운 뒤 리렌더되어도 결과가 뒤집히지 않는다.
+  // 초기화 함수는 StrictMode에서 2회 실행되지만 peek 기반이라 결과가 같다(멱등)
+  const [view] = useState(() => resolveCallback(search));
+
+  // 판정이 끝난 state는 폐기한다 — 렌더가 아니라 효과에서, 재실행돼도 무해하다
+  useEffect(() => oauthStateStorage.clear(), []);
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-md p-lg">

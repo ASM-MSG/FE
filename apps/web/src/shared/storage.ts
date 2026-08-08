@@ -28,11 +28,14 @@ export const oauthStateStorage = {
   save: (state: string): void => {
     sessionStorage.setItem(OAUTH_STATE_KEY, state);
   },
-  /** 콜백에서 1회 소비 — 읽는 즉시 지워 재사용(리플레이)을 막는다 */
-  consume: (): string | null => {
-    const state = sessionStorage.getItem(OAUTH_STATE_KEY);
+  /**
+   * 읽기 — **부수효과가 없다.** 읽으면서 지우면 렌더가 두 번 실행되는 환경(StrictMode)에서
+   * 두 번째 판정이 값을 잃어 정상 콜백을 실패로 오판한다. 삭제는 clear가 따로 맡는다.
+   */
+  peek: (): string | null => sessionStorage.getItem(OAUTH_STATE_KEY),
+  /** 판정 후 폐기 — 같은 인가 결과의 재사용(리플레이)을 막는다. 여러 번 호출해도 무해하다 */
+  clear: (): void => {
     sessionStorage.removeItem(OAUTH_STATE_KEY);
-    return state;
   },
 };
 
