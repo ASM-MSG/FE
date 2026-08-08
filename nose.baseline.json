@@ -4292,6 +4292,34 @@
           "is_fragment": false
         }
       ]
+    },
+    {
+      "id": "94eaa07999059209",
+      "note": "consolidate `div` — 2 copies",
+      "members": [
+        {
+          "id": "a593e12a454bec5b",
+          "source_digest": "fnv1a64:dae57be4607d2f9a",
+          "file": "apps/web/src/pages/map-home/ui/CellSummaryPanel.tsx",
+          "lang": "typescript",
+          "start_line": 88,
+          "end_line": 98,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "62ec962d04fd35bb",
+          "source_digest": "fnv1a64:2248ab7e2fbc5205",
+          "file": "apps/web/src/pages/map-home/ui/HomeCellDetailPanel.tsx",
+          "lang": "typescript",
+          "start_line": 71,
+          "end_line": 81,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        }
+      ]
     }
   ]
 }

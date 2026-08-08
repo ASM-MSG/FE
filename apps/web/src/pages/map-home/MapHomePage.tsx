@@ -24,6 +24,7 @@ import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
 import {
+  HomeCellDetailError,
   HomeCellDetailLoading,
   HomeCellDetailPanel,
 } from "./ui/HomeCellDetailPanel";
@@ -146,7 +147,11 @@ export const MapHomePage = () => {
 
   // 상세 표시 모델 파생 (AC 9·10 → MSG-325 실 API) — 색칠 상태·대표 영상·행정동 3종 조합.
   // MSG-277 AC 13: 경로추천도 다른 테마와 동일하게 상세를 연다
-  const detail = useGridDetailQuery(selectedCellId, activeTheme);
+  const {
+    detail,
+    isError: detailFailed,
+    retry: retryDetail,
+  } = useGridDetailQuery(selectedCellId, activeTheme);
 
   // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
   const themeFeed = useMemo(
@@ -187,6 +192,12 @@ export const MapHomePage = () => {
               detail={detail}
               onClose={closeDetailMiniFirst}
               onViewAll={handleViewAll}
+            />
+          ) : detailFailed ? (
+            // 실패를 로딩으로 위장하지 않는다 — 재시도 수단을 준다 (MSG-325 리뷰 반영)
+            <HomeCellDetailError
+              onRetry={retryDetail}
+              onClose={closeDetailMiniFirst}
             />
           ) : (
             // 분기는 **선택 컨텍스트** 기준이다 — detail 기준으로 하면 격자를 바꿔 탭할 때

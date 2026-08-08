@@ -13,8 +13,11 @@ import { useGridDetailQuery } from "./use-grid-detail-query";
 const SEOMYEON = "39064_112221";
 const JEONPO = "39065_112223";
 
+/** 재시도를 끈다 — 여기서 검증하는 건 훅의 실패 노출 계약이지 재시도 정책이 아니다 */
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <QueryClientProvider client={new QueryClient()}>
+  <QueryClientProvider
+    client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+  >
     {children}
   </QueryClientProvider>
 );
@@ -54,10 +57,11 @@ describe("useGridDetailQuery", () => {
       wrapper,
     });
 
-    await waitFor(() => expect(result.current).not.toBeNull());
-    expect(result.current?.gridId).toBe(SEOMYEON);
-    expect(result.current?.label).toBe("서면 A-14");
-    expect(result.current?.subtitle).toBe("내 영상 4개");
+    await waitFor(() => expect(result.current.detail).not.toBeNull());
+    expect(result.current.detail?.gridId).toBe(SEOMYEON);
+    expect(result.current.detail?.label).toBe("서면 A-14");
+    expect(result.current.detail?.subtitle).toBe("내 영상 4개");
+    expect(result.current.isError).toBe(false);
   });
 
   it("다른 격자를 탭하면 직전 격자의 상세를 그대로 보여주지 않는다 — 새 응답 전까지 비운다", async () => {
@@ -67,16 +71,16 @@ describe("useGridDetailQuery", () => {
       ({ gridId }: { gridId: string }) => useGridDetailQuery(gridId, null),
       { wrapper, initialProps: { gridId: SEOMYEON } },
     );
-    await waitFor(() => expect(result.current?.gridId).toBe(SEOMYEON));
+    await waitFor(() => expect(result.current.detail?.gridId).toBe(SEOMYEON));
 
     rerender({ gridId: JEONPO });
 
     // 새 격자의 응답이 오기 전에 직전 격자(서면)의 배지·영상수가 남아 있으면 안 된다
-    expect(result.current).toBeNull();
+    expect(result.current.detail).toBeNull();
 
-    await waitFor(() => expect(result.current?.gridId).toBe(JEONPO));
-    expect(result.current?.label).toBe("전포 A-15");
-    expect(result.current?.subtitle).toBe("내 영상 9개");
+    await waitFor(() => expect(result.current.detail?.gridId).toBe(JEONPO));
+    expect(result.current.detail?.label).toBe("전포 A-15");
+    expect(result.current.detail?.subtitle).toBe("내 영상 9개");
   });
 
   it("선택이 없으면(null) 조회하지 않고 null을 돌려준다", async () => {
@@ -87,7 +91,61 @@ describe("useGridDetailQuery", () => {
     });
 
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(result.current).toBeNull();
+    expect(result.current.detail).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("격자 조회가 실패하면 실패로 알린다 — 로딩으로 위장하지 않는다 (리뷰 반영)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              developCode: 5000,
+              message: "서버 오류",
+              data: null,
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          ),
+      ),
+    );
+
+    const { result } = renderHook(() => useGridDetailQuery(SEOMYEON, null), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true), {
+      timeout: 5000,
+    });
+    expect(result.current.detail).toBeNull();
+  });
+
+  it("대표 영상·행정동만 실패하면 상세는 그대로 보여준다 — 선택적 정보다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<(input: Request) => Promise<Response>>(async (request) => {
+        const { pathname } = new URL(request.url);
+        if (pathname === `/api/grids/${SEOMYEON}`) {
+          return envelopeResponse({
+            gridId: SEOMYEON,
+            occupied: true,
+            videoCount: 4,
+            zoneName: "서면",
+            zoneCell: "A-14",
+          });
+        }
+        return new Response(null, { status: 500 });
+      }),
+    );
+
+    const { result } = renderHook(() => useGridDetailQuery(SEOMYEON, null), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(result.current.detail).not.toBeNull());
+    expect(result.current.isError).toBe(false);
+    expect(result.current.detail?.coverVideo).toBeNull();
+    expect(result.current.detail?.regionLabel).toBeNull();
   });
 });

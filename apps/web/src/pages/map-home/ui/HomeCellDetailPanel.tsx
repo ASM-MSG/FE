@@ -1,5 +1,5 @@
 import { MapPin } from "lucide-react";
-import { cn } from "@fillmap/ui-web";
+import { Button, cn } from "@fillmap/ui-web";
 import type {
   HomeCellBadge,
   HomeCellDetail,
@@ -54,6 +54,34 @@ export const HomeCellDetailLoading = ({ onClose }: { onClose: () => void }) => {
  * 마지막 업로드 시각은 명세 대응이 없거나 제외 범위(격자 상세 연동 티켓)라 표시하지 않는다.
  * 액션 행 실동작은 계속 제외 범위 — 클릭 no-op 유지.
  */
+/**
+ * 상세 조회 실패 자리 (MSG-325 리뷰 반영) — 실패를 로딩으로 위장하지 않는다.
+ * 로딩 자리와 같은 슬롯을 쓰되 재시도 수단을 준다(요약 패널의 실패 상태와 같은 결).
+ */
+export const HomeCellDetailError = ({
+  onRetry,
+  onClose,
+}: {
+  onRetry: () => void;
+  onClose: () => void;
+}) => {
+  useEscapeClose(onClose);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-sm">
+      <p className="text-fm-body text-foreground-muted">
+        격자 정보를 불러오지 못했어요
+      </p>
+      <Button
+        text="다시 시도"
+        variant="secondary"
+        size="sm"
+        onClick={onRetry}
+      />
+    </div>
+  );
+};
+
 export const HomeCellDetailPanel = ({
   detail,
   onClose,

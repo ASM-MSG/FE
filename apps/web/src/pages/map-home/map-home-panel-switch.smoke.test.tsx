@@ -34,14 +34,18 @@ const renderHome = () =>
     </Routes>,
   );
 
-/** 격자 상세 응답만 보류시켜 "선택은 됐는데 데이터는 아직" 상태를 만든다 */
-const stubDetail = (pending: boolean) => {
+/**
+ * 격자 상세 응답만 모드별로 갈아끼운다 — 뷰포트·핫구역은 항상 빈 응답.
+ * "선택은 됐는데 데이터는 아직"(pending)과 조회 실패(error)를 같은 스텁으로 만든다.
+ */
+const stubDetail = (mode: "ready" | "pending" | "error") => {
   vi.stubGlobal(
     "fetch",
     vi.fn<(input: Request) => Promise<Response>>(async (request) => {
       const { pathname } = new URL(request.url);
       if (pathname.startsWith("/api/grids/")) {
-        if (pending) return new Promise<Response>(() => {});
+        if (mode === "pending") return new Promise<Response>(() => {});
+        if (mode === "error") return new Response(null, { status: 500 });
         if (pathname.endsWith("/cover")) return envelopeResponse(null);
         return envelopeResponse({
           gridId: SEOMYEON,
@@ -68,7 +72,7 @@ afterEach(() => {
 
 describe("홈 좌측 패널 분기", () => {
   it("선택한 격자가 있으면 상세 데이터가 아직 없어도 요약 패널로 되돌아가지 않는다", async () => {
-    stubDetail(true);
+    stubDetail("pending");
     useHomeCellDetailStore.setState({ selectedCellId: SEOMYEON });
 
     renderHome();
@@ -80,7 +84,7 @@ describe("홈 좌측 패널 분기", () => {
   });
 
   it("상세 응답이 도착하면 상세 패널로 전환된다", async () => {
-    stubDetail(false);
+    stubDetail("ready");
     useHomeCellDetailStore.setState({ selectedCellId: SEOMYEON });
 
     renderHome();
@@ -89,8 +93,23 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.getByText("내 영상 4개")).toBeTruthy();
   });
 
+  it("격자 조회가 실패하면 로딩이 아니라 실패로 알리고 재시도를 준다 (리뷰 반영)", async () => {
+    stubDetail("error");
+    useHomeCellDetailStore.setState({ selectedCellId: SEOMYEON });
+
+    renderHome();
+
+    expect(
+      await screen.findByText(/격자 정보를 불러오지 못했어요/, undefined, {
+        timeout: 5000,
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "다시 시도" })).toBeTruthy();
+    expect(screen.queryByText(/격자 정보를 불러오는 중/)).toBeNull();
+  });
+
   it("선택이 없으면 요약 패널 자리다 (기존 분기 보존)", async () => {
-    stubDetail(false);
+    stubDetail("ready");
 
     renderHome();
 
