@@ -8,18 +8,27 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { webStorage } from "@/shared/storage";
+import { KAKAO_CALLBACK_PATH } from "@/app/routes";
+import { appOrigin, redirectTo } from "@/shared/navigation";
+import { oauthStateStorage, webStorage } from "@/shared/storage";
+import { KAKAO_AUTHORIZE_ENDPOINT } from "../model/kakao-oauth";
 import { AUTH_STORAGE_KEY, useAuthStore } from "../model/auth-store";
 import { useLoginModalStore } from "../model/login-modal-store";
 import { LoginModal } from "./LoginModal";
+
+// 외부 이동은 어댑터 경유 — jsdom은 location.assign 재정의를 막으므로 어댑터를 목한다
+vi.mock("@/shared/navigation", () => ({
+  redirectTo: vi.fn(),
+  appOrigin: () => "http://localhost:5173",
+}));
 
 /**
  * 로그인 모달 스모크 (MSG-46 후속 2 G2·G3 + 후속 3 P2 — login-page.smoke 관례).
  * 콘텐츠 구성·닫기 계약·카카오 버튼 dev 모의 로그인만 고정한다. 색·간격·카드 형태 등
  * 픽셀 판정은 브라우저 검증의 몫 — 스타일 단정은 넣지 않는다.
  * 모달 열기 진입(SideRail 분기)은 side-rail-nav.test.tsx 몫 (G1).
- * 카카오 버튼이 MSG-324에서 목 로그인 → dev 모의 로그인 API로 배선돼 네트워크를 탄다 —
- * fetch 목 + QueryClientProvider 보강 (클릭 계약 자체는 승계: 로그인 상태 + 모달 닫힘).
+ * 카카오 버튼은 MSG-325에서 플래그 분기가 됐다 — 기본(플래그 off)은 기존 dev 모의 로그인
+ * 계약 그대로이고, VITE_KAKAO_LOGIN_ENABLED=true에서만 실 인가 리다이렉트를 탄다.
  */
 
 /** 현재 경로 노출 대역 — 모달 상호작용이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
@@ -30,7 +39,7 @@ const LocationProbe = () => {
 
 const renderModal = () =>
   render(
-    // KakaoLoginButton의 useDevSocialLogin(useMutation)이 QueryClient를 요구한다 (MSG-324)
+    // 모달 하위 트리가 쿼리 훅을 쓸 수 있어 프로바이더는 유지한다
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter initialEntries={["/"]}>
         <LoginModal />
@@ -42,7 +51,7 @@ const renderModal = () =>
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
-  // 카카오 버튼 케이스가 실토큰을 저장하므로 스토어·스토리지를 비로그인으로 되돌린다
+  vi.clearAllMocks();
   useAuthStore.setState({ accessToken: null, isAuthenticated: false });
   webStorage.removeItem(AUTH_STORAGE_KEY);
 });
@@ -95,8 +104,7 @@ describe("로그인 모달 스모크", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("카카오 버튼 클릭 → dev 모의 로그인 요청, 성공 시 로그인 상태 + 모달 닫힘 — URL 불변 (MSG-324 기준 11, 구 P2 목 로그인 대체)", async () => {
-    useAuthStore.setState({ accessToken: null, isAuthenticated: false });
+  it("기본값(플래그 off)에서는 기존 dev 모의 로그인 계약을 유지한다 — 서버 교환 전에 배포돼도 로그인이 깨지지 않는다 (MSG-325 회귀 방지)", async () => {
     const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
       async () =>
         new Response(
@@ -111,17 +119,38 @@ describe("로그인 모달 스모크", () => {
     vi.stubGlobal("fetch", fetchMock);
     renderModal();
 
+    fireEvent.click(screen.getByRole("button", { name: "카카오로 계속하기" }));
+
+    await waitFor(() => expect(useLoginModalStore.getState().open).toBe(false));
+    expect(new URL(fetchMock.mock.calls[0][0].url).pathname).toBe(
+      "/api/auth/dev/social-login",
+    );
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(vi.mocked(redirectTo)).not.toHaveBeenCalled();
+    expect(screen.getByTestId("location").textContent).toBe("/");
+  });
+
+  it("플래그 on이면 카카오 인가 페이지로 리다이렉트한다 — openid scope·콜백 URI·state 동봉", () => {
+    vi.stubEnv("VITE_KAKAO_LOGIN_ENABLED", "true");
+    renderModal();
+
     const button = screen.getByRole("button", { name: "카카오로 계속하기" });
     expect(button.getAttribute("type")).toBe("button");
 
     fireEvent.click(button);
 
-    // dev 모의 로그인일 뿐 실 카카오 OIDC 아님 — 인가 리다이렉트 없음 (스펙 오탐 방지)
-    await waitFor(() => expect(useLoginModalStore.getState().open).toBe(false));
-    const [requested] = fetchMock.mock.calls[0];
-    expect(new URL(requested.url).pathname).toBe("/api/auth/dev/social-login");
-    expect(useAuthStore.getState().isAuthenticated).toBe(true);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByTestId("location").textContent).toBe("/");
+    expect(vi.mocked(redirectTo)).toHaveBeenCalledTimes(1);
+    const url = new URL(vi.mocked(redirectTo).mock.calls[0][0]);
+    expect(url.origin + url.pathname).toBe(KAKAO_AUTHORIZE_ENDPOINT);
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("scope")?.split(",")).toContain("openid");
+    expect(url.searchParams.get("redirect_uri")).toBe(
+      `${appOrigin()}${KAKAO_CALLBACK_PATH}`,
+    );
+
+    // state는 콜백에서 대조할 수 있도록 저장돼 있어야 한다 (CSRF)
+    const state = url.searchParams.get("state");
+    expect(state).toBeTruthy();
+    expect(oauthStateStorage.consume()).toBe(state);
   });
 });

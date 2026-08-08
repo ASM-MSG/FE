@@ -1,10 +1,11 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/app/layouts/AppLayout";
 import { RequireAuth } from "@/app/RequireAuth";
-import { ROUTES } from "@/app/routes";
+import { KAKAO_CALLBACK_PATH, ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
+import { KakaoCallbackPage } from "@/pages/oauth-callback/KakaoCallbackPage";
 import { ProfilePanel } from "@/pages/profile/ProfilePanel";
 import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
@@ -37,6 +38,9 @@ export const router = createBrowserRouter([
           },
         ],
       },
+      // 카카오 OAuth 콜백 — 지도 셸 밖이다. 인가 직후 잠깐 머무는 화면이라 지도를
+      // 다시 마운트할 이유가 없고, 셸 안에 두면 패널 자리에 갇혀 보인다 (MSG-325)
+      { path: KAKAO_CALLBACK_PATH, element: <KakaoCallbackPage /> },
     ],
   },
 ]);
