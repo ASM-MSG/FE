@@ -10,6 +10,12 @@ export const ROUTES = {
   profile: "/profile",
 } as const;
 
+/**
+ * 카카오 OAuth 콜백 경로 (MSG-325) — 카카오 콘솔 등록값과 일치해야 한다.
+ * 네비 섹션이 아니므로 ROUTES에 넣지 않는다(사이드레일 활성 판정 대상 밖).
+ */
+export const KAKAO_CALLBACK_PATH = "/oauth/kakao/callback";
+
 export type NavKey = keyof typeof ROUTES;
 
 /** 외부에서 넘어온 문자열 key가 네비 키인지 좁히는 타입 가드 */

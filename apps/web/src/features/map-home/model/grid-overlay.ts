@@ -13,7 +13,7 @@ import {
   clipLineToBoundary,
   pointInPolygon,
 } from "@/entities/region";
-import type { OccupiedCell, StyledCellOverlay } from "./theme-overlay";
+import type { StyledCellOverlay } from "./theme-overlay";
 
 /**
  * 홈 격자 오버레이 파생 (MSG-263 AC 2~7).
@@ -109,22 +109,6 @@ export const isGridCellCenterInBusan = (point: LatLng): boolean => {
     BUSAN_BOUNDARY,
   );
 };
-
-/**
- * 점령 셀 → 격자 스냅 + 경계 내부 필터된 점령 오버레이 목록. [AC 4·7, D3]
- * bounds는 center가 속한 100m 격자 셀의 bounds이고, occupied 스타일(Figma:
- * 채움 18% + 실선 테두리 40% — 렌더 수치는 MapCanvas)로 표시된다.
- */
-export const buildOccupiedGridCells = (
-  occupied: OccupiedCell[],
-): StyledCellOverlay[] =>
-  occupied
-    .filter((cell) => isGridCellCenterInBusan(cell.center))
-    .map((cell) => ({
-      id: cell.gridId,
-      bounds: cellBoundsAt(cellIndexAt(cell.center)),
-      occupied: true,
-    }));
 
 /**
  * 셸 상시 점령 셀 중 섹션 게시 셀과 id가 겹치는 셀을 렌더 대상에서 제외한다. [개정 2 AC 8, R6]

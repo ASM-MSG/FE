@@ -230,6 +230,18 @@ export type VideoUploadResponseDto = {
      * 이 업로드로 완료된 미션 스탬프 목록 — 없으면 빈 배열
      */
     completedMissions: Array<CompletedMissionResponseDto>;
+    /**
+     * 격자가 속한 구역 이름 (예 "서면"). 구역 밖 격자면 null — 이때 라벨은 regionName 이다
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
+     */
+    zoneCell: string | null;
+    /**
+     * 격자 중심점 행정동 이름 — 구역 밖 격자의 폴백 라벨. 무귀속(해상 등)이거나 미판정이면 null
+     */
+    regionName: string | null;
 };
 
 /**
@@ -459,6 +471,20 @@ export type LoginResponseDto = {
 };
 
 /**
+ * 카카오 인가 코드 로그인 요청 (웹). 카카오 콜백으로 받은 코드를 서버가 ID Token 으로 교환한다.
+ */
+export type KakaoCodeLoginRequestDto = {
+    /**
+     * 카카오 콜백 쿼리로 받은 1회용 인가 코드
+     */
+    code: string;
+    /**
+     * 인가 요청에 사용한 redirect URI 그대로. 카카오 콘솔 등록값과 정확히 일치해야 한다.
+     */
+    redirectUri: string;
+};
+
+/**
  * 로그아웃 요청 (선택 body) — fcmToken 이 있으면 세션 삭제와 함께 해당 FCM 푸시 토큰도 정리된다
  */
 export type LogoutRequestDto = {
@@ -502,6 +528,58 @@ export type DevSocialLoginRequestDto = {
      * 닉네임 (선택). 없으면 dev-{oid}
      */
     nickname?: string;
+};
+
+/**
+ * 블라인드 해제 결과 — 복구된 영상 상태.
+ */
+export type AdminVideoUnblindResponseDto = {
+    /**
+     * 해제된 영상 ID
+     */
+    videoId: number;
+    /**
+     * 해제 후 영상 상태 — 성공이면 항상 ACTIVE
+     */
+    status: 'ACTIVE' | 'BLINDED' | 'DELETED';
+};
+
+export type ApiResponseDtoAdminVideoUnblindResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminVideoUnblindResponseDto;
+};
+
+/**
+ * 신고 승인·기각 처리 결과 — 종결된 신고 상태와 처리 후 영상 상태.
+ */
+export type AdminReportProcessResponseDto = {
+    /**
+     * 처리된 신고 ID
+     */
+    reportId: number;
+    /**
+     * 처리 후 신고 상태 — 승인이면 RESOLVED, 기각이면 REJECTED
+     */
+    status: 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'REJECTED';
+    /**
+     * 신고 대상 영상 ID
+     */
+    videoId: number;
+    /**
+     * 처리 후 영상 상태 — 승인의 전이 생략 케이스(FR-5)를 이 값으로 구분한다
+     */
+    videoStatus: 'ACTIVE' | 'BLINDED' | 'DELETED';
+    /**
+     * 처리 시각
+     */
+    reviewedAt: string;
+};
+
+export type ApiResponseDtoAdminReportProcessResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminReportProcessResponseDto;
 };
 
 /**
@@ -672,6 +750,18 @@ export type VideoPlaybackResponseDto = {
      * playbackUrl presign TTL(초). playbackUrl=null 이면 null
      */
     expiresInSec: number | null;
+    /**
+     * 격자가 속한 구역 이름 (예 "서면"). 구역 밖 격자면 null — 이때 라벨은 regionName 이다
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
+     */
+    zoneCell: string | null;
+    /**
+     * 격자 중심점 행정동 이름 — 구역 밖 격자의 폴백 라벨. 무귀속(해상 등)이거나 미판정이면 null
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoListTrendingKeywordResponseDto = {
@@ -724,6 +814,14 @@ export type PlaceSearchResponseDto = {
      * 그 좌표의 격자 ID — FE 격자 하이라이트 키 (즉석 계산, 저장 아님)
      */
     gridId: string;
+    /**
+     * 격자가 속한 구역 이름. 구역 밖이면 null — 표시 라벨은 address 가 맡으므로 행정동 폴백 재료를 싣지 않는다(§D2 유지).
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null 이다.
+     */
+    zoneCell: string | null;
 };
 
 export type ApiResponseDtoRegionExploreResponseDto = {
@@ -760,6 +858,14 @@ export type ExploreGridResponseDto = {
      * 커버 영상 길이(초) — duration 뱃지
      */
     coverDurationSec: number;
+    /**
+     * 격자가 속한 구역 이름 (예 "서면"). 구역 밖 격자면 null — 이때 FE 는 래퍼의 regionName 을 라벨로 쓴다
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
+     */
+    zoneCell: string | null;
 };
 
 /**
@@ -1028,6 +1134,14 @@ export type HotZoneResponseDto = {
      * 핫스코어 — 최근 48시간(8버킷) 방문 신호 합산
      */
     score: number;
+    /**
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 지도 마커는 라벨을 그리지 않으므로 행정동 폴백 재료를 싣지 않는다(마커를 누르면 단일 격자 조회가 라벨을 준다).
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단) — 마커 배지용. zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
+     */
+    zoneCell: string | null;
 };
 
 export type ApiResponseDtoOccupiedGridPageResponseDto = {
@@ -1066,6 +1180,14 @@ export type OccupiedGridResponseDto = {
      * 격자 가로 인덱스 (경도 기반 정수)
      */
     gridX: number;
+    /**
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 지도 오버레이는 라벨을 그리지 않으므로 행정동 폴백 재료를 싣지 않는다(셀을 누르면 단일 격자 조회가 라벨을 준다).
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단) — 셀 배지용. zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
+     */
+    zoneCell: string | null;
 };
 
 export type ApiResponseDtoGridCellResponseDto = {
@@ -1090,6 +1212,14 @@ export type GridCellResponseDto = {
      * 이 격자에 올린 내 영상 수 (미점령이면 0)
      */
     videoCount: number;
+    /**
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 표시 이름은 함께 호출하는 GET /api/regions/stats/by-grid 응답의 regionName(행정동)으로 폴백한다.
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단). zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
+     */
+    zoneCell: string | null;
 };
 
 export type ApiResponseDtoGridVideoPageResponseDto = {
@@ -1294,6 +1424,14 @@ export type FriendCollectionGridResponseDto = {
      * 격자 중심점 행정동 이름(무귀속/미판정이면 null)
      */
     regionName: string | null;
+    /**
+     * 격자가 속한 구역 이름 (예 "서면"). 구역 밖 격자면 null — 이때 라벨은 regionName 이다
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
+     */
+    zoneCell: string | null;
 };
 
 /**
@@ -1444,6 +1582,14 @@ export type RegionVideoResponseDto = {
      * 업로드(방문) 시각 — 정렬 키
      */
     createdAt: string;
+    /**
+     * 격자가 속한 구역 이름 (예 "서면"). 구역 밖 격자면 null — 이 화면은 행정동 헤더 아래 목록이라 폴백 이름을 문맥에서 알 수 있어 항목에 regionName 을 따로 담지 않는다
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
+     */
+    zoneCell: string | null;
 };
 
 export type ApiResponseDtoCollectionSummaryResponseDto = {
@@ -1498,6 +1644,14 @@ export type CollectionGridResponseDto = {
      * 격자 중심점 행정동 이름(무귀속/미판정이면 null)
      */
     regionName: string | null;
+    /**
+     * 격자가 속한 구역 이름 (예 "서면"). 구역 밖 격자면 null — 이때 라벨은 regionName 이다
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
+     */
+    zoneCell: string | null;
 };
 
 export type ApiResponseDtoListMyBadgeResponseDto = {
@@ -1546,6 +1700,140 @@ export type MyBadgeResponseDto = {
      * 대표 뱃지 순서(1·2) — 대표 아니면 null
      */
     featuredRank: number | null;
+};
+
+/**
+ * 관리자 단건 영상 확인 응답 — 영상 메타와 재생·썸네일 presigned GET URL.
+ */
+export type AdminVideoReviewResponseDto = {
+    /**
+     * 영상 ID
+     */
+    videoId: number;
+    /**
+     * 영상 상태 — BLINDED 여도 발급된다 (DELETED 만 404)
+     */
+    status: 'ACTIVE' | 'BLINDED' | 'DELETED';
+    /**
+     * 영상 처리 상태 — READY 일 때만 재생 URL 이 발급된다
+     */
+    processingStatus: 'UPLOADED' | 'ENCODING' | 'BLURRING' | 'READY' | 'FAILED';
+    /**
+     * 공개 범위 — PRIVATE 여도 발급된다 (관리자 확인은 은닉 없음)
+     */
+    visibility: 'PUBLIC' | 'PRIVATE' | 'FRIENDS';
+    /**
+     * 영상 길이(초, 최대 30)
+     */
+    durationSec: number;
+    /**
+     * 촬영 시각 (표시용)
+     */
+    recordedAt: string;
+    /**
+     * 재생본 presigned GET URL — READY 가 아니면 null
+     */
+    playbackUrl: string | null;
+    /**
+     * 썸네일 presigned GET URL — 썸네일 key 없음(READY 이전)이면 null
+     */
+    thumbnailUrl: string | null;
+    /**
+     * playbackUrl presign TTL(초) — playbackUrl=null 이면 null
+     */
+    expiresInSec: number | null;
+};
+
+export type ApiResponseDtoAdminVideoReviewResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminVideoReviewResponseDto;
+};
+
+/**
+ * 관리자 신고 목록 항목 — 신고 한 건과 판단에 필요한 주변 정보.
+ */
+export type AdminReportItemResponseDto = {
+    /**
+     * 신고 ID — 승인·기각 경로 변수로 그대로 쓴다
+     */
+    reportId: number;
+    /**
+     * 신고 처리 상태
+     */
+    status: 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'REJECTED';
+    /**
+     * 신고 사유
+     */
+    reason: 'INAPPROPRIATE' | 'PRIVACY' | 'SPAM' | 'COPYRIGHT' | 'OTHER';
+    /**
+     * 신고자가 적은 상세 설명 — OTHER 가 아닌 사유는 없을 수 있다
+     */
+    detail: string | null;
+    /**
+     * 신고 접수 시각
+     */
+    createdAt: string;
+    /**
+     * 신고자의 사용자 ID
+     */
+    reporterId: number;
+    /**
+     * 신고자의 닉네임
+     */
+    reporterNickname: string;
+    /**
+     * 신고 대상 영상 ID — 단건 확인·블라인드 해제 경로 변수로 쓴다
+     */
+    videoId: number;
+    /**
+     * 신고 대상 영상의 현재 상태 (ACTIVE/BLINDED/DELETED)
+     */
+    videoStatus: 'ACTIVE' | 'BLINDED' | 'DELETED';
+    /**
+     * 영상 소유자의 닉네임
+     */
+    videoOwnerNickname: string;
+    /**
+     * 처리한 관리자의 사용자 ID — 미처리면 null
+     */
+    reviewedBy: number | null;
+    /**
+     * 처리 시각 — 미처리면 null
+     */
+    reviewedAt: string | null;
+};
+
+/**
+ * 관리자 신고 목록 응답 — 상태 필터 기준 한 페이지.
+ */
+export type AdminReportListResponseDto = {
+    /**
+     * 이 페이지의 신고 목록. 정렬은 접수 최신순 고정
+     */
+    items: Array<AdminReportItemResponseDto>;
+    /**
+     * 현재 페이지 번호 (0부터)
+     */
+    page: number;
+    /**
+     * 페이지 크기
+     */
+    size: number;
+    /**
+     * 필터에 해당하는 전체 신고 수
+     */
+    totalElements: number;
+    /**
+     * 전체 페이지 수
+     */
+    totalPages: number;
+};
+
+export type ApiResponseDtoAdminReportListResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminReportListResponseDto;
 };
 
 export type DeleteData = {
@@ -1844,6 +2132,32 @@ export type OauthLoginResponses = {
 
 export type OauthLoginResponse = OauthLoginResponses[keyof OauthLoginResponses];
 
+export type OauthCodeLoginData = {
+    body: KakaoCodeLoginRequestDto;
+    headers?: {
+        /**
+         * 클라이언트 유형 (web|app, 기본 web)
+         */
+        'X-Client-Type'?: string;
+        /**
+         * 디바이스 식별자. 없으면 서버가 UUID 를 생성해 응답 헤더 X-Device-Id 로 반환한다.
+         */
+        'X-Device-Id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/auth/oauth/kakao/code';
+};
+
+export type OauthCodeLoginResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoLoginResponseDto;
+};
+
+export type OauthCodeLoginResponse = OauthCodeLoginResponses[keyof OauthCodeLoginResponses];
+
 export type LogoutData = {
     body?: LogoutRequestDto;
     headers?: {
@@ -1912,6 +2226,69 @@ export type SocialLoginResponses = {
 };
 
 export type SocialLoginResponse = SocialLoginResponses[keyof SocialLoginResponses];
+
+export type UnblindVideoData = {
+    body?: never;
+    path: {
+        /**
+         * 해제할 영상 ID
+         */
+        videoId: number;
+    };
+    query?: never;
+    url: '/api/admin/videos/{videoId}/unblind';
+};
+
+export type UnblindVideoResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminVideoUnblindResponseDto;
+};
+
+export type UnblindVideoResponse = UnblindVideoResponses[keyof UnblindVideoResponses];
+
+export type Reject1Data = {
+    body?: never;
+    path: {
+        /**
+         * 기각할 신고 ID
+         */
+        reportId: number;
+    };
+    query?: never;
+    url: '/api/admin/reports/{reportId}/reject';
+};
+
+export type Reject1Responses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminReportProcessResponseDto;
+};
+
+export type Reject1Response = Reject1Responses[keyof Reject1Responses];
+
+export type ApproveData = {
+    body?: never;
+    path: {
+        /**
+         * 승인할 신고 ID
+         */
+        reportId: number;
+    };
+    query?: never;
+    url: '/api/admin/reports/{reportId}/approve';
+};
+
+export type ApproveResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminReportProcessResponseDto;
+};
+
+export type ApproveResponse = ApproveResponses[keyof ApproveResponses];
 
 export type SetVisibilityData = {
     body: VideoVisibilityRequestDto;
@@ -2604,6 +2981,79 @@ export type FindMyBadgesResponses = {
 };
 
 export type FindMyBadgesResponse = FindMyBadgesResponses[keyof FindMyBadgesResponses];
+
+export type RedirectToKakaoAuthorizeData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 카카오 콜백 URI. 콘솔 등록값과 정확히 일치해야 한다(검증 주체는 카카오).
+         */
+        redirectUri: string;
+        /**
+         * 콜백 위조 검증용 난수. 서버는 손대지 않고 인가 URL 에 그대로 전달한다.
+         */
+        state?: string;
+    };
+    url: '/api/auth/oauth/kakao/authorize';
+};
+
+export type RedirectToKakaoAuthorizeResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type GetVideoForReviewData = {
+    body?: never;
+    path: {
+        /**
+         * 확인할 영상 ID
+         */
+        videoId: number;
+    };
+    query?: never;
+    url: '/api/admin/videos/{videoId}';
+};
+
+export type GetVideoForReviewResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminVideoReviewResponseDto;
+};
+
+export type GetVideoForReviewResponse = GetVideoForReviewResponses[keyof GetVideoForReviewResponses];
+
+export type GetReportsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 신고 상태 필터 (PENDING, REVIEWING, RESOLVED, REJECTED — 대소문자 무관)
+         */
+        status?: string;
+        /**
+         * 페이지 번호 (0부터)
+         */
+        page?: number;
+        /**
+         * 페이지 크기 (1~100)
+         */
+        size?: number;
+    };
+    url: '/api/admin/reports';
+};
+
+export type GetReportsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminReportListResponseDto;
+};
+
+export type GetReportsResponse = GetReportsResponses[keyof GetReportsResponses];
 
 export type DeleteFriendData = {
     body?: never;

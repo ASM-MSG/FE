@@ -15,3 +15,46 @@ export const webStorage: StateStorage = {
     localStorage.removeItem(name);
   },
 };
+
+const OAUTH_STATE_KEY = "fillmap.oauth.state";
+
+/**
+ * OAuth state(CSRF 대조 토큰) 보관소 (MSG-325) — 탭 수명과 함께 사라져야 하므로
+ * sessionStorage를 쓴다(localStorage와 달리 다른 탭·재방문으로 새지 않는다).
+ * model 레이어가 브라우저 API를 직접 만지지 않도록 여기를 경유한다 — RN 확장 시 이 파일만 교체.
+ */
+export const oauthStateStorage = {
+  /** 인가 요청 직전 저장 */
+  save: (state: string): void => {
+    sessionStorage.setItem(OAUTH_STATE_KEY, state);
+  },
+  /**
+   * 읽기 — **부수효과가 없다.** 읽으면서 지우면 렌더가 두 번 실행되는 환경(StrictMode)에서
+   * 두 번째 판정이 값을 잃어 정상 콜백을 실패로 오판한다. 삭제는 clear가 따로 맡는다.
+   */
+  peek: (): string | null => sessionStorage.getItem(OAUTH_STATE_KEY),
+  /** 판정 후 폐기 — 같은 인가 결과의 재사용(리플레이)을 막는다. 여러 번 호출해도 무해하다 */
+  clear: (): void => {
+    sessionStorage.removeItem(OAUTH_STATE_KEY);
+  },
+};
+
+const DEVICE_ID_KEY = "fillmap.device.id";
+
+/**
+ * 서버가 발급한 디바이스 식별자 보관소 (MSG-325) — 로그인 응답의 `X-Device-Id` 헤더를
+ * 저장해 이후 요청에 재사용한다. 세션이 아니라 기기에 묶이는 값이라 localStorage를 쓴다
+ * (탭을 닫아도 같은 기기로 인식돼야 재발급이 같은 디바이스 세션을 갱신한다).
+ */
+export const deviceIdStorage = {
+  get: (): string | null => localStorage.getItem(DEVICE_ID_KEY),
+  save: (deviceId: string): void => {
+    localStorage.setItem(DEVICE_ID_KEY, deviceId);
+  },
+  clear: (): void => {
+    localStorage.removeItem(DEVICE_ID_KEY);
+  },
+};
+
+/** 1회성 state 토큰 생성 — 웹 crypto 의존이라 어댑터 층에 둔다 */
+export const createOauthState = (): string => crypto.randomUUID();

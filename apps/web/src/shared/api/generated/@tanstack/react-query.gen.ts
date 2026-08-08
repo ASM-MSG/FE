@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, delete_, deleteFriend, deleteMe, findMyBadges, getActiveMissions, getCell, getCollectionGrids, getExploreRegions, getFriendGrids, getFriendGridVideos, getFriendProfile, getFriends, getGridCover, getGridGlobalVideos, getGridVideos, getHotZones, getMe, getMyFriendCode, getOccupiedInViewport, getPlayback, getPreferences, getReceivedRequests, getRegionGrids, getRegionVideos, getStatByGrid, getStatByPoint, getStats, getSummary, getTrendingKeywords, getZones, issuePresignedUrl, login, logout, oauthLogin, type Options, preview, register, reissue, reject, replace, replaceFeatured, report, request, reverseGeocode, searchPlaces, setVisibility, signup, socialLogin, unregister, update, updateNickname, upload } from '../sdk.gen';
-import type { AcceptData, DeleteData, DeleteFriendData, DeleteMeData, FindMyBadgesData, FindMyBadgesResponse, GetActiveMissionsData, GetActiveMissionsResponse, GetCellData, GetCellResponse, GetCollectionGridsData, GetCollectionGridsResponse, GetExploreRegionsData, GetExploreRegionsResponse, GetFriendGridsData, GetFriendGridsResponse, GetFriendGridVideosData, GetFriendGridVideosResponse, GetFriendProfileData, GetFriendProfileResponse, GetFriendsData, GetFriendsResponse, GetGridCoverData, GetGridCoverResponse, GetGridGlobalVideosData, GetGridGlobalVideosResponse, GetGridVideosData, GetGridVideosResponse, GetHotZonesData, GetHotZonesResponse, GetMeData, GetMeResponse, GetMyFriendCodeData, GetMyFriendCodeResponse, GetOccupiedInViewportData, GetOccupiedInViewportResponse, GetPlaybackData, GetPlaybackResponse, GetPreferencesData, GetPreferencesResponse, GetReceivedRequestsData, GetReceivedRequestsResponse, GetRegionGridsData, GetRegionGridsResponse, GetRegionVideosData, GetRegionVideosResponse, GetStatByGridData, GetStatByGridResponse, GetStatByPointData, GetStatByPointResponse, GetStatsData, GetStatsResponse, GetSummaryData, GetSummaryResponse, GetTrendingKeywordsData, GetTrendingKeywordsResponse, GetZonesData, GetZonesResponse, IssuePresignedUrlData, IssuePresignedUrlResponse, LoginData, LoginResponse, LogoutData, OauthLoginData, OauthLoginResponse, PreviewData, PreviewResponse, RegisterData, ReissueData, ReissueResponse, RejectData, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponse, ReplaceResponse, ReportData, ReportResponse, RequestData, RequestResponse, ReverseGeocodeData, ReverseGeocodeResponse, SearchPlacesData, SearchPlacesResponse, SetVisibilityData, SetVisibilityResponse, SignupData, SignupResponse, SocialLoginData, SocialLoginResponse, UnregisterData, UpdateData, UpdateNicknameData, UpdateNicknameResponse, UpdateResponse, UploadData, UploadResponse } from '../types.gen';
+import { accept, approve, delete_, deleteFriend, deleteMe, findMyBadges, getActiveMissions, getCell, getCollectionGrids, getExploreRegions, getFriendGrids, getFriendGridVideos, getFriendProfile, getFriends, getGridCover, getGridGlobalVideos, getGridVideos, getHotZones, getMe, getMyFriendCode, getOccupiedInViewport, getPlayback, getPreferences, getReceivedRequests, getRegionGrids, getRegionVideos, getReports, getStatByGrid, getStatByPoint, getStats, getSummary, getTrendingKeywords, getVideoForReview, getZones, issuePresignedUrl, login, logout, oauthCodeLogin, oauthLogin, type Options, preview, redirectToKakaoAuthorize, register, reissue, reject, reject1, replace, replaceFeatured, report, request, reverseGeocode, searchPlaces, setVisibility, signup, socialLogin, unblindVideo, unregister, update, updateNickname, upload } from '../sdk.gen';
+import type { AcceptData, ApproveData, ApproveResponse, DeleteData, DeleteFriendData, DeleteMeData, FindMyBadgesData, FindMyBadgesResponse, GetActiveMissionsData, GetActiveMissionsResponse, GetCellData, GetCellResponse, GetCollectionGridsData, GetCollectionGridsResponse, GetExploreRegionsData, GetExploreRegionsResponse, GetFriendGridsData, GetFriendGridsResponse, GetFriendGridVideosData, GetFriendGridVideosResponse, GetFriendProfileData, GetFriendProfileResponse, GetFriendsData, GetFriendsResponse, GetGridCoverData, GetGridCoverResponse, GetGridGlobalVideosData, GetGridGlobalVideosResponse, GetGridVideosData, GetGridVideosResponse, GetHotZonesData, GetHotZonesResponse, GetMeData, GetMeResponse, GetMyFriendCodeData, GetMyFriendCodeResponse, GetOccupiedInViewportData, GetOccupiedInViewportResponse, GetPlaybackData, GetPlaybackResponse, GetPreferencesData, GetPreferencesResponse, GetReceivedRequestsData, GetReceivedRequestsResponse, GetRegionGridsData, GetRegionGridsResponse, GetRegionVideosData, GetRegionVideosResponse, GetReportsData, GetReportsResponse, GetStatByGridData, GetStatByGridResponse, GetStatByPointData, GetStatByPointResponse, GetStatsData, GetStatsResponse, GetSummaryData, GetSummaryResponse, GetTrendingKeywordsData, GetTrendingKeywordsResponse, GetVideoForReviewData, GetVideoForReviewResponse, GetZonesData, GetZonesResponse, IssuePresignedUrlData, IssuePresignedUrlResponse, LoginData, LoginResponse, LogoutData, OauthCodeLoginData, OauthCodeLoginResponse, OauthLoginData, OauthLoginResponse, PreviewData, PreviewResponse, RedirectToKakaoAuthorizeData, RegisterData, ReissueData, ReissueResponse, Reject1Data, Reject1Response, RejectData, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponse, ReplaceResponse, ReportData, ReportResponse, RequestData, RequestResponse, ReverseGeocodeData, ReverseGeocodeResponse, SearchPlacesData, SearchPlacesResponse, SetVisibilityData, SetVisibilityResponse, SignupData, SignupResponse, SocialLoginData, SocialLoginResponse, UnblindVideoData, UnblindVideoResponse, UnregisterData, UpdateData, UpdateNicknameData, UpdateNicknameResponse, UpdateResponse, UploadData, UploadResponse } from '../types.gen';
 
 /**
  * 영상 삭제
@@ -328,12 +328,31 @@ export const reissueMutation = (options?: Partial<Options<ReissueData>>): UseMut
 /**
  * 소셜 로그인 (OIDC)
  *
- * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다.
+ * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다. 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다.
  */
 export const oauthLoginMutation = (options?: Partial<Options<OauthLoginData>>): UseMutationOptions<OauthLoginResponse, DefaultError, Options<OauthLoginData>> => {
     const mutationOptions: UseMutationOptions<OauthLoginResponse, DefaultError, Options<OauthLoginData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await oauthLogin({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 소셜 로그인 (카카오 인가 코드)
+ *
+ * 웹에서 카카오 콜백으로 받은 인가 코드로 로그인/가입한다. 서버가 REST API 키로 카카오 토큰 엔드포인트를 호출해 ID Token 을 받은 뒤, 소셜 로그인(OIDC)과 완전히 같은 검증·발급 경로를 태운다. 인가 진입점이 심은 OAUTH_NONCE 쿠키가 함께 와야 한다(없으면 401). 응답 형태는 기존 소셜 로그인과 동일하다 — 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다. 네이티브 SDK 가 교환까지 해주는 앱은 이 API 가 아니라 POST /api/auth/oauth/{provider} 를 쓴다.
+ */
+export const oauthCodeLoginMutation = (options?: Partial<Options<OauthCodeLoginData>>): UseMutationOptions<OauthCodeLoginResponse, DefaultError, Options<OauthCodeLoginData>> => {
+    const mutationOptions: UseMutationOptions<OauthCodeLoginResponse, DefaultError, Options<OauthCodeLoginData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await oauthCodeLogin({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -391,6 +410,63 @@ export const socialLoginMutation = (options?: Partial<Options<SocialLoginData>>)
     const mutationOptions: UseMutationOptions<SocialLoginResponse, DefaultError, Options<SocialLoginData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await socialLogin({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 블라인드 해제
+ *
+ * BLINDED 영상을 ACTIVE 로 복구한다. 오판 복구용이며 그 신고의 RESOLVED 는 되돌리지 않는다. 없는 영상과 삭제된 영상은 404(3404), 이미 ACTIVE 면 409(3409) 다.
+ */
+export const unblindVideoMutation = (options?: Partial<Options<UnblindVideoData>>): UseMutationOptions<UnblindVideoResponse, DefaultError, Options<UnblindVideoData>> => {
+    const mutationOptions: UseMutationOptions<UnblindVideoResponse, DefaultError, Options<UnblindVideoData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await unblindVideo({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 신고 기각
+ *
+ * 신고를 REJECTED 로 종결한다. 영상에는 아무 영향이 없고 응답의 videoStatus 는 현재 상태 그대로다. 없는 신고는 404(11404), 이미 처리된 신고는 409(11410) 다.
+ */
+export const reject1Mutation = (options?: Partial<Options<Reject1Data>>): UseMutationOptions<Reject1Response, DefaultError, Options<Reject1Data>> => {
+    const mutationOptions: UseMutationOptions<Reject1Response, DefaultError, Options<Reject1Data>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await reject1({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 신고 승인
+ *
+ * 신고를 RESOLVED 로 종결하고 대상 영상을 블라인드한다 — 한 트랜잭션이다. 영상이 이미 BLINDED 거나 DELETED 면 영상 전이 없이 신고만 종결하며, 응답의 videoStatus 로 구분할 수 있다. 없는 신고는 404(11404), 이미 처리된 신고와 동시 처리의 늦은 쪽은 409(11410) 다.
+ */
+export const approveMutation = (options?: Partial<Options<ApproveData>>): UseMutationOptions<ApproveResponse, DefaultError, Options<ApproveData>> => {
+    const mutationOptions: UseMutationOptions<ApproveResponse, DefaultError, Options<ApproveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approve({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1162,6 +1238,98 @@ export const findMyBadgesOptions = (options?: Options<FindMyBadgesData>) => quer
     },
     queryKey: findMyBadgesQueryKey(options)
 });
+
+export const redirectToKakaoAuthorizeQueryKey = (options: Options<RedirectToKakaoAuthorizeData>) => createQueryKey('redirectToKakaoAuthorize', options);
+
+/**
+ * 카카오 로그인 시작 (인가 진입점)
+ *
+ * 웹 로그인의 시작점이다. 클라이언트는 이 URL 로 이동하기만 하면 된다(location.href). 서버가 카카오 인가 URL(client_id·response_type=code·scope=openid·nonce 포함)을 조립해 302 로 보내면서 같은 응답에 OAUTH_NONCE 쿠키(HttpOnly, 10분)를 심는다. 그래서 scope=openid 누락이나 nonce 누락이 구조적으로 불가능하고, REST API 키가 클라이언트 코드로 나갈 일도 없다. 응답은 리다이렉트라 공통 응답 포맷을 쓰지 않는다.
+ */
+export const redirectToKakaoAuthorizeOptions = (options: Options<RedirectToKakaoAuthorizeData>) => queryOptions<unknown, DefaultError, unknown, ReturnType<typeof redirectToKakaoAuthorizeQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await redirectToKakaoAuthorize({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: redirectToKakaoAuthorizeQueryKey(options)
+});
+
+export const getVideoForReviewQueryKey = (options: Options<GetVideoForReviewData>) => createQueryKey('getVideoForReview', options);
+
+/**
+ * 관리자 단건 영상 확인
+ *
+ * 신고 판단용으로 영상 하나를 확인한다 — 공개범위와 상태(BLINDED 포함)를 무시하고 요청 시점에 재생·썸네일 presigned URL 을 발급하며, 조회수를 올리지 않는다. 처리 상태가 READY 가 아니면 playbackUrl 과 expiresInSec 은 null 이다. 없는 영상과 삭제된 영상은 404(3404) 다.
+ */
+export const getVideoForReviewOptions = (options: Options<GetVideoForReviewData>) => queryOptions<GetVideoForReviewResponse, DefaultError, GetVideoForReviewResponse, ReturnType<typeof getVideoForReviewQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getVideoForReview({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getVideoForReviewQueryKey(options)
+});
+
+export const getReportsQueryKey = (options?: Options<GetReportsData>) => createQueryKey('getReports', options);
+
+/**
+ * 신고 목록 조회
+ *
+ * 상태 필터 기준으로 신고를 접수 최신순 페이지 단위로 조회한다. 기본은 미처리(PENDING) 신고다. 항목에 신고자·영상 소유자 닉네임과 영상 현재 상태가 함께 담겨 목록만으로 판단할 수 있다. 지원하지 않는 status 는 400(11420), page 음수나 size 범위(1~100) 밖은 400(11421) 이다. REVIEWING 은 유효한 값이지만 만드는 경로가 없어 항상 빈 목록이다.
+ */
+export const getReportsOptions = (options?: Options<GetReportsData>) => queryOptions<GetReportsResponse, DefaultError, GetReportsResponse, ReturnType<typeof getReportsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getReports({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getReportsQueryKey(options)
+});
+
+export const getReportsInfiniteQueryKey = (options?: Options<GetReportsData>): QueryKey<Options<GetReportsData>> => createQueryKey('getReports', options, true);
+
+/**
+ * 신고 목록 조회
+ *
+ * 상태 필터 기준으로 신고를 접수 최신순 페이지 단위로 조회한다. 기본은 미처리(PENDING) 신고다. 항목에 신고자·영상 소유자 닉네임과 영상 현재 상태가 함께 담겨 목록만으로 판단할 수 있다. 지원하지 않는 status 는 400(11420), page 음수나 size 범위(1~100) 밖은 400(11421) 이다. REVIEWING 은 유효한 값이지만 만드는 경로가 없어 항상 빈 목록이다.
+ */
+export const getReportsInfiniteOptions = (options?: Options<GetReportsData>) => {
+    const opts = infiniteQueryOptions<GetReportsResponse, DefaultError, InfiniteData<GetReportsResponse>, QueryKey<Options<GetReportsData>>, number | Pick<QueryKey<Options<GetReportsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetReportsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getReports({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getReportsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 /**
  * 친구 삭제

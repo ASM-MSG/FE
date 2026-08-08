@@ -103,7 +103,10 @@ describe("프로필 패널 스모크", () => {
     expect(screen.getByText(MOCK_PROFILE.nickname)).toBeTruthy();
   });
 
-  it("[로그아웃] 클릭 시 /api/auth/logout 호출 후 비로그인 상태가 되고, 화면 전환 없이 패널에 머문다 (F2 → MSG-324 기준 12)", async () => {
+  // MSG-325: "화면 전환 없이 패널에 머문다"(F2)를 폐기하고 즉시 홈으로 보낸다 —
+  // 로그아웃 후에도 프로필 패널이 남아 있으면 비로그인 상태로 보호 화면에 머무는 셈이라
+  // 사이드레일 활성 탭도 '프로필'로 남는다. 홈 이동으로 활성 탭이 자연히 '홈'이 된다
+  it("[로그아웃] 클릭 시 /api/auth/logout 호출 후 비로그인 상태가 되고, 즉시 홈으로 이동한다 (MSG-325 — F2 대체)", async () => {
     // MSG-324에서 목 스토어 배선 → useLogout 훅(API + 로컬 우선 종료)으로 교체돼 네트워크를 탄다 — fetch 목 보강
     const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
       async () => new Response(null, { status: 200 }),
@@ -120,9 +123,11 @@ describe("프로필 패널 스모크", () => {
     );
     const [requested] = fetchMock.mock.calls[0];
     expect(new URL(requested.url).pathname).toBe("/api/auth/logout");
-    // 로그아웃 직후 화면 전환 없음(패널에 머묾)이 의도 — 이후 프로필 클릭 시 로그인 모달 (G1)
-    expect(screen.getByTestId("location").textContent).toBe("/profile");
-    expect(screen.getByText(MOCK_PROFILE.nickname)).toBeTruthy();
+    // 홈으로 이동 — 사이드레일 활성 탭 판정(getActiveNavKey)이 pathname 기반이라 홈이 활성된다
+    await waitFor(() =>
+      expect(screen.getByTestId("location").textContent).toBe("/"),
+    );
+    expect(screen.queryByText(MOCK_PROFILE.nickname)).toBeNull();
   });
 
   it("[편집] 클릭 시 '프로필 편집' 모달이 열리고 닉네임이 값으로 채워져 있다 — URL 불변 (MSG-125 AC 1·3)", async () => {

@@ -1,4 +1,5 @@
 import type { AfterResponseHook, BeforeRequestHook } from "ky";
+import { deviceIdStorage } from "../storage";
 import { unwrapEnvelope } from "./envelope";
 
 /**
@@ -79,6 +80,26 @@ const reissueAccessToken = async (): Promise<string | null> => {
   }
 };
 
+/** 서버가 로그인 응답으로 내려주는 기기 식별 헤더 (MSG-325) */
+export const DEVICE_ID_HEADER = "X-Device-Id";
+
+/**
+ * X-Device-Id를 붙이지 않는 경로 — 로그아웃은 **전 디바이스 세션 삭제**가 확정 동작이라
+ * (MSG-324 추정 4) 기기를 특정하면 현재 기기만 로그아웃되는 동작 변경이 된다.
+ */
+const NO_DEVICE_ID_PATHS = new Set(["/api/auth/logout"]);
+
+/**
+ * 저장된 디바이스 식별자를 요청에 싣는다 — 재발급이 같은 디바이스 세션을 갱신하도록.
+ * auth 엔드포인트(reissue 포함)에도 붙여야 하므로 토큰 주입보다 앞에서 처리한다.
+ */
+const attachDeviceId = (request: Request): void => {
+  const deviceId = deviceIdStorage.get();
+  if (deviceId === null) return;
+  if (NO_DEVICE_ID_PATHS.has(new URL(request.url).pathname)) return;
+  request.headers.set(DEVICE_ID_HEADER, deviceId);
+};
+
 /**
  * 수용 기준 1 — 저장 토큰이 있으면 Authorization: Bearer 주입, 없으면 헤더 미부착.
  *
@@ -89,6 +110,7 @@ const reissueAccessToken = async (): Promise<string | null> => {
  * logout은 Authorization이 필수라 이 목록에 없다 — 의도된 비대칭(테스트가 고정).
  */
 export const authBeforeRequest: BeforeRequestHook = ({ request }) => {
+  attachDeviceId(request);
   if (isAuthEndpoint(request.url)) {
     return;
   }

@@ -2,14 +2,10 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/app/routes";
 import { MOCK_CELLS } from "@/entities/cell";
-import { MOCK_COLLECTED_VIDEOS, MOCK_DEX } from "@/entities/dex";
+import { MOCK_COLLECTED_VIDEOS } from "@/entities/dex";
 import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
 import { SearchBox } from "@/features/explore/ui/SearchBox";
-import {
-  canOpenDetail,
-  deriveHomeCellDetail,
-  myVideoIdsOf,
-} from "@/features/map-home/model/home-cell-detail";
+import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { MOCK_ROUTE, themeCellsOf } from "@/features/map-home/model/theme";
 import { deriveThemeFeed } from "@/features/map-home/model/theme-feed";
@@ -17,23 +13,24 @@ import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-stor
 import {
   buildHomeOverlayCells,
   buildRouteOverlay,
+  themeCellGridIds,
 } from "@/features/map-home/model/theme-overlay";
+import { useGridDetailQuery } from "@/features/map-home/model/use-grid-detail-query";
+import { useHotZoneCells } from "@/features/map-home/model/use-hotzones-query";
+import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
+import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
-import { HomeCellDetailPanel } from "./ui/HomeCellDetailPanel";
+import {
+  HomeCellDetailError,
+  HomeCellDetailLoading,
+  HomeCellDetailPanel,
+} from "./ui/HomeCellDetailPanel";
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
 import { ThemeFeedPanel } from "./ui/ThemeFeedPanel";
 import { VideoMiniPanel } from "./ui/VideoMiniPanel";
-
-// 내 점령 셀 = 도감 수집 격자 재사용 (A2) — 표시는 셸 상시 층(MSG-263 D9) 소유이고,
-// 홈은 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정에만 이 목록을 쓴다
-const OCCUPIED_CELLS = MOCK_DEX.collectedCells.map(({ gridId, center }) => ({
-  gridId,
-  center,
-}));
-const OCCUPIED_IDS = OCCUPIED_CELLS.map((c) => c.gridId);
 
 // 내 수집 영상 id 전체 — 테마 피드의 mine 판정 키 (MSG-277 AC 4). 영상 id는 셀 접두라 전역 유일
 const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.videoId);
@@ -79,16 +76,27 @@ export const MapHomePage = () => {
   const setOnCellClick = useMapOverlayStore((s) => s.setOnCellClick);
   const clearOverlays = useMapOverlayStore((s) => s.clear);
 
-  const themeCells = useMemo(
-    () => (activeTheme ? themeCellsOf(activeTheme) : []),
-    [activeTheme],
+  // 내 점령 격자 id — 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정용.
+  // 표시는 셸 상시 층(MSG-263 D9) 소유이고, 홈은 같은 뷰포트 쿼리를 구독만 한다(캐시 공유)
+  const viewportBounds = useViewportStore((s) => s.bounds);
+  const { grids: occupiedGrids } = useOccupiedGridsQuery(viewportBounds);
+  const occupiedIds = useMemo(
+    () => occupiedGrids.map((g) => g.gridId),
+    [occupiedGrids],
   );
+
+  // 핫구역만 실 API, 나머지 3테마는 목 유지 (MSG-325 결정 3 — 서버에 대응 API가 없다)
+  const hotZoneCells = useHotZoneCells(viewportBounds);
+  const themeCells = useMemo(() => {
+    if (activeTheme === null) return [];
+    return activeTheme === "hot" ? hotZoneCells : themeCellsOf(activeTheme);
+  }, [activeTheme, hotZoneCells]);
 
   // 강조 셀·경로 파생 (AC 2·6·7·8) — 뷰포트와 무관하게 게시한다: 활성 테마 셀이 화면 밖이면
   // 지도에 아무것도 더 그려지지 않아 기본 상태 그대로 보인다 (AC 11 — 별도 분기 불요)
   const overlayCells = useMemo(
-    () => buildHomeOverlayCells(activeTheme, themeCells, OCCUPIED_CELLS),
-    [activeTheme, themeCells],
+    () => buildHomeOverlayCells(activeTheme, themeCells, occupiedIds),
+    [activeTheme, themeCells, occupiedIds],
   );
   const routeOverlay = useMemo(
     () => buildRouteOverlay(activeTheme, MOCK_ROUTE),
@@ -105,12 +113,14 @@ export const MapHomePage = () => {
   // 셀 탭 → 상세 오픈/무시 판정 (AC 9·10) — 판정은 순수 함수, 스토어는 상태만
   const handleCellTap = useCallback(
     (cellId: string) => {
-      const themeCellIds = themeCells.map((c) => c.id);
-      if (!canOpenDetail(activeTheme, cellId, themeCellIds, OCCUPIED_IDS))
+      // 판정 id는 게시 id와 같은 규칙(좌표 유래 서버 gridId)이어야 한다 — 목 소스 테마의
+      // ThemeCell.id는 목 라벨("A-14")이라 그대로 쓰면 상세가 열리지 않는다 (MSG-325 회귀 방지)
+      const themeGridIds = themeCellGridIds(themeCells);
+      if (!canOpenDetail(activeTheme, cellId, themeGridIds, occupiedIds))
         return;
       selectCell(cellId);
     },
-    [activeTheme, themeCells, selectCell],
+    [activeTheme, themeCells, occupiedIds, selectCell],
   );
 
   // 섹션 오버레이 게시(테마 셀·경로·클릭 핸들러) — 홈 마운트 중 유지, 이탈 시 해제.
@@ -135,18 +145,13 @@ export const MapHomePage = () => {
   // 접힘은 셸이 display:none으로 숨겨 언마운트되지 않으므로 상태가 유지된다 (A6 정합)
   useEffect(() => resetThemeFilter, [resetThemeFilter]);
 
-  // 상세 표시 모델 파생 (AC 9·10) — MSG-277 AC 13: 경로추천도 다른 테마와 동일하게 상세를 연다
-  const detail = useMemo(() => {
-    if (selectedCellId === null) return null;
-    const cell = MOCK_CELLS.find((c) => c.id === selectedCellId);
-    if (!cell) return null;
-    return deriveHomeCellDetail({
-      cell,
-      activeTheme,
-      occupied: OCCUPIED_IDS.includes(cell.id),
-      myVideoIds: myVideoIdsOf(MOCK_COLLECTED_VIDEOS, cell.id),
-    });
-  }, [selectedCellId, activeTheme]);
+  // 상세 표시 모델 파생 (AC 9·10 → MSG-325 실 API) — 색칠 상태·대표 영상·행정동 3종 조합.
+  // MSG-277 AC 13: 경로추천도 다른 테마와 동일하게 상세를 연다
+  const {
+    detail,
+    isError: detailFailed,
+    retry: retryDetail,
+  } = useGridDetailQuery(selectedCellId, activeTheme);
 
   // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
   const themeFeed = useMemo(
@@ -181,13 +186,24 @@ export const MapHomePage = () => {
         <SearchBox />
         {/* 분기 우선순위 (MSG-277 확정): 셀 상세 > 테마 피드 > 요약 — 테마 상세를 닫으면
             칩이 유지된 채 피드로 자연 복귀한다 (AC 13) */}
-        {detail ? (
-          <HomeCellDetailPanel
-            detail={detail}
-            onVideoSelect={openMiniPanel}
-            onClose={closeDetailMiniFirst}
-            onViewAll={handleViewAll}
-          />
+        {selectedCellId !== null ? (
+          detail ? (
+            <HomeCellDetailPanel
+              detail={detail}
+              onClose={closeDetailMiniFirst}
+              onViewAll={handleViewAll}
+            />
+          ) : detailFailed ? (
+            // 실패를 로딩으로 위장하지 않는다 — 재시도 수단을 준다 (MSG-325 리뷰 반영)
+            <HomeCellDetailError
+              onRetry={retryDetail}
+              onClose={closeDetailMiniFirst}
+            />
+          ) : (
+            // 분기는 **선택 컨텍스트** 기준이다 — detail 기준으로 하면 격자를 바꿔 탭할 때
+            // 새 응답 전까지 요약 패널로 튀었다 돌아온다 (MSG-325 리뷰 반영)
+            <HomeCellDetailLoading onClose={closeDetailMiniFirst} />
+          )
         ) : themeFeed ? (
           <ThemeFeedPanel
             feed={themeFeed}

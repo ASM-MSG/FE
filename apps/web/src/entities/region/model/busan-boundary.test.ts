@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { GRID_ORIGIN } from "@/entities/cell";
 import { clipLineToBoundary, pointInPolygon } from "./boundary-geometry";
 import { BUSAN_BBOX, BUSAN_BOUNDARY } from "./busan-boundary";
 
@@ -35,8 +34,17 @@ describe("부산 행정경계 정적 데이터 (MSG-263 D7·D8, AC 4)", () => {
     }
   });
 
-  it("격자 원점(D2) = 부산 bbox SW 코너 — grid.ts 하드코딩 스냅샷과 데이터가 정합한다", () => {
-    expect(GRID_ORIGIN).toEqual(BUSAN_BBOX.sw);
+  // MSG-325: 격자 원점이 서버 정본(적도·본초자오선)으로 바뀌어 "원점 = bbox SW" 단정은 폐기했다.
+  // BUSAN_BBOX는 뷰포트 컬링(grid-overlay) 기준으로 남으므로, 그 역할의 불변식으로 대체한다.
+  it("BUSAN_BBOX가 경계 데이터 전 정점을 감싼다 — 뷰포트 컬링이 경계 일부를 잘라내지 않는다", () => {
+    for (const ring of BUSAN_BOUNDARY.flat()) {
+      for (const point of ring) {
+        expect(point.lat).toBeGreaterThanOrEqual(BUSAN_BBOX.sw.lat);
+        expect(point.lat).toBeLessThanOrEqual(BUSAN_BBOX.ne.lat);
+        expect(point.lng).toBeGreaterThanOrEqual(BUSAN_BBOX.sw.lng);
+        expect(point.lng).toBeLessThanOrEqual(BUSAN_BBOX.ne.lng);
+      }
+    }
   });
 
   it("실데이터 절단(AC 3): 수영만(광안대교로 폐합된 내수면 홀)을 가로지르는 수평선이 다중 선분으로 갈라지고, 바다(홀) 구간은 결과에 없다", () => {

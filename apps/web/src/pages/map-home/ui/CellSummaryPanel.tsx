@@ -8,6 +8,7 @@ import {
   topCellsByVideo,
 } from "@/features/map-home/model/cell-viewport";
 import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
+import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 
 interface CellSummaryPanelProps {
@@ -59,13 +60,26 @@ const CellCard = ({
 /**
  * 지도 위 요약 패널 — 현재 뷰포트 기준 격자·영상 요약과 상위 격자 카드.
  * 로딩(S12)·에러(S13)·빈(S6)·정상(S4) 4상태를 처리한다.
+ *
+ * MSG-325 기준 15: 내 점령 격자 조회(`/api/grids`)의 로딩·실패도 이 패널의 기존 상태 슬롯이
+ * 함께 표현한다 — "이 지역 정보"를 대표하는 자리가 여기라 별도 UI를 만들지 않는다.
+ * 격자 카드 목록 자체(탐색·요약 소스)는 제외 범위로 목을 유지한다.
  */
 export const CellSummaryPanel = ({
   onViewAll,
   onCellSelect,
 }: CellSummaryPanelProps) => {
   const bounds = useViewportStore((s) => s.bounds);
-  const { data, isLoading, isError, refetch } = useCellsQuery();
+  const cells = useCellsQuery();
+  const occupied = useOccupiedGridsQuery(bounds);
+
+  const { data } = cells;
+  const isLoading = cells.isLoading || occupied.isLoading;
+  const isError = cells.isError || occupied.isError;
+  const refetch = () => {
+    void cells.refetch();
+    void occupied.refetch();
+  };
 
   // 에러를 로딩보다 먼저 체크 — 지도 로드 실패로 bounds가 null에 머물러도 S13 에러 상태에 도달해야 한다
   if (isError) {

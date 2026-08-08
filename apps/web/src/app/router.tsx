@@ -1,19 +1,23 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/app/layouts/AppLayout";
 import { RequireAuth } from "@/app/RequireAuth";
-import { ROUTES } from "@/app/routes";
+import { RouteErrorBoundary } from "@/app/RouteErrorBoundary";
+import { KAKAO_CALLBACK_PATH, ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { ExplorePanel } from "@/pages/explore/ExplorePanel";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
+import { KakaoCallbackPage } from "@/pages/oauth-callback/KakaoCallbackPage";
 import { ProfilePanel } from "@/pages/profile/ProfilePanel";
 import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
 
 export const router = createBrowserRouter([
   // 로그인은 라우트가 아니라 모달(LoginModal, AppLayout 마운트)이다 — MSG-46 후속 2 G7.
-  // /login 직접 진입은 라우터 기본 폴백(무매칭 에러 화면)을 따른다 (신규 404 페이지 없음)
+  // /login 직접 진입은 무매칭이라 아래 errorElement 화면으로 수렴한다 (신규 404 페이지 없음)
   {
     element: <AppLayout />,
+    // 렌더·로더 오류와 무매칭 경로(404)가 라우터 기본 화면(스택 노출) 대신 이 화면으로 수렴한다
+    errorElement: <RouteErrorBoundary />,
     children: [
       // 모든 네비 섹션이 지속 지도 셸을 공유한다 — 각 섹션은 지도 위 사이드바 패널로 열리고
       // 닫으면(홈으로 복귀) 지도가 넓게 보인다. 지도는 라우트 전환에도 유지된다(D1).
@@ -37,6 +41,9 @@ export const router = createBrowserRouter([
           },
         ],
       },
+      // 카카오 OAuth 콜백 — 지도 셸 밖이다. 인가 직후 잠깐 머무는 화면이라 지도를
+      // 다시 마운트할 이유가 없고, 셸 안에 두면 패널 자리에 갇혀 보인다 (MSG-325)
+      { path: KAKAO_CALLBACK_PATH, element: <KakaoCallbackPage /> },
     ],
   },
 ]);

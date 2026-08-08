@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import type { LatLng } from "@/entities/cell";
-import { MOCK_DEX } from "@/entities/dex";
 import { useMapOverlayStore } from "./map-overlay-store";
 import {
   buildClusterMarkers,
@@ -10,9 +9,10 @@ import {
 } from "@/features/map-home/model/cluster-overlay";
 import {
   buildGridLines,
-  buildOccupiedGridCells,
   excludeSectionCells,
 } from "@/features/map-home/model/grid-overlay";
+import { toOccupiedOverlays } from "@/features/map-home/model/occupied-grid-overlay";
+import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
@@ -21,12 +21,6 @@ import { SEOMYEON_CENTER, getCurrentPosition } from "@/shared/geolocation";
 import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
 import { useSidebarStore } from "./sidebar-store";
 import type { MapShellContext } from "./use-map-shell";
-
-// 상시 점령 셀 (MSG-263 D3·D9) — mock(MOCK_DEX.collectedCells)의 center를 100m 격자로 스냅.
-// mock이 정적이라 모듈 스코프 1회 파생 — 섹션 전환·리렌더에 재계산이 없다
-const PERSISTENT_OCCUPIED_CELLS = buildOccupiedGridCells(
-  MOCK_DEX.collectedCells,
-);
 
 /**
  * 지속 지도 셸 — siderail 전 섹션이 이 셸을 공유하므로 지도 인스턴스와
@@ -56,14 +50,22 @@ export const MapShell = () => {
     [viewportBounds, viewportZoom],
   );
 
+  // 상시 점령 셀 (MSG-263 D3·D9 → MSG-325 실 API) — 뷰포트 기준 내 점령 격자를 조회해
+  // 그대로 오버레이로 쓴다. 이동 중에는 keepPreviousData가 직전 목록을 유지한다
+  const { grids: occupiedGrids } = useOccupiedGridsQuery(viewportBounds);
+  const persistentOccupiedCells = useMemo(
+    () => toOccupiedOverlays(occupiedGrids),
+    [occupiedGrids],
+  );
+
   // 상시 점령 셀 + 섹션 게시 셀 병합 — 게시 셀과 id가 겹치는 상시 셀은 제외해
   // 교집합을 섹션(테마) 스타일로 1회만 그린다 (MSG-263 개정 2 AC 8, R6)
   const overlayCells = useMemo(
     () => [
-      ...excludeSectionCells(PERSISTENT_OCCUPIED_CELLS, sectionCells),
+      ...excludeSectionCells(persistentOccupiedCells, sectionCells),
       ...sectionCells,
     ],
-    [sectionCells],
+    [persistentOccupiedCells, sectionCells],
   );
   // 채움 줌 게이트 (MSG-264 AC 1·2, A5 — 전 섹션 공유): zoom < GRID_MIN_ZOOM이면
   // 채움 셀을 전달하지 않고 아래 클러스터로 전환한다 — MSG-263 D4(채움 상시 표시) 대체
@@ -76,10 +78,10 @@ export const MapShell = () => {
   const clusters = useMemo(
     () =>
       buildClusterMarkers(
-        selectClusterSource(sectionCells, PERSISTENT_OCCUPIED_CELLS).cells,
+        selectClusterSource(sectionCells, persistentOccupiedCells).cells,
         viewportZoom,
       ),
-    [sectionCells, viewportZoom],
+    [sectionCells, persistentOccupiedCells, viewportZoom],
   );
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);

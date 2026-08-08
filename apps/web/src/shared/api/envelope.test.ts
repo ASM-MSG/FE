@@ -15,13 +15,22 @@ describe("unwrapEnvelope", () => {
     const envelope: ApiResponseDtoGridCellResponseDto = {
       developCode: 1000,
       message: "성공",
-      data: { gridId: "9_9", occupied: false, videoCount: 0 },
+      // zoneName·zoneCell은 required + nullable — 구역 밖 격자면 쌍으로 null
+      data: {
+        gridId: "9_9",
+        occupied: false,
+        videoCount: 0,
+        zoneName: null,
+        zoneCell: null,
+      },
     };
 
     expect(unwrapEnvelope(envelope)).toEqual({
       gridId: "9_9",
       occupied: false,
       videoCount: 0,
+      zoneName: null,
+      zoneCell: null,
     });
   });
 

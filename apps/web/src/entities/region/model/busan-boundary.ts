@@ -323,7 +323,7 @@ export const BUSAN_BOUNDARY: BoundaryMultiPolygon = [
   [toRing(MAIN_RING), toRing(SUYEONG_BAY_HOLE)],
 ];
 
-/** 부산 경계 bounding box — 격자 원점(GRID_ORIGIN = sw, D2)·뷰포트 컬링의 기준 */
+/** 부산 경계 bounding box — 뷰포트 컬링의 기준 (MSG-325: 격자 원점은 서버 정본으로 분리됐다) */
 export const BUSAN_BBOX: Bounds = BUSAN_BOUNDARY[0][0].reduce(
   (bbox, point) => ({
     sw: {

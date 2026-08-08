@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetZonesData, GetZonesResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, RejectData, RejectResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -226,11 +226,26 @@ export const reissue = <ThrowOnError extends boolean = false>(options?: Options<
 /**
  * 소셜 로그인 (OIDC)
  *
- * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다.
+ * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다. 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다.
  */
 export const oauthLogin = <ThrowOnError extends boolean = false>(options: Options<OauthLoginData, ThrowOnError>): RequestResult<OauthLoginResponses, unknown, ThrowOnError> => (options.client ?? client).post<OauthLoginResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/auth/oauth/{provider}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 소셜 로그인 (카카오 인가 코드)
+ *
+ * 웹에서 카카오 콜백으로 받은 인가 코드로 로그인/가입한다. 서버가 REST API 키로 카카오 토큰 엔드포인트를 호출해 ID Token 을 받은 뒤, 소셜 로그인(OIDC)과 완전히 같은 검증·발급 경로를 태운다. 인가 진입점이 심은 OAUTH_NONCE 쿠키가 함께 와야 한다(없으면 401). 응답 형태는 기존 소셜 로그인과 동일하다 — 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다. 네이티브 SDK 가 교환까지 해주는 앱은 이 API 가 아니라 POST /api/auth/oauth/{provider} 를 쓴다.
+ */
+export const oauthCodeLogin = <ThrowOnError extends boolean = false>(options: Options<OauthCodeLoginData, ThrowOnError>): RequestResult<OauthCodeLoginResponses, unknown, ThrowOnError> => (options.client ?? client).post<OauthCodeLoginResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/auth/oauth/kakao/code',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -281,6 +296,39 @@ export const socialLogin = <ThrowOnError extends boolean = false>(options: Optio
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * 블라인드 해제
+ *
+ * BLINDED 영상을 ACTIVE 로 복구한다. 오판 복구용이며 그 신고의 RESOLVED 는 되돌리지 않는다. 없는 영상과 삭제된 영상은 404(3404), 이미 ACTIVE 면 409(3409) 다.
+ */
+export const unblindVideo = <ThrowOnError extends boolean = false>(options: Options<UnblindVideoData, ThrowOnError>): RequestResult<UnblindVideoResponses, unknown, ThrowOnError> => (options.client ?? client).post<UnblindVideoResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/admin/videos/{videoId}/unblind',
+    ...options
+});
+
+/**
+ * 신고 기각
+ *
+ * 신고를 REJECTED 로 종결한다. 영상에는 아무 영향이 없고 응답의 videoStatus 는 현재 상태 그대로다. 없는 신고는 404(11404), 이미 처리된 신고는 409(11410) 다.
+ */
+export const reject1 = <ThrowOnError extends boolean = false>(options: Options<Reject1Data, ThrowOnError>): RequestResult<Reject1Responses, unknown, ThrowOnError> => (options.client ?? client).post<Reject1Responses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/admin/reports/{reportId}/reject',
+    ...options
+});
+
+/**
+ * 신고 승인
+ *
+ * 신고를 RESOLVED 로 종결하고 대상 영상을 블라인드한다 — 한 트랜잭션이다. 영상이 이미 BLINDED 거나 DELETED 면 영상 전이 없이 신고만 종결하며, 응답의 videoStatus 로 구분할 수 있다. 없는 신고는 404(11404), 이미 처리된 신고와 동시 처리의 늦은 쪽은 409(11410) 다.
+ */
+export const approve = <ThrowOnError extends boolean = false>(options: Options<ApproveData, ThrowOnError>): RequestResult<ApproveResponses, unknown, ThrowOnError> => (options.client ?? client).post<ApproveResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/admin/reports/{reportId}/approve',
+    ...options
 });
 
 /**
@@ -640,6 +688,39 @@ export const getCollectionGrids = <ThrowOnError extends boolean = false>(options
 export const findMyBadges = <ThrowOnError extends boolean = false>(options?: Options<FindMyBadgesData, ThrowOnError>): RequestResult<FindMyBadgesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<FindMyBadgesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/badges',
+    ...options
+});
+
+/**
+ * 카카오 로그인 시작 (인가 진입점)
+ *
+ * 웹 로그인의 시작점이다. 클라이언트는 이 URL 로 이동하기만 하면 된다(location.href). 서버가 카카오 인가 URL(client_id·response_type=code·scope=openid·nonce 포함)을 조립해 302 로 보내면서 같은 응답에 OAUTH_NONCE 쿠키(HttpOnly, 10분)를 심는다. 그래서 scope=openid 누락이나 nonce 누락이 구조적으로 불가능하고, REST API 키가 클라이언트 코드로 나갈 일도 없다. 응답은 리다이렉트라 공통 응답 포맷을 쓰지 않는다.
+ */
+export const redirectToKakaoAuthorize = <ThrowOnError extends boolean = false>(options: Options<RedirectToKakaoAuthorizeData, ThrowOnError>): RequestResult<RedirectToKakaoAuthorizeResponses, unknown, ThrowOnError> => (options.client ?? client).get<RedirectToKakaoAuthorizeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/auth/oauth/kakao/authorize',
+    ...options
+});
+
+/**
+ * 관리자 단건 영상 확인
+ *
+ * 신고 판단용으로 영상 하나를 확인한다 — 공개범위와 상태(BLINDED 포함)를 무시하고 요청 시점에 재생·썸네일 presigned URL 을 발급하며, 조회수를 올리지 않는다. 처리 상태가 READY 가 아니면 playbackUrl 과 expiresInSec 은 null 이다. 없는 영상과 삭제된 영상은 404(3404) 다.
+ */
+export const getVideoForReview = <ThrowOnError extends boolean = false>(options: Options<GetVideoForReviewData, ThrowOnError>): RequestResult<GetVideoForReviewResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetVideoForReviewResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/admin/videos/{videoId}',
+    ...options
+});
+
+/**
+ * 신고 목록 조회
+ *
+ * 상태 필터 기준으로 신고를 접수 최신순 페이지 단위로 조회한다. 기본은 미처리(PENDING) 신고다. 항목에 신고자·영상 소유자 닉네임과 영상 현재 상태가 함께 담겨 목록만으로 판단할 수 있다. 지원하지 않는 status 는 400(11420), page 음수나 size 범위(1~100) 밖은 400(11421) 이다. REVIEWING 은 유효한 값이지만 만드는 경로가 없어 항상 빈 목록이다.
+ */
+export const getReports = <ThrowOnError extends boolean = false>(options?: Options<GetReportsData, ThrowOnError>): RequestResult<GetReportsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetReportsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/admin/reports',
     ...options
 });
 

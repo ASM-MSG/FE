@@ -17,16 +17,18 @@ const WEB_GRID_PATH = new URL(
 const loadWebGrid = (): Promise<typeof mobileGrid> => import(WEB_GRID_PATH);
 
 describe("grid 동등성 (AC 1)", () => {
-  it("원점 GRID_ORIGIN(34.98495/128.79626)·셀 크기·기준 위도가 웹 원본과 동일하다", async () => {
+  // MSG-325: 서버 정본(GridConstants) 채택 — 원점이 부산 bbox SW에서 적도·본초자오선으로,
+  // 스텝이 파생값에서 고정 상수로 바뀌었다. 값은 BE 글로서리 "격자 계산 규칙"이 정본이다.
+  it("원점 GRID_ORIGIN(0/0)이 서버 정본이고 웹 원본과 동일하다", async () => {
     const webGrid = await loadWebGrid();
-    expect(mobileGrid.GRID_ORIGIN).toEqual({ lat: 34.98495, lng: 128.79626 });
+    expect(mobileGrid.GRID_ORIGIN).toEqual({ lat: 0, lng: 0 });
     expect(mobileGrid.GRID_ORIGIN).toEqual(webGrid.GRID_ORIGIN);
-    expect(mobileGrid.GRID_CELL_METERS).toBe(webGrid.GRID_CELL_METERS);
-    expect(mobileGrid.GRID_REF_LAT).toBe(webGrid.GRID_REF_LAT);
   });
 
-  it("위경도 스텝(GRID_LAT_STEP·GRID_LNG_STEP)이 웹 원본과 정확히 같다", async () => {
+  it("위경도 스텝(GRID_LAT_STEP·GRID_LNG_STEP)이 서버 정본 값이고 웹 원본과 정확히 같다", async () => {
     const webGrid = await loadWebGrid();
+    expect(mobileGrid.GRID_LAT_STEP).toBe(0.0009);
+    expect(mobileGrid.GRID_LNG_STEP).toBe(0.00115);
     expect(mobileGrid.GRID_LAT_STEP).toBe(webGrid.GRID_LAT_STEP);
     expect(mobileGrid.GRID_LNG_STEP).toBe(webGrid.GRID_LNG_STEP);
   });
@@ -35,8 +37,8 @@ describe("grid 동등성 (AC 1)", () => {
     const webGrid = await loadWebGrid();
     const samples = [
       { lat: 35.1579, lng: 129.0594 }, // 서면 중심 (mock 기준 지역)
-      { lat: 34.98495, lng: 128.79626 }, // 원점 (sw 변 포함 스냅)
-      { lat: 34.9, lng: 128.7 }, // 원점 남서쪽 — 음수 인덱스
+      { lat: 0, lng: 0 }, // 원점 (sw 변 포함 스냅)
+      { lat: -0.001, lng: -0.002 }, // 원점 남서쪽 — 음수 인덱스
       { lat: 35.38, lng: 129.25 }, // 부산 북동부
     ];
     for (const point of samples) {

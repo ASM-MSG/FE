@@ -1,25 +1,28 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { webStorage } from "@/shared/storage";
+import { KAKAO_CALLBACK_PATH } from "@/app/routes";
+import { appOrigin, redirectTo } from "@/shared/navigation";
+import { oauthStateStorage, webStorage } from "@/shared/storage";
+import { KAKAO_AUTHORIZE_PATH } from "../model/kakao-oauth";
 import { AUTH_STORAGE_KEY, useAuthStore } from "../model/auth-store";
 import { useLoginModalStore } from "../model/login-modal-store";
 import { LoginModal } from "./LoginModal";
+
+// 외부 이동은 어댑터 경유 — jsdom은 location.assign 재정의를 막으므로 어댑터를 목한다
+vi.mock("@/shared/navigation", () => ({
+  redirectTo: vi.fn(),
+  appOrigin: () => "http://localhost:5173",
+}));
 
 /**
  * 로그인 모달 스모크 (MSG-46 후속 2 G2·G3 + 후속 3 P2 — login-page.smoke 관례).
  * 콘텐츠 구성·닫기 계약·카카오 버튼 dev 모의 로그인만 고정한다. 색·간격·카드 형태 등
  * 픽셀 판정은 브라우저 검증의 몫 — 스타일 단정은 넣지 않는다.
  * 모달 열기 진입(SideRail 분기)은 side-rail-nav.test.tsx 몫 (G1).
- * 카카오 버튼이 MSG-324에서 목 로그인 → dev 모의 로그인 API로 배선돼 네트워크를 탄다 —
- * fetch 목 + QueryClientProvider 보강 (클릭 계약 자체는 승계: 로그인 상태 + 모달 닫힘).
+ * 카카오 버튼은 MSG-325에서 **서버 로그인 진입점으로 이동**하는 계약이 됐다 —
+ * 로그인 완결(코드 교환)은 콜백 페이지 소관이라 여기서는 이동과 state 저장만 단정한다.
  */
 
 /** 현재 경로 노출 대역 — 모달 상호작용이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
@@ -30,7 +33,7 @@ const LocationProbe = () => {
 
 const renderModal = () =>
   render(
-    // KakaoLoginButton의 useDevSocialLogin(useMutation)이 QueryClient를 요구한다 (MSG-324)
+    // 모달 하위 트리가 쿼리 훅을 쓸 수 있어 프로바이더는 유지한다
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter initialEntries={["/"]}>
         <LoginModal />
@@ -42,7 +45,8 @@ const renderModal = () =>
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
-  // 카카오 버튼 케이스가 실토큰을 저장하므로 스토어·스토리지를 비로그인으로 되돌린다
+  vi.clearAllMocks();
+  oauthStateStorage.clear();
   useAuthStore.setState({ accessToken: null, isAuthenticated: false });
   webStorage.removeItem(AUTH_STORAGE_KEY);
 });
@@ -95,20 +99,7 @@ describe("로그인 모달 스모크", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("카카오 버튼 클릭 → dev 모의 로그인 요청, 성공 시 로그인 상태 + 모달 닫힘 — URL 불변 (MSG-324 기준 11, 구 P2 목 로그인 대체)", async () => {
-    useAuthStore.setState({ accessToken: null, isAuthenticated: false });
-    const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
-      async () =>
-        new Response(
-          JSON.stringify({
-            developCode: 0,
-            message: "ok",
-            data: { accessToken: "dev-access-token", refreshToken: null },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+  it("카카오 버튼 클릭 → 서버 로그인 진입점으로 이동한다 — 콜백 URI·state 동봉", () => {
     renderModal();
 
     const button = screen.getByRole("button", { name: "카카오로 계속하기" });
@@ -116,12 +107,16 @@ describe("로그인 모달 스모크", () => {
 
     fireEvent.click(button);
 
-    // dev 모의 로그인일 뿐 실 카카오 OIDC 아님 — 인가 리다이렉트 없음 (스펙 오탐 방지)
-    await waitFor(() => expect(useLoginModalStore.getState().open).toBe(false));
-    const [requested] = fetchMock.mock.calls[0];
-    expect(new URL(requested.url).pathname).toBe("/api/auth/dev/social-login");
-    expect(useAuthStore.getState().isAuthenticated).toBe(true);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByTestId("location").textContent).toBe("/");
+    expect(vi.mocked(redirectTo)).toHaveBeenCalledTimes(1);
+    const url = new URL(vi.mocked(redirectTo).mock.calls[0][0]);
+    expect(url.pathname).toBe(KAKAO_AUTHORIZE_PATH);
+    expect(url.searchParams.get("redirectUri")).toBe(
+      `${appOrigin()}${KAKAO_CALLBACK_PATH}`,
+    );
+
+    // state는 콜백에서 대조할 수 있도록 저장돼 있어야 한다 (CSRF)
+    const state = url.searchParams.get("state");
+    expect(state).toBeTruthy();
+    expect(oauthStateStorage.peek()).toBe(state);
   });
 });
