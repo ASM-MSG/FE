@@ -23,7 +23,10 @@ import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
-import { HomeCellDetailPanel } from "./ui/HomeCellDetailPanel";
+import {
+  HomeCellDetailLoading,
+  HomeCellDetailPanel,
+} from "./ui/HomeCellDetailPanel";
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
 import { ThemeFeedPanel } from "./ui/ThemeFeedPanel";
 import { VideoMiniPanel } from "./ui/VideoMiniPanel";
@@ -178,12 +181,18 @@ export const MapHomePage = () => {
         <SearchBox />
         {/* 분기 우선순위 (MSG-277 확정): 셀 상세 > 테마 피드 > 요약 — 테마 상세를 닫으면
             칩이 유지된 채 피드로 자연 복귀한다 (AC 13) */}
-        {detail ? (
-          <HomeCellDetailPanel
-            detail={detail}
-            onClose={closeDetailMiniFirst}
-            onViewAll={handleViewAll}
-          />
+        {selectedCellId !== null ? (
+          detail ? (
+            <HomeCellDetailPanel
+              detail={detail}
+              onClose={closeDetailMiniFirst}
+              onViewAll={handleViewAll}
+            />
+          ) : (
+            // 분기는 **선택 컨텍스트** 기준이다 — detail 기준으로 하면 격자를 바꿔 탭할 때
+            // 새 응답 전까지 요약 패널로 튀었다 돌아온다 (MSG-325 리뷰 반영)
+            <HomeCellDetailLoading onClose={closeDetailMiniFirst} />
+          )
         ) : themeFeed ? (
           <ThemeFeedPanel
             feed={themeFeed}

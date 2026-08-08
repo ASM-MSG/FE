@@ -4242,6 +4242,56 @@
           "is_fragment": false
         }
       ]
+    },
+    {
+      "id": "29ac04462a1924d5",
+      "note": "consolidate `routes` — 4 copies — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "05164e34f694c04a",
+          "source_digest": "fnv1a64:7ad7ae2c3cc5a5ca",
+          "file": "apps/web/src/pages/dex/badge-tab.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 52,
+          "end_line": 56,
+          "kind": "Block",
+          "name": "routes",
+          "is_fragment": false
+        },
+        {
+          "id": "039a8605473ac5d9",
+          "source_digest": "fnv1a64:7ad7ae2c3cc5a5ca",
+          "file": "apps/web/src/pages/dex/dex-panel.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 62,
+          "end_line": 66,
+          "kind": "Block",
+          "name": "routes",
+          "is_fragment": false
+        },
+        {
+          "id": "56ed95ca58bfe0bb",
+          "source_digest": "fnv1a64:7ad7ae2c3cc5a5ca",
+          "file": "apps/web/src/pages/dex/gallery-tab.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 90,
+          "end_line": 94,
+          "kind": "Block",
+          "name": "routes",
+          "is_fragment": false
+        },
+        {
+          "id": "ec99ecfac39db23a",
+          "source_digest": "fnv1a64:8fe27cd57b04fb19",
+          "file": "apps/web/src/pages/map-home/map-home-panel-switch.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 30,
+          "end_line": 34,
+          "kind": "Block",
+          "name": "routes",
+          "is_fragment": false
+        }
+      ]
     }
   ]
 }

@@ -27,6 +27,24 @@ const BADGE_CLASS: Record<HomeCellBadge["id"], string> = {
 };
 
 /**
+ * 상세 로딩 자리 (MSG-325 리뷰 반영) — 격자를 바꿔 탭하면 새 응답이 올 때까지 detail이
+ * 비는데, 그 사이 요약 패널로 되돌아가면 선택 컨텍스트가 있는데도 화면이 통째로 튄다.
+ * 상세 슬롯을 지키면서 로딩만 알린다. Escape 닫기는 유지한다 — 조회가 실패해 영영
+ * 상세가 오지 않는 경우에도 사용자가 빠져나올 수 있어야 한다.
+ */
+export const HomeCellDetailLoading = ({ onClose }: { onClose: () => void }) => {
+  useEscapeClose(onClose);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-md" aria-busy>
+      <p className="text-fm-body text-foreground-muted">
+        격자 정보를 불러오는 중이에요…
+      </p>
+    </div>
+  );
+};
+
+/**
  * 홈 격자 상세 패널 (MSG-252 AC 9·9-1·10 → MSG-277 정보 구조 → MSG-325 실 API 전환) —
  * 좌측 패널에서 요약(CellSummaryPanel)·테마 피드 자리에 전환 렌더된다(SearchBox 유지).
  * 별도 닫기 버튼 없음(A3) — 칩 해제·전환(스토어 연동)·다른 격자 탭(교체)·Escape로 닫힌다.
