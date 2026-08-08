@@ -1,17 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KAKAO_CALLBACK_PATH } from "@/app/routes";
 import { appOrigin, redirectTo } from "@/shared/navigation";
 import { oauthStateStorage, webStorage } from "@/shared/storage";
-import { KAKAO_AUTHORIZE_ENDPOINT } from "../model/kakao-oauth";
+import { KAKAO_AUTHORIZE_PATH } from "../model/kakao-oauth";
 import { AUTH_STORAGE_KEY, useAuthStore } from "../model/auth-store";
 import { useLoginModalStore } from "../model/login-modal-store";
 import { LoginModal } from "./LoginModal";
@@ -27,8 +21,8 @@ vi.mock("@/shared/navigation", () => ({
  * 콘텐츠 구성·닫기 계약·카카오 버튼 dev 모의 로그인만 고정한다. 색·간격·카드 형태 등
  * 픽셀 판정은 브라우저 검증의 몫 — 스타일 단정은 넣지 않는다.
  * 모달 열기 진입(SideRail 분기)은 side-rail-nav.test.tsx 몫 (G1).
- * 카카오 버튼은 MSG-325에서 플래그 분기가 됐다 — 기본(플래그 off)은 기존 dev 모의 로그인
- * 계약 그대로이고, VITE_KAKAO_LOGIN_ENABLED=true에서만 실 인가 리다이렉트를 탄다.
+ * 카카오 버튼은 MSG-325에서 **서버 로그인 진입점으로 이동**하는 계약이 됐다 —
+ * 로그인 완결(코드 교환)은 콜백 페이지 소관이라 여기서는 이동과 state 저장만 단정한다.
  */
 
 /** 현재 경로 노출 대역 — 모달 상호작용이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
@@ -105,34 +99,7 @@ describe("로그인 모달 스모크", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("기본값(플래그 off)에서는 기존 dev 모의 로그인 계약을 유지한다 — 서버 교환 전에 배포돼도 로그인이 깨지지 않는다 (MSG-325 회귀 방지)", async () => {
-    const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
-      async () =>
-        new Response(
-          JSON.stringify({
-            developCode: 0,
-            message: "ok",
-            data: { accessToken: "dev-access-token", refreshToken: null },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-    renderModal();
-
-    fireEvent.click(screen.getByRole("button", { name: "카카오로 계속하기" }));
-
-    await waitFor(() => expect(useLoginModalStore.getState().open).toBe(false));
-    expect(new URL(fetchMock.mock.calls[0][0].url).pathname).toBe(
-      "/api/auth/dev/social-login",
-    );
-    expect(useAuthStore.getState().isAuthenticated).toBe(true);
-    expect(vi.mocked(redirectTo)).not.toHaveBeenCalled();
-    expect(screen.getByTestId("location").textContent).toBe("/");
-  });
-
-  it("플래그 on이면 카카오 인가 페이지로 리다이렉트한다 — openid scope·콜백 URI·state 동봉", () => {
-    vi.stubEnv("VITE_KAKAO_LOGIN_ENABLED", "true");
+  it("카카오 버튼 클릭 → 서버 로그인 진입점으로 이동한다 — 콜백 URI·state 동봉", () => {
     renderModal();
 
     const button = screen.getByRole("button", { name: "카카오로 계속하기" });
@@ -142,10 +109,8 @@ describe("로그인 모달 스모크", () => {
 
     expect(vi.mocked(redirectTo)).toHaveBeenCalledTimes(1);
     const url = new URL(vi.mocked(redirectTo).mock.calls[0][0]);
-    expect(url.origin + url.pathname).toBe(KAKAO_AUTHORIZE_ENDPOINT);
-    expect(url.searchParams.get("response_type")).toBe("code");
-    expect(url.searchParams.get("scope")?.split(",")).toContain("openid");
-    expect(url.searchParams.get("redirect_uri")).toBe(
+    expect(url.pathname).toBe(KAKAO_AUTHORIZE_PATH);
+    expect(url.searchParams.get("redirectUri")).toBe(
       `${appOrigin()}${KAKAO_CALLBACK_PATH}`,
     );
 

@@ -70,6 +70,61 @@ afterEach(() => {
   vi.resetModules();
 });
 
+describe("X-Device-Id 재사용 (MSG-325)", () => {
+  it("저장된 디바이스 식별자를 요청에 싣는다 — 재발급이 같은 디바이스 세션을 갱신하도록", async () => {
+    const { deviceIdStorage } = await import("../storage");
+    deviceIdStorage.save("device-abc");
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    configure(configureAuthPipeline, () => "stored-access-token");
+    const { received } = stubFetch(() => envelopeResponse({ ok: true }));
+
+    await httpClient.get(`${API_BASE}/api/videos`);
+
+    expect(received[0].headers.get("X-Device-Id")).toBe("device-abc");
+    deviceIdStorage.clear();
+  });
+
+  it("재발급에도 붙인다 — auth 엔드포인트 토큰 미주입과 별개다", async () => {
+    const { deviceIdStorage } = await import("../storage");
+    deviceIdStorage.save("device-abc");
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    configure(configureAuthPipeline, () => "stored-access-token");
+    const { received } = stubFetch(() => envelopeResponse({ ok: true }));
+
+    await httpClient.post(`${API_BASE}/api/auth/reissue`);
+
+    expect(received[0].headers.get("X-Device-Id")).toBe("device-abc");
+    expect(received[0].headers.get("Authorization")).toBeNull();
+    deviceIdStorage.clear();
+  });
+
+  it("로그아웃에는 붙이지 않는다 — 전 디바이스 세션 삭제가 확정 동작이다 (MSG-324 추정 4)", async () => {
+    const { deviceIdStorage } = await import("../storage");
+    deviceIdStorage.save("device-abc");
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    configure(configureAuthPipeline, () => "stored-access-token");
+    const { received } = stubFetch(() => envelopeResponse({ ok: true }));
+
+    await httpClient.post(`${API_BASE}/api/auth/logout`);
+
+    expect(received[0].headers.get("X-Device-Id")).toBeNull();
+    expect(received[0].headers.get("Authorization")).toBe(
+      "Bearer stored-access-token",
+    );
+    deviceIdStorage.clear();
+  });
+
+  it("저장된 값이 없으면 헤더가 아예 붙지 않는다", async () => {
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    configure(configureAuthPipeline, () => "stored-access-token");
+    const { received } = stubFetch(() => envelopeResponse({ ok: true }));
+
+    await httpClient.get(`${API_BASE}/api/videos`);
+
+    expect(received[0].headers.get("X-Device-Id")).toBeNull();
+  });
+});
+
 describe("토큰 주입 (기준 1) · credentials (기준 6)", () => {
   it("액세스 토큰이 있으면 모든 요청에 Authorization: Bearer가 주입되고, credentials는 include다", async () => {
     const { configureAuthPipeline, httpClient } = await loadPipeline();

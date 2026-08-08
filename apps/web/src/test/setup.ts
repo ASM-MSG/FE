@@ -31,3 +31,13 @@ if (globalThis.localStorage === undefined) {
     configurable: true,
   });
 }
+
+/**
+ * API 에러 정규화 인터셉터 등록 (MSG-325).
+ * 앱은 main.tsx 부트스트랩에서 1회 등록하는데, 테스트는 그 진입점을 타지 않아
+ * 실패 응답이 정규화되지 않은 **원시 봉투**로 도착했다 — 화면이 developCode로
+ * 분기하는 코드를 테스트가 검증하지 못하는 사각이었다. 앱과 같은 조건으로 맞춘다.
+ */
+const { registerApiErrorInterceptor } =
+  await import("@/shared/api/error-interceptor");
+registerApiErrorInterceptor();

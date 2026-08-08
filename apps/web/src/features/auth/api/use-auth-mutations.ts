@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { DEVICE_ID_HEADER } from "@/shared/api/auth-pipeline";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 // 생성 mutation 옵션은 barrel(generated/index.ts) 미재수출 — 직접 경로 import (MSG-323 관례)
 import {
@@ -7,6 +8,10 @@ import {
   signupMutation,
   socialLoginMutation,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
+// 응답 **헤더**(X-Device-Id)가 필요해 생성 mutation 옵션 대신 SDK를 직접 호출한다 —
+// 생성 옵션의 mutationFn은 data만 돌려주고 Response를 감춘다 (MSG-325)
+import { oauthCodeLogin } from "@/shared/api/generated/sdk.gen";
+import { deviceIdStorage } from "@/shared/storage";
 import type { Options, SignupData } from "@/shared/api/generated";
 import { useAuthStore } from "../model/auth-store";
 
@@ -41,6 +46,41 @@ export const useDevSocialLogin = () => {
       setAccessToken(unwrapEnvelope(envelope).accessToken);
       queryClient.clear();
     },
+  });
+};
+
+/**
+ * 카카오 인가 코드 로그인 (MSG-325) — `/api/auth/oauth/kakao/code`.
+ * 서버가 코드를 ID 토큰으로 교환하고 nonce 쿠키와 대조해 검증한다. nonce 쿠키는
+ * httpClient의 `credentials: "include"`로 자동 동봉된다(MSG-324) — 훅은 관여하지 않는다.
+ * 응답 body의 refreshToken은 웹에서 항상 null이다(HttpOnly 쿠키로 내려감).
+ */
+export const useKakaoCodeLogin = (callbacks?: {
+  onLoggedIn?: () => void;
+  onFailed?: (error: unknown) => void;
+}) => {
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const queryClient = useQueryClient();
+  // 콜백을 mutate 호출 인자가 아니라 **훅 레벨 옵션**으로 받는다: mutate의 per-call 콜백은
+  // 관찰자가 언마운트되면 버려지는데, StrictMode는 mount→unmount→mount라 첫 마운트에서
+  // 시작한 요청의 콜백이 그대로 유실된다(성공 시 화면 전환·실패 시 안내가 통째로 사라짐)
+  return useMutation({
+    mutationFn: async (variables: { code: string; redirectUri: string }) => {
+      const { data, response } = await oauthCodeLogin({
+        body: variables,
+        throwOnError: true,
+      });
+      // 서버가 발급한 기기 식별자를 보관해 이후 요청(특히 재발급)에 재사용한다
+      const deviceId = response.headers.get(DEVICE_ID_HEADER);
+      if (deviceId !== null) deviceIdStorage.save(deviceId);
+      return data;
+    },
+    onSuccess: (envelope) => {
+      setAccessToken(unwrapEnvelope(envelope).accessToken);
+      queryClient.clear();
+      callbacks?.onLoggedIn?.();
+    },
+    onError: (error) => callbacks?.onFailed?.(error),
   });
 };
 

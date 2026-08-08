@@ -1,41 +1,53 @@
 import { describe, expect, it } from "vitest";
 import {
-  KAKAO_AUTHORIZE_ENDPOINT,
+  KAKAO_AUTHORIZE_PATH,
   buildKakaoAuthorizeUrl,
   parseKakaoCallback,
+  toKakaoLoginFailure,
 } from "./kakao-oauth";
 
-const JS_KEY = "test_javascript_key";
+const API_BASE_URL = "https://api.fillmap.kr";
 const REDIRECT_URI = "http://localhost:5173/oauth/kakao/callback";
 
-describe("buildKakaoAuthorizeUrl — 카카오 인가 요청 URL", () => {
+describe("buildKakaoAuthorizeUrl — 서버 로그인 진입점 URL", () => {
   const url = new URL(
     buildKakaoAuthorizeUrl({
-      jsKey: JS_KEY,
+      apiBaseUrl: API_BASE_URL,
       redirectUri: REDIRECT_URI,
       state: "STATE_TOKEN",
     }),
   );
 
-  it("카카오 인가 엔드포인트로 향한다", () => {
-    expect(url.origin + url.pathname).toBe(KAKAO_AUTHORIZE_ENDPOINT);
+  it("카카오가 아니라 서버 진입점으로 향한다 — 앱 키·scope·nonce는 서버 몫이다", () => {
+    expect(url.origin).toBe(API_BASE_URL);
+    expect(url.pathname).toBe(KAKAO_AUTHORIZE_PATH);
   });
 
-  it("client_id는 JavaScript 키다 — REST API 키는 프론트에 두지 않는다", () => {
-    expect(url.searchParams.get("client_id")).toBe(JS_KEY);
-  });
-
-  it("인가 코드 플로우이고 redirect_uri는 콘솔 등록값 그대로다", () => {
-    expect(url.searchParams.get("response_type")).toBe("code");
-    expect(url.searchParams.get("redirect_uri")).toBe(REDIRECT_URI);
-  });
-
-  it("scope에 openid를 포함한다 — 없으면 서버가 요구하는 ID 토큰이 발급되지 않는다", () => {
-    expect(url.searchParams.get("scope")?.split(",")).toContain("openid");
+  it("콜백 주소를 그대로 넘긴다 — 4단계 코드 교환 요청에도 같은 값을 쓴다", () => {
+    expect(url.searchParams.get("redirectUri")).toBe(REDIRECT_URI);
   });
 
   it("state를 그대로 싣는다 — 콜백에서 대조할 CSRF 토큰", () => {
     expect(url.searchParams.get("state")).toBe("STATE_TOKEN");
+  });
+
+  it("앱 키를 싣지 않는다 — REST API 키가 클라이언트로 나갈 경로가 없다", () => {
+    expect(url.searchParams.get("client_id")).toBeNull();
+  });
+});
+
+describe("toKakaoLoginFailure — 서버 오류코드 해석", () => {
+  it("2423은 코드 만료·재사용 — 처음부터 다시 로그인해야 한다", () => {
+    expect(toKakaoLoginFailure(2423)).toBe("expired");
+  });
+
+  it("2502는 카카오 장애 — 잠시 후 재시도 안내다", () => {
+    expect(toKakaoLoginFailure(2502)).toBe("provider");
+  });
+
+  it("그 외·코드 없음은 일반 실패로 다룬다", () => {
+    expect(toKakaoLoginFailure(9999)).toBe("unknown");
+    expect(toKakaoLoginFailure(undefined)).toBe("unknown");
   });
 });
 

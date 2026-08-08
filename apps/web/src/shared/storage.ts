@@ -39,5 +39,22 @@ export const oauthStateStorage = {
   },
 };
 
+const DEVICE_ID_KEY = "fillmap.device.id";
+
+/**
+ * 서버가 발급한 디바이스 식별자 보관소 (MSG-325) — 로그인 응답의 `X-Device-Id` 헤더를
+ * 저장해 이후 요청에 재사용한다. 세션이 아니라 기기에 묶이는 값이라 localStorage를 쓴다
+ * (탭을 닫아도 같은 기기로 인식돼야 재발급이 같은 디바이스 세션을 갱신한다).
+ */
+export const deviceIdStorage = {
+  get: (): string | null => localStorage.getItem(DEVICE_ID_KEY),
+  save: (deviceId: string): void => {
+    localStorage.setItem(DEVICE_ID_KEY, deviceId);
+  },
+  clear: (): void => {
+    localStorage.removeItem(DEVICE_ID_KEY);
+  },
+};
+
 /** 1회성 state 토큰 생성 — 웹 crypto 의존이라 어댑터 층에 둔다 */
 export const createOauthState = (): string => crypto.randomUUID();

@@ -471,6 +471,20 @@ export type LoginResponseDto = {
 };
 
 /**
+ * 카카오 인가 코드 로그인 요청 (웹). 카카오 콜백으로 받은 코드를 서버가 ID Token 으로 교환한다.
+ */
+export type KakaoCodeLoginRequestDto = {
+    /**
+     * 카카오 콜백 쿼리로 받은 1회용 인가 코드
+     */
+    code: string;
+    /**
+     * 인가 요청에 사용한 redirect URI 그대로. 카카오 콘솔 등록값과 정확히 일치해야 한다.
+     */
+    redirectUri: string;
+};
+
+/**
  * 로그아웃 요청 (선택 body) — fcmToken 이 있으면 세션 삭제와 함께 해당 FCM 푸시 토큰도 정리된다
  */
 export type LogoutRequestDto = {
@@ -2118,6 +2132,32 @@ export type OauthLoginResponses = {
 
 export type OauthLoginResponse = OauthLoginResponses[keyof OauthLoginResponses];
 
+export type OauthCodeLoginData = {
+    body: KakaoCodeLoginRequestDto;
+    headers?: {
+        /**
+         * 클라이언트 유형 (web|app, 기본 web)
+         */
+        'X-Client-Type'?: string;
+        /**
+         * 디바이스 식별자. 없으면 서버가 UUID 를 생성해 응답 헤더 X-Device-Id 로 반환한다.
+         */
+        'X-Device-Id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/auth/oauth/kakao/code';
+};
+
+export type OauthCodeLoginResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoLoginResponseDto;
+};
+
+export type OauthCodeLoginResponse = OauthCodeLoginResponses[keyof OauthCodeLoginResponses];
+
 export type LogoutData = {
     body?: LogoutRequestDto;
     headers?: {
@@ -2941,6 +2981,29 @@ export type FindMyBadgesResponses = {
 };
 
 export type FindMyBadgesResponse = FindMyBadgesResponses[keyof FindMyBadgesResponses];
+
+export type RedirectToKakaoAuthorizeData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 카카오 콜백 URI. 콘솔 등록값과 정확히 일치해야 한다(검증 주체는 카카오).
+         */
+        redirectUri: string;
+        /**
+         * 콜백 위조 검증용 난수. 서버는 손대지 않고 인가 URL 에 그대로 전달한다.
+         */
+        state?: string;
+    };
+    url: '/api/auth/oauth/kakao/authorize';
+};
+
+export type RedirectToKakaoAuthorizeResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
 
 export type GetVideoForReviewData = {
     body?: never;

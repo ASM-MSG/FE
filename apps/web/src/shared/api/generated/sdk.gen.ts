@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -226,11 +226,26 @@ export const reissue = <ThrowOnError extends boolean = false>(options?: Options<
 /**
  * 소셜 로그인 (OIDC)
  *
- * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다.
+ * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다. 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다.
  */
 export const oauthLogin = <ThrowOnError extends boolean = false>(options: Options<OauthLoginData, ThrowOnError>): RequestResult<OauthLoginResponses, unknown, ThrowOnError> => (options.client ?? client).post<OauthLoginResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/auth/oauth/{provider}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 소셜 로그인 (카카오 인가 코드)
+ *
+ * 웹에서 카카오 콜백으로 받은 인가 코드로 로그인/가입한다. 서버가 REST API 키로 카카오 토큰 엔드포인트를 호출해 ID Token 을 받은 뒤, 소셜 로그인(OIDC)과 완전히 같은 검증·발급 경로를 태운다. 인가 진입점이 심은 OAUTH_NONCE 쿠키가 함께 와야 한다(없으면 401). 응답 형태는 기존 소셜 로그인과 동일하다 — 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다. 네이티브 SDK 가 교환까지 해주는 앱은 이 API 가 아니라 POST /api/auth/oauth/{provider} 를 쓴다.
+ */
+export const oauthCodeLogin = <ThrowOnError extends boolean = false>(options: Options<OauthCodeLoginData, ThrowOnError>): RequestResult<OauthCodeLoginResponses, unknown, ThrowOnError> => (options.client ?? client).post<OauthCodeLoginResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/auth/oauth/kakao/code',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -673,6 +688,17 @@ export const getCollectionGrids = <ThrowOnError extends boolean = false>(options
 export const findMyBadges = <ThrowOnError extends boolean = false>(options?: Options<FindMyBadgesData, ThrowOnError>): RequestResult<FindMyBadgesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<FindMyBadgesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/badges',
+    ...options
+});
+
+/**
+ * 카카오 로그인 시작 (인가 진입점)
+ *
+ * 웹 로그인의 시작점이다. 클라이언트는 이 URL 로 이동하기만 하면 된다(location.href). 서버가 카카오 인가 URL(client_id·response_type=code·scope=openid·nonce 포함)을 조립해 302 로 보내면서 같은 응답에 OAUTH_NONCE 쿠키(HttpOnly, 10분)를 심는다. 그래서 scope=openid 누락이나 nonce 누락이 구조적으로 불가능하고, REST API 키가 클라이언트 코드로 나갈 일도 없다. 응답은 리다이렉트라 공통 응답 포맷을 쓰지 않는다.
+ */
+export const redirectToKakaoAuthorize = <ThrowOnError extends boolean = false>(options: Options<RedirectToKakaoAuthorizeData, ThrowOnError>): RequestResult<RedirectToKakaoAuthorizeResponses, unknown, ThrowOnError> => (options.client ?? client).get<RedirectToKakaoAuthorizeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/auth/oauth/kakao/authorize',
     ...options
 });
 
