@@ -45,7 +45,10 @@ export const useOccupiedGridsQuery = (bounds: Bounds | null) => {
   const { query: viewport, enabled } = viewportQueryArgs(bounds);
   const query = useInfiniteQuery({
     ...getOccupiedInViewportInfiniteOptions({ query: viewport }),
-    initialPageParam: "",
+    // 첫 페이지는 **커서 없이** 요청한다. 생성 queryFn은 pageParam이 문자열이면 `cursor`
+    // 쿼리로 싣는데, 빈 문자열이면 `cursor=`가 그대로 나가 서버가 400으로 거부한다
+    // (브라우저 검증에서 실측). 객체 형태로 주면 커서 없이 뷰포트 파라미터만 나간다
+    initialPageParam: { query: viewport },
     getNextPageParam: nextGridsPageParam,
     enabled,
     ...mapQueryPolicy,
