@@ -39,6 +39,28 @@ export const oauthStateStorage = {
   },
 };
 
+const UPLOAD_INTENT_KEY = "fillmap.upload.pending-intent";
+
+/**
+ * 업로드 의도 보관소 (MSG-352 C11) — 비로그인 업로드 게이트가 세운 "로그인 후 위저드
+ * 재개" 의도를 카카오 OAuth 리다이렉트(페이지 이탈·복귀) 너머로 유지한다.
+ * oauthStateStorage와 같은 이유로 sessionStorage를 쓴다: 같은 탭의 리다이렉트 왕복만
+ * 생존하면 되고, 탭을 닫으면 함께 소멸해 만료 로직 없이 stale 위험이 최소이며
+ * 다른 탭·재방문으로 새지 않는다.
+ */
+export const uploadIntentStorage = {
+  /** 비로그인 업로드 게이트 진입 시 저장 */
+  save: (): void => {
+    sessionStorage.setItem(UPLOAD_INTENT_KEY, "1");
+  },
+  /** 읽기 — 부수효과 없음(oauthStateStorage.peek과 동일 규약). 해제는 clear가 맡는다 */
+  peek: (): boolean => sessionStorage.getItem(UPLOAD_INTENT_KEY) !== null,
+  /** 소진·해제 — 재개(소진)·취소·stale 청소 경로에서 호출, 여러 번 호출해도 무해하다 */
+  clear: (): void => {
+    sessionStorage.removeItem(UPLOAD_INTENT_KEY);
+  },
+};
+
 const DEVICE_ID_KEY = "fillmap.device.id";
 
 /**

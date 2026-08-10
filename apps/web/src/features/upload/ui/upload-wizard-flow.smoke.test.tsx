@@ -6,6 +6,8 @@ import {
   render,
   screen,
 } from "@testing-library/react";
+import { useAuthStore } from "@/features/auth/model/auth-store";
+import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 
 /**
@@ -64,7 +66,11 @@ const pickSuggestionAndProceed = () => {
 
 describe("업로드 위저드 흐름 스모크", () => {
   beforeEach(() => {
-    useUploadModalStore.setState({ open: false });
+    // C9 게이트 도입으로 위저드 열림은 로그인 상태가 전제 — 기존 흐름 단정은 불변.
+    // 잔존 의도(C10) 초기화를 로그인 전이보다 앞에 둬 스퓨리어스 재개를 막는다
+    useUploadModalStore.setState({ open: false, pendingAfterLogin: false });
+    useLoginModalStore.setState({ open: false });
+    useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
     mockMeta.duration = null;
     mockMeta.objectUrl = null;
     mockMeta.error = false;
@@ -203,6 +209,33 @@ describe("업로드 위저드 흐름 스모크", () => {
     fireEvent.click(screen.getByRole("button", { name: "확인 후 다음 단계" }));
     expect(screen.getByText("업로드 미리보기")).toBeTruthy();
     expect(screen.queryByText(/AI 하이라이트 구간/)).toBeNull();
+  });
+
+  // MSG-352 C9: 비로그인 업로드 진입은 위저드 대신 로그인 모달 (자동 재개 없음)
+  it("비로그인 상태에서 업로드 진입 시 위저드가 열리지 않고 로그인 모달 열림 상태가 된다", () => {
+    act(() =>
+      useAuthStore.setState({ accessToken: null, isAuthenticated: false }),
+    );
+
+    openModal();
+
+    expect(screen.queryByText("영상 업로드")).toBeNull();
+    expect(useUploadModalStore.getState().open).toBe(false);
+    expect(useLoginModalStore.getState().open).toBe(true);
+  });
+
+  // MSG-352 C10: 게이트 경로에서 로그인에 성공하면 위저드가 자동으로 이어서 열린다
+  it("비로그인 업로드 진입 후 로그인에 성공하면 로그인 모달이 닫히고 위저드가 자동으로 이어서 열린다", () => {
+    act(() =>
+      useAuthStore.setState({ accessToken: null, isAuthenticated: false }),
+    );
+    openModal();
+    expect(screen.queryByText("영상 업로드")).toBeNull();
+
+    act(() => useAuthStore.getState().setAccessToken("token"));
+
+    expect(useLoginModalStore.getState().open).toBe(false);
+    expect(screen.getAllByText("영상 업로드").length).toBeGreaterThan(0);
   });
 
   it("중간 단계에서 ✕로 닫으면 재오픈 시 1단계 초기 상태다", () => {
