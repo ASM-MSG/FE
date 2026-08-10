@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { decodeGridBounds, type Bounds } from "@/entities/cell";
+import { decodeGridCenter, type Bounds } from "@/entities/cell";
 import { getHotZonesOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { mapQueryPolicy } from "./map-query-policy";
@@ -22,14 +22,10 @@ export const useHotZoneCells = (bounds: Bounds | null): ThemeCell[] => {
     ...mapQueryPolicy,
   });
 
-  return (data?.hotZones ?? []).map(({ gridId }) => {
-    const cellBounds = decodeGridBounds(gridId);
-    return {
-      id: gridId,
-      center: {
-        lat: (cellBounds.sw.lat + cellBounds.ne.lat) / 2,
-        lng: (cellBounds.sw.lng + cellBounds.ne.lng) / 2,
-      },
-    };
-  });
+  // center는 5179 셀 중심의 역변환(MSG-357) — 다시 encodeGridId하면 원래 gridId로 돌아와
+  // 오버레이 파이프라인(buildHomeOverlayCells)의 id 체계와 어긋나지 않는다
+  return (data?.hotZones ?? []).map(({ gridId }) => ({
+    id: gridId,
+    center: decodeGridCenter(gridId),
+  }));
 };

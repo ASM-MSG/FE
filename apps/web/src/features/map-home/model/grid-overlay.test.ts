@@ -1,5 +1,12 @@
+import proj4 from "proj4";
 import { describe, expect, it } from "vitest";
-import { GRID_LAT_STEP, GRID_LNG_STEP, type Bounds } from "@/entities/cell";
+import {
+  CELL_SIZE_METERS,
+  CRS_DEF_EPSG5179,
+  cellCornersAt,
+  viewportGridRange,
+  type Bounds,
+} from "@/entities/cell";
 import { pointInPolygon, BUSAN_BOUNDARY } from "@/entities/region";
 import { MOCK_OCCUPIED_GRIDS } from "@/test/occupied-grids";
 import {
@@ -21,7 +28,20 @@ const OPEN_SEA_VIEWPORT: Bounds = {
   ne: { lat: 34.55, lng: 129.06 },
 };
 
-describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6)", () => {
+/** 검증용 독립 변환기 — 구현과 같은 정본 정의 문자열로 만든 교차 대조 기준 */
+const verify5179 = proj4("WGS84", CRS_DEF_EPSG5179);
+
+/** 한 화면 버퍼 뷰포트 (구현의 R3 버퍼 규칙과 동일) */
+const bufferedOf = ({ sw, ne }: Bounds): Bounds => {
+  const latSpan = ne.lat - sw.lat;
+  const lngSpan = ne.lng - sw.lng;
+  return {
+    sw: { lat: sw.lat - latSpan, lng: sw.lng - lngSpan },
+    ne: { lat: ne.lat + latSpan, lng: ne.lng + lngSpan },
+  };
+};
+
+describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6 · MSG-357 EPSG:5179)", () => {
   it("뷰포트∩부산 범위의 선분만 반환한다 — 선분 중점이 모두 행정경계 내부다 (AC 2·3)", () => {
     const lines = buildGridLines(SEOMYEON_VIEWPORT, 15);
 
@@ -33,6 +53,46 @@ describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6)", (
       };
       expect(pointInPolygon(mid, BUSAN_BOUNDARY)).toBe(true);
     }
+  });
+
+  it("격자선 선분이 5179 셀 경계의 역변환 좌표와 일치한다 — 끝점을 5179로 변환하면 id의 경계 좌표(×100m)다 (MSG-357 기준 5)", () => {
+    const lines = buildGridLines(SEOMYEON_VIEWPORT, 15);
+    expect(lines.length).toBeGreaterThan(0);
+
+    // 절단된 끝점은 위경도 직선 근사(끝점만 역변환 — 스펙 명시) 위 점이라 버퍼 범위(~3.3km)
+    // 현(弦)의 자오선 수렴 곡률 오차가 실린다 — 실측 최대 ~16cm (zoom 15에서 1px ≈ 4m라
+    // 화면상 구분 불가). 0.5m 상한은 직선 근사를 허용하면서도 구 위경도 스텝 격자
+    // (수십 m 어긋남)를 확실히 거른다
+    const METER_TOLERANCE = 0.5;
+    for (const { id, path } of lines) {
+      const [axis, indexText] = id.split("-");
+      const boundary = Number(indexText) * CELL_SIZE_METERS;
+      for (const point of path) {
+        const [x, y] = verify5179.forward([point.lng, point.lat]);
+        const actual = axis === "v" ? x : y;
+        expect(Math.abs(actual - boundary), id).toBeLessThanOrEqual(
+          METER_TOLERANCE,
+        );
+      }
+    }
+  });
+
+  it("격자선 경계 좌표가 셀 꼭짓점 계산과 교차 대조된다 — 뷰포트 내 셀의 꼭짓점이 대응 격자선 위에 있다 (MSG-357 기준 5)", () => {
+    const lines = buildGridLines(SEOMYEON_VIEWPORT, 15);
+    const range = viewportGridRange(SEOMYEON_VIEWPORT);
+    // 뷰포트 중앙부 셀 — 부산 내부라 사방 격자선이 절단 없이 존재한다
+    const cell = {
+      gridX: Math.round((range.minGridX + range.maxGridX) / 2),
+      gridY: Math.round((range.minGridY + range.maxGridY) / 2),
+    };
+    const [swCorner] = cellCornersAt(cell);
+    const [x, y] = verify5179.forward([swCorner.lng, swCorner.lat]);
+
+    // 남서 꼭짓점의 5179 좌표 = 대응 수직·수평 격자선의 경계 좌표
+    expect(x).toBeCloseTo(cell.gridX * CELL_SIZE_METERS, 6);
+    expect(y).toBeCloseTo(cell.gridY * CELL_SIZE_METERS, 6);
+    expect(lines.some((l) => l.id.startsWith(`v-${cell.gridX}-`))).toBe(true);
+    expect(lines.some((l) => l.id.startsWith(`h-${cell.gridY}-`))).toBe(true);
   });
 
   it("부산 밖 전용 뷰포트면 빈 배열이다 (AC 2)", () => {
@@ -51,11 +111,10 @@ describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6)", (
   it("파생 도형 수가 셀 수(열×행)가 아닌 선 수(열+행) 규모에 머문다 — 뷰포트 크기 기준 상한 가드 (AC 5)", () => {
     const lines = buildGridLines(SEOMYEON_VIEWPORT, 15);
 
-    // 한 화면 버퍼(양쪽 각 1화면 = 스팬 3배)를 감안한 격자 행·열 수
-    const latSpan = SEOMYEON_VIEWPORT.ne.lat - SEOMYEON_VIEWPORT.sw.lat;
-    const lngSpan = SEOMYEON_VIEWPORT.ne.lng - SEOMYEON_VIEWPORT.sw.lng;
-    const rows = Math.ceil((3 * latSpan) / GRID_LAT_STEP) + 1;
-    const cols = Math.ceil((3 * lngSpan) / GRID_LNG_STEP) + 1;
+    // 한 화면 버퍼(양쪽 각 1화면)를 감안한 5179 격자 행·열 수
+    const range = viewportGridRange(bufferedOf(SEOMYEON_VIEWPORT));
+    const rows = range.maxGridY - range.minGridY + 2;
+    const cols = range.maxGridX - range.minGridX + 2;
 
     // 선 규모 상한 — 경계 절단 분절을 넉넉히 잡아도 (행+열)의 상수배
     expect(lines.length).toBeLessThanOrEqual(4 * (rows + cols));
@@ -65,23 +124,14 @@ describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6)", (
 
   it("모든 선분은 버퍼 뷰포트 범위 안이다 — 뷰포트 컬링 (AC 2)", () => {
     const lines = buildGridLines(SEOMYEON_VIEWPORT, 15);
+    const buffered = bufferedOf(SEOMYEON_VIEWPORT);
 
-    const latSpan = SEOMYEON_VIEWPORT.ne.lat - SEOMYEON_VIEWPORT.sw.lat;
-    const lngSpan = SEOMYEON_VIEWPORT.ne.lng - SEOMYEON_VIEWPORT.sw.lng;
     for (const { path } of lines) {
       for (const point of path) {
-        expect(point.lat).toBeGreaterThanOrEqual(
-          SEOMYEON_VIEWPORT.sw.lat - latSpan,
-        );
-        expect(point.lat).toBeLessThanOrEqual(
-          SEOMYEON_VIEWPORT.ne.lat + latSpan,
-        );
-        expect(point.lng).toBeGreaterThanOrEqual(
-          SEOMYEON_VIEWPORT.sw.lng - lngSpan,
-        );
-        expect(point.lng).toBeLessThanOrEqual(
-          SEOMYEON_VIEWPORT.ne.lng + lngSpan,
-        );
+        expect(point.lat).toBeGreaterThanOrEqual(buffered.sw.lat);
+        expect(point.lat).toBeLessThanOrEqual(buffered.ne.lat);
+        expect(point.lng).toBeGreaterThanOrEqual(buffered.sw.lng);
+        expect(point.lng).toBeLessThanOrEqual(buffered.ne.lng);
       }
     }
   });

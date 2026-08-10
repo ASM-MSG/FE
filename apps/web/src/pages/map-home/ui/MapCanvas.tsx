@@ -17,7 +17,7 @@ import {
 } from "react-naver-maps";
 import { semantic } from "@fillmap/design-tokens";
 import { Button } from "@fillmap/ui-web";
-import type { Bounds, LatLng } from "@/entities/cell";
+import type { Bounds, CellCorners, LatLng } from "@/entities/cell";
 import { GRID_MIN_ZOOM } from "@/features/map-home/model/grid-overlay";
 import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
 import { buildHatchLines } from "@/features/map-home/model/theme-overlay";
@@ -45,12 +45,14 @@ export interface MapCanvasHandle {
 }
 
 /**
- * 지도에 그릴 사각 오버레이 한 칸 — 순수 데이터(id + Bounds). 좌표→기하 변환은 호출부 몫.
+ * 지도에 그릴 사각 오버레이 한 칸 — 순수 데이터(id + 꼭짓점 4점). 좌표→기하 변환은 호출부 몫.
+ * MSG-357: 5179 셀은 위경도 평면에서 기울어져 있어 Bounds가 아니라 꼭짓점 링을 받는다.
  * 스타일 필드(MSG-252·263)는 옵셔널 — 미지정이면 현행 primary 렌더 그대로 (기존 도감 오버레이 불변, AC 13)
  */
 export interface MapCellOverlay {
   id: string;
-  bounds: Bounds;
+  /** 셀 꼭짓점 — 남서→남동→북동→북서 (Polygon paths 링으로 그대로 쓴다) */
+  corners: CellCorners;
   /** 채움·테두리 색 (테마 토큰 hex) — 미지정 시 primary (MSG-252 AC 6) */
   color?: string;
   /** 빗금 표시 (테마 셀 ∩ 내 점령 — MSG-252 AC 7, R1: 사선 Polyline 근사) */
@@ -263,14 +265,6 @@ const HATCH_STROKE_OPACITY = 0.85;
 const ROUTE_STROKE_WEIGHT = 4;
 const ROUTE_STROKE_OPACITY = 0.9;
 
-/** 사각 Bounds → 폴리곤 링(꼭짓점 4개, sw 기준 반시계) — 네이버 Polygon paths는 링 배열을 받는다 */
-const boundsToPath = ({ sw, ne }: Bounds): LatLng[] => [
-  { lat: sw.lat, lng: sw.lng },
-  { lat: sw.lat, lng: ne.lng },
-  { lat: ne.lat, lng: ne.lng },
-  { lat: ne.lat, lng: sw.lng },
-];
-
 /**
  * 경로 경유지 번호 마커 HTML (MSG-252 AC 8) — 네이버 Marker HtmlIcon content.
  * 마커 앵커는 좌상단 기준이라 translate로 원 중심을 좌표에 맞춘다 (naver.maps.Point 앵커 불요).
@@ -473,7 +467,8 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                 {overlayCells?.map((cell) => (
                   <Polygon
                     key={cell.id}
-                    paths={[boundsToPath(cell.bounds)]}
+                    // MSG-357: 꼭짓점 4점(남서→남동→북동→북서 반시계 링)을 그대로 쓴다
+                    paths={[cell.corners]}
                     strokeWeight={1}
                     // 스타일 미지정 셀은 현행 primary 그대로 — 도감 오버레이·스모크 불변 (MSG-252 AC 13).
                     // occupied 셀은 Figma 점령 스타일(채움 18% + 실선 테두리 40% — MSG-263 AC 10)
@@ -504,7 +499,7 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                 {overlayCells
                   ?.filter((cell) => cell.hatched)
                   .map((cell) =>
-                    buildHatchLines(cell.bounds).map((line, i) => (
+                    buildHatchLines(cell.corners).map((line, i) => (
                       <Polyline
                         key={`${cell.id}-hatch-${i}`}
                         path={line}

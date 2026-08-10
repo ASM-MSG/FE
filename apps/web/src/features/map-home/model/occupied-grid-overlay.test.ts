@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeGridBounds, encodeGridId } from "@/entities/cell";
+import { decodeGridCorners, encodeGridId } from "@/entities/cell";
 import { occupiedGridOf } from "@/test/occupied-grids";
 import { toOccupiedOverlays } from "./occupied-grid-overlay";
 
@@ -12,11 +12,11 @@ const HAEUNDAE = gridAt(35.1631, 129.1604);
 const OFFSHORE = gridAt(34.95, 129.0);
 
 describe("점령 격자 응답 → 오버레이 셀 (MSG-325 기준 5)", () => {
-  it("응답 gridId를 그대로 오버레이 id로 쓰고, bounds는 그 gridId의 디코드 bbox다", () => {
+  it("응답 gridId를 그대로 오버레이 id로 쓰고, 기하는 그 gridId의 디코드 꼭짓점 4점이다 (MSG-357)", () => {
     const [overlay] = toOccupiedOverlays([SEOMYEON]);
 
     expect(overlay.id).toBe(SEOMYEON.gridId);
-    expect(overlay.bounds).toEqual(decodeGridBounds(SEOMYEON.gridId));
+    expect(overlay.corners).toEqual(decodeGridCorners(SEOMYEON.gridId));
     expect(overlay.occupied).toBe(true);
   });
 
