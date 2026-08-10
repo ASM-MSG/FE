@@ -37,6 +37,13 @@ const submitLogin = () => {
   fireEvent.click(screen.getByRole("button", { name: "개발용 로그인" }));
 };
 
+/** fetch 응답을 스텁하고 패널 렌더→제출까지 — 실패·성공 케이스 공통 준비 절차 */
+const stubFetchAndSubmit = (respond: () => Promise<Response>) => {
+  vi.stubGlobal("fetch", vi.fn(respond));
+  renderPanel();
+  submitLogin();
+};
+
 /** vitest 환경은 DEV=true — 게이트 분기 검증을 위해 값만 스왑하고 복원한다 */
 const originalDev = import.meta.env.DEV;
 
@@ -71,13 +78,7 @@ describe("개발용 로그인 패널 (A1 게이트)", () => {
 
 describe("개발용 로그인 패널 (A5 실패 · 성공 배선)", () => {
   it("로그인 실패(API 오류) 시 실패 메시지가 표시된다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(null, { status: 401 })),
-    );
-    renderPanel();
-
-    submitLogin();
+    stubFetchAndSubmit(async () => new Response(null, { status: 401 }));
 
     await waitFor(() =>
       expect(screen.getByText(/로그인에 실패했어요/)).toBeTruthy(),
@@ -86,13 +87,7 @@ describe("개발용 로그인 패널 (A5 실패 · 성공 배선)", () => {
   });
 
   it("실패 시 두 입력에 오류 상태(aria-invalid)가 반영된다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(null, { status: 401 })),
-    );
-    renderPanel();
-
-    submitLogin();
+    stubFetchAndSubmit(async () => new Response(null, { status: 401 }));
 
     await waitFor(() =>
       expect(screen.getByText(/로그인에 실패했어요/)).toBeTruthy(),
@@ -106,13 +101,7 @@ describe("개발용 로그인 패널 (A5 실패 · 성공 배선)", () => {
   });
 
   it("서버 오류(5xx)면 자격증명 안내 대신 서버 오류 안내가 표시된다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(null, { status: 500 })),
-    );
-    renderPanel();
-
-    submitLogin();
+    stubFetchAndSubmit(async () => new Response(null, { status: 500 }));
 
     await waitFor(() =>
       expect(screen.getByText(/서버 오류가 발생했어요/)).toBeTruthy(),
@@ -120,15 +109,9 @@ describe("개발용 로그인 패널 (A5 실패 · 성공 배선)", () => {
   });
 
   it("네트워크 실패(응답 없음)면 연결 안내가 표시된다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
-        throw new TypeError("Failed to fetch");
-      }),
-    );
-    renderPanel();
-
-    submitLogin();
+    stubFetchAndSubmit(async () => {
+      throw new TypeError("Failed to fetch");
+    });
 
     await waitFor(() =>
       expect(screen.getByText(/서버에 연결하지 못했어요/)).toBeTruthy(),
@@ -136,18 +119,12 @@ describe("개발용 로그인 패널 (A5 실패 · 성공 배선)", () => {
   });
 
   it("로그인 성공 시 인증 상태가 되고 로그인 모달이 닫힌다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        envelopeResponse({
-          accessToken: "dev-login-token",
-          refreshToken: null,
-        }),
-      ),
+    stubFetchAndSubmit(async () =>
+      envelopeResponse({
+        accessToken: "dev-login-token",
+        refreshToken: null,
+      }),
     );
-    renderPanel();
-
-    submitLogin();
 
     await waitFor(() =>
       expect(useAuthStore.getState().isAuthenticated).toBe(true),
