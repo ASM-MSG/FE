@@ -41,12 +41,25 @@ const nextButton = () =>
 // 스토어 갱신은 React 밖 호출이라 act로 감싸 렌더를 flush한다
 const openModal = () => act(() => useUploadModalStore.getState().openModal());
 
-const selectValidFile = () => {
+const selectValidFile = (name = "clip.mp4") => {
   const input = document.querySelector('input[type="file"]');
   if (!input) throw new Error("파일 input이 렌더되지 않음");
   fireEvent.change(input, {
-    target: { files: [new File(["v"], "clip.mp4", { type: "video/mp4" })] },
+    target: { files: [new File(["v"], name, { type: "video/mp4" })] },
   });
+};
+
+const clickBack = () =>
+  fireEvent.click(screen.getByRole("button", { name: "이전 단계로" }));
+
+/** 2/4 하이라이트에서 첫 추천 구간을 선택하고 다음 단계로 넘어간다 */
+const pickSuggestionAndProceed = () => {
+  const suggestion = document.querySelector("[aria-pressed]");
+  if (!suggestion) throw new Error("추천 구간 버튼이 렌더되지 않음");
+  fireEvent.click(suggestion);
+  fireEvent.click(
+    screen.getByRole("button", { name: "이 구간으로 다음 단계" }),
+  );
 };
 
 describe("업로드 위저드 흐름 스모크", () => {
@@ -123,6 +136,73 @@ describe("업로드 위저드 흐름 스모크", () => {
 
     // 선택 결과가 상위로 전달되어 하이라이트 카드가 렌더됨 (MSG-120 S11 배선)
     expect(screen.getByText(/AI 하이라이트 구간/)).toBeTruthy();
+  });
+
+  // MSG-352 B2: 180초 초과 영상은 안내가 표시되고 진행이 차단된다
+  it("180초를 초과하는 영상을 선택하면 안내가 표시되고 '다음'이 비활성이다", () => {
+    mockMeta.duration = 200;
+    openModal();
+    selectValidFile();
+
+    expect(nextButton().disabled).toBe(true);
+    expect(screen.getByText(/180초를 초과/)).toBeTruthy();
+  });
+
+  // MSG-352 C5: 이전 단계 복귀 후 재진행해도 흐름이 깨지지 않는다 —
+  // 파일·duration 유지, 파일 재선택 없이 4/4 재도달, 재선택 결과 반영
+  it("4/4→3/4→2/4→1단계 복귀 후 파일 재선택 없이 재진행하면 4/4까지 도달하고 하이라이트 재선택이 반영된다", () => {
+    mockMeta.duration = 42;
+    openModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+    pickSuggestionAndProceed();
+    fireEvent.click(screen.getByRole("button", { name: "확인 후 다음 단계" }));
+    expect(screen.getByText("업로드 미리보기")).toBeTruthy();
+
+    // 4/4 → 3/4 → 2/4 → 1단계 (전 스텝 "이전 단계로")
+    clickBack();
+    expect(screen.getByText("AI 자동 블러 확인")).toBeTruthy();
+    clickBack();
+    expect(screen.getByText("AI 하이라이트 추천")).toBeTruthy();
+    clickBack();
+    expect(screen.getAllByText("영상 업로드").length).toBeGreaterThan(0);
+
+    // 선택 파일·duration 유지 — 재선택 없이 즉시 재진행 가능
+    expect(screen.getByText("clip.mp4")).toBeTruthy();
+    expect(nextButton().disabled).toBe(false);
+
+    // 재진행: 1 → 2 → 3 → 4, 재선택 결과가 미리보기에 반영된다
+    fireEvent.click(nextButton());
+    expect(screen.getByText("AI 하이라이트 추천")).toBeTruthy();
+    pickSuggestionAndProceed();
+    expect(screen.getByText("AI 자동 블러 확인")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "확인 후 다음 단계" }));
+    expect(screen.getByText("업로드 미리보기")).toBeTruthy();
+    expect(screen.getByText(/AI 하이라이트 구간/)).toBeTruthy();
+  });
+
+  // MSG-352 C6: 1단계까지 돌아가 다른 파일을 선택하면 이전 하이라이트 선택이 잔존하지 않는다
+  it("1단계로 돌아가 다른 파일(5초 이하)을 선택하면 이전 영상의 하이라이트 선택이 잔존하지 않는다", () => {
+    mockMeta.duration = 42;
+    openModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+    pickSuggestionAndProceed();
+    expect(screen.getByText("AI 자동 블러 확인")).toBeTruthy();
+
+    // 3/4 → 2/4 → 1단계 복귀 후 5초 이하의 다른 파일 선택
+    clickBack();
+    clickBack();
+    expect(screen.getAllByText("영상 업로드").length).toBeGreaterThan(0);
+    mockMeta.duration = 3;
+    selectValidFile("short.mov");
+
+    // 5초 이하 — 블러(3/4) 직행, 4/4에 이전 영상의 하이라이트 카드가 없다
+    fireEvent.click(nextButton());
+    expect(screen.getByText("AI 자동 블러 확인")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "확인 후 다음 단계" }));
+    expect(screen.getByText("업로드 미리보기")).toBeTruthy();
+    expect(screen.queryByText(/AI 하이라이트 구간/)).toBeNull();
   });
 
   it("중간 단계에서 ✕로 닫으면 재오픈 시 1단계 초기 상태다", () => {

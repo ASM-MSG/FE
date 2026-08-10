@@ -183,14 +183,15 @@ export const formatTimecode = (seconds: number): string => {
 };
 
 /**
- * 목업 AI 추천 구간 3~5개를 생성한다. [L8]
- * 각 구간은 5~30초 길이·[0, duration] 범위를 만족한다(clampSegment로 보장).
- * 개수는 영상 길이에 따라 3(짧음)~5(김)로 가변.
+ * 목업 AI 추천 구간 1~3개를 생성한다. [L8 · MSG-352 추정 4]
+ * Figma ver 10 문구 "1~3개 구간"과 정합 — 기존 3~5개에서 하향.
+ * 각 구간은 5~30초 길이·[0, duration] 범위를 만족한다.
+ * 개수는 영상 길이에 따라 1(짧음)~3(김)으로 가변.
  */
 export const buildMockHighlights = (
   duration: number,
 ): HighlightSuggestion[] => {
-  const count = Math.max(3, Math.min(5, Math.floor(duration / 10) + 1));
+  const count = Math.max(1, Math.min(3, Math.floor(duration / 10) + 1));
   const desiredLength = clamp(
     Math.round(duration / count),
     SEGMENT_MIN_SEC,

@@ -1,11 +1,5 @@
-import { useMemo } from "react";
-import { MapPin, ShieldCheck } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { ModalCard } from "@fillmap/ui-web";
-import {
-  buildMockBlurRegions,
-  formatBlurCount,
-  summarizeBlurRegions,
-} from "@/features/upload/model/blur-detection";
 import {
   formatSelectionRange,
   type SelectionResult,
@@ -32,11 +26,12 @@ const STEP_DESCRIPTION = "4/4 단계 · 최종 확인";
 const HIGHLIGHT_REASON = "조회수·움직임 기반 최적 5초 구간이 선택되었습니다";
 
 /**
- * 4단계 "업로드 미리보기" 화면 본체. [S1~S11]
- * 선택 영상 미리보기 + AI 하이라이트 선택 구간 + 자동 블러 결과 + 위치 태그를 한 화면에서
- * 최종 확인하고 "지금 게시하기"로 게시(목업)한다. ModalCard 쉘 안에 카드를 조립한다.
+ * 4단계 "업로드 미리보기" 화면 본체. [S1~S11 · MSG-352 C3·C7]
+ * 선택 영상 미리보기 + AI 하이라이트 선택 구간 + 위치 태그를 한 화면에서 최종 확인하고
+ * "지금 게시하기"로 게시(목업)한다. ModalCard 쉘 안에 카드를 조립한다.
+ * Figma ver 10(14324:12172)에서 개인정보 자동 블러 카드(얼굴/번호판 개수 2열)가 제거됐고,
+ * "이전 단계로"는 밑줄 링크에서 전폭 보조 버튼(ModalCard secondaryText)으로 승격됐다.
  * view-only — 미리보기는 재생/컨트롤 없이 정지 표시(Q5), "블러 결과 수동 조정" 버튼은 렌더하지 않는다(S7).
- * 블러 요약은 BlurStep과 동일한 결정적 목업(buildMockBlurRegions)으로 재계산한다(Q6).
  */
 export const PreviewStep = ({
   objectUrl,
@@ -46,18 +41,15 @@ export const PreviewStep = ({
   onBack,
   onClose,
 }: PreviewStepProps) => {
-  const summary = useMemo(
-    () => summarizeBlurRegions(buildMockBlurRegions()),
-    [],
-  );
-
   return (
     <ModalCard
       title="업로드 미리보기"
       description={STEP_DESCRIPTION}
       confirmText="지금 게시하기"
       confirmVariant="primary"
+      secondaryText="이전 단계로"
       onConfirm={onPublish}
+      onSecondary={onBack}
       onClose={onClose}
     >
       <VideoPreview objectUrl={objectUrl} />
@@ -79,33 +71,6 @@ export const PreviewStep = ({
         </div>
       )}
 
-      {/* 블러 카드 — 완료 배지 + 얼굴·번호판 처리 개수 2열. 수동 조정 버튼은 렌더하지 않는다 [S5·S7] */}
-      <div className="flex w-full flex-col gap-sm rounded-md bg-surface-soft px-md py-sm">
-        <div className="flex items-center gap-xs">
-          <ShieldCheck className="size-4 shrink-0 text-primary" />
-          <span className="text-fm-body-strong text-foreground">
-            개인정보 자동 블러
-          </span>
-          <span className="ml-auto rounded-full bg-primary/10 px-sm py-xxs text-fm-caption text-primary">
-            완료
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-xs">
-          <div className="flex flex-col gap-xxs rounded-sm bg-surface-elevated px-sm py-xs">
-            <span className="text-fm-label text-foreground-muted">얼굴</span>
-            <span className="text-fm-body-strong text-foreground">
-              {formatBlurCount(summary.faces)}
-            </span>
-          </div>
-          <div className="flex flex-col gap-xxs rounded-sm bg-surface-elevated px-sm py-xs">
-            <span className="text-fm-label text-foreground-muted">번호판</span>
-            <span className="text-fm-body-strong text-foreground">
-              {formatBlurCount(summary.plates)}
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* 위치 카드 — 1단계에서 태그된 격자(A-14) 파생 라벨 [S6] */}
       <div className="flex w-full items-center gap-xs rounded-md bg-surface-soft px-md py-sm">
         <MapPin className="size-4 shrink-0 text-primary" />
@@ -116,15 +81,6 @@ export const PreviewStep = ({
           </span>
         </div>
       </div>
-
-      {/* "이전 단계로" — Figma는 버튼 아래 밑줄 링크지만 ModalCard children은 버튼 행 위에 렌더된다(Q4) [S9] */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="self-center text-fm-label text-foreground-muted underline underline-offset-2 transition-colors hover:text-foreground"
-      >
-        이전 단계로
-      </button>
     </ModalCard>
   );
 };

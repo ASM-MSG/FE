@@ -22,6 +22,8 @@ interface HighlightStepProps {
   duration: number;
   /** 모달 전체 닫기 (✕) */
   onClose: () => void;
+  /** 이전 단계(1/4 영상 업로드)로 복귀 (MSG-352 C4) */
+  onBack: () => void;
   /** 다음 단계(블러 확인)로 전환 — 선택 결과(SelectionResult|null)를 상위로 전달 (MSG-120 S11, MSG-118 배선 완성) */
   onNext: (result: SelectionResult | null) => void;
 }
@@ -40,6 +42,7 @@ export const HighlightStep = ({
   objectUrl,
   duration,
   onClose,
+  onBack,
   onNext,
 }: HighlightStepProps) => {
   const suggestions = useMemo(() => buildMockHighlights(duration), [duration]);
@@ -71,7 +74,9 @@ export const HighlightStep = ({
       description={STEP_DESCRIPTION}
       confirmText="이 구간으로 다음 단계"
       confirmDisabled={!canProceedToNextStep(state)}
+      secondaryText="이전 단계로"
       onConfirm={handleConfirm}
+      onSecondary={onBack}
       onClose={onClose}
     >
       <VideoPreview

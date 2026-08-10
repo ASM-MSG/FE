@@ -140,13 +140,14 @@ describe("formatTimecode", () => {
 });
 
 describe("buildMockHighlights", () => {
-  // L8: 3~5개의 추천 구간, 각 구간은 5~30초 제약과 [0, duration] 범위를 만족한다
+  // L8 (MSG-352 추정 4로 갱신): 1~3개의 추천 구간 — Figma ver 10 문구 "1~3개 구간" 정합.
+  // 각 구간은 5~30초 제약과 [0, duration] 범위를 만족한다
   it.each([6, 10, 25, 60, 120])(
-    "duration=%d초: 3~5개 구간을 생성하며 각 구간이 제약을 만족한다",
+    "duration=%d초: 1~3개 구간을 생성하며 각 구간이 제약을 만족한다",
     (duration) => {
       const highlights = buildMockHighlights(duration);
-      expect(highlights.length).toBeGreaterThanOrEqual(3);
-      expect(highlights.length).toBeLessThanOrEqual(5);
+      expect(highlights.length).toBeGreaterThanOrEqual(1);
+      expect(highlights.length).toBeLessThanOrEqual(3);
 
       for (const seg of highlights) {
         const length = seg.end - seg.start;

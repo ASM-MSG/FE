@@ -1,15 +1,17 @@
 import { type ReactNode, useState } from "react";
 import { MapPin } from "lucide-react";
-import { cn, DialogShell, Input, ModalCard } from "@fillmap/ui-web";
+import { cn, DialogShell, ModalCard } from "@fillmap/ui-web";
 import { MOCK_CELLS } from "@/entities/cell";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import type { SelectionResult } from "@/features/upload/model/highlight-selection";
 import {
   getNextStep,
+  getPrevStep,
   type UploadStep,
 } from "@/features/upload/model/upload-wizard";
 import {
   canSubmitUpload,
+  isWithinDurationLimit,
   type UploadCandidate,
 } from "@/features/upload/model/upload-validation";
 import { BlurStep } from "./BlurStep";
@@ -72,14 +74,15 @@ const InfoBox = ({
 /**
  * 영상 업로드 모달 — DialogShell(오버레이·포털·포커스 트랩·Esc·scrim)로 ModalCard를 감싼다.
  * 두 진입점 공통 조상(AppLayout)에 1회 마운트되고 열림 상태는 전역 스토어가 관리한다(Q1·Q2).
- * 제목·선택 파일·스텝은 로컬 state이며 닫힐 때 초기화된다(AC10·S14).
+ * 선택 파일·스텝은 로컬 state이며 닫힐 때 초기화된다(AC10·S14). 제목 입력은
+ * Figma ver 10에서 제거됐다(MSG-352 C1·추정 1).
  * 정보 입력 → (하이라이트) → 블러 확인 선형 위저드다 — "다음"은 스텝을 전환하고,
+ * "이전 단계로"는 getPrevStep으로 직전 스텝에 복귀한다(MSG-352 C2~C4).
  * 취소/✕/scrim/Esc만 모달을 닫는다. 실제 업로드 연동은 범위 밖(목업).
  */
 export const UploadModal = () => {
   const open = useUploadModalStore((s) => s.open);
   const closeModal = useUploadModalStore((s) => s.closeModal);
-  const [title, setTitle] = useState("");
   const [file, setFile] = useState<UploadCandidate | null>(null);
   // 원본 File — duration 캡처·미리보기용(플랫폼 경계). candidate와 별도로 보관 (MSG-118)
   const [rawFile, setRawFile] = useState<File | null>(null);
@@ -96,11 +99,19 @@ export const UploadModal = () => {
     error: videoLoadError,
   } = useVideoDuration(rawFile);
 
-  // "다음" 활성 조건 = 유효 파일 && 메타데이터 로드 완료(duration 확정) && 로드 실패 아님 (Q1·S2·S7)
+  // 실측 길이가 180초를 초과하면 진행을 차단하고 드롭존 하단에 안내한다 (MSG-352 B2·추정 5)
+  const durationExceeded =
+    duration !== null && !isWithinDurationLimit(duration);
+
+  // "다음" 활성 조건 = 유효 파일 && 메타데이터 로드 완료(duration 확정) && 로드 실패 아님
+  // && 180초 이내 (Q1·S2·S7·MSG-352 B2)
   // 현재 훅 구현에선 error면 duration이 항상 null이라 !videoLoadError가 중복이지만,
   // 훅 불변식이 바뀌어도 로드 실패 시 진행을 막도록 방어적으로 유지한다.
   const canProceed =
-    canSubmitUpload(file) && duration !== null && !videoLoadError;
+    canSubmitUpload(file) &&
+    duration !== null &&
+    !videoLoadError &&
+    !durationExceeded;
 
   // "다음" — 5초 초과면 하이라이트(2/4), 이하면 블러 확인(3/4)으로 전환 (S3·S4).
   // duration 확정 전에는 canProceed가 false라 이 경로가 열리지 않는다.
@@ -109,15 +120,23 @@ export const UploadModal = () => {
     setStep(getNextStep("select", duration));
   };
 
+  // "이전 단계로" — 전진 판정과 정합인 getPrevStep으로 직전 스텝 복귀 (MSG-352 C2~C4).
+  // 파일·duration·하이라이트 선택은 유지된다 — 복귀 후 재진행 무결(C5).
+  const goBack = () => {
+    if (duration === null) return;
+    setStep((current) => getPrevStep(current, duration));
+  };
+
   const handleSelectFile = (candidate: UploadCandidate, source: File) => {
     setFile(candidate);
     setRawFile(source);
+    // 다른 파일을 선택하면 이전 영상의 하이라이트 선택이 잔존하지 않는다 (MSG-352 C6)
+    setHighlightSelection(null);
   };
 
-  // 닫힐 때마다 입력을 초기화해 다시 열면 이전 제목·파일·스텝이 남지 않는다 (AC10)
+  // 닫힐 때마다 입력을 초기화해 다시 열면 이전 파일·스텝이 남지 않는다 (AC10)
   // 하이라이트 선택도 리셋 — 재오픈 잔존·5초 이하 새 영상의 하이라이트 카드 오표시 방지 (MSG-120 S4·S8)
   const close = () => {
-    setTitle("");
     setFile(null);
     setRawFile(null);
     setStep("select");
@@ -142,6 +161,7 @@ export const UploadModal = () => {
           objectUrl={objectUrl}
           duration={duration}
           onClose={close}
+          onBack={goBack}
           onNext={(result) => {
             // 선택 결과를 상위에 보관 후 블러 확인(3/4)으로 전환 (MSG-120 S3·S11)
             setHighlightSelection(result);
@@ -153,8 +173,8 @@ export const UploadModal = () => {
           objectUrl={objectUrl}
           duration={duration}
           onClose={close}
-          // 확인 시 4/4 미리보기로 전환 (MSG-120 S1, MSG-119 콘솔 로그 대체).
-          // BlurStep 시그니처는 유지 — payload는 계속 생성되며 상위에서 미사용(고아 방지).
+          onBack={goBack}
+          // 확인 시 4/4 미리보기로 전환 (MSG-120 S1)
           onConfirm={() => setStep("preview")}
         />
       ) : step === "preview" && duration !== null ? (
@@ -163,7 +183,7 @@ export const UploadModal = () => {
           highlightSelection={highlightSelection}
           locationLabel={PREVIEW_LOCATION_LABEL}
           onPublish={close}
-          onBack={() => setStep("blur")}
+          onBack={goBack}
           onClose={close}
         />
       ) : (
@@ -182,22 +202,15 @@ export const UploadModal = () => {
             onSelectFile={handleSelectFile}
           />
 
-          <div className="flex w-full flex-col gap-xs">
-            <label
-              htmlFor="upload-title"
-              className="text-fm-body-strong text-foreground"
-            >
-              제목
-            </label>
-            <Input
-              id="upload-title"
-              placeholder="영상 제목을 입력해주세요"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="border-border bg-surface-soft"
-            />
-          </div>
+          {/* 180초 초과 안내 — 드롭존 하단 error 텍스트, 기존 무효 파일 거부 안내 패턴 (MSG-352 B2·추정 5) */}
+          {durationExceeded && (
+            <span className="w-full text-left text-fm-label text-error">
+              180초를 초과하는 영상은 올릴 수 없어요. 더 짧은 영상으로 다시
+              선택해주세요
+            </span>
+          )}
 
+          {/* 위치 태그 행 — Figma ver 10에서 드롭존 바로 아래로 이동 (MSG-352 C1) */}
           <div className="flex w-full items-center gap-xs">
             <span className="shrink-0 text-fm-body-strong text-foreground">
               위치 태그
@@ -224,7 +237,7 @@ export const UploadModal = () => {
             body={
               videoLoadError
                 ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
-                : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
+                : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 1~3개 구간을 추천해요"
             }
           />
           <InfoBox
