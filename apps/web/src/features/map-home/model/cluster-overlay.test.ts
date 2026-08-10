@@ -53,27 +53,27 @@ const sumCount = (markers: ClusterMarker[]): number =>
   markers.reduce((sum, m) => sum + m.count, 0);
 
 describe("gateFillCells — 채움 줌 게이트 (MSG-264 AC 1·2, A5 전 섹션 공유)", () => {
-  it("zoom 15(이상)에서는 채움 셀 목록이 그대로 반환된다 (AC 1)", () => {
+  it("zoom 16(이상)에서는 채움 셀 목록이 그대로 반환된다 (AC 1)", () => {
     expect(gateFillCells(ALL_CELLS, GRID_MIN_ZOOM)).toEqual(ALL_CELLS);
-    expect(gateFillCells(ALL_CELLS, 16)).toEqual(ALL_CELLS);
+    expect(gateFillCells(ALL_CELLS, 17)).toEqual(ALL_CELLS);
   });
 
-  it("zoom 14(미만)에서는 채움 셀이 파생되지 않는다 (AC 2)", () => {
-    expect(gateFillCells(ALL_CELLS, 14)).toEqual([]);
+  it("zoom 15(미만)에서는 채움 셀이 파생되지 않는다 (AC 2, MSG-357 후속 — 축척 250m는 클러스터)", () => {
+    expect(gateFillCells(ALL_CELLS, 15)).toEqual([]);
     expect(gateFillCells(ALL_CELLS, 10)).toEqual([]);
   });
 });
 
 describe("buildClusterMarkers — 그리드 윈도 클러스터링 (MSG-264)", () => {
-  it("zoom 15(이상) 입력에는 클러스터가 파생되지 않는다 (AC 1)", () => {
+  it("zoom 16(이상) 입력에는 클러스터가 파생되지 않는다 (AC 1)", () => {
     expect(buildClusterMarkers(ALL_CELLS, GRID_MIN_ZOOM)).toEqual([]);
-    expect(buildClusterMarkers(ALL_CELLS, 16)).toEqual([]);
+    expect(buildClusterMarkers(ALL_CELLS, 17)).toEqual([]);
   });
 
-  it("zoom 14에서는 클러스터가 파생되고 채움 셀·격자선은 파생되지 않는다 — 경계값 15/14 양쪽 (AC 2)", () => {
-    expect(buildClusterMarkers(ALL_CELLS, 14).length).toBeGreaterThan(0);
-    expect(gateFillCells(ALL_CELLS, 14)).toEqual([]);
-    expect(buildGridLines(SEOMYEON_VIEWPORT, 14)).toEqual([]);
+  it("zoom 15에서는 클러스터가 파생되고 채움 셀·격자선은 파생되지 않는다 — 경계값 16/15 양쪽 (AC 2, MSG-357 후속)", () => {
+    expect(buildClusterMarkers(ALL_CELLS, 15).length).toBeGreaterThan(0);
+    expect(gateFillCells(ALL_CELLS, 15)).toEqual([]);
+    expect(buildGridLines(SEOMYEON_VIEWPORT, 15)).toEqual([]);
   });
 
   it("클러스터 배지 숫자의 합 = 집계 대상 셀 수 — 어떤 셀도 누락·중복 집계되지 않는다 (AC 4)", () => {
@@ -103,6 +103,12 @@ describe("buildClusterMarkers — 그리드 윈도 클러스터링 (MSG-264)", (
     const s14 = clusterWindowSteps(14);
     expect(s13.lat).toBeCloseTo(2 * s14.lat, 12);
     expect(s13.lng).toBeCloseTo(2 * s14.lng, 12);
+
+    // 게이트 상향(15→16, MSG-357 후속) 후에도 줌별 윈도 지상 폭은 기존 캘리브레이션과
+    // 동일하다 — zoom 15에서 기저 스텝 × 3.5 (계수 반감이 게이트 앵커 이동을 상쇄)
+    const s15 = clusterWindowSteps(15);
+    expect(s15.lat).toBeCloseTo(0.0009 * 3.5, 12);
+    expect(s15.lng).toBeCloseTo(0.00115 * 3.5, 12);
 
     // 서면 근방의 zoom 13 윈도 하나를 골라 그 안 0.25·0.75 지점에 셀 배치 —
     // zoom 14 윈도(절반 크기)로는 서로 다른 윈도에 떨어진다

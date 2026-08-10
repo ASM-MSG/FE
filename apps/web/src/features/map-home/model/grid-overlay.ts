@@ -30,8 +30,9 @@ import type { StyledCellOverlay } from "./theme-overlay";
  * 격자·채움 표시 최소 줌 — 미만이면 격자선과 점령·테마 채움을 모두 숨기고 클러스터 마커로
  * 전환한다 (MSG-264 — D4 "점령 채움은 임계와 무관하게 항상 표시"를 명시적으로 대체).
  * 채움 게이트·클러스터 파생은 cluster-overlay(gateFillCells·buildClusterMarkers) 소유.
+ * 16 = 네이버 축척 100m — 250m(zoom 15)부터는 클러스터 (MSG-357 후속, 15→16 상향).
  */
-export const GRID_MIN_ZOOM = 15;
+export const GRID_MIN_ZOOM = 16;
 
 /** 지도에 게시할 격자선 한 선분 — 순수 데이터(id + 두 끝점), MapCanvas prop 계약 */
 export interface GridLineOverlay {

@@ -25,8 +25,8 @@ interface ViewportState {
  */
 export const useViewportStore = create<ViewportState>((set) => ({
   center: SEOMYEON_CENTER,
-  // 기존 카카오 level 5의 체감 등가 (MSG-254 A1: zoom ≈ 20 − level) — MapCanvas DEFAULT_ZOOM과 동일 값
-  zoom: 15,
+  // 진입 시 격자가 보이는 최소 줌 = GRID_MIN_ZOOM (MSG-357 후속) — MapCanvas DEFAULT_ZOOM과 동일 값
+  zoom: 16,
   bounds: null,
   setViewport: (viewport) => set(viewport),
 }));

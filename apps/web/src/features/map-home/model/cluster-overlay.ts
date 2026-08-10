@@ -22,10 +22,11 @@ export const CLUSTER_WINDOW_ORIGIN: LatLng = { lat: 0, lng: 0 };
 /**
  * 클러스터 윈도의 격자 셀 배수 계수 (A1) — 윈도 지상 폭 = 기저 스텝 × 2^(GRID_MIN_ZOOM − zoom) × 계수.
  * 줌 1단 아웃 = 지상 폭 2배이므로 윈도의 픽셀 등가 크기는 줌과 무관하게 일정하다:
- * zoom 15에서 100m ≈ 26px(위도 35°) → 3.5배 ≈ 90px. 마커 최대 지름(tier 3, 44px)의
+ * zoom 16에서 100m ≈ 52px(위도 35°) → 1.75배 ≈ 90px. 마커 최대 지름(tier 3, 44px)의
  * 2배 이상이라 중앙부 클램프와 함께 마커 겹침이 없다 (AC 7).
+ * 게이트 상향(15→16, MSG-357 후속) 시 3.5→1.75 반감 — 앵커 이동을 상쇄해 줌별 지상 폭 불변.
  */
-export const CLUSTER_WINDOW_CELL_FACTOR = 3.5;
+export const CLUSTER_WINDOW_CELL_FACTOR = 1.75;
 
 /** 줌별 클러스터 윈도 스텝(도 단위) — 줌 1단 아웃마다 2배 (AC 6) */
 export const clusterWindowSteps = (

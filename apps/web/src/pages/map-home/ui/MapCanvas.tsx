@@ -115,8 +115,9 @@ const NAVER_NCP_KEY_ID = import.meta.env.VITE_NAVER_MAP_NCP_KEY_ID as
 // 캐시 키 마커가 덧붙을 수 있다(NaverMapView의 providerSubmodules 주석 참조)
 const NAVER_SUBMODULES = ["geocoder"];
 
-// 기존 카카오 level 5의 체감 등가 초기 줌 (A1: zoom ≈ 20 − level) — viewport-store 초기값과 동일
-const DEFAULT_ZOOM = 15;
+// 진입 시 격자가 보이는 최소 줌 = GRID_MIN_ZOOM (MSG-357 후속 — 게이트 상향에 맞춰 15→16,
+// 첫 화면이 클러스터로 열리지 않게 유지) — viewport-store 초기값과 동일
+const DEFAULT_ZOOM = 16;
 // 네이버 지도 zoom 유효 범위(A2)는 map-scale 단일 정의를 공유한다 — SDK 내부 클램핑에 기대지 않고 명시한다
 
 /** 네이버 지도 Map → 플랫폼 중립 Viewport 추출 */
@@ -390,7 +391,7 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
 
     // 클러스터 클릭 줌 인 (MSG-264 AC 8, A3) — SDK 접근은 이 경계 안에서만.
     // 멤버 영역(bounds 합집합)으로 fitBounds하되, 단일 셀 클러스터는 100m 셀 과확대
-    // (zoom 21)를 막기 위해 셀 중심으로 GRID_MIN_ZOOM(15) 수준 줌 인한다.
+    // (zoom 21)를 막기 위해 셀 중심으로 GRID_MIN_ZOOM(16) 수준 줌 인한다.
     const zoomToCluster = (cluster: MapClusterOverlay) => {
       const map = mapRef.current;
       if (!map) return;
