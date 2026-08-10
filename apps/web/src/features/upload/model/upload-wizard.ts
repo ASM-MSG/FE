@@ -25,3 +25,21 @@ export const getNextStep = (
   }
   return "blur";
 };
+
+/**
+ * 현재 스텝과 영상 길이로 이전 스텝을 판정한다. [MSG-352 C2]
+ * - "preview": 항상 "blur"(블러 확인은 필수 게이트라 반드시 거쳐 왔다).
+ * - "blur": 5초를 초과하면 "highlight"를 거쳐 왔고, 이하면 건너뛰고 왔으므로 "select".
+ *   경계는 shouldOfferHighlight를 재사용해 전진 판정(getNextStep)과 정합을 유지한다.
+ * - "highlight": 항상 "select". ("select"는 시작점 — 자기 자신을 반환한다)
+ */
+export const getPrevStep = (
+  current: UploadStep,
+  duration: number,
+): UploadStep => {
+  if (current === "preview") return "blur";
+  if (current === "blur") {
+    return shouldOfferHighlight(duration) ? "highlight" : "select";
+  }
+  return "select";
+};
