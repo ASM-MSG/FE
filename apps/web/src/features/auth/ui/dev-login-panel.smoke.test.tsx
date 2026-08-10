@@ -85,6 +85,56 @@ describe("개발용 로그인 패널 (A5 실패 · 성공 배선)", () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 
+  it("실패 시 두 입력에 오류 상태(aria-invalid)가 반영된다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 401 })),
+    );
+    renderPanel();
+
+    submitLogin();
+
+    await waitFor(() =>
+      expect(screen.getByText(/로그인에 실패했어요/)).toBeTruthy(),
+    );
+    expect(screen.getByLabelText("이메일").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(screen.getByLabelText("비밀번호").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+  });
+
+  it("서버 오류(5xx)면 자격증명 안내 대신 서버 오류 안내가 표시된다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 500 })),
+    );
+    renderPanel();
+
+    submitLogin();
+
+    await waitFor(() =>
+      expect(screen.getByText(/서버 오류가 발생했어요/)).toBeTruthy(),
+    );
+  });
+
+  it("네트워크 실패(응답 없음)면 연결 안내가 표시된다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
+    renderPanel();
+
+    submitLogin();
+
+    await waitFor(() =>
+      expect(screen.getByText(/서버에 연결하지 못했어요/)).toBeTruthy(),
+    );
+  });
+
   it("로그인 성공 시 인증 상태가 되고 로그인 모달이 닫힌다", async () => {
     vi.stubGlobal(
       "fetch",
