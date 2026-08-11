@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { MapPin } from "lucide-react";
 import { Button, cn } from "@fillmap/ui-web";
 import type {
@@ -9,8 +8,8 @@ import { decodeGridCenter } from "@/entities/cell";
 import { formatDuration } from "@/features/explore/model/explore-cells";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { formatRelativeTime, formatViewCountKo } from "@/shared/format";
+import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { CellActionRow } from "./CellActionRow";
-import { CoverVideoPlayer } from "./CoverVideoPlayer";
 import { useEscapeClose } from "./use-escape-close";
 
 interface HomeCellDetailPanelProps {
@@ -98,9 +97,10 @@ export const HomeCellDetailPanel = ({
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   const handleUpload = () => openUploadModal(decodeGridCenter(detail.gridId));
 
-  // 대표 영상 재생 (MSG-329 후속) — 썸네일 클릭 시 그 자리에서 인라인 재생.
-  // 격자를 바꾸면 cover.videoId가 달라져 자동으로 썸네일로 복귀한다
-  const [playVideoId, setPlayVideoId] = useState<number | null>(null);
+  // 대표 영상 재생 (MSG-329 후속) — 클릭 시 우측 미니 사이드패널(VideoMiniPanel)에서 재생.
+  // serverVideoId를 넘기면 패널이 playbackUrl(READY면 블러본)을 지연 조회한다.
+  // 소유자 정보가 cover 응답에 없어 mine=false 고정(핸들 없이 상대시간만 표시 — 한계 기록)
+  const openMiniPanel = useVideoMiniPanelStore((s) => s.open);
 
   const cover = detail.coverVideo;
   const coverDuration = cover ? formatDuration(cover.durationSec) : null;
@@ -140,30 +140,40 @@ export const HomeCellDetailPanel = ({
           <CellActionRow onUpload={handleUpload} />
 
           {/* 전역 대표 영상 1건 — 후보가 없으면(`/cover` data null) 영역 자체를 그리지 않는다.
-              클릭 시 같은 자리에서 인라인 재생 (MSG-329 후속 — 표시 전용에서 배선으로 승격) */}
+              클릭 시 우측 미니 사이드패널에서 재생 (MSG-329 후속 — 표시 전용에서 배선으로 승격) */}
           {cover && (
             <div className="flex flex-col gap-xxs">
-              {playVideoId === cover.videoId ? (
-                <CoverVideoPlayer videoId={cover.videoId} />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setPlayVideoId(cover.videoId)}
-                  aria-label="대표 영상 재생"
-                  className="relative block aspect-video w-full overflow-hidden rounded-sm bg-surface"
-                >
-                  <img
-                    src={cover.thumbnailUrl}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                  {coverDuration && (
-                    <span className="absolute bottom-xs right-xs rounded-xs bg-navy-900/70 px-1.5 py-0.5 text-fm-caption text-foreground-inverse">
-                      {coverDuration}
-                    </span>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() =>
+                  openMiniPanel(
+                    {
+                      videoId: cover.videoId,
+                      viewCount: cover.viewCount,
+                      recordedAt: cover.recordedAt,
+                      durationSec: cover.durationSec,
+                      thumbnailUrl: cover.thumbnailUrl,
+                      // 명세에 제목 필드가 없다 — 격자 라벨 파생 (CellVideoExtension.title 환류 유지)
+                      title: `${detail.label} 대표 영상`,
+                    },
+                    false,
+                    cover.videoId,
+                  )
+                }
+                aria-label="대표 영상 재생"
+                className="relative block aspect-video w-full overflow-hidden rounded-sm bg-surface"
+              >
+                <img
+                  src={cover.thumbnailUrl}
+                  alt=""
+                  className="size-full object-cover"
+                />
+                {coverDuration && (
+                  <span className="absolute bottom-xs right-xs rounded-xs bg-navy-900/70 px-1.5 py-0.5 text-fm-caption text-foreground-inverse">
+                    {coverDuration}
+                  </span>
+                )}
+              </button>
               <span className="flex items-center justify-between gap-sm text-fm-caption text-foreground-muted">
                 <span>대표 영상 · {formatRelativeTime(cover.recordedAt)}</span>
                 <span className="shrink-0">

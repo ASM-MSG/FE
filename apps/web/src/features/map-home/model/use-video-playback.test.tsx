@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { envelopeResponse } from "@/test/envelope-response";
+import { READY_PLAYBACK } from "@/test/playback-fixture";
 import { stubFetch } from "@/test/stub-fetch";
 import {
   playbackUnavailableMessage,
@@ -13,24 +14,6 @@ import {
  * 대표 영상 재생 조회 (격자 상세 재생 배선) — GET /api/videos/{videoId}의
  * playbackUrl(READY면 블러본 presigned GET)을 가져온다. READY 전이면 null이다.
  */
-
-const PLAYBACK_BODY = {
-  videoId: 42,
-  playbackUrl: "https://cdn.example.com/blurred.mp4",
-  thumbnailUrl: null,
-  gridId: "16846_11428",
-  durationSec: 5,
-  processingStatus: "READY",
-  visibility: "PUBLIC",
-  status: "ACTIVE",
-  viewCount: 19,
-  recordedAt: "2026-08-02T05:00:00Z",
-  expiresInSec: 600,
-  zoneName: "서면",
-  zoneCell: "F-8",
-  regionName: "부산광역시 부산진구 부전1동",
-  highlights: null,
-};
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -47,7 +30,7 @@ afterEach(() => {
 
 describe("useVideoPlayback — 격자 상세 재생 조회", () => {
   it("videoId로 재생 조회를 호출하고 언랩된 playbackUrl을 돌려준다", async () => {
-    const received = stubFetch(() => envelopeResponse(PLAYBACK_BODY));
+    const received = stubFetch(() => envelopeResponse(READY_PLAYBACK));
 
     const { result } = renderHook(() => useVideoPlayback(42), {
       wrapper: createWrapper(),
@@ -62,7 +45,7 @@ describe("useVideoPlayback — 격자 상세 재생 조회", () => {
   });
 
   it("videoId가 null이면 조회하지 않는다 (모달 닫힘 상태)", () => {
-    const received = stubFetch(() => envelopeResponse(PLAYBACK_BODY));
+    const received = stubFetch(() => envelopeResponse(READY_PLAYBACK));
 
     renderHook(() => useVideoPlayback(null), { wrapper: createWrapper() });
 

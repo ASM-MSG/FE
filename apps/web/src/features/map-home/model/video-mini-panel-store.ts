@@ -5,13 +5,19 @@ import type { CellVideo } from "@/entities/cell";
 export interface VideoMiniSelection {
   video: CellVideo;
   mine: boolean;
+  /**
+   * 실 서버 영상이면 videoId (MSG-329 후속 — 격자 상세 대표 영상 재생).
+   * 있으면 미니 패널이 GET /api/videos/{videoId}로 playbackUrl을 지연 조회해 재생하고,
+   * 없으면 기존 목 경로(video.videoSrc)를 그대로 쓴다.
+   */
+  serverVideoId?: number;
 }
 
 interface VideoMiniPanelState {
   /** 선택 영상 — null이면 미니 패널 닫힘 (3차 AC 1) */
   selected: VideoMiniSelection | null;
   /** 영상 카드 클릭 — 이미 열린 상태에서 다른 영상이면 교체 (3차 AC 1, 추정 7 — 재클릭도 교체) */
-  open: (video: CellVideo, mine: boolean) => void;
+  open: (video: CellVideo, mine: boolean, serverVideoId?: number) => void;
   /** 닫기 — 닫기 버튼·컨텍스트 변경(셀 상세 select/close 체인)·Escape 우선 배선의 대상 (3차 AC 2·3) */
   close: () => void;
 }
@@ -25,6 +31,7 @@ interface VideoMiniPanelState {
  */
 export const useVideoMiniPanelStore = create<VideoMiniPanelState>((set) => ({
   selected: null,
-  open: (video, mine) => set({ selected: { video, mine } }),
+  open: (video, mine, serverVideoId) =>
+    set({ selected: { video, mine, serverVideoId } }),
   close: () => set({ selected: null }),
 }));
