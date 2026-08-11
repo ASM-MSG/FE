@@ -12,5 +12,6 @@ test("지도가 정상 로딩되고 초기 축척 배지가 표시된다", async
 
   const scaleBadge = page.getByRole("status", { name: /지도 축척/ });
   await expect(scaleBadge).toBeVisible({ timeout: 15_000 });
-  await expect(scaleBadge).toHaveAttribute("aria-label", "지도 축척 250m");
+  // 진입 줌 16 = 축척 100m (MSG-357 후속 — 게이트 상향과 함께 진입 줌 15→16)
+  await expect(scaleBadge).toHaveAttribute("aria-label", "지도 축척 100m");
 });
