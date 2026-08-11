@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/app/routes";
 import { MOCK_CELLS } from "@/entities/cell";
@@ -149,6 +149,18 @@ export const MapHomePage = () => {
   // 홈 이탈(다른 섹션 라우트로 언마운트) 시 칩·셀 상세 초기화 (AC 14) — 복귀 화면이 기본 상태.
   // 접힘은 셸이 display:none으로 숨겨 언마운트되지 않으므로 상태가 유지된다 (A6 정합)
   useEffect(() => resetThemeFilter, [resetThemeFilter]);
+
+  // 셸 선점 진입 보존 (MSG-329 후속) — 다른 탭에서 점령 격자를 클릭하면 셸이 select 후
+  // 홈으로 전환하는데, StrictMode 이중 마운트가 위 AC 14 클린업을 마운트 시점에 1회
+  // 실행해 그 선택을 지운다. 마운트 직전 선택을 렌더 1회 캡처해 두고 다시 적용한다 —
+  // 초기화 의미(빈 복귀 화면)는 유지된다: 셸 진입이 아니면 캡처 값이 null이라 무동작.
+  const shellSelectionRef = useRef(
+    useHomeCellDetailStore.getState().selectedCellId,
+  );
+  useEffect(() => {
+    const preserved = shellSelectionRef.current;
+    if (preserved !== null) selectCell(preserved);
+  }, [selectCell]);
 
   // 상세 표시 모델 파생 (AC 9·10 → MSG-325 실 API) — 색칠 상태·대표 영상·행정동 3종 조합.
   // MSG-277 AC 13: 경로추천도 다른 테마와 동일하게 상세를 연다
