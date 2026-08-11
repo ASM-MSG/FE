@@ -1,14 +1,29 @@
+import { readFileSync } from "node:fs";
 import path from "path";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-export default defineConfig({
+// 앱 버전 주입 소스 — package.json version (MSG-329 A5, MOCK "1.0.0" 하드코딩 대체)
+const { version } = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
+) as { version: string };
+
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  // ffmpeg.wasm은 자체 워커·코어를 패키지 상대 URL로 로드한다 — dep 사전 번들을 타면
+  // 워커 경로가 깨지므로 제외한다 (지연 로드 dynamic import라 초기 번들 영향 없음, MSG-329)
+  optimizeDeps: {
+    exclude: ["@ffmpeg/ffmpeg"],
+  },
+  define: {
+    // MSG-329 A5: 앱 버전 빌드 주입. vitest(mode=test)는 센티널 — 테스트가 실버전에 결합하지 않게
+    __APP_VERSION__: JSON.stringify(mode === "test" ? "0.0.0-test" : version),
   },
   test: {
     environment: "jsdom",
@@ -23,4 +38,4 @@ export default defineConfig({
       VITE_API_BASE_URL: "http://api.vitest.sentinel",
     },
   },
-});
+}));

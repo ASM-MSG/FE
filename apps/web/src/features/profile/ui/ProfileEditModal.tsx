@@ -8,7 +8,12 @@ import {
   Switch,
 } from "@fillmap/ui-web";
 import { avatarFallback, type ProfileData } from "@/entities/profile";
-import { canSaveProfile, locationStatusLabel } from "../model/profile-edit";
+import { useUpdateNickname } from "../api/use-profile-mutations";
+import {
+  canSaveProfile,
+  locationStatusLabel,
+  nicknameError,
+} from "../model/profile-edit";
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -18,11 +23,12 @@ interface ProfileEditModalProps {
 }
 
 /**
- * 프로필 편집 모달 (MSG-125) — Figma node 13399:2153.
+ * 프로필 편집 모달 (MSG-125 → MSG-329 A7~A9 실 API 배선) — Figma node 13399:2153.
  * DialogShell(스크림·포털·ESC/바깥클릭 닫기·포커스 트랩)로 ModalCard를 감싼다 (ReportDialog 패턴).
- * 폼 상태(닉네임·위치정보 토글)는 로컬 state이며 닫힐 때 초기값으로 복원된다(ReportDialog S9 선례 → AC 8).
- * 저장은 닫힘만 — 저장 처리(API·클라이언트 상태 반영)는 제외 범위 (A4).
- * [변경] 칩은 활성 외관 + 핸들러 미배선(클릭 no-op) — 업로드는 제외 범위 (AC 11).
+ * [저장]은 PUT /api/users/me/nickname — 성공 시 getMe invalidate(훅 소관) 후 모달이 닫히고,
+ * 실패 시 모달이 유지되고 오류가 표시되며 재시도가 가능하다 (A8·A9).
+ * 닉네임 검증은 2~20자(trim) — 범위 밖이면 [저장] 비활성 + 사유 안내 (A7).
+ * 위치정보 토글은 클라이언트 값 유지 — 서버 반영 없음 (A6, 제외 범위).
  */
 export const ProfileEditModal = ({
   open,
@@ -36,14 +42,25 @@ export const ProfileEditModal = ({
   const nicknameId = useId();
   const locationId = useId();
 
-  // 닫힐 때 폼을 초기값으로 되돌려 재오픈 시 변경이 반영되지 않게 한다 (AC 8)
+  const {
+    mutate: saveNickname,
+    isPending,
+    isError,
+    reset,
+  } = useUpdateNickname({ onSaved: () => onOpenChange(false) });
+
+  // 닫힐 때 폼·오류 상태를 초기값으로 되돌려 재오픈 시 변경·실패 흔적이 남지 않게 한다 (AC 8)
   const handleOpenChange = (next: boolean) => {
     if (!next) {
+      if (isPending) return; // 저장 진행 중에는 닫지 않는다 — 결과 불명 상태 방지
       setNickname(profile.nickname);
       setLocationEnabled(profile.locationEnabled);
+      reset();
     }
     onOpenChange(next);
   };
+
+  const validationMessage = nicknameError(nickname);
 
   return (
     <DialogShell
@@ -54,10 +71,10 @@ export const ProfileEditModal = ({
       <ModalCard
         title="프로필 편집"
         cancelText="취소"
-        confirmText="저장"
-        confirmDisabled={!canSaveProfile(nickname)}
+        confirmText={isPending ? "저장 중…" : "저장"}
+        confirmDisabled={!canSaveProfile(nickname) || isPending}
         onCancel={() => handleOpenChange(false)}
-        onConfirm={() => handleOpenChange(false)}
+        onConfirm={() => saveNickname(nickname.trim())}
         onClose={() => handleOpenChange(false)}
       >
         {/* 아바타 미리보기 + [변경] — 88px는 variant에 없어 size-22 오버라이드,
@@ -89,6 +106,16 @@ export const ProfileEditModal = ({
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
           />
+          {/* 범위 밖 사유 안내 (A7) — 비활성 [저장]의 이유를 시각으로 알린다 */}
+          {validationMessage !== null && (
+            <p className="text-fm-label text-error">{validationMessage}</p>
+          )}
+          {/* 저장 실패 — 모달 유지 + 오류 표시 + [저장] 재시도 가능 (A9) */}
+          {isError && (
+            <p role="alert" className="text-fm-label text-error">
+              닉네임 저장에 실패했어요. 다시 시도해주세요
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-xs">

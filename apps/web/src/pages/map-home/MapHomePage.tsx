@@ -30,6 +30,7 @@ import {
   HomeCellDetailPanel,
 } from "./ui/HomeCellDetailPanel";
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
+import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
 import { ThemeFeedPanel } from "./ui/ThemeFeedPanel";
 import { VideoMiniPanel } from "./ui/VideoMiniPanel";
 
@@ -64,7 +65,6 @@ export const MapHomePage = () => {
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
   const toggleTheme = useThemeFilterStore((s) => s.toggle);
-  const resetThemeFilter = useThemeFilterStore((s) => s.reset);
   const selectedCellId = useHomeCellDetailStore((s) => s.selectedCellId);
   const selectCell = useHomeCellDetailStore((s) => s.select);
   const closeDetail = useHomeCellDetailStore((s) => s.close);
@@ -146,9 +146,8 @@ export const MapHomePage = () => {
     clearOverlays,
   ]);
 
-  // 홈 이탈(다른 섹션 라우트로 언마운트) 시 칩·셀 상세 초기화 (AC 14) — 복귀 화면이 기본 상태.
-  // 접힘은 셸이 display:none으로 숨겨 언마운트되지 않으므로 상태가 유지된다 (A6 정합)
-  useEffect(() => resetThemeFilter, [resetThemeFilter]);
+  // 홈 진입/이탈 선택 수명주기 — AC 14 초기화 + 셸 선점 진입 보존 (StrictMode 회귀 테스트 포함)
+  useHomeEntryLifecycle();
 
   // 상세 표시 모델 파생 (AC 9·10 → MSG-325 실 API) — 색칠 상태·대표 영상·행정동 3종 조합.
   // MSG-277 AC 13: 경로추천도 다른 테마와 동일하게 상세를 연다

@@ -9,7 +9,15 @@ import type { OccupiedGridResponseDto } from "@/shared/api/generated";
 /** gridId 하나로 점령 격자 응답 항목을 만든다 — 구역 밖(zone 쌍 null) 기본 */
 export const occupiedGridOf = (gridId: string): OccupiedGridResponseDto => {
   const [gridY, gridX] = gridId.split("_").map(Number);
-  return { gridId, gridY, gridX, zoneName: null, zoneCell: null };
+  // regionName: 2026-08-11 명세 재생성으로 신설된 필수 필드 (행정동 폴백 라벨) — 픽스처는 무귀속
+  return {
+    gridId,
+    gridY,
+    gridX,
+    zoneName: null,
+    zoneCell: null,
+    regionName: null,
+  };
 };
 
 export const MOCK_OCCUPIED_GRIDS: OccupiedGridResponseDto[] =

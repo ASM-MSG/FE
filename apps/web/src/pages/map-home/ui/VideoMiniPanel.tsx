@@ -1,5 +1,9 @@
 import { useEffect, useRef } from "react";
 import { Film, X } from "lucide-react";
+import {
+  playbackUnavailableMessage,
+  useVideoPlayback,
+} from "@/features/map-home/model/use-video-playback";
 import type { VideoMiniSelection } from "@/features/map-home/model/video-mini-panel-store";
 import { formatViewCountKo } from "@/shared/format";
 import { VideoOwnerMeta } from "./VideoOwnerMeta";
@@ -20,9 +24,16 @@ interface VideoMiniPanelProps {
  * 접힘 시에는 셸의 display:none 래퍼로 좌측 패널과 함께 숨는다 (추정 9).
  */
 export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
-  const { video, mine } = selected;
+  const { video, mine, serverVideoId } = selected;
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // 서버 영상(격자 상세 대표 영상)은 playbackUrl을 지연 조회한다 — 목 경로는 조회 없음
+  const playback = useVideoPlayback(serverVideoId ?? null);
+  const videoSrc =
+    serverVideoId !== undefined
+      ? (playback.data?.playbackUrl ?? null)
+      : (video.videoSrc ?? null);
 
   // 열림 = 마운트 1회 — 닫기 버튼 포커스 (AC 6). 교체는 같은 마운트의 리렌더라 다시 옮기지 않는다
   useEffect(() => {
@@ -33,7 +44,7 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
   // autoplay 정책·소스 로드 실패 시엔 무시하고 controls 수동 재생으로 폴백 (VideoPreview 관례)
   useEffect(() => {
     videoRef.current?.play()?.catch(() => {});
-  }, [video.videoId]);
+  }, [videoSrc]);
 
   return (
     <aside
@@ -54,14 +65,33 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
 
       {/* 재생 영역 — 실 스트리밍 전 목 소스(CC0 샘플). 오프라인이면 재생만 실패, 패널 동작은 유지 (리스크 수용) */}
       <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-foreground">
-        {video.videoSrc ? (
+        {videoSrc ? (
           <video
             ref={videoRef}
-            src={video.videoSrc}
+            src={videoSrc}
             controls
             playsInline
             className="size-full object-contain"
           />
+        ) : serverVideoId !== undefined ? (
+          playback.isLoading ? (
+            <p className="text-fm-caption text-foreground-inverse/70">
+              재생 정보를 불러오는 중이에요…
+            </p>
+          ) : playback.isError ? (
+            <p
+              role="alert"
+              className="px-md text-center text-fm-caption text-foreground-inverse/70"
+            >
+              재생 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요
+            </p>
+          ) : playback.data ? (
+            <p className="px-md text-center text-fm-caption text-foreground-inverse/70">
+              {playbackUnavailableMessage(playback.data)}
+            </p>
+          ) : (
+            <Film aria-hidden className="size-8 text-foreground-inverse/40" />
+          )
         ) : (
           <Film aria-hidden className="size-8 text-foreground-inverse/40" />
         )}

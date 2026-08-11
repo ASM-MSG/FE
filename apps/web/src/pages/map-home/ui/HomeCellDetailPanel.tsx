@@ -4,8 +4,11 @@ import type {
   HomeCellBadge,
   HomeCellDetail,
 } from "@/features/map-home/model/home-cell-detail";
+import { decodeGridCenter } from "@/entities/cell";
 import { formatDuration } from "@/features/explore/model/explore-cells";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { formatRelativeTime, formatViewCountKo } from "@/shared/format";
+import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { CellActionRow } from "./CellActionRow";
 import { useEscapeClose } from "./use-escape-close";
 
@@ -90,6 +93,15 @@ export const HomeCellDetailPanel = ({
   // Escape 닫기 (AC 9-1) — 입력 요소 타깃 무시 계약 포함 (use-escape-close, MSG-277 공용 추출)
   useEscapeClose(onClose);
 
+  // [영상 추가] = 격자 고정 진입 — 이 격자 중심을 지목해 업로드 모달을 연다 (위치 태그·확정 좌표가 이 격자를 따른다)
+  const openUploadModal = useUploadModalStore((s) => s.openModal);
+  const handleUpload = () => openUploadModal(decodeGridCenter(detail.gridId));
+
+  // 대표 영상 재생 (MSG-329 후속) — 클릭 시 우측 미니 사이드패널(VideoMiniPanel)에서 재생.
+  // serverVideoId를 넘기면 패널이 playbackUrl(READY면 블러본)을 지연 조회한다.
+  // 소유자 정보가 cover 응답에 없어 mine=false 고정(핸들 없이 상대시간만 표시 — 한계 기록)
+  const openMiniPanel = useVideoMiniPanelStore((s) => s.open);
+
   const cover = detail.coverVideo;
   const coverDuration = cover ? formatDuration(cover.durationSec) : null;
 
@@ -125,13 +137,32 @@ export const HomeCellDetailPanel = ({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-md">
-          <CellActionRow />
+          <CellActionRow onUpload={handleUpload} />
 
           {/* 전역 대표 영상 1건 — 후보가 없으면(`/cover` data null) 영역 자체를 그리지 않는다.
-              재생 배선은 제외 범위(격자 상세 연동 티켓)라 표시 전용이다 */}
+              클릭 시 우측 미니 사이드패널에서 재생 (MSG-329 후속 — 표시 전용에서 배선으로 승격) */}
           {cover && (
             <div className="flex flex-col gap-xxs">
-              <span className="relative block aspect-video w-full overflow-hidden rounded-sm bg-surface">
+              <button
+                type="button"
+                onClick={() =>
+                  openMiniPanel(
+                    {
+                      videoId: cover.videoId,
+                      viewCount: cover.viewCount,
+                      recordedAt: cover.recordedAt,
+                      durationSec: cover.durationSec,
+                      thumbnailUrl: cover.thumbnailUrl,
+                      // 명세에 제목 필드가 없다 — 격자 라벨 파생 (CellVideoExtension.title 환류 유지)
+                      title: `${detail.label} 대표 영상`,
+                    },
+                    false,
+                    cover.videoId,
+                  )
+                }
+                aria-label="대표 영상 재생"
+                className="relative block aspect-video w-full overflow-hidden rounded-sm bg-surface"
+              >
                 <img
                   src={cover.thumbnailUrl}
                   alt=""
@@ -142,7 +173,7 @@ export const HomeCellDetailPanel = ({
                     {coverDuration}
                   </span>
                 )}
-              </span>
+              </button>
               <span className="flex items-center justify-between gap-sm text-fm-caption text-foreground-muted">
                 <span>대표 영상 · {formatRelativeTime(cover.recordedAt)}</span>
                 <span className="shrink-0">

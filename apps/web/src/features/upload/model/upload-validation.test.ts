@@ -6,8 +6,8 @@ import {
   isValidVideoFile,
   isWithinDurationLimit,
   isWithinSizeLimit,
+  MAX_DURATION_SEC,
   MAX_UPLOAD_BYTES,
-  MAX_VIDEO_DURATION_SECONDS,
 } from "./upload-validation";
 
 describe("hasAllowedVideoExtension", () => {
@@ -54,25 +54,6 @@ describe("isWithinSizeLimit", () => {
   });
 });
 
-describe("isWithinDurationLimit", () => {
-  // B1 (MSG-352): 180 이하 true — 경계 180초 포함
-  it("정확히 180초이거나 그 이하이면 유효로 판정한다", () => {
-    expect(isWithinDurationLimit(MAX_VIDEO_DURATION_SECONDS)).toBe(true);
-    expect(isWithinDurationLimit(179.9)).toBe(true);
-    expect(isWithinDurationLimit(1)).toBe(true);
-  });
-
-  // B1 (MSG-352): 180 초과 false
-  it("180초를 초과하면 무효로 판정한다", () => {
-    expect(isWithinDurationLimit(180.01)).toBe(false);
-    expect(isWithinDurationLimit(300)).toBe(false);
-  });
-
-  it("최대 길이 상수는 180초다", () => {
-    expect(MAX_VIDEO_DURATION_SECONDS).toBe(180);
-  });
-});
-
 describe("isValidVideoFile", () => {
   // AC14: 확장자·용량을 모두 만족해야 유효
   it("MP4·MOV이면서 500MB 이하인 파일만 유효로 판정한다", () => {
@@ -113,9 +94,31 @@ describe("canSubmitUpload", () => {
   });
 });
 
+// MSG-329 B1 신설 — 구현은 길이 검증이 없었다(구 "최대 60초"는 안내 텍스트뿐).
+// use-video-duration 실측값을 받아 180초 이하를 판정한다.
+describe("isWithinDurationLimit — 180초 이하 판정 (MSG-329 B1)", () => {
+  it("정확히 180초는 유효로 판정한다", () => {
+    expect(isWithinDurationLimit(MAX_DURATION_SEC)).toBe(true);
+  });
+
+  it("180초 미만은 유효로 판정한다", () => {
+    expect(isWithinDurationLimit(1)).toBe(true);
+    expect(isWithinDurationLimit(179.9)).toBe(true);
+  });
+
+  it("180초를 초과하면 무효로 판정한다 — 서버 3425 방어의 FE 1차 검증", () => {
+    expect(isWithinDurationLimit(180.1)).toBe(false);
+    expect(isWithinDurationLimit(600)).toBe(false);
+  });
+});
+
 describe("상수", () => {
   it("허용 확장자는 mp4·mov이고 최대 용량은 500MB다", () => {
     expect(ALLOWED_VIDEO_EXTENSIONS).toEqual(["mp4", "mov"]);
     expect(MAX_UPLOAD_BYTES).toBe(500 * 1024 * 1024);
+  });
+
+  it("최대 길이는 180초다 (MSG-329 B1 — 구 60초 안내 폐기)", () => {
+    expect(MAX_DURATION_SEC).toBe(180);
   });
 });

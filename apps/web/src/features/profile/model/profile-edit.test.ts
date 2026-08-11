@@ -1,31 +1,64 @@
 import { describe, expect, it } from "vitest";
-import { canSaveProfile, locationStatusLabel } from "./profile-edit";
+import {
+  canSaveProfile,
+  locationStatusLabel,
+  NICKNAME_MAX_LENGTH,
+  NICKNAME_MIN_LENGTH,
+  nicknameError,
+} from "./profile-edit";
 
-describe("canSaveProfile — 닉네임이 빈 값이면 저장 불가, 아니면 저장 가능 (AC 6)", () => {
-  it("닉네임이 빈 문자열이면 false를 반환한다", () => {
-    expect(canSaveProfile("")).toBe(false);
+/**
+ * MSG-329 A7 재설계 — 구 검증(빈 값만 차단)은 1자를 통과시켜 서버 400을 불렀다.
+ * 명세(PUT /api/users/me/nickname)와 같은 2~20자(trim 기준)로 강화한다.
+ */
+describe("닉네임 검증이 2~20자(trim 기준)다 (A7)", () => {
+  it("1자는 저장 불가다 — 구 검증(빈 값만 차단)이 통과시키던 케이스", () => {
+    expect(canSaveProfile("한")).toBe(false);
   });
 
-  it("공백만 포함한 닉네임도 빈 값으로 간주해 false를 반환한다 (A3 — trim)", () => {
+  it("21자는 저장 불가다", () => {
+    expect(canSaveProfile("가".repeat(21))).toBe(false);
+  });
+
+  it("2자·20자(경계)는 저장 가능하다", () => {
+    expect(canSaveProfile("필맵")).toBe(true);
+    expect(canSaveProfile("가".repeat(20))).toBe(true);
+  });
+
+  it("빈 문자열·공백만 있는 값은 저장 불가다", () => {
+    expect(canSaveProfile("")).toBe(false);
     expect(canSaveProfile("   ")).toBe(false);
     expect(canSaveProfile("\t\n")).toBe(false);
   });
 
-  it("내용이 있는 닉네임이면 true를 반환한다", () => {
-    expect(canSaveProfile("필맵퍼")).toBe(true);
+  it("trim 기준으로 판정한다 — 앞뒤 공백을 뺀 길이가 범위 판정 대상이다", () => {
+    expect(canSaveProfile("  한  ")).toBe(false); // trim 후 1자
+    expect(canSaveProfile("  필맵  ")).toBe(true); // trim 후 2자
+    expect(canSaveProfile(`  ${"가".repeat(20)}  `)).toBe(true); // trim 후 20자
   });
 
-  it("앞뒤 공백이 있어도 내용이 있으면 true를 반환한다", () => {
-    expect(canSaveProfile("  필맵퍼  ")).toBe(true);
+  it("범위 밖이면 사유 안내 문구를, 유효하면 null을 반환한다 — [저장] 비활성 사유 표시용", () => {
+    expect(nicknameError("한")).toBe(
+      `닉네임은 ${NICKNAME_MIN_LENGTH}~${NICKNAME_MAX_LENGTH}자로 입력해주세요`,
+    );
+    expect(nicknameError("가".repeat(21))).toBe(
+      `닉네임은 ${NICKNAME_MIN_LENGTH}~${NICKNAME_MAX_LENGTH}자로 입력해주세요`,
+    );
+    expect(nicknameError("필맵퍼")).toBeNull();
+  });
+
+  it("경계 상수는 명세값(2·20)이다", () => {
+    expect(NICKNAME_MIN_LENGTH).toBe(2);
+    expect(NICKNAME_MAX_LENGTH).toBe(20);
   });
 });
 
-describe("locationStatusLabel — 토글 상태 문구 (AC 4)", () => {
+describe("locationStatusLabel — 토글 상태 문구 (기존 동작 보존, A6)", () => {
   it("켜짐이면 '사용 중'을 반환한다", () => {
     expect(locationStatusLabel(true)).toBe("사용 중");
   });
 
-  it("꺼짐이면 '사용 안 함'을 반환한다 (A2 — 2026-07-23 승인 게이트에서 사용자 확정 카피)", () => {
+  it("꺼짐이면 '사용 안 함'을 반환한다", () => {
     expect(locationStatusLabel(false)).toBe("사용 안 함");
   });
 });

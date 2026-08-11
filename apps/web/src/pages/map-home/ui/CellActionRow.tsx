@@ -17,13 +17,19 @@ const ACTIONS = [
   { label: "저장", Icon: Bookmark },
 ];
 
-export const CellActionRow = () => {
+interface CellActionRowProps {
+  /** [영상 추가] 클릭 — 이 격자를 지목한 업로드 진입 (격자 고정 진입). 공유·저장은 계속 no-op */
+  onUpload?: () => void;
+}
+
+export const CellActionRow = ({ onUpload }: CellActionRowProps) => {
   return (
     <div className="flex rounded-md border border-border py-xs">
       {ACTIONS.map(({ label, Icon }) => (
         <button
           key={label}
           type="button"
+          onClick={label === "영상 추가" ? onUpload : undefined}
           className="flex flex-1 flex-col items-center gap-xxs py-xxs"
         >
           <Icon aria-hidden className="size-5 text-primary" />

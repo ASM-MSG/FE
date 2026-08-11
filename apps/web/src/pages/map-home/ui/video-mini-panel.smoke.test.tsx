@@ -1,6 +1,16 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { VideoMiniSelection } from "@/features/map-home/model/video-mini-panel-store";
+import { envelopeResponse } from "@/test/envelope-response";
+import { READY_PLAYBACK } from "@/test/playback-fixture";
+import { stubFetch } from "@/test/stub-fetch";
 import { VideoMiniPanel } from "./VideoMiniPanel";
 
 /**
@@ -45,6 +55,16 @@ const OTHER_SELECTION: VideoMiniSelection = {
   mine: false,
 };
 
+// 패널이 서버 영상 지연 조회(useVideoPlayback — useQuery)를 품게 돼 QueryClient 전제가
+// 생겼다 (MSG-329 후속 — 기존 단정은 불변). 목 경로(serverVideoId 없음)는 조회하지 않는다
+const withQueryClient = (ui: React.ReactNode) => (
+  <QueryClientProvider
+    client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+  >
+    {ui}
+  </QueryClientProvider>
+);
+
 describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
   afterEach(() => {
     cleanup();
@@ -52,7 +72,9 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
 
   it("선택 영상 videoSrc의 video 요소와 제목·조회수 메타가 렌더된다 (AC 5)", () => {
     const { container } = render(
-      <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      withQueryClient(
+        <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      ),
     );
 
     const video = container.querySelector("video");
@@ -67,18 +89,28 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
 
   it("내 영상이면 '내 영상 · M월 D일', 타인이면 @핸들 소유 문구가 보인다 — 카드와 동일 분기 (AC 5, 추정 5)", () => {
     const { rerender } = render(
-      <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      withQueryClient(
+        <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      ),
     );
     expect(screen.getByText(/내 영상/)).toBeTruthy();
     expect(screen.getByText(/7월 15일/)).toBeTruthy();
 
-    rerender(<VideoMiniPanel selected={OTHER_SELECTION} onClose={() => {}} />);
+    rerender(
+      withQueryClient(
+        <VideoMiniPanel selected={OTHER_SELECTION} onClose={() => {}} />,
+      ),
+    );
     expect(screen.getByText(/@jeonpo_alley/)).toBeTruthy();
   });
 
   it("닫기 버튼 클릭 시 onClose가 호출된다 (AC 5)", () => {
     const onClose = vi.fn();
-    render(<VideoMiniPanel selected={MINE_SELECTION} onClose={onClose} />);
+    render(
+      withQueryClient(
+        <VideoMiniPanel selected={MINE_SELECTION} onClose={onClose} />,
+      ),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "미니 패널 닫기" }));
 
@@ -87,7 +119,9 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
 
   it("열릴 때 포커스가 닫기 버튼으로 이동하고, 교체 시에는 이동하지 않는다 (AC 6)", () => {
     const { rerender } = render(
-      <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      withQueryClient(
+        <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      ),
     );
 
     const closeButton = screen.getByRole("button", { name: "미니 패널 닫기" });
@@ -95,8 +129,70 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
 
     // 사용자가 포커스를 옮긴 뒤 다른 카드로 교체 — 포커스를 다시 빼앗지 않는다
     closeButton.blur();
-    rerender(<VideoMiniPanel selected={OTHER_SELECTION} onClose={() => {}} />);
+    rerender(
+      withQueryClient(
+        <VideoMiniPanel selected={OTHER_SELECTION} onClose={() => {}} />,
+      ),
+    );
 
     expect(document.activeElement).not.toBe(closeButton);
+  });
+});
+
+/** 서버 영상 선택 (격자 상세 대표 영상) — videoSrc 없이 serverVideoId로 playbackUrl 지연 조회 */
+const SERVER_SELECTION: VideoMiniSelection = {
+  video: {
+    videoId: 42,
+    title: "서면 F-8 대표 영상",
+    viewCount: 19,
+    recordedAt: "2026-08-02T05:00:00.000Z",
+    durationSec: 5,
+    thumbnailUrl: "data:,thumb",
+  },
+  mine: false,
+  serverVideoId: 42,
+};
+
+const renderServer = (body: Record<string, unknown>) => {
+  stubFetch(() => envelopeResponse(body));
+  return render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <VideoMiniPanel selected={SERVER_SELECTION} onClose={() => {}} />
+    </QueryClientProvider>,
+  );
+};
+
+describe("서버 영상 미니 패널 — playbackUrl 지연 조회 (MSG-329 후속 재생 배선)", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("READY면 playbackUrl로 video 요소가 렌더된다", async () => {
+    const { container } = renderServer(READY_PLAYBACK);
+
+    await waitFor(() =>
+      expect(container.querySelector("video")?.getAttribute("src")).toBe(
+        "https://cdn.example.com/blurred.mp4",
+      ),
+    );
+  });
+
+  it("READY 전(playbackUrl null)이면 처리 중 안내가 뜬다", async () => {
+    renderServer({
+      ...READY_PLAYBACK,
+      playbackUrl: null,
+      processingStatus: "BLURRING",
+    });
+
+    expect(
+      await screen.findByText(
+        "AI가 아직 처리 중인 영상이에요. 처리가 끝나면 재생할 수 있어요",
+      ),
+    ).toBeTruthy();
   });
 });

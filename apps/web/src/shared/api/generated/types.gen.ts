@@ -294,6 +294,10 @@ export type PresignedUrlRequestDto = {
      * 업로드할 파일 크기(바이트). 서버 상한 초과 시 거부
      */
     contentLength: number;
+    /**
+     * 발급 용도. 미지정(null)은 UPLOAD 와 동일. 하이라이트 선분석 원본은 HIGHLIGHT_PREVIEW 로 발급받아 전용 크기 상한(기본 2GiB)을 적용받는다
+     */
+    purpose?: string;
 };
 
 export type ApiResponseDtoPresignedUrlResponseDto = {
@@ -318,6 +322,32 @@ export type PresignedUrlResponseDto = {
      * presigned URL 유효 시간(초)
      */
     expiresInSec: number;
+};
+
+/**
+ * 하이라이트 선분석 요청 (MSG-351). 원본은 presign(purpose=HIGHLIGHT_PREVIEW)으로 먼저 올린다.
+ */
+export type HighlightPreviewRequestDto = {
+    /**
+     * presign 으로 올린 원본의 pending 키. videos/pending/{내 userId}/ prefix 여야 한다
+     */
+    s3Key: string;
+};
+
+export type ApiResponseDtoHighlightPreviewResponseDto = {
+    developCode: number;
+    message: string;
+    data: HighlightPreviewResponseDto;
+};
+
+/**
+ * 하이라이트 선분석 응답 (MSG-351). 결과는 저장되지 않는 임시 값이다 — 확정본의 하이라이트는 업로드 확정 후 블러 파이프라인이 따로 계산한다.
+ */
+export type HighlightPreviewResponseDto = {
+    /**
+     * [[시작초, 끝초], ...] 최대 3구간, 초는 소수점 둘째 자리. 배열 순서가 추천 우선순위(첫 요소가 최우선)다. 각 구간은 5초 이상이고 시작점끼리 5초 이상 벌어진다. 5초 미만 원본이거나 조건을 채우는 구간이 없으면 빈 배열 [] — 추천 없음이니 FE 는 추천 단계를 스킵한다
+     */
+    highlights: Array<Array<number>>;
 };
 
 /**
@@ -659,7 +689,7 @@ export type ApiResponseDtoListZoneResponseDto = {
 };
 
 /**
- * 격자 표시명 계산용 구역(zone). 정수 사각형 + 이름 + 소속 행정동.
+ * 구역(zone)의 이름과 격자 사각형 범위 — 검색바 구역 이동·범위 오버레이용. 격자 표시명은 서버가 계산해 격자 응답에 함께 싣는다.
  */
 export type ZoneResponseDto = {
     /**
@@ -762,6 +792,10 @@ export type VideoPlaybackResponseDto = {
      * 격자 중심점 행정동 이름 — 구역 밖 격자의 폴백 라벨. 무귀속(해상 등)이거나 미판정이면 null
      */
     regionName: string | null;
+    /**
+     * AI 추천 하이라이트 구간 [[시작초, 끝초], ...]. 최대 3구간, 초는 소수점 둘째 자리. 배열 순서가 추천 우선순위(첫 요소가 최우선 추천). 없으면 null (READY 이전·FAILED·0구간 포함, 빈 배열은 내려가지 않는다) 예시: [[0.0, 4.25], [12.0, 18.5], [20.0, 27.5]]
+     */
+    highlights: Array<Array<number>> | null;
 };
 
 export type ApiResponseDtoListTrendingKeywordResponseDto = {
@@ -839,11 +873,11 @@ export type ExploreGridResponseDto = {
      */
     gridId: string;
     /**
-     * 격자 위도 인덱스 (FE 지도 이동·라벨 조합)
+     * 격자 세로 인덱스 (EPSG:5179 평면 y / 100 — 위도가 아니다). FE 지도 이동·라벨 조합
      */
     gridY: number;
     /**
-     * 격자 경도 인덱스
+     * 격자 가로 인덱스 (EPSG:5179 평면 x / 100 — 경도가 아니다)
      */
     gridX: number;
     /**
@@ -937,13 +971,13 @@ export type RegionStatResponseDto = {
 export type ApiResponseDtoRegionStatResponseDto = {
     developCode: number;
     message: string;
-    data: RegionStatResponseDto;
+    data: RegionStatResponseDto | null;
 };
 
 export type ApiResponseDtoRegionResponseDto = {
     developCode: number;
     message: string;
-    data: RegionResponseDto;
+    data: RegionResponseDto | null;
 };
 
 /**
@@ -1123,11 +1157,11 @@ export type HotZoneResponseDto = {
      */
     gridId: string;
     /**
-     * 격자 세로 인덱스 (위도 기반 정수)
+     * 격자 세로 인덱스 (EPSG:5179 평면 y / 100 — 위도가 아니다)
      */
     gridY: number;
     /**
-     * 격자 가로 인덱스 (경도 기반 정수)
+     * 격자 가로 인덱스 (EPSG:5179 평면 x / 100 — 경도가 아니다)
      */
     gridX: number;
     /**
@@ -1135,13 +1169,17 @@ export type HotZoneResponseDto = {
      */
     score: number;
     /**
-     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 지도 마커는 라벨을 그리지 않으므로 행정동 폴백 재료를 싣지 않는다(마커를 누르면 단일 격자 조회가 라벨을 준다).
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 마커 라벨은 같은 항목의 regionName(행정동)이다(추가 호출 없음).
      */
     zoneName: string | null;
     /**
      * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단) — 마커 배지용. zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
      */
     zoneCell: string | null;
+    /**
+     * 격자 중심점이 속한 행정동 전체 이름. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoOccupiedGridPageResponseDto = {
@@ -1173,21 +1211,25 @@ export type OccupiedGridResponseDto = {
      */
     gridId: string;
     /**
-     * 격자 세로 인덱스 (위도 기반 정수)
+     * 격자 세로 인덱스 (EPSG:5179 평면 y / 100 — 위도가 아니다)
      */
     gridY: number;
     /**
-     * 격자 가로 인덱스 (경도 기반 정수)
+     * 격자 가로 인덱스 (EPSG:5179 평면 x / 100 — 경도가 아니다)
      */
     gridX: number;
     /**
-     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 지도 오버레이는 라벨을 그리지 않으므로 행정동 폴백 재료를 싣지 않는다(셀을 누르면 단일 격자 조회가 라벨을 준다).
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 표시 이름은 같은 항목의 regionName(행정동)이다(추가 호출 없음).
      */
     zoneName: string | null;
     /**
      * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단) — 셀 배지용. zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
      */
     zoneCell: string | null;
+    /**
+     * 격자 중심점이 속한 행정동 전체 이름. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoGridCellResponseDto = {
@@ -1213,13 +1255,17 @@ export type GridCellResponseDto = {
      */
     videoCount: number;
     /**
-     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 표시 이름은 함께 호출하는 GET /api/regions/stats/by-grid 응답의 regionName(행정동)으로 폴백한다.
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 표시 이름은 같은 응답의 regionName(행정동)이다(추가 호출 없음).
      */
     zoneName: string | null;
     /**
      * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단). zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
      */
     zoneCell: string | null;
+    /**
+     * 격자 중심점이 속한 행정동 전체 이름. 아직 아무도 영상을 올리지 않은 격자에도 실린다. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoGridVideoPageResponseDto = {
@@ -1307,7 +1353,7 @@ export type GridVideoResponseDto = {
 export type ApiResponseDtoGridCoverVideoResponseDto = {
     developCode: number;
     message: string;
-    data: GridCoverVideoResponseDto;
+    data: GridCoverVideoResponseDto | null;
 };
 
 /**
@@ -1981,6 +2027,22 @@ export type IssuePresignedUrlResponses = {
 };
 
 export type IssuePresignedUrlResponse = IssuePresignedUrlResponses[keyof IssuePresignedUrlResponses];
+
+export type HighlightPreviewData = {
+    body: HighlightPreviewRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/videos/highlight-preview';
+};
+
+export type HighlightPreviewResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoHighlightPreviewResponseDto;
+};
+
+export type HighlightPreviewResponse = HighlightPreviewResponses[keyof HighlightPreviewResponses];
 
 export type UnregisterData = {
     body?: never;

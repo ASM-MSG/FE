@@ -1,28 +1,44 @@
 # react-doctor hook start
-react_doctor_scan_staged_files() {
-  if [ -x "./node_modules/.bin/react-doctor" ]; then
-    "./node_modules/.bin/react-doctor" --staged --blocking warning
+# 모노레포 루트에는 react 의존성이 없어 react-doctor의 React 전용 규칙이 통째로 꺼진다 —
+# 루트 단일 실행은 "No React project detected" 상태의 가짜 그린이었다 (MSG-329 실증:
+# 같은 스테이징이 루트 exit 0 / apps/web exit 1). React 패키지 루트에서 각각 실행해
+# 해당 서브트리의 스테이징분을 React 규칙 포함으로 스캔한다. 스테이징이 없는 패키지는
+# "No staged source files found"로 즉시 통과라 비용이 거의 없다.
+REACT_DOCTOR_REPO_ROOT="$(pwd)"
+REACT_DOCTOR_PKGS="apps/web apps/mobile packages/ui-web packages/ui-native"
+
+react_doctor_run_in() {
+  pkg_dir="$1"
+  if [ -x "$REACT_DOCTOR_REPO_ROOT/node_modules/.bin/react-doctor" ]; then
+    (cd "$pkg_dir" && "$REACT_DOCTOR_REPO_ROOT/node_modules/.bin/react-doctor" --staged --blocking warning)
     return
   fi
 
   if command -v react-doctor >/dev/null 2>&1; then
-    react-doctor --staged --blocking warning
+    (cd "$pkg_dir" && react-doctor --staged --blocking warning)
     return
   fi
 
   # package.json의 react-doctor 버전과 맞춰둔다(재현성) — 위 두 분기가 이미 실패한
   # 드문 경우에만 타는 폴백이라, 버전 올릴 때 이 범위도 같이 갱신할 것.
   if command -v pnpm >/dev/null 2>&1; then
-    pnpm dlx react-doctor@^0.9.3 --staged --blocking warning
+    (cd "$pkg_dir" && pnpm dlx react-doctor@^0.9.3 --staged --blocking warning)
     return
   fi
 
   if command -v npx >/dev/null 2>&1; then
-    npx --yes react-doctor@^0.9.3 --staged --blocking warning
+    (cd "$pkg_dir" && npx --yes react-doctor@^0.9.3 --staged --blocking warning)
     return
   fi
 
   printf '%s\n' "react-doctor: command not found; skipping staged scan."
+}
+
+react_doctor_scan_staged_files() {
+  for react_doctor_pkg in $REACT_DOCTOR_PKGS; do
+    [ -d "$react_doctor_pkg" ] || continue
+    react_doctor_run_in "$react_doctor_pkg" || return $?
+  done
 }
 
 react_doctor_output=$(mktemp "${TMPDIR:-/tmp}/react-doctor-hook.XXXXXX")
@@ -32,7 +48,7 @@ else
   react_doctor_exit_code=$?
   cat "$react_doctor_output" >&2
   rm -f "$react_doctor_output"
-  printf '%s\n' "React Doctor found staged regressions." "Run react-doctor --staged --blocking warning to inspect." "Want them fixed? Ask your agent to run that command and resolve the findings." >&2
+  printf '%s\n' "React Doctor found staged regressions." "Run react-doctor --staged --blocking warning (해당 패키지 디렉토리에서) to inspect." "Want them fixed? Ask your agent to run that command and resolve the findings." >&2
   exit "$react_doctor_exit_code"
 fi
 # react-doctor hook end

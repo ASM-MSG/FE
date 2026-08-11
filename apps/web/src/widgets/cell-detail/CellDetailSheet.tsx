@@ -8,6 +8,7 @@ import {
 } from "@/features/explore/model/cell-detail";
 import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
 import { formatDuration } from "@/features/explore/model/explore-cells";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { CellMoreMenu } from "./CellMoreMenu";
 import { ReportDialog } from "./ReportDialog";
 
@@ -20,12 +21,15 @@ interface CellDetailSheetProps {
  * 격자 상세 시트 — 목록 오른쪽 컬럼에 나란히 붙는 신규 컨테이너(모달·전체 전환 아님, AC 1).
  * 대표 영상 플레이어(자리) / 격자 메타 / 통계 3항목 / 액션 버튼(자리) / "이 격자의 영상" 리스트로 구성.
  * BottomSheet(하단 도킹)와 역할이 달라 재사용하지 않고 별도 셸로 둔다(스펙 명시).
- * 대표 영상·닫기는 cell-detail-store를 구독한다. 실제 재생/업로드/공유는 [제외 범위]로 no-op.
+ * 대표 영상·닫기는 cell-detail-store를 구독한다. 업로드는 격자 고정 진입으로 배선했고(MSG-329
+ * 후속 — cell.center 지목), 재생/공유는 [제외 범위]로 no-op.
  */
 export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
   const activeVideoId = useCellDetailStore((s) => s.activeVideoId);
   const selectVideo = useCellDetailStore((s) => s.selectVideo);
   const close = useCellDetailStore((s) => s.close);
+  // 격자 고정 진입 — 이 격자(mock center)를 지목해 업로드 모달을 연다
+  const openUploadModal = useUploadModalStore((s) => s.openModal);
 
   const [reportOpen, setReportOpen] = useState(false);
 
@@ -90,7 +94,12 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
 
         {/* 액션 버튼 (자리, no-op) — 업로드 / 공유 / 더보기 (AC 15) */}
         <div className="flex items-center gap-sm">
-          <Button text="이 격자에 영상 업로드" size="sm" className="flex-1" />
+          <Button
+            text="이 격자에 영상 업로드"
+            size="sm"
+            className="flex-1"
+            onClick={() => openUploadModal(cell.center)}
+          />
           <IconButton label="공유">
             <Share2 className="size-5" />
           </IconButton>
