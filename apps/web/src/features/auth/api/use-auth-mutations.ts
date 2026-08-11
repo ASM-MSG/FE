@@ -3,14 +3,13 @@ import { DEVICE_ID_HEADER } from "@/shared/api/auth-pipeline";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 // 생성 mutation 옵션은 barrel(generated/index.ts) 미재수출 — 직접 경로 import (MSG-323 관례)
 import {
-  loginMutation,
   logoutMutation,
   signupMutation,
   socialLoginMutation,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 // 응답 **헤더**(X-Device-Id)가 필요해 생성 mutation 옵션 대신 SDK를 직접 호출한다 —
 // 생성 옵션의 mutationFn은 data만 돌려주고 Response를 감춘다 (MSG-325)
-import { oauthCodeLogin } from "@/shared/api/generated/sdk.gen";
+import { login, oauthCodeLogin } from "@/shared/api/generated/sdk.gen";
 import { deviceIdStorage } from "@/shared/storage";
 import type { Options, SignupData } from "@/shared/api/generated";
 import { useAuthStore } from "../model/auth-store";
@@ -30,6 +29,20 @@ const DEV_SOCIAL_LOGIN_OID = "web-local-dev";
 const socialLoginFn = socialLoginMutation().mutationFn!;
 const signupFn = signupMutation().mutationFn!;
 const logoutFn = logoutMutation().mutationFn!;
+
+/**
+ * 로그인 SDK 호출 공통 처리 (MSG-325·MSG-352) — 응답 헤더의 기기 식별자(X-Device-Id)를
+ * deviceIdStorage에 보관해 이후 요청(특히 재발급)에 재사용하고, 응답 data를 돌려준다.
+ * 카카오 코드 로그인·이메일 로그인이 공유한다.
+ */
+const requestSavingDeviceId = async <T>(
+  request: () => Promise<{ data: T; response: Response }>,
+): Promise<T> => {
+  const { data, response } = await request();
+  const deviceId = response.headers.get(DEVICE_ID_HEADER);
+  if (deviceId !== null) deviceIdStorage.save(deviceId);
+  return data;
+};
 
 /**
  * dev 모의 소셜 로그인 (기준 7·8) — `/api/auth/dev/social-login`, oid는 코드 상수.
@@ -65,16 +78,10 @@ export const useKakaoCodeLogin = (callbacks?: {
   // 관찰자가 언마운트되면 버려지는데, StrictMode는 mount→unmount→mount라 첫 마운트에서
   // 시작한 요청의 콜백이 그대로 유실된다(성공 시 화면 전환·실패 시 안내가 통째로 사라짐)
   return useMutation({
-    mutationFn: async (variables: { code: string; redirectUri: string }) => {
-      const { data, response } = await oauthCodeLogin({
-        body: variables,
-        throwOnError: true,
-      });
-      // 서버가 발급한 기기 식별자를 보관해 이후 요청(특히 재발급)에 재사용한다
-      const deviceId = response.headers.get(DEVICE_ID_HEADER);
-      if (deviceId !== null) deviceIdStorage.save(deviceId);
-      return data;
-    },
+    mutationFn: (variables: { code: string; redirectUri: string }) =>
+      requestSavingDeviceId(() =>
+        oauthCodeLogin({ body: variables, throwOnError: true }),
+      ),
     onSuccess: (envelope) => {
       setAccessToken(unwrapEnvelope(envelope).accessToken);
       queryClient.clear();
@@ -84,12 +91,20 @@ export const useKakaoCodeLogin = (callbacks?: {
   });
 };
 
-/** 이메일 로그인 (기준 7·8) — 성공 시 accessToken 스토어 저장까지. 화면 배선은 후속 티켓 (추정 7) */
+/**
+ * 이메일 로그인 (기준 7·8, MSG-352 A2·A3) — `/api/auth/login`, 개발용 로그인(DevLoginPanel) 진입점.
+ * useKakaoCodeLogin과 동일하게 SDK를 직접 호출해 응답 헤더 `X-Device-Id`를 deviceIdStorage에
+ * 저장한다 — 이후 401 재발급이 카카오 세션과 동일하게 동작하는 전제(MSG-352 추정 8).
+ * 변수는 이메일·비밀번호 평면 객체 — 화면이 SDK Options 계층을 모르게 한다.
+ */
 export const useEmailLogin = () => {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const queryClient = useQueryClient();
   return useMutation({
-    ...loginMutation(),
+    mutationFn: (variables: { email: string; password: string }) =>
+      requestSavingDeviceId(() =>
+        login({ body: variables, throwOnError: true }),
+      ),
     onSuccess: (envelope) => {
       setAccessToken(unwrapEnvelope(envelope).accessToken);
       queryClient.clear();

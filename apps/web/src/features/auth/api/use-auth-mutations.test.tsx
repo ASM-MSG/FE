@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { webStorage } from "@/shared/storage";
+import { deviceIdStorage, webStorage } from "@/shared/storage";
 import { envelopeResponse } from "@/test/envelope-response";
 import { AUTH_STORAGE_KEY, useAuthStore } from "../model/auth-store";
 import {
@@ -51,6 +51,7 @@ const pathnameOf = (request: Request) => new URL(request.url).pathname;
 beforeEach(() => {
   useAuthStore.setState({ accessToken: null, isAuthenticated: false });
   webStorage.removeItem(AUTH_STORAGE_KEY);
+  deviceIdStorage.clear();
 });
 
 afterEach(() => {
@@ -109,21 +110,27 @@ describe("useDevSocialLogin (기준 7·8)", () => {
   });
 });
 
-describe("useEmailLogin (기준 7·8)", () => {
-  it("성공 시 accessToken이 스토어에 저장된다 — /api/auth/login POST, 바디 그대로 전달", async () => {
+describe("useEmailLogin (기준 7·8, MSG-352 A2·A3·A5)", () => {
+  // MSG-352 개편: 변수는 이메일·비밀번호 평면 객체 — 화면(DevLoginPanel)이 SDK Options
+  // 계층을 모르게 한다 (useKakaoCodeLogin 패턴). 기존 { body } 형태 테스트의 정당 갱신.
+  it("성공 시 accessToken이 스토어에 저장되고 이전 세션의 쿼리 캐시가 비워진다 — /api/auth/login POST (A2)", async () => {
     const received = stubFetch(() =>
       envelopeResponse({
         accessToken: "email-access-token",
         refreshToken: null,
       }),
     );
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(["profile"], { nickname: "이전 사용자" });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
 
-    const { result } = renderHook(() => useEmailLogin(), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(() => useEmailLogin(), { wrapper });
     act(() => {
       result.current.mutate({
-        body: { email: "seomyeon@fillmap.kr", password: "password12" },
+        email: "seomyeon@fillmap.kr",
+        password: "password12",
       });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -135,6 +142,58 @@ describe("useEmailLogin (기준 7·8)", () => {
     });
     expect(useAuthStore.getState().accessToken).toBe("email-access-token");
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(queryClient.getQueryData(["profile"])).toBeUndefined();
+  });
+
+  it("응답 헤더 X-Device-Id가 deviceIdStorage에 저장된다 — 이후 401 재발급 전제 (A3)", async () => {
+    stubFetch(
+      () =>
+        new Response(
+          JSON.stringify({
+            developCode: 0,
+            message: "ok",
+            data: { accessToken: "email-access-token", refreshToken: null },
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Device-Id": "device-from-server",
+            },
+          },
+        ),
+    );
+
+    const { result } = renderHook(() => useEmailLogin(), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.mutate({
+        email: "seomyeon@fillmap.kr",
+        password: "password12",
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(deviceIdStorage.get()).toBe("device-from-server");
+  });
+
+  it("실패(API 오류) 시 isError로 끝나고 인증 상태를 바꾸지 않는다 (A5)", async () => {
+    stubFetch(() => new Response(null, { status: 401 }));
+
+    const { result } = renderHook(() => useEmailLogin(), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.mutate({
+        email: "seomyeon@fillmap.kr",
+        password: "wrong-password",
+      });
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+
+    expect(useAuthStore.getState().accessToken).toBeNull();
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });
 
