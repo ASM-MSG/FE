@@ -21,6 +21,7 @@ import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-gr
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
+import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { CellSummaryPanel } from "./ui/CellSummaryPanel";
 import {
@@ -111,6 +112,7 @@ export const MapHomePage = () => {
   }, [clearFilters, navigate]);
 
   // 셀 탭 → 상세 오픈/무시 판정 (AC 9·10) — 판정은 순수 함수, 스토어는 상태만
+  const expandSidebar = useSidebarStore((s) => s.setCollapsed);
   const handleCellTap = useCallback(
     (cellId: string) => {
       // 판정 id는 게시 id와 같은 규칙(좌표 유래 서버 gridId)이어야 한다 — 목 소스 테마의
@@ -119,8 +121,11 @@ export const MapHomePage = () => {
       if (!canOpenDetail(activeTheme, cellId, themeGridIds, occupiedIds))
         return;
       selectCell(cellId);
+      // 접힘 상태에서도 색칠 셀 탭이면 상세가 보여야 한다 — 판정 통과 시에만 펼쳐,
+      // 지도만 넓게 보려는 접힘을 무의미한 클릭이 해제하지 않는다
+      expandSidebar(false);
     },
-    [activeTheme, themeCells, occupiedIds, selectCell],
+    [activeTheme, themeCells, occupiedIds, selectCell, expandSidebar],
   );
 
   // 섹션 오버레이 게시(테마 셀·경로·클릭 핸들러) — 홈 마운트 중 유지, 이탈 시 해제.

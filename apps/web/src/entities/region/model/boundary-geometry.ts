@@ -44,39 +44,41 @@ export const pointInPolygon = (
       !holes.some((hole) => pointInRing(point, hole)),
   );
 
-/** 절단 대상 격자선 — 수평(위도 고정) 또는 수직(경도 고정) 선분 */
-export type GridLine =
-  | { axis: "h"; lat: number; fromLng: number; toLng: number }
-  | { axis: "v"; lng: number; fromLat: number; toLat: number };
+/** 절단 대상 선분 — 임의 기울기 두 끝점 (MSG-357: 5179 격자선은 위경도 평면에서 기울어져 있다) */
+export type BoundarySegment = [LatLng, LatLng];
 
 /**
- * 수평/수직 격자선을 행정경계 내부 구간의 선분(들)로 절단한다. [AC 3]
- * 스캔라인 교차: 모든 링(외곽·홀)의 변과의 교차 좌표를 모아 정렬하면, even-odd 규칙상
- * 홀수번째→짝수번째 교차 쌍이 내부 구간이다 — 오목 경계·홀·MultiPolygon에서 자연히
- * 다중 선분으로 갈라진다. 비용은 선당 O(경계 정점 수).
+ * 임의 기울기 선분을 행정경계 내부 구간의 선분(들)로 절단한다. [MSG-263 AC 3 · MSG-357 일반화]
+ * 파라메트릭 절단: 선분 P(t) = A + t·(B−A)의 지지 직선과 모든 링(외곽·홀) 변의 교차 t를 모아
+ * 정렬하면, even-odd 규칙상 홀수번째→짝수번째 교차 쌍이 내부 구간이다 — 오목 경계·홀·
+ * MultiPolygon에서 자연히 다중 선분으로 갈라진다. 각 쌍을 [0,1]로 클램프해 선분 범위로
+ * 자른다. 변이 직선을 가로지르는지는 두 끝점의 부호 판정(반개구간 `>` 규칙)으로 정해
+ * 꼭짓점 이중 계수를 막는다 — 구 축평행 스캔라인과 같은 규칙의 2D 일반화다.
+ * 비용은 선분당 O(경계 정점 수).
  */
 export const clipLineToBoundary = (
-  line: GridLine,
+  [a, b]: BoundarySegment,
   boundary: BoundaryMultiPolygon,
-): [LatLng, LatLng][] => {
-  // 스캔 축 좌표(fixed)와 교차 축 좌표를 일반화한다 — h: lat 고정·lng 교차, v: 반대
-  const fixed = line.axis === "h" ? line.lat : line.lng;
-  const from = line.axis === "h" ? line.fromLng : line.fromLat;
-  const to = line.axis === "h" ? line.toLng : line.toLat;
+): BoundarySegment[] => {
+  const dLat = b.lat - a.lat;
+  const dLng = b.lng - a.lng;
+  /** 지지 직선 기준 점의 부호 면적 — 0보다 크면 직선 왼쪽 */
+  const sideOf = (p: LatLng): number =>
+    dLng * (p.lat - a.lat) - dLat * (p.lng - a.lng);
 
   const crossings: number[] = [];
   for (const polygon of boundary) {
     for (const ring of polygon) {
       for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const a = ring[i];
-        const b = ring[j];
-        const aFixed = line.axis === "h" ? a.lat : a.lng;
-        const bFixed = line.axis === "h" ? b.lat : b.lng;
-        if (aFixed > fixed !== bFixed > fixed) {
-          const aCross = line.axis === "h" ? a.lng : a.lat;
-          const bCross = line.axis === "h" ? b.lng : b.lat;
+        const c = ring[i];
+        const d = ring[j];
+        if (sideOf(c) > 0 !== sideOf(d) > 0) {
+          // A + t·AB = C + u·CD 를 CD와의 외적으로 소거해 t만 푼다
+          const edgeLat = d.lat - c.lat;
+          const edgeLng = d.lng - c.lng;
+          const denom = dLng * edgeLat - dLat * edgeLng;
           crossings.push(
-            aCross + ((bCross - aCross) * (fixed - aFixed)) / (bFixed - aFixed),
+            ((c.lng - a.lng) * edgeLat - (c.lat - a.lat) * edgeLng) / denom,
           );
         }
       }
@@ -84,22 +86,17 @@ export const clipLineToBoundary = (
   }
   crossings.sort((x, y) => x - y);
 
-  const segments: [LatLng, LatLng][] = [];
+  const at = (t: number): LatLng => ({
+    lat: a.lat + t * dLat,
+    lng: a.lng + t * dLng,
+  });
+
+  const segments: BoundarySegment[] = [];
   for (let k = 0; k + 1 < crossings.length; k += 2) {
-    const start = Math.max(crossings[k], from);
-    const end = Math.min(crossings[k + 1], to);
+    const start = Math.max(crossings[k], 0);
+    const end = Math.min(crossings[k + 1], 1);
     if (start >= end) continue;
-    segments.push(
-      line.axis === "h"
-        ? [
-            { lat: line.lat, lng: start },
-            { lat: line.lat, lng: end },
-          ]
-        : [
-            { lat: start, lng: line.lng },
-            { lat: end, lng: line.lng },
-          ],
-    );
+    segments.push([at(start), at(end)]);
   }
   return segments;
 };

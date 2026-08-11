@@ -1,20 +1,32 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { CellCorners } from "@/entities/cell";
 import { useMapOverlayStore } from "./map-overlay-store";
+
+/** 축평행 사각 꼭짓점 픽스처 — MSG-357: 셀 기하가 Bounds에서 꼭짓점 4점으로 바뀌었다 */
+const cornersOf = (
+  sw: { lat: number; lng: number },
+  ne: { lat: number; lng: number },
+): CellCorners => [
+  sw,
+  { lat: sw.lat, lng: ne.lng },
+  ne,
+  { lat: ne.lat, lng: sw.lng },
+];
 
 const OVERLAYS = [
   {
     id: "A-14",
-    bounds: {
-      sw: { lat: 35.155, lng: 129.056 },
-      ne: { lat: 35.159, lng: 129.061 },
-    },
+    corners: cornersOf(
+      { lat: 35.155, lng: 129.056 },
+      { lat: 35.159, lng: 129.061 },
+    ),
   },
   {
     id: "B-07",
-    bounds: {
-      sw: { lat: 35.161, lng: 129.058 },
-      ne: { lat: 35.166, lng: 129.063 },
-    },
+    corners: cornersOf(
+      { lat: 35.161, lng: 129.058 },
+      { lat: 35.166, lng: 129.063 },
+    ),
   },
 ];
 

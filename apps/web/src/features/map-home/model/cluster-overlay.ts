@@ -1,10 +1,4 @@
-import {
-  GRID_LAT_STEP,
-  GRID_LNG_STEP,
-  GRID_ORIGIN,
-  type Bounds,
-  type LatLng,
-} from "@/entities/cell";
+import type { Bounds, LatLng } from "@/entities/cell";
 import { GRID_MIN_ZOOM, isGridCellCenterInBusan } from "./grid-overlay";
 import type { StyledCellOverlay } from "./theme-overlay";
 
@@ -17,19 +11,32 @@ import type { StyledCellOverlay } from "./theme-overlay";
  */
 
 /**
- * 클러스터 윈도의 격자 셀 배수 계수 (A1) — 윈도 지상 폭 = 격자 스텝 × 2^(GRID_MIN_ZOOM − zoom) × 계수.
- * 줌 1단 아웃 = 지상 폭 2배이므로 윈도의 픽셀 등가 크기는 줌과 무관하게 일정하다:
- * zoom 15에서 100m ≈ 26px(위도 35°) → 3.5배 ≈ 90px. 마커 최대 지름(tier 3, 44px)의
- * 2배 이상이라 중앙부 클램프와 함께 마커 겹침이 없다 (AC 7).
+ * 클러스터 윈도 기저 스텝(도 단위) — 구 위경도 격자 스텝(MSG-325)을 로컬 상수로 이전 (MSG-357 A3).
+ * 서버 계약이 아니라 화면 그룹핑 창이라 5179화하지 않는다 — 클러스터링 개편은 별도 티켓.
  */
-export const CLUSTER_WINDOW_CELL_FACTOR = 3.5;
+const CLUSTER_WINDOW_BASE_STEP = { lat: 0.0009, lng: 0.00115 };
+
+/** 클러스터 윈도 원점 — 위경도 (0, 0) 스냅 기준 */
+export const CLUSTER_WINDOW_ORIGIN: LatLng = { lat: 0, lng: 0 };
+
+/**
+ * 클러스터 윈도의 격자 셀 배수 계수 (A1) — 윈도 지상 폭 = 기저 스텝 × 2^(GRID_MIN_ZOOM − zoom) × 계수.
+ * 줌 1단 아웃 = 지상 폭 2배이므로 윈도의 픽셀 등가 크기는 줌과 무관하게 일정하다:
+ * zoom 16에서 100m ≈ 52px(위도 35°) → 1.75배 ≈ 90px. 마커 최대 지름(tier 3, 44px)의
+ * 2배 이상이라 중앙부 클램프와 함께 마커 겹침이 없다 (AC 7).
+ * 게이트 상향(15→16, MSG-357 후속) 시 3.5→1.75 반감 — 앵커 이동을 상쇄해 줌별 지상 폭 불변.
+ */
+export const CLUSTER_WINDOW_CELL_FACTOR = 1.75;
 
 /** 줌별 클러스터 윈도 스텝(도 단위) — 줌 1단 아웃마다 2배 (AC 6) */
 export const clusterWindowSteps = (
   zoom: number,
 ): { lat: number; lng: number } => {
   const scale = CLUSTER_WINDOW_CELL_FACTOR * 2 ** (GRID_MIN_ZOOM - zoom);
-  return { lat: GRID_LAT_STEP * scale, lng: GRID_LNG_STEP * scale };
+  return {
+    lat: CLUSTER_WINDOW_BASE_STEP.lat * scale,
+    lng: CLUSTER_WINDOW_BASE_STEP.lng * scale,
+  };
 };
 
 /** 묶인 격자 수 → 배지 크기 3단계 (AC 5, A2 — mock 규모 기준, 실 API 규모에서 재조정 전제) */
@@ -78,10 +85,27 @@ interface ClusterWindow {
   members: { cell: StyledCellOverlay; center: LatLng }[];
 }
 
+/** 셀 중심 근사 — 꼭짓점 4점 centroid (MSG-357: 기울어진 사각형이라 corners 평균이 중심이다) */
+const cellCentroid = (cell: StyledCellOverlay): LatLng => ({
+  lat: cell.corners.reduce((s, c) => s + c.lat, 0) / cell.corners.length,
+  lng: cell.corners.reduce((s, c) => s + c.lng, 0) / cell.corners.length,
+});
+
+/** 멤버 셀 꼭짓점 전체의 위경도 min/max 합집합 — 클릭 줌 인(fitBounds) 대상 */
+const cornersUnionBounds = (members: { cell: StyledCellOverlay }[]): Bounds => {
+  const corners = members.flatMap(({ cell }) => cell.corners);
+  const lats = corners.map((c) => c.lat);
+  const lngs = corners.map((c) => c.lng);
+  return {
+    sw: { lat: Math.min(...lats), lng: Math.min(...lngs) },
+    ne: { lat: Math.max(...lats), lng: Math.max(...lngs) },
+  };
+};
+
 /**
  * 채움 셀 → 그리드 윈도 클러스터 마커 목록 (AC 4·6·7·10·11).
  * - zoom ≥ GRID_MIN_ZOOM이면 빈 배열 — 채움이 표시되는 줌에서는 클러스터가 없다 (AC 1)
- * - 셀 bounds 중심을 윈도(GRID_ORIGIN 기준)에 스냅해 묶는다 — 누락·중복 없는 분할 (AC 4)
+ * - 셀 중심(corners centroid)을 윈도(CLUSTER_WINDOW_ORIGIN 기준)에 스냅해 묶는다 — 누락·중복 없는 분할 (AC 4)
  * - 마커 위치 = 멤버 centroid를 윈도 중앙 1/2 영역으로 클램프 — 인접 마커 최소 간격
  *   = 윈도 절반 보장 (AC 7, A1)
  * - 부산 행정경계 밖 center 셀은 집계 제외 (AC 11 — 파생물 입력이 이미 필터본이어도 재보장)
@@ -93,17 +117,15 @@ export const buildClusterMarkers = (
   if (zoom >= GRID_MIN_ZOOM) return [];
 
   const step = clusterWindowSteps(zoom);
+  const origin = CLUSTER_WINDOW_ORIGIN;
   const windows = new Map<string, ClusterWindow>();
 
   for (const cell of cells) {
-    const center = {
-      lat: (cell.bounds.sw.lat + cell.bounds.ne.lat) / 2,
-      lng: (cell.bounds.sw.lng + cell.bounds.ne.lng) / 2,
-    };
+    const center = cellCentroid(cell);
     if (!isGridCellCenterInBusan(center)) continue;
 
-    const col = Math.floor((center.lng - GRID_ORIGIN.lng) / step.lng);
-    const row = Math.floor((center.lat - GRID_ORIGIN.lat) / step.lat);
+    const col = Math.floor((center.lng - origin.lng) / step.lng);
+    const row = Math.floor((center.lat - origin.lat) / step.lat);
     const key = `${col}:${row}`;
     const found = windows.get(key);
     if (found) found.members.push({ cell, center });
@@ -116,22 +138,9 @@ export const buildClusterMarkers = (
       lng: members.reduce((s, m) => s + m.center.lng, 0) / members.length,
     };
     const windowCenter = {
-      lat: GRID_ORIGIN.lat + (row + 0.5) * step.lat,
-      lng: GRID_ORIGIN.lng + (col + 0.5) * step.lng,
+      lat: origin.lat + (row + 0.5) * step.lat,
+      lng: origin.lng + (col + 0.5) * step.lng,
     };
-    const bounds = members.reduce<Bounds>(
-      (acc, { cell }) => ({
-        sw: {
-          lat: Math.min(acc.sw.lat, cell.bounds.sw.lat),
-          lng: Math.min(acc.sw.lng, cell.bounds.sw.lng),
-        },
-        ne: {
-          lat: Math.max(acc.ne.lat, cell.bounds.ne.lat),
-          lng: Math.max(acc.ne.lng, cell.bounds.ne.lng),
-        },
-      }),
-      members[0].cell.bounds,
-    );
     const color = members[0].cell.color;
 
     return {
@@ -151,7 +160,7 @@ export const buildClusterMarkers = (
       count: members.length,
       tier: tierOf(members.length),
       ...(color !== undefined && { color }),
-      bounds,
+      bounds: cornersUnionBounds(members),
     };
   });
 };
