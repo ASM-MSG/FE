@@ -1,8 +1,8 @@
 import {
-  cellBoundsAt,
+  cellCornersAt,
   cellIndexAt,
   encodeGridId,
-  type Bounds,
+  type CellCorners,
   type CellOverlay,
   type LatLng,
 } from "@/entities/cell";
@@ -19,8 +19,8 @@ import {
  * 테마 오버레이 파생 (MSG-252 AC 2·6·7·8).
  * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
  * 렌더링(naver Polygon·Polyline·Marker)은 MapCanvas 경계 안에서 하고, 여기는 데이터만 만든다.
- * MSG-263 개정(D5): 셀 bounds는 500m 근사(cellToBounds)가 아니라 100m 격자 스냅
- * (cellBoundsAt∘cellIndexAt)이고, 셀 중심이 부산 행정경계 밖인 셀은 대상에서 제외한다(AC 4).
+ * MSG-263 개정(D5) → MSG-357: 셀 기하는 100m 격자 스냅 꼭짓점 4점
+ * (cellCornersAt∘cellIndexAt — EPSG:5179)이고, 셀 중심이 부산 행정경계 밖인 셀은 대상에서 제외한다(AC 4).
  * MSG-263 개정 2(D9): 기본 점령 셀은 셸 상시 층(MapShell → toOccupiedOverlays)으로 분리 —
  * 여기서는 테마 셀(빗금 포함)만 게시한다. 교집합 1회 렌더는 셸의 excludeSectionCells가 맡는다(AC 8).
  */
@@ -67,7 +67,7 @@ export const buildHomeOverlayCells = (
     const gridId = encodeGridId(c.center);
     return {
       id: gridId,
-      bounds: cellBoundsAt(cellIndexAt(c.center)),
+      corners: cellCornersAt(cellIndexAt(c.center)),
       color: THEME_META[activeTheme].color,
       hatched: occupiedIds.has(gridId),
     };
@@ -108,24 +108,31 @@ export const buildRouteOverlay = (
 export const HATCH_LINE_COUNT = 5;
 
 /**
- * 셀 Bounds 안 사선 빗금 선분 목록. [AC 7, R1]
+ * 셀 꼭짓점 4점 안 사선 빗금 선분 목록. [AC 7, R1]
  * 네이버 Polygon은 패턴 채움을 지원하지 않아 사선 Polyline 묶음으로 빗금을 근사한다 —
  * 정규화 좌표(0~1)에서 x+y=s (s∈(0,2)) 반대각 평행선을 사각형 경계로 절단한 것.
+ * MSG-357: 셀이 기울어진 사각형이라 정규화 좌표를 꼭짓점 4점의 쌍선형 보간으로 되돌린다 —
+ * 축평행 Bounds 시절과 등가 기하(사양 변경 아님).
  */
 export const buildHatchLines = (
-  bounds: Bounds,
+  corners: CellCorners,
   lineCount: number = HATCH_LINE_COUNT,
 ): [LatLng, LatLng][] => {
-  const dLat = bounds.ne.lat - bounds.sw.lat;
-  const dLng = bounds.ne.lng - bounds.sw.lng;
+  const [sw, se, ne, nw] = corners;
+  /** 정규화 좌표 (u: 서→동, v: 남→북) → 꼭짓점 4점 쌍선형 보간 좌표 */
+  const at = (u: number, v: number): LatLng => {
+    const bilerp = (axis: (p: LatLng) => number): number =>
+      axis(sw) * (1 - u) * (1 - v) +
+      axis(se) * u * (1 - v) +
+      axis(ne) * u * v +
+      axis(nw) * (1 - u) * v;
+    return { lat: bilerp((p) => p.lat), lng: bilerp((p) => p.lng) };
+  };
 
   return Array.from({ length: lineCount }, (_, i) => {
     const s = (2 * (i + 1)) / (lineCount + 1);
     const x1 = Math.max(0, s - 1);
     const x2 = Math.min(1, s);
-    return [
-      { lat: bounds.sw.lat + (s - x1) * dLat, lng: bounds.sw.lng + x1 * dLng },
-      { lat: bounds.sw.lat + (s - x2) * dLat, lng: bounds.sw.lng + x2 * dLng },
-    ];
+    return [at(x1, s - x1), at(x2, s - x2)];
   });
 };

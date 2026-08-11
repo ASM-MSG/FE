@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { cellBoundsAt, cellIndexAt, encodeGridId } from "@/entities/cell";
+import {
+  cellCornersAt,
+  cellIndexAt,
+  encodeGridId,
+  type CellCorners,
+} from "@/entities/cell";
 import { MOCK_DEX } from "@/entities/dex";
 import {
   MOCK_ROUTE,
@@ -69,10 +74,10 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
     );
   });
 
-  it("테마 셀 bounds도 100m 격자 스냅이다 — 500m/100m 혼재 불허 (MSG-263 D5·AC 8)", () => {
+  it("테마 셀 기하도 100m 격자 스냅 꼭짓점 4점이다 — 격자 정의 단일화 (MSG-263 D5 → MSG-357)", () => {
     for (const cell of MOCK_THEME_CELLS.hot) {
       const overlay = overlays.find((o) => o.id === encodeGridId(cell.center))!;
-      expect(overlay.bounds).toEqual(cellBoundsAt(cellIndexAt(cell.center)));
+      expect(overlay.corners).toEqual(cellCornersAt(cellIndexAt(cell.center)));
     }
   });
 
@@ -199,34 +204,54 @@ describe("buildRouteOverlay — 경로 데이터 게시 분기 (AC 8)", () => {
   });
 });
 
-describe("buildHatchLines — 셀 Bounds 안 사선 빗금 기하 (AC 7, R1)", () => {
-  const bounds = {
-    sw: { lat: 35.155, lng: 129.056 },
-    ne: { lat: 35.159, lng: 129.061 },
-  };
+describe("buildHatchLines — 셀 꼭짓점 4점 안 사선 빗금 기하 (AC 7, R1 · MSG-357 corners 등가 이전)", () => {
+  // 축평행 사각 꼭짓점 — 쌍선형 보간이 구 Bounds 산식과 등가임을 같은 기하로 확인한다
+  const sw = { lat: 35.155, lng: 129.056 };
+  const ne = { lat: 35.159, lng: 129.061 };
+  const corners: CellCorners = [
+    sw,
+    { lat: sw.lat, lng: ne.lng },
+    ne,
+    { lat: ne.lat, lng: sw.lng },
+  ];
 
   it("요청한 개수의 선분을 만든다", () => {
-    expect(buildHatchLines(bounds, 5)).toHaveLength(5);
-    expect(buildHatchLines(bounds, 3)).toHaveLength(3);
+    expect(buildHatchLines(corners, 5)).toHaveLength(5);
+    expect(buildHatchLines(corners, 3)).toHaveLength(3);
   });
 
-  it("모든 선분 끝점은 Bounds 안(경계 포함)에 있다", () => {
-    for (const [a, b] of buildHatchLines(bounds, 7)) {
+  it("모든 선분 끝점은 꼭짓점 사각형 안(경계 포함)에 있다", () => {
+    for (const [a, b] of buildHatchLines(corners, 7)) {
       for (const p of [a, b]) {
-        expect(p.lat).toBeGreaterThanOrEqual(bounds.sw.lat);
-        expect(p.lat).toBeLessThanOrEqual(bounds.ne.lat);
-        expect(p.lng).toBeGreaterThanOrEqual(bounds.sw.lng);
-        expect(p.lng).toBeLessThanOrEqual(bounds.ne.lng);
+        expect(p.lat).toBeGreaterThanOrEqual(sw.lat);
+        expect(p.lat).toBeLessThanOrEqual(ne.lat);
+        expect(p.lng).toBeGreaterThanOrEqual(sw.lng);
+        expect(p.lng).toBeLessThanOrEqual(ne.lng);
       }
     }
   });
 
   it("선분들은 서로 평행한 사선이다 — 정규화 좌표에서 기울기가 일정하다", () => {
-    const dLat = bounds.ne.lat - bounds.sw.lat;
-    const dLng = bounds.ne.lng - bounds.sw.lng;
-    for (const [a, b] of buildHatchLines(bounds, 5)) {
+    const dLat = ne.lat - sw.lat;
+    const dLng = ne.lng - sw.lng;
+    for (const [a, b] of buildHatchLines(corners, 5)) {
       const slope = (b.lat - a.lat) / dLat / ((b.lng - a.lng) / dLng);
       expect(slope).toBeCloseTo(-1, 6);
+    }
+  });
+
+  it("기울어진 꼭짓점 사각형에서도 빗금 끝점이 사각형 내부에 머문다 — 5179 셀 대응 (MSG-357)", () => {
+    // 실제 5179 셀 꼭짓점 — 위경도 평면에서 기울어진 사각형
+    const tilted = cellCornersAt(cellIndexAt({ lat: 35.1579, lng: 129.0594 }));
+    const lats = tilted.map((c) => c.lat);
+    const lngs = tilted.map((c) => c.lng);
+    for (const [a, b] of buildHatchLines(tilted, 5)) {
+      for (const p of [a, b]) {
+        expect(p.lat).toBeGreaterThanOrEqual(Math.min(...lats));
+        expect(p.lat).toBeLessThanOrEqual(Math.max(...lats));
+        expect(p.lng).toBeGreaterThanOrEqual(Math.min(...lngs));
+        expect(p.lng).toBeLessThanOrEqual(Math.max(...lngs));
+      }
     }
   });
 });

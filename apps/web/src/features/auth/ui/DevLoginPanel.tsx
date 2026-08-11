@@ -1,7 +1,22 @@
 import { type FormEvent, useState } from "react";
 import { Button, Input } from "@fillmap/ui-web";
+import { ApiError } from "@/shared/api/api-error";
 import { useEmailLogin } from "../api/use-auth-mutations";
 import { useLoginModalStore } from "../model/login-modal-store";
+
+/**
+ * 실패 원인별 안내 (리뷰 반영) — 자격증명 문제(4xx)와 서버(5xx)·네트워크(무응답)를
+ * 구분한다. dev 전용 도구라 5xx에는 상태코드를 노출해 디버깅 혼선을 줄인다.
+ * ApiError가 아닌 예외(정규화 미경유)는 status가 없으므로 연결 안내로 수렴한다.
+ */
+const failureMessage = (error: unknown): string => {
+  const status = error instanceof ApiError ? error.status : undefined;
+  if (status === undefined)
+    return "서버에 연결하지 못했어요. 네트워크·서버 상태를 확인해주세요";
+  if (status >= 500)
+    return `서버 오류가 발생했어요 (HTTP ${status}). 잠시 후 다시 시도해주세요`;
+  return "로그인에 실패했어요. 이메일·비밀번호를 확인해주세요";
+};
 
 /**
  * 개발용 로그인 폼 본체 — 이메일·비밀번호로 `/api/auth/login`을 호출한다 (MSG-352 A2~A5).
@@ -13,7 +28,7 @@ const DevLoginForm = () => {
   const closeModal = useLoginModalStore((s) => s.closeModal);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { mutate, isPending, isError } = useEmailLogin();
+  const { mutate, isPending, isError, error } = useEmailLogin();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -36,6 +51,7 @@ const DevLoginForm = () => {
         placeholder="개발 계정 이메일"
         autoComplete="username"
         value={email}
+        error={isError}
         onChange={(event) => setEmail(event.target.value)}
       />
       <Input
@@ -44,11 +60,12 @@ const DevLoginForm = () => {
         placeholder="비밀번호"
         autoComplete="current-password"
         value={password}
+        error={isError}
         onChange={(event) => setPassword(event.target.value)}
       />
       {isError && (
         <p role="alert" className="text-fm-label text-error">
-          로그인에 실패했어요. 이메일·비밀번호를 확인해주세요
+          {failureMessage(error)}
         </p>
       )}
       <Button

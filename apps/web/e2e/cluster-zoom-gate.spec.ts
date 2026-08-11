@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { stubOccupiedGrids } from "./occupied-grids-stub.js";
 
 /**
- * MSG-264 줄 게이트 회귀 스펙 — 순수 로직(GRID_MIN_ZOOM 임계값 15)은
+ * MSG-264 줄 게이트 회귀 스펙 — 순수 로직(GRID_MIN_ZOOM 임계값 16, MSG-357 후속 상향)은
  * cluster-overlay.test.ts(유닛)가 커버하지만, "실제 네이버 SDK가 줌에 반응해
  * 격자 채움 ↔ 클러스터 마커를 전환 렌더링하는지"는 브라우저 없이 검증 불가능하다.
  *
@@ -14,7 +14,7 @@ test.describe("격자 채움 ↔ 클러스터 마커 줌 게이트", () => {
     await stubOccupiedGrids(page);
   });
 
-  test("줌 15(기본) 상태에서는 클러스터 마커가 없다", async ({ page }) => {
+  test("줌 16(기본) 상태에서는 클러스터 마커가 없다", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("status", { name: /지도 축척/ })).toBeVisible({
       timeout: 15_000,
@@ -24,7 +24,7 @@ test.describe("격자 채움 ↔ 클러스터 마커 줌 게이트", () => {
     await expect(clusterMarkers).toHaveCount(0);
   });
 
-  test("줌 15 미만으로 축소하면 클러스터 마커가 나타나고, 다시 확대하면 사라진다", async ({
+  test("줌 16 미만으로 축소하면 클러스터 마커가 나타나고, 다시 확대하면 사라진다", async ({
     page,
   }) => {
     await page.goto("/");
@@ -36,7 +36,8 @@ test.describe("격자 채움 ↔ 클러스터 마커 줌 게이트", () => {
     const zoomIn = page.getByRole("button", { name: "확대" });
     const clusterMarkers = page.locator('[title*="클러스터"]');
 
-    await zoomOut.click();
+    // 1단 축소 = 줌 15(축척 250m) — 게이트 경계값. 구 게이트(15)라면 여기서 채움이
+    // 유지돼 실패하므로, 이 단정이 게이트 상향(15→16) 자체를 판별한다
     await zoomOut.click();
     await expect(clusterMarkers.first()).toBeVisible({ timeout: 10_000 });
     await expect(clusterMarkers.first()).toHaveAttribute(
@@ -44,7 +45,6 @@ test.describe("격자 채움 ↔ 클러스터 마커 줌 게이트", () => {
       /^격자 \d+개 클러스터$/,
     );
 
-    await zoomIn.click();
     await zoomIn.click();
     await expect(clusterMarkers).toHaveCount(0);
   });

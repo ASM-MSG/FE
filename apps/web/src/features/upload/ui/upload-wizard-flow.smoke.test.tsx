@@ -8,6 +8,8 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useAuthStore } from "@/features/auth/model/auth-store";
+import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useProcessingStore } from "@/features/upload/model/processing-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { envelopeResponse } from "@/test/envelope-response";
@@ -130,7 +132,11 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
   beforeEach(() => {
     localStorage.clear();
     useProcessingStore.setState({ pending: [] });
-    useUploadModalStore.setState({ open: false });
+    // C9 게이트(develop 머지) 도입으로 위저드 열림은 로그인 상태가 전제 — 기존 흐름 단정은 불변.
+    // 잔존 의도(C10) 초기화를 로그인 전이보다 앞에 둬 스퓨리어스 재개를 막는다
+    useUploadModalStore.setState({ open: false, pendingAfterLogin: false });
+    useLoginModalStore.setState({ open: false });
+    useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
     mockMeta.duration = null;
     mockMeta.objectUrl = null;
     mockMeta.error = false;

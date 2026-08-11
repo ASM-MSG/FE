@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  GRID_ORIGIN,
-  cellBoundsAt,
+  cellCornersAt,
   cellIndexAt,
   type Bounds,
   type LatLng,
 } from "@/entities/cell";
 import {
+  CLUSTER_WINDOW_ORIGIN,
   buildClusterMarkers,
   clusterWindowSteps,
   gateFillCells,
@@ -28,14 +28,14 @@ const SEOMYEON_VIEWPORT: Bounds = {
 /** 셸과 동일 입력 경로의 상시 점령 셀 — 경계 내부 필터 완료본 (MSG-263 D3·D9) */
 const PERSISTENT = toOccupiedOverlays(MOCK_OCCUPIED_GRIDS);
 
-/** center가 속한 100m 격자 셀로 스냅된 오버레이 셀 — 파생물 입력 형태와 동일 */
+/** center가 속한 100m 격자 셀로 스냅된 오버레이 셀 — 파생물 입력 형태와 동일 (MSG-357: 꼭짓점 4점) */
 const overlayAt = (
   id: string,
   center: LatLng,
   color?: string,
 ): StyledCellOverlay => ({
   id,
-  bounds: cellBoundsAt(cellIndexAt(center)),
+  corners: cellCornersAt(cellIndexAt(center)),
   ...(color !== undefined && { color }),
 });
 
@@ -53,27 +53,27 @@ const sumCount = (markers: ClusterMarker[]): number =>
   markers.reduce((sum, m) => sum + m.count, 0);
 
 describe("gateFillCells — 채움 줌 게이트 (MSG-264 AC 1·2, A5 전 섹션 공유)", () => {
-  it("zoom 15(이상)에서는 채움 셀 목록이 그대로 반환된다 (AC 1)", () => {
+  it("zoom 16(이상)에서는 채움 셀 목록이 그대로 반환된다 (AC 1)", () => {
     expect(gateFillCells(ALL_CELLS, GRID_MIN_ZOOM)).toEqual(ALL_CELLS);
-    expect(gateFillCells(ALL_CELLS, 16)).toEqual(ALL_CELLS);
+    expect(gateFillCells(ALL_CELLS, 17)).toEqual(ALL_CELLS);
   });
 
-  it("zoom 14(미만)에서는 채움 셀이 파생되지 않는다 (AC 2)", () => {
-    expect(gateFillCells(ALL_CELLS, 14)).toEqual([]);
+  it("zoom 15(미만)에서는 채움 셀이 파생되지 않는다 (AC 2, MSG-357 후속 — 축척 250m는 클러스터)", () => {
+    expect(gateFillCells(ALL_CELLS, 15)).toEqual([]);
     expect(gateFillCells(ALL_CELLS, 10)).toEqual([]);
   });
 });
 
 describe("buildClusterMarkers — 그리드 윈도 클러스터링 (MSG-264)", () => {
-  it("zoom 15(이상) 입력에는 클러스터가 파생되지 않는다 (AC 1)", () => {
+  it("zoom 16(이상) 입력에는 클러스터가 파생되지 않는다 (AC 1)", () => {
     expect(buildClusterMarkers(ALL_CELLS, GRID_MIN_ZOOM)).toEqual([]);
-    expect(buildClusterMarkers(ALL_CELLS, 16)).toEqual([]);
+    expect(buildClusterMarkers(ALL_CELLS, 17)).toEqual([]);
   });
 
-  it("zoom 14에서는 클러스터가 파생되고 채움 셀·격자선은 파생되지 않는다 — 경계값 15/14 양쪽 (AC 2)", () => {
-    expect(buildClusterMarkers(ALL_CELLS, 14).length).toBeGreaterThan(0);
-    expect(gateFillCells(ALL_CELLS, 14)).toEqual([]);
-    expect(buildGridLines(SEOMYEON_VIEWPORT, 14)).toEqual([]);
+  it("zoom 15에서는 클러스터가 파생되고 채움 셀·격자선은 파생되지 않는다 — 경계값 16/15 양쪽 (AC 2, MSG-357 후속)", () => {
+    expect(buildClusterMarkers(ALL_CELLS, 15).length).toBeGreaterThan(0);
+    expect(gateFillCells(ALL_CELLS, 15)).toEqual([]);
+    expect(buildGridLines(SEOMYEON_VIEWPORT, 15)).toEqual([]);
   });
 
   it("클러스터 배지 숫자의 합 = 집계 대상 셀 수 — 어떤 셀도 누락·중복 집계되지 않는다 (AC 4)", () => {
@@ -104,14 +104,21 @@ describe("buildClusterMarkers — 그리드 윈도 클러스터링 (MSG-264)", (
     expect(s13.lat).toBeCloseTo(2 * s14.lat, 12);
     expect(s13.lng).toBeCloseTo(2 * s14.lng, 12);
 
+    // 게이트 상향(15→16, MSG-357 후속) 후에도 줌별 윈도 지상 폭은 기존 캘리브레이션과
+    // 동일하다 — zoom 15에서 기저 스텝 × 3.5 (계수 반감이 게이트 앵커 이동을 상쇄)
+    const s15 = clusterWindowSteps(15);
+    expect(s15.lat).toBeCloseTo(0.0009 * 3.5, 12);
+    expect(s15.lng).toBeCloseTo(0.00115 * 3.5, 12);
+
     // 서면 근방의 zoom 13 윈도 하나를 골라 그 안 0.25·0.75 지점에 셀 배치 —
     // zoom 14 윈도(절반 크기)로는 서로 다른 윈도에 떨어진다
-    const row = Math.round((35.157 - GRID_ORIGIN.lat) / s13.lat);
-    const col = Math.round((129.059 - GRID_ORIGIN.lng) / s13.lng);
-    const lng = GRID_ORIGIN.lng + (col + 0.5) * s13.lng;
+    const origin = CLUSTER_WINDOW_ORIGIN;
+    const row = Math.round((35.157 - origin.lat) / s13.lat);
+    const col = Math.round((129.059 - origin.lng) / s13.lng);
+    const lng = origin.lng + (col + 0.5) * s13.lng;
     const pair = [
-      overlayAt("P-1", { lat: GRID_ORIGIN.lat + (row + 0.25) * s13.lat, lng }),
-      overlayAt("P-2", { lat: GRID_ORIGIN.lat + (row + 0.75) * s13.lat, lng }),
+      overlayAt("P-1", { lat: origin.lat + (row + 0.25) * s13.lat, lng }),
+      overlayAt("P-2", { lat: origin.lat + (row + 0.75) * s13.lat, lng }),
     ];
 
     expect(buildClusterMarkers(pair, 14)).toHaveLength(2);
@@ -119,11 +126,14 @@ describe("buildClusterMarkers — 그리드 윈도 클러스터링 (MSG-264)", (
     expect(merged).toHaveLength(1);
     expect(merged[0].count).toBe(2);
 
-    // 클릭 줌 인 대상 bounds = 멤버 셀 bounds 합집합
-    expect(merged[0].bounds.sw.lat).toBeCloseTo(pair[0].bounds.sw.lat, 10);
-    expect(merged[0].bounds.ne.lat).toBeCloseTo(pair[1].bounds.ne.lat, 10);
-    expect(merged[0].bounds.sw.lng).toBeCloseTo(pair[0].bounds.sw.lng, 10);
-    expect(merged[0].bounds.ne.lng).toBeCloseTo(pair[0].bounds.ne.lng, 10);
+    // 클릭 줌 인 대상 bounds = 멤버 셀 꼭짓점 전체의 위경도 min/max 합집합 (MSG-357)
+    const allCorners = pair.flatMap((cell) => cell.corners);
+    const lats = allCorners.map((c) => c.lat);
+    const lngs = allCorners.map((c) => c.lng);
+    expect(merged[0].bounds.sw.lat).toBeCloseTo(Math.min(...lats), 10);
+    expect(merged[0].bounds.ne.lat).toBeCloseTo(Math.max(...lats), 10);
+    expect(merged[0].bounds.sw.lng).toBeCloseTo(Math.min(...lngs), 10);
+    expect(merged[0].bounds.ne.lng).toBeCloseTo(Math.max(...lngs), 10);
 
     // 전체 셀에서도 줌 아웃이 클러스터 수를 늘리지 않는다
     expect(buildClusterMarkers(ALL_CELLS, 12).length).toBeLessThanOrEqual(
@@ -138,12 +148,13 @@ describe("buildClusterMarkers — 그리드 윈도 클러스터링 (MSG-264)", (
 
       for (const marker of markers) {
         // 윈도 내 위치 비율 — 중앙 1/2 영역([0.25, 0.75]) 클램프
+        const origin = CLUSTER_WINDOW_ORIGIN;
         const fracLat =
-          (marker.position.lat - GRID_ORIGIN.lat) / step.lat -
-          Math.floor((marker.position.lat - GRID_ORIGIN.lat) / step.lat);
+          (marker.position.lat - origin.lat) / step.lat -
+          Math.floor((marker.position.lat - origin.lat) / step.lat);
         const fracLng =
-          (marker.position.lng - GRID_ORIGIN.lng) / step.lng -
-          Math.floor((marker.position.lng - GRID_ORIGIN.lng) / step.lng);
+          (marker.position.lng - origin.lng) / step.lng -
+          Math.floor((marker.position.lng - origin.lng) / step.lng);
         expect(fracLat).toBeGreaterThanOrEqual(0.25 - 1e-9);
         expect(fracLat).toBeLessThanOrEqual(0.75 + 1e-9);
         expect(fracLng).toBeGreaterThanOrEqual(0.25 - 1e-9);

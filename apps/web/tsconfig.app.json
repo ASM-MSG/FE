@@ -8,6 +8,8 @@
     "module": "esnext",
     "types": ["vite/client", "navermaps"],
     "allowArbitraryExtensions": true,
+    /* BE 격자 픽스처(JSON) 전수 대조 테스트 import용 (MSG-357) */
+    "resolveJsonModule": true,
     "skipLibCheck": true,
 
     /* Bundler mode */

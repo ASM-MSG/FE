@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useProcessingStore } from "@/features/upload/model/processing-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { pendingVideoStorage } from "@/shared/storage";
@@ -64,7 +65,9 @@ const seedPending = () => {
 
 beforeEach(() => {
   localStorage.clear();
-  useUploadModalStore.setState({ open: false });
+  // C9 게이트(develop 머지): [다시 업로드]의 위저드 열림은 로그인 상태가 전제 (B17 단정 불변)
+  useUploadModalStore.setState({ open: false, pendingAfterLogin: false });
+  useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
   seedPending();
 });
 
