@@ -32,4 +32,5 @@ pnpm 모노레포 — apps/web(React 19 + Vite) + packages(design-tokens · tail
 | 2026-07-29 | vitest allowOnly:false 명시 | apps/web/vite.config.ts | allowOnly 기본값이 !CI라 로컬 pnpm test(빌더 완료 조건·검증 1단계)만 .only 잔류를 허용 — CI와 게이트 동작 통일 |
 | 2026-07-29 | 리뷰 반영 — 테스트 재설계 후 RED 재확인 루프백 명시, 테스트 파일 이동·리네임은 삭제 감사 예외, RED 리터럴 표기 통일 | skills/page-implementation, skills/page-verification | 리뷰 지적 — 재설계 경로만 RED 게이트를 우회할 여지, 리네임의 삭제 오판(과잉 지적 억제 정합), 표기 불일치 |
 | 2026-07-29 | 지도 격리 규칙을 네이버 SDK 기준으로 갱신 (react-kakao-maps-sdk → react-naver-maps, 경계 파일명·줌 의미 체계 명시) | skills/page-implementation | MSG-254 지도 SDK 마이그레이션 — 검증 환류에서 발견된 하네스 문서-코드 불일치 해소 |
+| 2026-08-11 | react-doctor pre-commit을 React 패키지(web·mobile·ui-web·ui-native)별 실행으로 재작성 — 루트 단일 실행은 react 의존성 부재로 React 전용 규칙이 통째로 꺼진 가짜 그린이었음 (같은 스테이징이 루트 exit 0 / apps/web exit 1로 실증) | .husky/pre-commit | MSG-329 — exhaustive-deps·lazy-ref 등 React 규칙 경고가 PR 리뷰에서야 드러나던 좌시프트 공백 해소 |
 | 2026-08-05 | CI 전용이던 포맷·중복 게이트를 로컬로 전진 — pre-commit에 format:check, pre-push에 check:duplication(신설), 검증 스킬 자동 게이트에 두 명령 추가 | .husky, skills/page-verification | MSG-298 — MSG-297에서 신설된 CI 게이트 2종이 로컬 훅·검증 스킬에 없어 push 후 CI에서야 실패가 드러남. 커밋(포맷)·push(중복) 시점으로 좌시프트 |
