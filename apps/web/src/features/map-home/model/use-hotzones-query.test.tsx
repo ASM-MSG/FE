@@ -67,6 +67,20 @@ describe("useHotZoneCells", () => {
     }
   });
 
+  it("데이터가 그대로면 리렌더에도 같은 배열 참조다 — 소비처 useMemo(themeCells) 무효화 방지 (리뷰 반영)", async () => {
+    stubHotZones(SEOMYEON_GRID_IDS);
+
+    const { result, rerender } = renderHook(
+      () => useHotZoneCells(SEOMYEON_VIEWPORT),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current).toHaveLength(2));
+    const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
+  });
+
   it("빈 목록 응답이면 빈 배열이다 — 상위 K·임계 판정에서 걸러지면 정상 경로다", async () => {
     stubHotZones([]);
 
