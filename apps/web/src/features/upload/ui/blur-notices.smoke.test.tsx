@@ -51,9 +51,9 @@ const stubPlayback = (processingStatus: string, playbackUrl: string | null) => {
   );
 };
 
-const renderNotices = () =>
+const renderNotices = (client: QueryClient = new QueryClient()) =>
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <UploadProcessingNotices />
     </QueryClientProvider>,
   );
@@ -107,6 +107,20 @@ describe("블러 처리 통지 (B16·B17)", () => {
     );
     // 닫기만 한다 — 업로드 플로우가 열리지 않는다
     expect(useUploadModalStore.getState().open).toBe(false);
+  });
+
+  it("READY 전이 시 해당 격자 쿼리를 재무효화한다 — 블러 완료 후 상세의 대표 영상이 새로고침 없이 갱신", async () => {
+    stubPlayback("READY", "https://cdn.example.com/blur.mp4");
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    renderNotices(client);
+    await screen.findByText("AI 블러 처리 완료");
+
+    const calledKeys = invalidate.mock.calls.map((call) =>
+      JSON.stringify(call[0]?.queryKey),
+    );
+    // 격자 커버(대표 영상) 키가 응답 gridId로 무효화됐는지 — 나머지 상세 키도 동일 경로
+    expect(calledKeys.some((key) => key?.includes('"grid-77"'))).toBe(true);
   });
 
   it("FAILED 전이 시 실패 토스트 + [다시 업로드]가 새 업로드 플로우를 연다 (B17)", async () => {

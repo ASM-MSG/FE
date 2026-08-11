@@ -1,13 +1,6 @@
 import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { unwrapEnvelope } from "@/shared/api/envelope";
-// 생성 키 함수는 barrel 미재수출 — 직접 경로 import (MSG-323 관례)
-import {
-  getCellQueryKey,
-  getGridCoverQueryKey,
-  getOccupiedInViewportQueryKey,
-  getStatByGridQueryKey,
-} from "@/shared/api/generated/@tanstack/react-query.gen";
 import {
   highlightPreview,
   issuePresignedUrl,
@@ -23,6 +16,7 @@ import {
   runUploadFlow,
   UploadFlowError,
 } from "../model/upload-orchestration";
+import { invalidateGridQueries } from "./invalidate-grid-queries";
 import { uploadToS3 } from "./s3-upload";
 
 /**
@@ -156,26 +150,8 @@ export const useConfirmUpload = () => {
       // 블러 처리 대기 등록 — AppLayout 상주 워처가 이 스토어 구독으로 폴링을 시작한다 (B14·B15)
       track(video.videoId, Date.now());
 
-      // B13 — 코드베이스 최초의 invalidate 배선 (리스크 2: 티켓의 "유지"는 실측상 신규).
-      // 점령 격자는 뷰포트 파라미터별로 캐시가 갈라져 있어 생성 키의 식별자(_id)만 남긴
-      // 부분 키로 전 뷰포트를 무효화한다 (TanStack 부분 일치 — 수동 문자열 키 아님).
-      const [occupiedKey] = getOccupiedInViewportQueryKey({
-        query: { swLat: 0, swLng: 0, neLat: 0, neLng: 0 },
-      });
-      void queryClient.invalidateQueries({
-        queryKey: [{ _id: occupiedKey._id }],
-      });
-      // 격자 상세 3종(격자 탭 상세 조회 조합)은 업로드된 격자 키로 정확 무효화한다
-      const gridPath = { path: { gridId: video.gridId } };
-      void queryClient.invalidateQueries({
-        queryKey: getCellQueryKey(gridPath),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getGridCoverQueryKey(gridPath),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getStatByGridQueryKey({ query: { gridId: video.gridId } }),
-      });
+      // B13 — 격자 쿼리 무효화 (invalidate-grid-queries 공용 — READY 전이와 공유)
+      invalidateGridQueries(queryClient, video.gridId);
     },
   });
   const resetFlow = () => {

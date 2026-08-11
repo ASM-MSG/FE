@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { getPlayback } from "@/shared/api/generated/sdk.gen";
 import {
@@ -6,6 +7,7 @@ import {
   startProcessingPoll,
 } from "../model/processing-poll";
 import { useProcessingStore } from "../model/processing-store";
+import { invalidateGridQueries } from "./invalidate-grid-queries";
 
 /** 워처가 화면에 띄울 통지 — READY(확인 유도)/FAILED(재업로드 유도)/만료(지연 안내) */
 export type ProcessingNotice =
@@ -21,6 +23,7 @@ export type ProcessingNotice =
  * 웹 전용 API(document 가시성)는 이 api 계층에 격리한다 — 판정 로직은 model(processing-poll).
  */
 export const useProcessingWatcher = () => {
+  const queryClient = useQueryClient();
   const pending = useProcessingStore((s) => s.pending);
   const hydrate = useProcessingStore((s) => s.hydrate);
   const untrack = useProcessingStore((s) => s.untrack);
@@ -44,8 +47,9 @@ export const useProcessingWatcher = () => {
     const map = handles.current;
     for (const entry of pending) {
       if (map.has(entry.videoId)) continue;
-      // 마지막 조회의 playbackUrl 보관 — READY 통지의 재생 소스 (B16)
+      // 마지막 조회의 playbackUrl·gridId 보관 — READY 통지의 재생 소스(B16)와 격자 쿼리 갱신용
       const lastPlaybackUrl = { current: null as string | null };
+      const lastGridId = { current: null as string | null };
       const handle = startProcessingPoll({
         fetchStatus: async () => {
           const { data } = await getPlayback({
@@ -54,10 +58,16 @@ export const useProcessingWatcher = () => {
           });
           const playback = unwrapEnvelope(data);
           lastPlaybackUrl.current = playback.playbackUrl;
+          lastGridId.current = playback.gridId;
           return playback.processingStatus;
         },
         onReady: () => {
           untrack(entry.videoId);
+          // 블러 완료로 서버 READY 필터가 풀렸다 — 격자 상세(대표 영상 등)를 신선 조회시킨다.
+          // 확정 시점 무효화의 재조회는 READY 전이라 비어 있었으므로 여기서 한 번 더 필요하다
+          if (lastGridId.current !== null) {
+            invalidateGridQueries(queryClient, lastGridId.current);
+          }
           pushNotice({
             kind: "ready",
             videoId: entry.videoId,
