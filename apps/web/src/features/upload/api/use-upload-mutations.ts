@@ -57,27 +57,31 @@ const extensionFromType = (type: string): string =>
  * 호출부가 resolveAnalysisFailure로 판정한다(B5).
  */
 export const useAnalyzeVideo = () => {
-  const flowState = useRef<OrchestrationState>(createOrchestration());
+  // 지연 초기화 — 렌더마다 초기 상태 객체를 만들었다 버리지 않는다 (리뷰 반영)
+  const flowState = useRef<OrchestrationState | null>(null);
   const mutation = useMutation({
     mutationFn: async (file: File) => {
       try {
-        const { state, result } = await runUploadFlow(flowState.current, {
-          presign: presignEffect({
-            extension: fileExtension(file.name),
-            contentType: file.type || "video/mp4",
-            contentLength: file.size,
-            purpose: PRESIGN_PURPOSE.highlightPreview,
-          }),
-          putToS3: (presign) => uploadToS3(presign.uploadUrl, file),
-          finalize: async (s3Key) => {
-            const { data } = await highlightPreview({
-              body: { s3Key },
-              throwOnError: true,
-              fetch: analysisHttpClient,
-            });
-            return unwrapEnvelope(data).highlights;
+        const { state, result } = await runUploadFlow(
+          (flowState.current ??= createOrchestration()),
+          {
+            presign: presignEffect({
+              extension: fileExtension(file.name),
+              contentType: file.type || "video/mp4",
+              contentLength: file.size,
+              purpose: PRESIGN_PURPOSE.highlightPreview,
+            }),
+            putToS3: (presign) => uploadToS3(presign.uploadUrl, file),
+            finalize: async (s3Key) => {
+              const { data } = await highlightPreview({
+                body: { s3Key },
+                throwOnError: true,
+                fetch: analysisHttpClient,
+              });
+              return unwrapEnvelope(data).highlights;
+            },
           },
-        });
+        );
         flowState.current = state;
         return result;
       } catch (error) {
@@ -112,33 +116,37 @@ export interface ConfirmUploadInput {
 export const useConfirmUpload = () => {
   const queryClient = useQueryClient();
   const track = useProcessingStore((s) => s.track);
-  const flowState = useRef<OrchestrationState>(createOrchestration());
+  // 지연 초기화 — 렌더마다 초기 상태 객체를 만들었다 버리지 않는다 (리뷰 반영)
+  const flowState = useRef<OrchestrationState | null>(null);
   const mutation = useMutation({
     mutationFn: async (input: ConfirmUploadInput) => {
       try {
-        const { state, result } = await runUploadFlow(flowState.current, {
-          presign: presignEffect({
-            extension: extensionFromType(input.blob.type),
-            contentType: input.blob.type || "video/mp4",
-            contentLength: input.blob.size,
-            // purpose 미전송 = UPLOAD (B9)
-          }),
-          putToS3: (presign) => uploadToS3(presign.uploadUrl, input.blob),
-          finalize: async (s3Key) => {
-            const { data } = await upload({
-              body: {
-                s3Key,
-                lat: input.lat,
-                lng: input.lng,
-                durationSec: input.durationSec,
-                // recordedAt = 업로드 시각 (결정 B — 파일 메타 추출은 범위 제외)
-                recordedAt: new Date().toISOString(),
-              },
-              throwOnError: true,
-            });
-            return unwrapEnvelope(data);
+        const { state, result } = await runUploadFlow(
+          (flowState.current ??= createOrchestration()),
+          {
+            presign: presignEffect({
+              extension: extensionFromType(input.blob.type),
+              contentType: input.blob.type || "video/mp4",
+              contentLength: input.blob.size,
+              // purpose 미전송 = UPLOAD (B9)
+            }),
+            putToS3: (presign) => uploadToS3(presign.uploadUrl, input.blob),
+            finalize: async (s3Key) => {
+              const { data } = await upload({
+                body: {
+                  s3Key,
+                  lat: input.lat,
+                  lng: input.lng,
+                  durationSec: input.durationSec,
+                  // recordedAt = 업로드 시각 (결정 B — 파일 메타 추출은 범위 제외)
+                  recordedAt: new Date().toISOString(),
+                },
+                throwOnError: true,
+              });
+              return unwrapEnvelope(data);
+            },
           },
-        });
+        );
         flowState.current = state;
         return result;
       } catch (error) {

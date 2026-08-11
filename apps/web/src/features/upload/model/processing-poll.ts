@@ -62,6 +62,9 @@ export const startProcessingPoll = (
 
   const schedule = () => {
     if (stopped) return;
+    // 기존 예약을 먼저 취소한다 — 최초 예약과 checkNow(즉시 조회)의 재예약이 경합하면
+    // 영상당 타이머가 누적돼 30초 간격보다 잦은 조회가 생긴다 (리뷰 반영)
+    if (timer !== null) clearTimeout(timer);
     timer = setTimeout(() => {
       void check();
     }, PROCESSING_POLL_INTERVAL_MS);

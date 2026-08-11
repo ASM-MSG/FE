@@ -94,7 +94,7 @@ export const useProcessingWatcher = () => {
         map.delete(videoId);
       }
     }
-  }, [pending, untrack, pushNotice]);
+  }, [pending, untrack, pushNotice, queryClient]);
 
   // 탭 포커스 복귀 — 대기 목록 재수화 + 즉시 조회 (B15)
   useEffect(() => {

@@ -110,7 +110,9 @@ export const deviceIdStorage = {
 /** 1회성 state 토큰 생성 — 웹 crypto 의존이라 어댑터 층에 둔다 */
 export const createOauthState = (): string => crypto.randomUUID();
 
-const PENDING_VIDEO_KEY = "fillmap.upload.pending";
+// 키에 스키마 버전을 박는다 — 항목 형태가 바뀌면 새 버전 키로 갈아타 구 데이터를
+// 파싱 시도 없이 자연 폐기한다 (리뷰 반영. 구 무버전 키는 미출시 상태라 마이그레이션 불요)
+const PENDING_VIDEO_KEY = "fillmap.upload.pending:v1";
 
 /** 블러 처리 대기 영상 — 확정된 videoId와 폴링 기산점(확정 시각) */
 export interface PendingVideo {

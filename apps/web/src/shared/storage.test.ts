@@ -41,11 +41,11 @@ describe("pendingVideoStorage — 처리 대기 videoId 기록 (B15)", () => {
   });
 
   it("저장값이 손상돼도(파싱 불가·형상 위반) 빈 목록으로 폴백한다", () => {
-    localStorage.setItem("fillmap.upload.pending", "not-json{");
+    localStorage.setItem("fillmap.upload.pending:v1", "not-json{");
     expect(pendingVideoStorage.list()).toEqual([]);
 
     localStorage.setItem(
-      "fillmap.upload.pending",
+      "fillmap.upload.pending:v1",
       JSON.stringify([{ videoId: "칠" }]),
     );
     expect(pendingVideoStorage.list()).toEqual([]);

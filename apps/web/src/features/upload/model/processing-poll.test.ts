@@ -166,3 +166,17 @@ describe("stop — 폴링 중지", () => {
     expect(onFailed).not.toHaveBeenCalled();
   });
 });
+
+describe("startProcessingPoll — 타이머 경합 (리뷰 반영)", () => {
+  it("checkNow가 pending으로 끝나도 예약 타이머는 1개만 유지된다 — 최초 예약과 중복 예약 금지", async () => {
+    const { handle, fetchStatus } = startWith();
+
+    // 등록 직후 즉시 조회 (워처 실사용 경로) — pending으로 끝나며 내부에서 재예약한다
+    await handle.checkNow();
+    expect(fetchStatus).toHaveBeenCalledTimes(1);
+
+    // 한 간격 경과 — 타이머가 중복 예약됐다면 2회, 정상이면 1회만 추가 조회된다
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(fetchStatus).toHaveBeenCalledTimes(2);
+  });
+});

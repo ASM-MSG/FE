@@ -75,7 +75,10 @@ let lastConfirmBody: Record<string, unknown> | null = null;
 const stubApi = (overrides?: {
   highlights?: number[][] | null;
   holdAnalysis?: boolean;
+  /** 확정(POST /api/videos)을 앞에서 n회 실패시킨다 — 재게시 정합 시나리오용 */
+  failConfirmTimes?: number;
 }) => {
+  let confirmFailures = overrides?.failConfirmTimes ?? 0;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
@@ -102,6 +105,13 @@ const stubApi = (overrides?: {
         });
       }
       if (url.pathname === "/api/videos") {
+        if (confirmFailures > 0) {
+          confirmFailures -= 1;
+          return new Response(
+            JSON.stringify({ developCode: 500, message: "실패", data: null }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
         lastConfirmBody =
           input instanceof Request
             ? ((await input.clone().json()) as Record<string, unknown>)
@@ -112,6 +122,29 @@ const stubApi = (overrides?: {
     }),
   );
 };
+
+/** S3 PUT 호출 수 — 재게시 정합 단정용 (원본·확정 업로드 모두 같은 버킷 호스트) */
+/** [이 구간으로 다음 단계] → 미리보기 진입 + 트리밍 완료([업로드하기] 활성) 대기 */
+const proceedToPreviewReady = async () => {
+  fireEvent.click(
+    screen.getByRole("button", { name: "이 구간으로 다음 단계" }),
+  );
+  await waitFor(() =>
+    expect(
+      (screen.getByRole("button", { name: "업로드하기" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false),
+  );
+};
+
+const countS3Puts = () =>
+  vi
+    .mocked(fetch)
+    .mock.calls.filter((call) =>
+      String(call[0] instanceof Request ? call[0].url : call[0]).includes(
+        "bucket.s3.example.com",
+      ),
+    ).length;
 
 const nextButton = () =>
   screen.getByRole("button", { name: "다음" }) as HTMLButtonElement;
@@ -263,26 +296,49 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
     startFlow(42);
 
     await screen.findByText("AI 하이라이트 추천");
-    fireEvent.click(
-      screen.getByRole("button", { name: "이 구간으로 다음 단계" }),
-    );
-
     // 미리보기 — 잘린 결과(트리밍 목)가 준비되면 [업로드하기] 활성
-    expect(await screen.findByText("업로드 미리보기")).toBeTruthy();
-    await waitFor(() =>
-      expect(
-        (
-          screen.getByRole("button", {
-            name: "업로드하기",
-          }) as HTMLButtonElement
-        ).disabled,
-      ).toBe(false),
-    );
+    await proceedToPreviewReady();
+    expect(screen.getByText("업로드 미리보기")).toBeTruthy();
     // 선택 구간 카드 — 시간·길이 중심 (오탐 방지 2)
     expect(screen.getByText(/0:03 – 0:08 · 5초/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "업로드하기" }));
     expect(await screen.findByText("업로드 완료!")).toBeTruthy();
+  });
+
+  it("게시 실패 후 [이전 단계로]에서 다른 구간을 골라 재게시하면 새 구간이 처음부터 다시 업로드된다 (리뷰 반영 — 옛 s3Key 확정 방지)", async () => {
+    stubApi({
+      highlights: [
+        [3, 8],
+        [12, 18],
+      ],
+      failConfirmTimes: 1,
+    });
+    mockMeta.objectUrl = "blob:original";
+    startFlow(42);
+
+    // 구간 A로 게시 시도 — 확정만 실패 (presign·S3 PUT은 성공)
+    await screen.findByText("AI 하이라이트 추천");
+    await proceedToPreviewReady();
+    fireEvent.click(screen.getByRole("button", { name: "업로드하기" }));
+    await screen.findByText(/게시에 실패했어요|실패/);
+
+    const s3PutsAfterFailure = countS3Puts(); // 원본 1 + 구간 A 1 = 2
+
+    // 이전 단계로 → 다른 구간 B 선택 → 재게시
+    fireEvent.click(screen.getByRole("button", { name: "이전 단계로" }));
+    await screen.findByText("AI 하이라이트 추천");
+    const cards = screen
+      .getAllByRole("button")
+      .filter((b) => b.hasAttribute("aria-pressed"));
+    fireEvent.click(cards[1]);
+    await proceedToPreviewReady();
+    fireEvent.click(screen.getByRole("button", { name: "업로드하기" }));
+    expect(await screen.findByText("업로드 완료!")).toBeTruthy();
+
+    // 새 구간(B)이 실제로 다시 업로드됐어야 한다 — S3 PUT이 1회 추가 (옛 s3Key 재사용 금지)
+    const s3PutsAfterRepublish = countS3Puts();
+    expect(s3PutsAfterRepublish).toBe(s3PutsAfterFailure + 1);
   });
 
   it("완료 모달 [확인] 후 재오픈하면 1단계 초기 상태다", async () => {

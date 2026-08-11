@@ -303,6 +303,10 @@ export const UploadModal = () => {
   const backToHighlight = () => {
     revokeTrim();
     confirm.reset();
+    // 부분 진행(s3PutDone·옛 s3Key)까지 초기화 — 다른 구간으로 재게시하면 처음부터
+    // presign→PUT을 다시 밟아야 한다. 빠뜨리면 새로 자른 영상이 업로드되지 않은 채
+    // 직전 구간의 s3Key로 확정되는 정합성 버그가 된다 (리뷰 반영)
+    confirm.resetFlow();
     setStep("highlight");
   };
 
