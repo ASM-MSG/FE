@@ -69,6 +69,9 @@ const UPLOAD_RESULT = {
 };
 
 /** fetch 목 — hey-api(Request)·S3 PUT(url+init) 두 형태를 pathname 라우팅한다 */
+/** 마지막 확정(POST /api/videos) 요청 body — lat/lng 유한성 단정용 (NaN은 JSON null → 서버 400) */
+let lastConfirmBody: Record<string, unknown> | null = null;
+
 const stubApi = (overrides?: {
   highlights?: number[][] | null;
   holdAnalysis?: boolean;
@@ -99,6 +102,10 @@ const stubApi = (overrides?: {
         });
       }
       if (url.pathname === "/api/videos") {
+        lastConfirmBody =
+          input instanceof Request
+            ? ((await input.clone().json()) as Record<string, unknown>)
+            : null;
         return envelopeResponse(UPLOAD_RESULT);
       }
       throw new Error(`예상 밖 요청: ${url.href}`);
@@ -241,6 +248,9 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
         "잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요",
       ),
     ).toBeTruthy();
+    // 확정 body의 좌표는 유한 수여야 한다 (B9) — NaN이면 JSON null로 직렬화돼 서버 400
+    expect(Number.isFinite(lastConfirmBody?.lat)).toBe(true);
+    expect(Number.isFinite(lastConfirmBody?.lng)).toBe(true);
     // 처리 대기 등록 (B15) — 워처 폴링의 입력
     expect(useProcessingStore.getState().pending.map((p) => p.videoId)).toEqual(
       [42],

@@ -1,7 +1,15 @@
+import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { HomeCellDetail } from "@/features/map-home/model/home-cell-detail";
 import { HomeCellDetailPanel } from "./HomeCellDetailPanel";
+
+// 패널이 인라인 플레이어(useVideoPlayback — useQuery)를 품을 수 있어 QueryClient로 감싼다
+// (재생 배선 후속 — Escape 단정은 불변). 재생 전에는 조회하지 않는다
+const withQueryClient = (ui: ReactNode) => (
+  <QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>
+);
 
 /**
  * 셀 상세 패널 Escape 배선 스모크 (MSG-252 리뷰 반영 — 2026-07-30).
@@ -39,14 +47,16 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
   it("input이 타깃인 Escape는 무시한다 — 검색창 드롭다운 닫기와 동시 닫힘 금지 (리뷰 반영 1)", () => {
     const onClose = vi.fn();
     render(
-      <>
-        <input aria-label="검색어" />
-        <HomeCellDetailPanel
-          detail={DETAIL}
-          onClose={onClose}
-          onViewAll={noopViewAll}
-        />
-      </>,
+      withQueryClient(
+        <>
+          <input aria-label="검색어" />
+          <HomeCellDetailPanel
+            detail={DETAIL}
+            onClose={onClose}
+            onViewAll={noopViewAll}
+          />
+        </>,
+      ),
     );
 
     fireEvent.keyDown(screen.getByLabelText("검색어"), { key: "Escape" });
@@ -57,11 +67,13 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
   it("일반 타깃(body)의 Escape는 상세를 닫는다 (AC 9-1 보존)", () => {
     const onClose = vi.fn();
     render(
-      <HomeCellDetailPanel
-        detail={DETAIL}
-        onClose={onClose}
-        onViewAll={noopViewAll}
-      />,
+      withQueryClient(
+        <HomeCellDetailPanel
+          detail={DETAIL}
+          onClose={onClose}
+          onViewAll={noopViewAll}
+        />,
+      ),
     );
 
     fireEvent.keyDown(document.body, { key: "Escape" });

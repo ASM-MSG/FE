@@ -22,11 +22,18 @@ export const formatUploadLocationLabel = (
  * 뷰포트 중심 좌표 + 행정동 라벨 — POST /api/videos body의 lat/lng도 같은 좌표다 (B9).
  * enabled=false면 조회하지 않는다 — UploadModal은 AppLayout에 상시 마운트라 열림 시에만 조회.
  */
+/** 유한 좌표 판정 — NaN·Infinity는 JSON에서 null이 되어 서버 400을 부른다 (목 id 셀 방어) */
+const isFiniteLatLng = (point: { lat: number; lng: number } | null): boolean =>
+  point !== null && Number.isFinite(point.lat) && Number.isFinite(point.lng);
+
 export const useUploadLocation = (enabled: boolean = true) => {
   const viewportCenter = useViewportStore((s) => s.center);
-  // 격자 고정 진입(격자 상세 [영상 추가])이 지목한 좌표가 있으면 뷰포트 중심보다 우선한다
+  // 격자 고정 진입(격자 상세 [영상 추가])이 지목한 좌표가 있으면 뷰포트 중심보다 우선한다.
+  // 비유한 좌표(목 id 셀의 decodeGridCenter("A-14") = NaN 등)는 지목으로 인정하지 않는다
   const target = useUploadModalStore((s) => s.target);
-  const center = target ?? viewportCenter;
+  const center = isFiniteLatLng(target)
+    ? (target as { lat: number; lng: number })
+    : viewportCenter;
   const query = useQuery({
     ...reverseGeocodeOptions({ query: { lat: center.lat, lng: center.lng } }),
     select: unwrapEnvelope,

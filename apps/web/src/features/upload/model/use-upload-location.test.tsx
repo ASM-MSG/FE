@@ -113,3 +113,28 @@ describe("useUploadLocation — 지목 격자 우선 (격자 고정 진입)", ()
     expect(result.current.center).toEqual({ lat: 35.1652, lng: 129.0656 });
   });
 });
+
+describe("useUploadLocation — 비정상 지목 좌표 방어", () => {
+  it("지목 좌표가 NaN이면(목 id 셀 등) 뷰포트 중심으로 폴백한다 — NaN은 JSON null이 되어 서버 400", async () => {
+    useViewportStore.setState({ center: { lat: 35.1579, lng: 129.0594 } });
+    useUploadModalStore.setState({ target: { lat: NaN, lng: NaN } });
+    const received = stubFetch(() =>
+      envelopeResponse({
+        regionCode: "2644056000",
+        regionName: "부산 부산진구 부전동",
+        parentCode: "26440",
+      }),
+    );
+
+    const { result } = renderHook(() => useUploadLocation(), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() =>
+      expect(result.current.label).toBe("부산 부산진구 부전동"),
+    );
+
+    const url = new URL(received[0].request.url);
+    expect(url.searchParams.get("lat")).toBe("35.1579");
+    expect(result.current.center).toEqual({ lat: 35.1579, lng: 129.0594 });
+  });
+});

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MapPin } from "lucide-react";
 import { Button, cn } from "@fillmap/ui-web";
 import type {
@@ -9,6 +10,7 @@ import { formatDuration } from "@/features/explore/model/explore-cells";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { formatRelativeTime, formatViewCountKo } from "@/shared/format";
 import { CellActionRow } from "./CellActionRow";
+import { CoverVideoPlayer } from "./CoverVideoPlayer";
 import { useEscapeClose } from "./use-escape-close";
 
 interface HomeCellDetailPanelProps {
@@ -96,6 +98,10 @@ export const HomeCellDetailPanel = ({
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   const handleUpload = () => openUploadModal(decodeGridCenter(detail.gridId));
 
+  // 대표 영상 재생 (MSG-329 후속) — 썸네일 클릭 시 그 자리에서 인라인 재생.
+  // 격자를 바꾸면 cover.videoId가 달라져 자동으로 썸네일로 복귀한다
+  const [playVideoId, setPlayVideoId] = useState<number | null>(null);
+
   const cover = detail.coverVideo;
   const coverDuration = cover ? formatDuration(cover.durationSec) : null;
 
@@ -134,21 +140,30 @@ export const HomeCellDetailPanel = ({
           <CellActionRow onUpload={handleUpload} />
 
           {/* 전역 대표 영상 1건 — 후보가 없으면(`/cover` data null) 영역 자체를 그리지 않는다.
-              재생 배선은 제외 범위(격자 상세 연동 티켓)라 표시 전용이다 */}
+              클릭 시 같은 자리에서 인라인 재생 (MSG-329 후속 — 표시 전용에서 배선으로 승격) */}
           {cover && (
             <div className="flex flex-col gap-xxs">
-              <span className="relative block aspect-video w-full overflow-hidden rounded-sm bg-surface">
-                <img
-                  src={cover.thumbnailUrl}
-                  alt=""
-                  className="size-full object-cover"
-                />
-                {coverDuration && (
-                  <span className="absolute bottom-xs right-xs rounded-xs bg-navy-900/70 px-1.5 py-0.5 text-fm-caption text-foreground-inverse">
-                    {coverDuration}
-                  </span>
-                )}
-              </span>
+              {playVideoId === cover.videoId ? (
+                <CoverVideoPlayer videoId={cover.videoId} />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPlayVideoId(cover.videoId)}
+                  aria-label="대표 영상 재생"
+                  className="relative block aspect-video w-full overflow-hidden rounded-sm bg-surface"
+                >
+                  <img
+                    src={cover.thumbnailUrl}
+                    alt=""
+                    className="size-full object-cover"
+                  />
+                  {coverDuration && (
+                    <span className="absolute bottom-xs right-xs rounded-xs bg-navy-900/70 px-1.5 py-0.5 text-fm-caption text-foreground-inverse">
+                      {coverDuration}
+                    </span>
+                  )}
+                </button>
+              )}
               <span className="flex items-center justify-between gap-sm text-fm-caption text-foreground-muted">
                 <span>대표 영상 · {formatRelativeTime(cover.recordedAt)}</span>
                 <span className="shrink-0">
