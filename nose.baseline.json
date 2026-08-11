@@ -489,42 +489,6 @@
       ]
     },
     {
-      "id": "1e27edbe8eb897f9",
-      "note": "repeated across 3 directories — extract a shared abstraction — high-parameter (13 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "1e819e0a731b7098",
-          "source_digest": "fnv1a64:d92a08a648104256",
-          "file": "apps/web/src/features/upload/model/upload-modal-store.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 223,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "b5e1f8442ec8e5c7",
-          "source_digest": "fnv1a64:9112bbed70f6425e",
-          "file": "apps/mobile/src/features/onboarding/model/onboarding-storage.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 62,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "1829dd25743ba19c",
-          "source_digest": "fnv1a64:8afebd98be10d321",
-          "file": "apps/mobile/src/features/map-home/model/theme-selection.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 51,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "1e981897aa62b5f5",
       "note": "consolidate `at` — 2 copies",
       "members": [
@@ -548,6 +512,32 @@
           "end_line": 92,
           "kind": "Function",
           "name": "at",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "1ee79aa30d60c22a",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "59384dbfb9c7a42f",
+          "source_digest": "fnv1a64:8019c09e75f12d3c",
+          "file": "apps/web/src/features/upload/ui/preview-step.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 60,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "af5e8fc68e54f244",
+          "source_digest": "fnv1a64:9a21a5f2d70f2811",
+          "file": "apps/web/src/pages/profile/ui/profile-header.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 29,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -750,32 +740,6 @@
           "end_line": 60,
           "kind": "Block",
           "name": "profilesection",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "299edb2da7f1f319",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (20 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "91fedc82170f546f",
-          "source_digest": "fnv1a64:959273eb0e0e51d5",
-          "file": "apps/mobile/src/shared/geolocation.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 199,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "2bb9e49e318b5777",
-          "source_digest": "fnv1a64:e6b485f6c6e86b63",
-          "file": "apps/web/src/features/upload/model/processing-poll.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 168,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -1003,6 +967,82 @@
       ]
     },
     {
+      "id": "3ce4fae08715ec60",
+      "note": "repeated across 5 directories — extract a shared abstraction — high-parameter (17 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "ecf176ebc7535113",
+          "source_digest": "fnv1a64:ed079503cf746868",
+          "file": "apps/web/src/features/auth/api/use-auth-mutations.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 335,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e5361c5ed420883f",
+          "source_digest": "fnv1a64:37898b01f84b0acd",
+          "file": "apps/web/src/features/upload/api/use-upload-mutations.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 273,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "2428c39250bbd4ad",
+          "source_digest": "fnv1a64:609ce4cbbb63859b",
+          "file": "apps/web/src/features/upload/model/use-upload-location.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 140,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "dde35dc69f148888",
+          "source_digest": "fnv1a64:f8294c76dceaefb2",
+          "file": "apps/web/src/features/profile/api/use-profile-mutations.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 137,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "320ae76a9a3723a4",
+          "source_digest": "fnv1a64:3b3f3fb85dbe8d77",
+          "file": "apps/web/src/features/map-home/model/use-hotzones-query.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 104,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "0f1fbfc919023dd6",
+          "source_digest": "fnv1a64:93486472020f09ed",
+          "file": "apps/web/src/features/map-home/model/use-video-playback.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 82,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1b697621e8bddf2b",
+          "source_digest": "fnv1a64:b2aa354e8728d8bc",
+          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.render.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 65,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "404f72bfabca2ffa",
       "note": "local duplication — extract a method from the repeated block — high-parameter (14 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -1111,26 +1151,36 @@
       ]
     },
     {
-      "id": "444c8278cce6abd1",
-      "note": "local duplication — extract a method from the repeated block",
+      "id": "43ec6ddc5a226c26",
+      "note": "repeated across 3 directories — extract a shared abstraction — high-parameter (15 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
         {
-          "id": "ff39f6d4b10f48af",
-          "source_digest": "fnv1a64:c8c5a41f7ca75ffb",
-          "file": "apps/web/src/features/upload/api/use-processing-watcher.ts",
+          "id": "15add6352cc51b18",
+          "source_digest": "fnv1a64:56cbd6a46ad62d69",
+          "file": "apps/web/src/pages/map-home/ui/video-mini-panel.smoke.test.tsx",
           "lang": "typescript",
-          "start_line": 67,
-          "end_line": 70,
+          "start_line": 1,
+          "end_line": 198,
           "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "5dcb5bb4a9ae93ef",
-          "source_digest": "fnv1a64:88093cd794581ee6",
-          "file": "apps/web/src/features/upload/api/use-processing-watcher.ts",
+          "id": "e86ba712a737823e",
+          "source_digest": "fnv1a64:0fd0e314be83ab8e",
+          "file": "apps/web/src/features/upload/ui/blur-notices.smoke.test.tsx",
           "lang": "typescript",
-          "start_line": 71,
-          "end_line": 74,
+          "start_line": 1,
+          "end_line": 151,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "bd8c592e1beaaea8",
+          "source_digest": "fnv1a64:beb26deb936dfb1c",
+          "file": "apps/web/src/features/auth/ui/dev-login-panel.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 135,
           "kind": "Block",
           "is_fragment": false
         }
@@ -1380,32 +1430,6 @@
       ]
     },
     {
-      "id": "57c5eeee3f4283d5",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "868f0cdc0ceda796",
-          "source_digest": "fnv1a64:0f5b8b010578f37c",
-          "file": "apps/web/src/pages/dex/DexPanel.tsx",
-          "lang": "typescript",
-          "start_line": 71,
-          "end_line": 72,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "93f4139000cb2186",
-          "source_digest": "fnv1a64:f18cdc3905077b3f",
-          "file": "apps/web/src/pages/map-home/MapHomePage.tsx",
-          "lang": "typescript",
-          "start_line": 77,
-          "end_line": 78,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "5b48f6b783fa6c2a",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (20 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -1559,70 +1583,6 @@
       ]
     },
     {
-      "id": "6107948dde3547a0",
-      "note": "repeated across 3 directories — extract a shared abstraction — high-parameter (17 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "15add6352cc51b18",
-          "source_digest": "fnv1a64:56cbd6a46ad62d69",
-          "file": "apps/web/src/pages/map-home/ui/video-mini-panel.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 198,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "3d73ffb9c2d12a08",
-          "source_digest": "fnv1a64:f0a584ab25751a3c",
-          "file": "apps/web/src/features/upload/ui/blur-notices.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 137,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "bd8c592e1beaaea8",
-          "source_digest": "fnv1a64:beb26deb936dfb1c",
-          "file": "apps/web/src/features/auth/ui/dev-login-panel.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 135,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "68c1578d73969273",
-      "note": "consolidate `resetFlow` — 2 copies",
-      "members": [
-        {
-          "id": "19ae1ae9f34bd44a",
-          "source_digest": "fnv1a64:7757274f68d6cc52",
-          "file": "apps/web/src/features/upload/api/use-upload-mutations.ts",
-          "lang": "typescript",
-          "start_line": 97,
-          "end_line": 99,
-          "kind": "Function",
-          "name": "resetFlow",
-          "is_fragment": false
-        },
-        {
-          "id": "68b57e3c2819a492",
-          "source_digest": "fnv1a64:7757274f68d6cc52",
-          "file": "apps/web/src/features/upload/api/use-upload-mutations.ts",
-          "lang": "typescript",
-          "start_line": 181,
-          "end_line": 183,
-          "kind": "Function",
-          "name": "resetFlow",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "69401a569a8777a9",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -1683,6 +1643,32 @@
           "end_line": 43,
           "kind": "Block",
           "name": "span",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "6d34220d08bedc4b",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (20 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "91fedc82170f546f",
+          "source_digest": "fnv1a64:959273eb0e0e51d5",
+          "file": "apps/mobile/src/shared/geolocation.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 199,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1a0e78ed2ba6588d",
+          "source_digest": "fnv1a64:cdbbc3767fd0aaca",
+          "file": "apps/web/src/features/upload/model/processing-poll.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 182,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -1759,6 +1745,34 @@
           "end_line": 150,
           "kind": "Function",
           "name": "MapFallback",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "75b71a78b2a8df7b",
+      "note": "consolidate `resetFlow` — 2 copies",
+      "members": [
+        {
+          "id": "19ae1ae9f34bd44a",
+          "source_digest": "fnv1a64:7757274f68d6cc52",
+          "file": "apps/web/src/features/upload/api/use-upload-mutations.ts",
+          "lang": "typescript",
+          "start_line": 97,
+          "end_line": 99,
+          "kind": "Function",
+          "name": "resetFlow",
+          "is_fragment": false
+        },
+        {
+          "id": "73c1b6ef4d2c28aa",
+          "source_digest": "fnv1a64:7757274f68d6cc52",
+          "file": "apps/web/src/features/upload/api/use-upload-mutations.ts",
+          "lang": "typescript",
+          "start_line": 167,
+          "end_line": 169,
+          "kind": "Function",
+          "name": "resetFlow",
           "is_fragment": false
         }
       ]
@@ -2206,86 +2220,26 @@
       ]
     },
     {
-      "id": "96315b0ef7a8523a",
-      "note": "repeated across 5 directories — extract a shared abstraction — high-parameter (17 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "id": "95bddf73ddc100fa",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (7 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
         {
-          "id": "ecf176ebc7535113",
-          "source_digest": "fnv1a64:ed079503cf746868",
-          "file": "apps/web/src/features/auth/api/use-auth-mutations.test.tsx",
+          "id": "bb4a7e222624a42c",
+          "source_digest": "fnv1a64:fe7e42654a5b2a80",
+          "file": "apps/web/src/features/upload/api/use-upload-mutations.ts",
           "lang": "typescript",
-          "start_line": 1,
-          "end_line": 335,
+          "start_line": 124,
+          "end_line": 158,
           "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "e5361c5ed420883f",
-          "source_digest": "fnv1a64:37898b01f84b0acd",
-          "file": "apps/web/src/features/upload/api/use-upload-mutations.test.tsx",
+          "id": "ec1899685b12442f",
+          "source_digest": "fnv1a64:6526bf58fb259b7e",
+          "file": "apps/web/src/features/upload/api/use-upload-mutations.ts",
           "lang": "typescript",
-          "start_line": 1,
-          "end_line": 273,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "b967e361b0f72167",
-          "source_digest": "fnv1a64:c1e8e15556923079",
-          "file": "apps/web/src/features/map-home/model/use-grid-detail-query.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 151,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "2428c39250bbd4ad",
-          "source_digest": "fnv1a64:609ce4cbbb63859b",
-          "file": "apps/web/src/features/upload/model/use-upload-location.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 140,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "dde35dc69f148888",
-          "source_digest": "fnv1a64:f8294c76dceaefb2",
-          "file": "apps/web/src/features/profile/api/use-profile-mutations.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 137,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "320ae76a9a3723a4",
-          "source_digest": "fnv1a64:3b3f3fb85dbe8d77",
-          "file": "apps/web/src/features/map-home/model/use-hotzones-query.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 104,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "0f1fbfc919023dd6",
-          "source_digest": "fnv1a64:93486472020f09ed",
-          "file": "apps/web/src/features/map-home/model/use-video-playback.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 82,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "1b697621e8bddf2b",
-          "source_digest": "fnv1a64:b2aa354e8728d8bc",
-          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.render.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 65,
+          "start_line": 65,
+          "end_line": 94,
           "kind": "Block",
           "is_fragment": false
         }
@@ -2576,6 +2530,32 @@
           "lang": "typescript",
           "start_line": 75,
           "end_line": 100,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "a97ba0a404457f79",
+      "note": "local duplication — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "09e8b8a591fa2bab",
+          "source_digest": "fnv1a64:c8c5a41f7ca75ffb",
+          "file": "apps/web/src/features/upload/api/use-processing-watcher.ts",
+          "lang": "typescript",
+          "start_line": 77,
+          "end_line": 80,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "41ede7fee2002743",
+          "source_digest": "fnv1a64:88093cd794581ee6",
+          "file": "apps/web/src/features/upload/api/use-processing-watcher.ts",
+          "lang": "typescript",
+          "start_line": 81,
+          "end_line": 84,
           "kind": "Block",
           "is_fragment": false
         }
@@ -2951,78 +2931,6 @@
           "start_line": 18,
           "end_line": 25,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "c852780ed7f98f34",
-      "note": "consolidate `div` — 6 copies",
-      "members": [
-        {
-          "id": "625b0e3112933f71",
-          "source_digest": "fnv1a64:1b41b991d1741d86",
-          "file": "apps/web/src/features/upload/ui/UploadModal.tsx",
-          "lang": "typescript",
-          "start_line": 72,
-          "end_line": 96,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        },
-        {
-          "id": "a717a96e70077db2",
-          "source_digest": "fnv1a64:a948dae0201c65f6",
-          "file": "apps/web/src/features/upload/ui/HighlightStep.tsx",
-          "lang": "typescript",
-          "start_line": 123,
-          "end_line": 128,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        },
-        {
-          "id": "77c5b9e93f1d8a76",
-          "source_digest": "fnv1a64:31d2bc5aee142ed7",
-          "file": "apps/web/src/features/upload/ui/PreviewStep.tsx",
-          "lang": "typescript",
-          "start_line": 111,
-          "end_line": 116,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        },
-        {
-          "id": "5e0736c20dc2be47",
-          "source_digest": "fnv1a64:81a0f1470319d13b",
-          "file": "apps/web/src/pages/profile/ui/SettingRow.tsx",
-          "lang": "typescript",
-          "start_line": 66,
-          "end_line": 71,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        },
-        {
-          "id": "11b628d54b6072a7",
-          "source_digest": "fnv1a64:997865e0f5cf74ae",
-          "file": "apps/web/src/pages/dex/ui/DexStatCards.tsx",
-          "lang": "typescript",
-          "start_line": 8,
-          "end_line": 11,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        },
-        {
-          "id": "e6519f2514c3a4e6",
-          "source_digest": "fnv1a64:cffe94edb4bdd955",
-          "file": "apps/web/src/pages/profile/ui/ActivityCard.tsx",
-          "lang": "typescript",
-          "start_line": 2,
-          "end_line": 5,
-          "kind": "Block",
-          "name": "div",
           "is_fragment": false
         }
       ]
@@ -3790,6 +3698,52 @@
       ]
     },
     {
+      "id": "f1b5db5269b590cd",
+      "note": "repeated across 4 directories — extract a shared abstraction — high-parameter (13 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "1e819e0a731b7098",
+          "source_digest": "fnv1a64:d92a08a648104256",
+          "file": "apps/web/src/features/upload/model/upload-modal-store.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 223,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "b5e1f8442ec8e5c7",
+          "source_digest": "fnv1a64:9112bbed70f6425e",
+          "file": "apps/mobile/src/features/onboarding/model/onboarding-storage.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 62,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1829dd25743ba19c",
+          "source_digest": "fnv1a64:8afebd98be10d321",
+          "file": "apps/mobile/src/features/map-home/model/theme-selection.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 51,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "d12dc8e2f16b1fab",
+          "source_digest": "fnv1a64:dc8889bb01f1a091",
+          "file": "apps/web/src/features/upload/api/ffmpeg-trim.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 42,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "f5430579f4f967e5",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -3889,6 +3843,78 @@
           "start_line": 6,
           "end_line": 9,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "fff75a5d5c4f8f72",
+      "note": "consolidate `div` — 6 copies",
+      "members": [
+        {
+          "id": "a15531abe4ff290b",
+          "source_digest": "fnv1a64:1b41b991d1741d86",
+          "file": "apps/web/src/features/upload/ui/SelectStep.tsx",
+          "lang": "typescript",
+          "start_line": 22,
+          "end_line": 46,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "a717a96e70077db2",
+          "source_digest": "fnv1a64:a948dae0201c65f6",
+          "file": "apps/web/src/features/upload/ui/HighlightStep.tsx",
+          "lang": "typescript",
+          "start_line": 123,
+          "end_line": 128,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "77c5b9e93f1d8a76",
+          "source_digest": "fnv1a64:31d2bc5aee142ed7",
+          "file": "apps/web/src/features/upload/ui/PreviewStep.tsx",
+          "lang": "typescript",
+          "start_line": 111,
+          "end_line": 116,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "5e0736c20dc2be47",
+          "source_digest": "fnv1a64:81a0f1470319d13b",
+          "file": "apps/web/src/pages/profile/ui/SettingRow.tsx",
+          "lang": "typescript",
+          "start_line": 66,
+          "end_line": 71,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "11b628d54b6072a7",
+          "source_digest": "fnv1a64:997865e0f5cf74ae",
+          "file": "apps/web/src/pages/dex/ui/DexStatCards.tsx",
+          "lang": "typescript",
+          "start_line": 8,
+          "end_line": 11,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "e6519f2514c3a4e6",
+          "source_digest": "fnv1a64:cffe94edb4bdd955",
+          "file": "apps/web/src/pages/profile/ui/ActivityCard.tsx",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 5,
+          "kind": "Block",
+          "name": "div",
           "is_fragment": false
         }
       ]

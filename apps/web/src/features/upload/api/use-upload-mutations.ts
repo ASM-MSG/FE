@@ -55,10 +55,14 @@ const extensionFromType = (type: string): string =>
  * `POST /api/videos/highlight-preview`. 결과는 highlights 시간쌍 배열(없으면 null).
  * 실패는 UploadFlowError(단계 표기)로 도착한다 — 확정 단계 실패의 developCode 분기는
  * 호출부가 resolveAnalysisFailure로 판정한다(B5).
+ * 캐시 무효화가 없는 것은 의도다 — 선분석 결과는 서버 비저장 임시값이라 대응하는 조회
+ * 캐시 자체가 없다 (react-doctor query-mutation-missing-invalidation은 오탐).
  */
 export const useAnalyzeVideo = () => {
   // 지연 초기화 — 렌더마다 초기 상태 객체를 만들었다 버리지 않는다 (리뷰 반영)
   const flowState = useRef<OrchestrationState | null>(null);
+  // 선분석 결과는 서버 비저장 임시값 — 대응 조회 캐시가 없어 무효화 대상이 없다 (규칙 오탐)
+  // oxlint-disable-next-line react-doctor/query-mutation-missing-invalidation
   const mutation = useMutation({
     mutationFn: async (file: File) => {
       try {

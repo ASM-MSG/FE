@@ -42,9 +42,13 @@ const clamp = (value: number, min: number, max: number): number =>
 /**
  * 서버 선분석 응답 [[시작초, 끝초], ...]을 추천 목록으로 변환한다. [B6]
  * 배열 순서(=추천 우선순위)를 보존하고, 시간쌍이 아닌 형상(원소 부족·역전·비수치)은 걸러낸다.
+ * 직접 지정과 동일한 5~28초·[0, duration] 정규화를 거친다 (리뷰 반영) — 서버가 상한을
+ * 지킨다는 계약이 FE에 없고, 무정규 추천(예: 전체 구간)은 트리밍 생략 지름길과 결합해
+ * 상한 초과 원본이 그대로 확정되는 경로가 된다.
  */
 export const fromServerHighlights = (
   pairs: number[][] | null | undefined,
+  duration: number,
 ): HighlightSuggestion[] =>
   (pairs ?? [])
     .filter(
@@ -54,7 +58,10 @@ export const fromServerHighlights = (
         Number.isFinite(pair[1]) &&
         pair[1] > pair[0],
     )
-    .map(([start, end], index) => ({ id: `ai-${index + 1}`, start, end }));
+    .map(([start, end], index) => ({
+      id: `ai-${index + 1}`,
+      ...clampSegment({ start, end }, duration),
+    }));
 
 /**
  * 시작 핸들을 newStart로 옮길 때의 clamp 결과. 끝은 고정. [B7]

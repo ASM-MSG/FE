@@ -22,11 +22,14 @@ import {
  */
 describe("fromServerHighlights — 서버 [[시작,끝]] 응답을 추천 목록으로 변환한다 (B6)", () => {
   it("배열 순서를 보존해 1~3개 추천을 만든다 — 순서가 추천 우선순위다", () => {
-    const suggestions = fromServerHighlights([
-      [3, 8],
-      [12, 18.5],
-      [20, 27.5],
-    ]);
+    const suggestions = fromServerHighlights(
+      [
+        [3, 8],
+        [12, 18.5],
+        [20, 27.5],
+      ],
+      60,
+    );
     expect(suggestions).toHaveLength(3);
     expect(suggestions.map((s) => [s.start, s.end])).toEqual([
       [3, 8],
@@ -36,29 +39,35 @@ describe("fromServerHighlights — 서버 [[시작,끝]] 응답을 추천 목록
   });
 
   it("각 추천은 고유 id를 가진다 — 카드 선택 식별용", () => {
-    const suggestions = fromServerHighlights([
-      [0, 5],
-      [10, 16],
-    ]);
+    const suggestions = fromServerHighlights(
+      [
+        [0, 5],
+        [10, 16],
+      ],
+      60,
+    );
     expect(new Set(suggestions.map((s) => s.id)).size).toBe(2);
   });
 
   it("null·빈 배열은 빈 목록이다 (스킵 흐름과 정합, 리스크 8)", () => {
-    expect(fromServerHighlights(null)).toEqual([]);
-    expect(fromServerHighlights([])).toEqual([]);
+    expect(fromServerHighlights(null, 60)).toEqual([]);
+    expect(fromServerHighlights([], 60)).toEqual([]);
   });
 
   it("시간쌍이 아닌 형상(원소 부족·역전)은 걸러낸다 — 명세 위반 응답 방어", () => {
-    expect(fromServerHighlights([[5], [8, 3], [0, 5]])).toHaveLength(1);
+    expect(fromServerHighlights([[5], [8, 3], [0, 5]], 60)).toHaveLength(1);
   });
 });
 
 describe("createInitialSelection — 첫 번째 추천이 기본 선택된다 (B6)", () => {
   it("추천이 있으면 mode=ai + 첫 번째 추천이 선택 상태다", () => {
-    const suggestions = fromServerHighlights([
-      [3, 8],
-      [12, 18],
-    ]);
+    const suggestions = fromServerHighlights(
+      [
+        [3, 8],
+        [12, 18],
+      ],
+      60,
+    );
     const state = createInitialSelection(60, suggestions);
     expect(state.mode).toBe("ai");
     expect(getSelectedSegment(state)).toEqual({ start: 3, end: 8 });
@@ -82,10 +91,13 @@ describe("createInitialSelection — 첫 번째 추천이 기본 선택된다 (B
 
 describe("selectAi / selectManual — 상호 배타 선택", () => {
   it("카드 선택 시 해당 추천 구간이 선택 구간이 된다 (B7)", () => {
-    const suggestions = fromServerHighlights([
-      [3, 8],
-      [12, 18],
-    ]);
+    const suggestions = fromServerHighlights(
+      [
+        [3, 8],
+        [12, 18],
+      ],
+      60,
+    );
     const state = selectAi(
       createInitialSelection(60, suggestions),
       suggestions[1],
@@ -94,7 +106,7 @@ describe("selectAi / selectManual — 상호 배타 선택", () => {
   });
 
   it("직접 구간 지정 시 AI 선택이 해제되고 수동 구간이 선택 구간이 된다", () => {
-    const suggestions = fromServerHighlights([[3, 8]]);
+    const suggestions = fromServerHighlights([[3, 8]], 60);
     const state = selectManual(createInitialSelection(60, suggestions), {
       start: 30,
       end: 40,
@@ -163,5 +175,22 @@ describe("시간 표기 — 카드는 시간 정보 중심이다 (B6, 사유 라
     expect(formatSegmentLabel({ start: 12, end: 18.5 })).toBe(
       "0:12 – 0:18 · 7초",
     );
+  });
+});
+
+describe("fromServerHighlights — 정규화 (리뷰 반영: AI 경로 상한 우회 방지)", () => {
+  it("서버 추천이 상한을 넘으면 직접 지정과 같은 5~28초·[0,duration]으로 clamp된다", () => {
+    // "전체가 하이라이트" 추천(0~32초, 영상 32초) — clamp 없으면 32초 원본이 그대로 확정된다
+    const list = fromServerHighlights([[0, 32]], 32);
+    expect(list).toHaveLength(1);
+    expect(list[0].end - list[0].start).toBeLessThanOrEqual(SEGMENT_MAX_SEC);
+    expect(list[0].start).toBeGreaterThanOrEqual(0);
+    expect(list[0].end).toBeLessThanOrEqual(32);
+  });
+
+  it("duration을 벗어난 추천도 영상 범위 안으로 정규화된다", () => {
+    const list = fromServerHighlights([[28, 40]], 30);
+    expect(list[0].end).toBeLessThanOrEqual(30);
+    expect(list[0].end - list[0].start).toBeGreaterThanOrEqual(SEGMENT_MIN_SEC);
   });
 });

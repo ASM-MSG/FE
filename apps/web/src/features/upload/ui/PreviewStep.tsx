@@ -127,7 +127,9 @@ export const PreviewStep = ({
       <button
         type="button"
         onClick={onBack}
-        disabled={submitting}
+        // 트리밍 중에도 막는다 — 되돌아가 다른 구간을 고르면 싱글턴 ffmpeg·고정 파일명을
+        // 두 트리밍이 공유해 last-write-wins 경쟁이 생긴다 (✕ busy 게이팅과 동일 패턴, 리뷰 반영)
+        disabled={submitting || trim.status === "trimming"}
         className="self-center text-fm-label text-foreground-muted underline underline-offset-2 transition-colors hover:text-foreground disabled:opacity-50"
       >
         이전 단계로

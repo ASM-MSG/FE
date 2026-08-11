@@ -22,20 +22,28 @@ export interface TrimResult {
 
 let ffmpegPromise: Promise<FFmpeg> | null = null;
 
-/** ffmpeg 인스턴스 싱글턴 — 최초 호출에서만 모듈·코어를 내려받는다 */
-const getFFmpeg = (): Promise<FFmpeg> => {
+/** ffmpeg 인스턴스 싱글턴 — 최초 호출에서만 모듈·코어를 내려받는다 (export는 재시도 회귀 테스트용) */
+export const getFFmpeg = (): Promise<FFmpeg> => {
   ffmpegPromise ??= (async () => {
-    const [{ FFmpeg: FFmpegCtor }, coreModule, wasmModule] = await Promise.all([
-      import("@ffmpeg/ffmpeg"),
-      import("@ffmpeg/core?url"),
-      import("@ffmpeg/core/wasm?url"),
-    ]);
-    const ffmpeg = new FFmpegCtor();
-    await ffmpeg.load({
-      coreURL: coreModule.default,
-      wasmURL: wasmModule.default,
-    });
-    return ffmpeg;
+    try {
+      const [{ FFmpeg: FFmpegCtor }, coreModule, wasmModule] =
+        await Promise.all([
+          import("@ffmpeg/ffmpeg"),
+          import("@ffmpeg/core?url"),
+          import("@ffmpeg/core/wasm?url"),
+        ]);
+      const ffmpeg = new FFmpegCtor();
+      await ffmpeg.load({
+        coreURL: coreModule.default,
+        wasmURL: wasmModule.default,
+      });
+      return ffmpeg;
+    } catch (error) {
+      // 실패한 promise를 캐시에 남기지 않는다 — 남기면 네트워크 순단 한 번에
+      // [다시 시도]가 새로고침 전까지 같은 rejected를 즉시 반환한다 (리뷰 반영)
+      ffmpegPromise = null;
+      throw error;
+    }
   })();
   return ffmpegPromise;
 };
