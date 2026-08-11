@@ -4320,6 +4320,236 @@
           "is_fragment": false
         }
       ]
+    },
+    {
+      "id": "9e8b16e5dd006143",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "7b3e95aa259ed9bb",
+          "source_digest": "fnv1a64:ac88c8143e38776d",
+          "file": "apps/web/src/test/occupied-grids.ts",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 21,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "7baa6281a591f47d",
+          "source_digest": "fnv1a64:e2a854e5344f3a6e",
+          "file": "apps/web/src/features/map-home/model/use-hotzones-query.test.tsx",
+          "lang": "typescript",
+          "start_line": 28,
+          "end_line": 38,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "54404eb4d889e1ac",
+      "note": "repeated across 4 directories — extract a shared abstraction",
+      "members": [
+        {
+          "id": "a70d055e76143ee8",
+          "source_digest": "fnv1a64:9f993095e843eeaa",
+          "file": "apps/web/src/pages/dex/ui/GalleryTabBody.tsx",
+          "lang": "typescript",
+          "start_line": 119,
+          "end_line": 131,
+          "kind": "Function",
+          "name": "GalleryErrorState",
+          "is_fragment": false
+        },
+        {
+          "id": "be50309d4437e8d2",
+          "source_digest": "fnv1a64:cb3f40eef60153ac",
+          "file": "apps/web/src/pages/profile/ProfilePanel.tsx",
+          "lang": "typescript",
+          "start_line": 122,
+          "end_line": 134,
+          "kind": "Function",
+          "name": "ProfileErrorState",
+          "is_fragment": false
+        },
+        {
+          "id": "4f4e316ab493c228",
+          "source_digest": "fnv1a64:4282aa9a14772011",
+          "file": "apps/web/src/pages/dex/DexPanel.tsx",
+          "lang": "typescript",
+          "start_line": 237,
+          "end_line": 247,
+          "kind": "Function",
+          "name": "DexErrorState",
+          "is_fragment": false
+        },
+        {
+          "id": "738b51c835f4e801",
+          "source_digest": "fnv1a64:141347f3e12182ae",
+          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 137,
+          "end_line": 147,
+          "kind": "Function",
+          "name": "MapFallback",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "09c75ecc0e041507",
+      "note": "consolidate `locationStatusLabel` — 2 copies",
+      "members": [
+        {
+          "id": "08ab19a9dc3166ae",
+          "source_digest": "fnv1a64:5e2bf1834f44d334",
+          "file": "apps/mobile/src/features/profile/model/profile-edit.ts",
+          "lang": "typescript",
+          "start_line": 11,
+          "end_line": 12,
+          "kind": "Function",
+          "name": "locationStatusLabel",
+          "is_fragment": false
+        },
+        {
+          "id": "4ac0ba3da1a72264",
+          "source_digest": "fnv1a64:5e2bf1834f44d334",
+          "file": "apps/web/src/features/profile/model/profile-edit.ts",
+          "lang": "typescript",
+          "start_line": 30,
+          "end_line": 31,
+          "kind": "Function",
+          "name": "locationStatusLabel",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "28b75db2cd773abc",
+      "note": "consolidate `profilesection` — 2 copies",
+      "members": [
+        {
+          "id": "13663ec1928cb142",
+          "source_digest": "fnv1a64:4208de69c498d922",
+          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
+          "lang": "typescript",
+          "start_line": 135,
+          "end_line": 139,
+          "kind": "Block",
+          "name": "profilesection",
+          "is_fragment": false
+        },
+        {
+          "id": "d207e2020a0329b7",
+          "source_digest": "fnv1a64:1f27a87170236322",
+          "file": "apps/web/src/pages/profile/ProfilePanel.tsx",
+          "lang": "typescript",
+          "start_line": 56,
+          "end_line": 60,
+          "kind": "Block",
+          "name": "profilesection",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "5df9ee835baf7d11",
+      "note": "local duplication — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "6a62af6d15b1eb22",
+          "source_digest": "fnv1a64:4269d10fe147a06c",
+          "file": "apps/mobile/src/entities/profile/model/mock-profile.test.ts",
+          "lang": "typescript",
+          "start_line": 3,
+          "end_line": 24,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e0e6cdae2d3e5c70",
+          "source_digest": "fnv1a64:96ba58809be5bffb",
+          "file": "apps/mobile/src/entities/profile/model/mock-profile.ts",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 24,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "c852780ed7f98f34",
+      "note": "consolidate `div` — 6 copies",
+      "members": [
+        {
+          "id": "625b0e3112933f71",
+          "source_digest": "fnv1a64:1b41b991d1741d86",
+          "file": "apps/web/src/features/upload/ui/UploadModal.tsx",
+          "lang": "typescript",
+          "start_line": 72,
+          "end_line": 96,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "a717a96e70077db2",
+          "source_digest": "fnv1a64:a948dae0201c65f6",
+          "file": "apps/web/src/features/upload/ui/HighlightStep.tsx",
+          "lang": "typescript",
+          "start_line": 123,
+          "end_line": 128,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "77c5b9e93f1d8a76",
+          "source_digest": "fnv1a64:31d2bc5aee142ed7",
+          "file": "apps/web/src/features/upload/ui/PreviewStep.tsx",
+          "lang": "typescript",
+          "start_line": 111,
+          "end_line": 116,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "5e0736c20dc2be47",
+          "source_digest": "fnv1a64:81a0f1470319d13b",
+          "file": "apps/web/src/pages/profile/ui/SettingRow.tsx",
+          "lang": "typescript",
+          "start_line": 66,
+          "end_line": 71,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "11b628d54b6072a7",
+          "source_digest": "fnv1a64:997865e0f5cf74ae",
+          "file": "apps/web/src/pages/dex/ui/DexStatCards.tsx",
+          "lang": "typescript",
+          "start_line": 8,
+          "end_line": 11,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "e6519f2514c3a4e6",
+          "source_digest": "fnv1a64:cffe94edb4bdd955",
+          "file": "apps/web/src/pages/profile/ui/ActivityCard.tsx",
+          "lang": "typescript",
+          "start_line": 2,
+          "end_line": 5,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        }
+      ]
     }
   ]
 }

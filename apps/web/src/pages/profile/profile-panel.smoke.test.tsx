@@ -8,24 +8,21 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MOCK_PROFILE } from "@/entities/profile";
 import { useAuthStore } from "@/features/auth/model/auth-store";
+import { envelopeResponse } from "@/test/envelope-response";
 import { ProfilePanel } from "./ProfilePanel";
 
 /**
- * 프로필 패널 스모크 (MSG-124 검증에서 승격 — 스펙 AC 1 "스모크 승격 후보" 표기, dex-panel.smoke 선례).
- * 후속 티켓([로그아웃] 실동작, 설정 하위 페이지)이 전부 이 패널을 다시 여므로
- * 안정 흐름만 고정한다: 패널 열림·플레이스홀더 부재(AC 1), 비활성 행 계약(AC 7·10),
- * 정보 행 비포커스(AC 8), no-op 클릭이 URL을 바꾸지 않음(AC 7·9).
- * [편집]은 MSG-125에서 프로필 편집 모달로 배선됨 — no-op 목록에서 제외하고
- * 모달 열림·초기값 채움을 별도 케이스로 고정한다 (MSG-125 AC 1·3).
- * [로그아웃]은 MSG-46 후속(F2)에서 목 스토어 배선 → MSG-324에서 useLogout 훅(logout API +
- * 로컬 우선 종료)으로 교체됨 — no-op 목록에서 제외하고 API 호출 + 상태 전환 + URL 불변을
- * 별도 케이스로 고정한다.
+ * 프로필 패널 스모크 (MSG-124 승격 → MSG-329 실 API 재설계).
+ * mock(MOCK_PROFILE) 소스가 폐기되고 GET /api/users/me 실 연동으로 바뀌어 fetch 스텁
+ * 기반으로 재설계했다. 고정 범위: 실 응답 렌더(A1)·명세 부재 필드 처리(A4)·앱 버전
+ * 빌드 주입(A5)·오류/재시도(A3)·[계정 삭제] 행 신설(A10)·로그아웃 회귀(A12)·편집 모달.
  * 스타일·간격 단정은 넣지 않는다 — 픽셀 판정은 브라우저 검증의 몫.
  */
 
-/** 현재 경로 노출 대역 — no-op 클릭이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
+const PROFILE = { email: "fillmapper@fillmap.app", nickname: "필맵퍼" };
+
+/** 현재 경로 노출 대역 — 클릭이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
 const LocationProbe = () => {
   const location = useLocation();
   return <output data-testid="location">{location.pathname}</output>;
@@ -33,7 +30,11 @@ const LocationProbe = () => {
 
 const renderPanel = () =>
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
       <MemoryRouter initialEntries={["/profile"]}>
         <Routes>
           <Route path="/profile" element={<ProfilePanel />} />
@@ -43,31 +44,77 @@ const renderPanel = () =>
     </QueryClientProvider>,
   );
 
+/** fetch 목 — pathname 라우팅. 기본은 getMe 성공 응답 */
+const stubApi = (route?: (request: Request) => Response | null) => {
+  const fetchMock = vi.fn(async (input: Request) => {
+    const custom = route?.(input);
+    if (custom) return custom;
+    if (new URL(input.url).pathname === "/api/users/me") {
+      return envelopeResponse(PROFILE);
+    }
+    return new Response(null, { status: 200 });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+};
+
+beforeEach(() => {
+  useAuthStore.setState({ isAuthenticated: true });
+});
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 
-describe("프로필 패널 스모크", () => {
-  beforeEach(() => {
-    // [로그아웃] 케이스가 목 인증 상태를 바꾸므로 매 케이스 로그인 상태로 리셋
-    useAuthStore.setState({ isAuthenticated: true });
-  });
-
-  it("패널이 프로필 콘텐츠로 열리고 '준비 중인 페이지예요' 플레이스홀더가 없다 (AC 1·2·4)", async () => {
+describe("프로필 패널 스모크 (MSG-329)", () => {
+  it("실 API 응답의 닉네임·이메일이 표시되고, 가입일 줄과 mock 활동 수치는 없다 (A1·A4)", async () => {
+    stubApi();
     renderPanel();
 
-    expect(
-      screen.getByRole("heading", { name: "프로필", level: 1 }),
-    ).toBeTruthy();
-    expect(await screen.findByText(MOCK_PROFILE.nickname)).toBeTruthy();
-    expect(screen.getByText(`${MOCK_PROFILE.streakDays}일 연속`)).toBeTruthy();
-    expect(screen.queryByText("준비 중인 페이지예요")).toBeNull();
+    expect(await screen.findByText(PROFILE.nickname)).toBeTruthy();
+    expect(screen.getByText(PROFILE.email)).toBeTruthy();
+    // 가입일 줄 미렌더 (A4 — 명세 부재)
+    expect(screen.queryByText(/가입일/)).toBeNull();
+    // "내 활동" 카드는 "—" (A4 — mock 값 잔존 금지)
+    expect(screen.getAllByText("—")).toHaveLength(2);
+    expect(screen.queryByText(/일 연속/)).toBeNull();
   });
 
-  it("비활성 › 행 5개는 포커스 가능한 button + aria-disabled + '준비 중' 캡션이다 (AC 7·10, A4)", async () => {
+  it("앱 버전 행은 빌드 주입 값(vitest 센티널)을 표시하는 정보 행이다 (A5)", async () => {
+    stubApi();
     renderPanel();
-    await screen.findByText(MOCK_PROFILE.nickname);
+    await screen.findByText(PROFILE.nickname);
+
+    // vite.config define — vitest(mode=test)는 "0.0.0-test" 센티널 (MOCK "1.0.0" 소스 제거)
+    expect(screen.getByText("0.0.0-test")).toBeTruthy();
+    expect(screen.queryByText("1.0.0")).toBeNull();
+    expect(screen.queryByRole("button", { name: /앱 버전/ })).toBeNull();
+  });
+
+  it("조회 실패 시 오류 상태(제목+안내+[다시 시도])가 뜨고 [다시 시도]로 재조회된다 (A3)", async () => {
+    let failNext = true;
+    stubApi((request) => {
+      if (new URL(request.url).pathname !== "/api/users/me") return null;
+      if (failNext) {
+        failNext = false;
+        return new Response(null, { status: 500 });
+      }
+      return null; // 기본 성공 응답
+    });
+    renderPanel();
+
+    expect(await screen.findByText("프로필을 불러오지 못했어요")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
+
+    expect(await screen.findByText(PROFILE.nickname)).toBeTruthy();
+  });
+
+  it("비활성 › 행은 5개(준비 중)이고, [계정 삭제]는 활성 행이다 (A10)", async () => {
+    stubApi();
+    renderPanel();
+    await screen.findByText(PROFILE.nickname);
 
     const disabledRows = screen
       .getAllByRole("button")
@@ -79,41 +126,31 @@ describe("프로필 패널 스모크", () => {
       "서비스 이용약관준비 중",
       "개인정보 처리방침준비 중",
     ]);
-    // 네이티브 disabled가 아니라서 탭 순서에 남는다 (AC 10)
-    for (const row of disabledRows) {
-      expect((row as HTMLButtonElement).disabled).toBe(false);
-    }
+
+    const deleteRow = screen.getByRole("button", { name: "계정 삭제" });
+    expect(deleteRow.getAttribute("aria-disabled")).toBeNull();
+    expect(deleteRow.textContent).not.toContain("준비 중");
   });
 
-  it("앱 버전 행은 버튼이 아닌 정보 행이다 — 포커스 대상 아님 (AC 8)", async () => {
+  it("[계정 삭제] 클릭 시 비가역 삭제 확인 모달(danger)이 뜬다 — URL 불변 (A10)", async () => {
+    stubApi();
     renderPanel();
-    await screen.findByText(MOCK_PROFILE.nickname);
+    await screen.findByText(PROFILE.nickname);
 
-    expect(screen.getByText(MOCK_PROFILE.appVersion)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /앱 버전/ })).toBeNull();
-  });
+    fireEvent.click(screen.getByRole("button", { name: "계정 삭제" }));
 
-  it("비활성 행 클릭은 no-op — URL이 /profile에서 바뀌지 않는다 (AC 7)", async () => {
-    renderPanel();
-    await screen.findByText(MOCK_PROFILE.nickname);
-
-    fireEvent.click(screen.getByRole("button", { name: /위치정보 동의 관리/ }));
-
+    expect(
+      screen.getAllByRole("dialog", { name: "계정 삭제" }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText(/되돌릴 수 없어요/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "삭제" })).toBeTruthy();
     expect(screen.getByTestId("location").textContent).toBe("/profile");
-    expect(screen.getByText(MOCK_PROFILE.nickname)).toBeTruthy();
   });
 
-  // MSG-325: "화면 전환 없이 패널에 머문다"(F2)를 폐기하고 즉시 홈으로 보낸다 —
-  // 로그아웃 후에도 프로필 패널이 남아 있으면 비로그인 상태로 보호 화면에 머무는 셈이라
-  // 사이드레일 활성 탭도 '프로필'로 남는다. 홈 이동으로 활성 탭이 자연히 '홈'이 된다
-  it("[로그아웃] 클릭 시 /api/auth/logout 호출 후 비로그인 상태가 되고, 즉시 홈으로 이동한다 (MSG-325 — F2 대체)", async () => {
-    // MSG-324에서 목 스토어 배선 → useLogout 훅(API + 로컬 우선 종료)으로 교체돼 네트워크를 탄다 — fetch 목 보강
-    const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
-      async () => new Response(null, { status: 200 }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+  it("[로그아웃] 클릭 시 /api/auth/logout 호출 후 비로그인 상태가 되고, 즉시 홈으로 이동한다 (A12 — 기존 배선 회귀 확인)", async () => {
+    const fetchMock = stubApi();
     renderPanel();
-    await screen.findByText(MOCK_PROFILE.nickname);
+    await screen.findByText(PROFILE.nickname);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
 
     fireEvent.click(screen.getByRole("button", { name: "로그아웃" }));
@@ -121,65 +158,49 @@ describe("프로필 패널 스모크", () => {
     await waitFor(() =>
       expect(useAuthStore.getState().isAuthenticated).toBe(false),
     );
-    const [requested] = fetchMock.mock.calls[0];
-    expect(new URL(requested.url).pathname).toBe("/api/auth/logout");
-    // 홈으로 이동 — 사이드레일 활성 탭 판정(getActiveNavKey)이 pathname 기반이라 홈이 활성된다
+    const paths = fetchMock.mock.calls.map(
+      ([request]) => new URL(request.url).pathname,
+    );
+    expect(paths).toContain("/api/auth/logout");
     await waitFor(() =>
       expect(screen.getByTestId("location").textContent).toBe("/"),
     );
-    expect(screen.queryByText(MOCK_PROFILE.nickname)).toBeNull();
+    expect(screen.queryByText(PROFILE.nickname)).toBeNull();
   });
 
-  it("[편집] 클릭 시 '프로필 편집' 모달이 열리고 닉네임이 값으로 채워져 있다 — URL 불변 (MSG-125 AC 1·3)", async () => {
+  it("[편집] 클릭 시 '프로필 편집' 모달이 열리고 닉네임이 실 응답 값으로 채워져 있다", async () => {
+    stubApi();
     renderPanel();
-    await screen.findByText(MOCK_PROFILE.nickname);
+    await screen.findByText(PROFILE.nickname);
 
     fireEvent.click(screen.getByRole("button", { name: "편집" }));
 
-    // Radix Content(sr-only Title 참조)와 ModalCard(aria-label) 둘 다 dialog role —
-    // ReportDialog 선례와 같은 중첩 구조라 접근성 이름 매치가 1개 이상이면 열린 것
     expect(
       screen.getAllByRole("dialog", { name: "프로필 편집" }).length,
     ).toBeGreaterThan(0);
     const nicknameInput = screen.getByLabelText("닉네임") as HTMLInputElement;
-    expect(nicknameInput.value).toBe(MOCK_PROFILE.nickname);
-    expect(screen.getByTestId("location").textContent).toBe("/profile");
+    expect(nicknameInput.value).toBe(PROFILE.nickname);
 
-    // [변경]은 순수 프레젠테이셔널 트리거 — 토글 시맨틱(aria-pressed) 미노출을 고정한다
-    // (PR #22 리뷰 반영 — Chip 내부 스프레드 순서에 기대는 억제라 회귀 방지 필수)
+    // [변경]은 순수 프레젠테이셔널 트리거 — 토글 시맨틱(aria-pressed) 미노출 고정 (PR #22)
     expect(
       screen.getByRole("button", { name: "변경" }).hasAttribute("aria-pressed"),
     ).toBe(false);
   });
 
-  it("값 변경(닉네임·토글) 후 [취소] → 재오픈하면 초기값으로 복원된다 (MSG-125 AC 8)", async () => {
+  it("닉네임을 1자로 바꾸면 [저장]이 비활성되고 사유가 표시된다 (A7 화면 배선)", async () => {
+    stubApi();
     renderPanel();
-    await screen.findByText(MOCK_PROFILE.nickname);
-
-    // 열고 닉네임·토글을 모두 변경한다 (mock 토글 초기값 true → "사용 중")
+    await screen.findByText(PROFILE.nickname);
     fireEvent.click(screen.getByRole("button", { name: "편집" }));
+
     fireEvent.change(screen.getByLabelText("닉네임"), {
-      target: { value: "바꾼닉네임" },
+      target: { value: "한" },
     });
-    fireEvent.click(screen.getByRole("switch", { name: "위치정보 사용" }));
-    expect(screen.getByText("사용 안 함")).toBeTruthy();
 
-    // [취소]로 닫힘 — 모달이 사라진다
-    fireEvent.click(screen.getByRole("button", { name: "취소" }));
-    expect(screen.queryAllByRole("dialog", { name: "프로필 편집" })).toEqual(
-      [],
-    );
-
-    // 재오픈 — 닉네임·토글이 초기값으로 복원되어 있다 (변경 미반영)
-    fireEvent.click(screen.getByRole("button", { name: "편집" }));
-    expect((screen.getByLabelText("닉네임") as HTMLInputElement).value).toBe(
-      MOCK_PROFILE.nickname,
-    );
     expect(
-      screen
-        .getByRole("switch", { name: "위치정보 사용" })
-        .getAttribute("aria-checked"),
-    ).toBe("true");
-    expect(screen.getByText("사용 중")).toBeTruthy();
+      (screen.getByRole("button", { name: "저장" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(screen.getByText("닉네임은 2~20자로 입력해주세요")).toBeTruthy();
   });
 });

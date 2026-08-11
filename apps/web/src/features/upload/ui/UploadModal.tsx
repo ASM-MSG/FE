@@ -1,38 +1,65 @@
 import { type ReactNode, useState } from "react";
 import { MapPin } from "lucide-react";
-import { cn, DialogShell, Input, ModalCard } from "@fillmap/ui-web";
-import { MOCK_CELLS } from "@/entities/cell";
-import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
-import type { SelectionResult } from "@/features/upload/model/highlight-selection";
+import { cn, DialogShell, ModalCard } from "@fillmap/ui-web";
+import { ApiError } from "@/shared/api/api-error";
 import {
-  getNextStep,
+  useAnalyzeVideo,
+  useConfirmUpload,
+} from "@/features/upload/api/use-upload-mutations";
+import { trimToSegment } from "@/features/upload/api/ffmpeg-trim";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
+import { useUploadLocation } from "@/features/upload/model/use-upload-location";
+import {
+  clampSegment,
+  fromServerHighlights,
+  type HighlightSuggestion,
+  type Segment,
+} from "@/features/upload/model/highlight-selection";
+import {
+  getStepAfterAnalysis,
+  resolveAnalysisFailure,
   type UploadStep,
 } from "@/features/upload/model/upload-wizard";
 import {
+  UploadFlowError,
+  type UploadStage,
+} from "@/features/upload/model/upload-orchestration";
+import {
   canSubmitUpload,
+  isWithinDurationLimit,
+  MAX_DURATION_SEC,
   type UploadCandidate,
 } from "@/features/upload/model/upload-validation";
-import { BlurStep } from "./BlurStep";
+import { coversWholeVideo } from "@/features/upload/model/video-trim";
+import { AnalyzingModal } from "./AnalyzingModal";
 import { HighlightStep } from "./HighlightStep";
-import { PreviewStep } from "./PreviewStep";
+import { PreviewStep, type TrimState } from "./PreviewStep";
 import { UploadDropzone } from "./UploadDropzone";
 import { useVideoDuration } from "./use-video-duration";
 
 const MODAL_SUBTITLE = "지금 위치의 격자에 순간을 기록하세요";
 
-// 위치→격자 해석 로직은 이번 범위 아님 — mock 격자(A-14) 기반 정적 라벨 (Q6·AC7)
-const CURRENT_CELL = MOCK_CELLS.find((cell) => cell.id === "A-14");
-const LOCATION_LABEL = `${CURRENT_CELL?.label ?? "현재 격자"} (현재 위치)`;
-// 4/4 미리보기 위치 카드 — 태그된 셀(A-14)의 상세 위치 + 라벨 합성.
-// Figma "합정동" 플레이스홀더 대신 태그한 셀 실제 데이터를 사용한다 (MSG-120 Q3·S6).
-const PREVIEW_LOCATION_LABEL = CURRENT_CELL
-  ? `${CURRENT_CELL.location} · ${CURRENT_CELL.label}`
-  : "현재 격자";
+/** 업로드 단계별 실패 안내 (B11 — 단계 구분 표시) */
+const STAGE_FAILURE_MESSAGES: Record<UploadStage, string> = {
+  presign: "업로드 준비에 실패했어요",
+  s3put: "영상 업로드에 실패했어요",
+  finalize: "게시에 실패했어요",
+};
 
-/**
- * AI 안내 / 최종 확인 박스 — 정적 프레젠테이션 (AC8·AC9).
- * 하이라이트 진입은 1단계 "다음" 버튼이 담당하므로 카드는 클릭 불가한 정적 안내다 (MSG-119 S5).
- */
+/** 선분석 실패 중 선택 스텝 복귀 사유 (B5) */
+const SELECT_FAILURE_MESSAGES = {
+  "corrupt-file": "영상을 분석할 수 없는 파일이에요. 다른 파일을 선택해주세요",
+  "too-long": `영상이 너무 길어요 — 최대 ${MAX_DURATION_SEC}초까지 올릴 수 있어요`,
+  "too-large": "파일이 너무 커요 — 500MB 이하 영상만 올릴 수 있어요",
+} as const;
+
+/** 흐름 실패에서 백엔드 developCode 추출 — 선분석 폴백 분기(B5)용 */
+const developCodeOf = (error: unknown): number | undefined => {
+  const cause = error instanceof UploadFlowError ? error.cause : error;
+  return cause instanceof ApiError ? cause.developCode : undefined;
+};
+
+/** 안내 박스 — 정적 프레젠테이션 */
 const InfoBox = ({
   title,
   body,
@@ -70,64 +97,213 @@ const InfoBox = ({
 );
 
 /**
- * 영상 업로드 모달 — DialogShell(오버레이·포털·포커스 트랩·Esc·scrim)로 ModalCard를 감싼다.
- * 두 진입점 공통 조상(AppLayout)에 1회 마운트되고 열림 상태는 전역 스토어가 관리한다(Q1·Q2).
- * 제목·선택 파일·스텝은 로컬 state이며 닫힐 때 초기화된다(AC10·S14).
- * 정보 입력 → (하이라이트) → 블러 확인 선형 위저드다 — "다음"은 스텝을 전환하고,
- * 취소/✕/scrim/Esc만 모달을 닫는다. 실제 업로드 연동은 범위 밖(목업).
+ * 영상 업로드 모달 (MSG-329 — 디자인 ver 11 재편).
+ * 스텝: 1/3 선택 → (AI 선분석 로딩) → 2/3 하이라이트 → 3/3 미리보기 → 확정 → 완료 모달.
+ * 구 "블러 확인" 스텝은 폐기 — 블러는 게시 후 서버 자동이며 완료는 폴링 워처가 통지한다.
+ * 두 진입점 공통 조상(AppLayout)에 1회 마운트되고 열림 상태는 전역 스토어가 관리한다.
+ * 진행 중(선분석·트리밍·게시)에는 닫기(✕·ESC·바깥 클릭)와 중복 게시가 차단된다 (B12).
  */
 export const UploadModal = () => {
   const open = useUploadModalStore((s) => s.open);
   const closeModal = useUploadModalStore((s) => s.closeModal);
-  const [title, setTitle] = useState("");
   const [file, setFile] = useState<UploadCandidate | null>(null);
-  // 원본 File — duration 캡처·미리보기용(플랫폼 경계). candidate와 별도로 보관 (MSG-118)
+  // 원본 File — duration 캡처·미리보기·선분석 업로드용(플랫폼 경계)
   const [rawFile, setRawFile] = useState<File | null>(null);
-  // 모달 내부 스텝 전환 — 위젯 경계를 넘지 않으므로 전역 스토어가 아닌 로컬 state (스펙 계획)
   const [step, setStep] = useState<UploadStep>("select");
-  // 2단계 하이라이트 선택 결과를 4/4 미리보기로 상위 전달·보관 (MSG-120 S3·S11).
-  // 5초 이하 건너뜀 흐름·재오픈 시 null — 하이라이트 카드 미표시를 보장한다 (S4·S8).
-  const [highlightSelection, setHighlightSelection] =
-    useState<SelectionResult | null>(null);
+  // 서버 선분석 추천 (B6) — 참조 고정을 위해 state 보유 (useHighlightSelection 리셋 기준)
+  const [suggestions, setSuggestions] = useState<HighlightSuggestion[]>([]);
+  // 3502 폴백 — 직접 구간 지정 모드 (B5)
+  const [manualFallback, setManualFallback] = useState(false);
+  // 선택 스텝 복귀 사유 (B5 — 3426·3425·3413)
+  const [selectFailure, setSelectFailure] = useState<string | null>(null);
+  // 선분석 준비 단계(presign·PUT) 실패 — 로딩 모달에 재시도 표시 (B11)
+  const [analyzingFailure, setAnalyzingFailure] = useState<UploadStage | null>(
+    null,
+  );
+  // 확정된 선택 구간 → 미리보기·트리밍 입력 (B8)
+  const [segment, setSegment] = useState<Segment | null>(null);
+  const [trim, setTrim] = useState<TrimState>({ status: "idle" });
+  // 확정 성공 → 완료 모달 (B13)
+  const [completed, setCompleted] = useState(false);
 
   const {
     duration,
     objectUrl,
     error: videoLoadError,
   } = useVideoDuration(rawFile);
+  const location = useUploadLocation(open);
+  const analyze = useAnalyzeVideo();
+  const confirm = useConfirmUpload();
 
-  // "다음" 활성 조건 = 유효 파일 && 메타데이터 로드 완료(duration 확정) && 로드 실패 아님 (Q1·S2·S7)
-  // 현재 훅 구현에선 error면 duration이 항상 null이라 !videoLoadError가 중복이지만,
-  // 훅 불변식이 바뀌어도 로드 실패 시 진행을 막도록 방어적으로 유지한다.
+  // 180초 초과 — FE 1차 검증 사유 표시 + [다음] 비활성 (B1)
+  const durationTooLong = duration !== null && !isWithinDurationLimit(duration);
   const canProceed =
-    canSubmitUpload(file) && duration !== null && !videoLoadError;
+    canSubmitUpload(file) &&
+    duration !== null &&
+    !videoLoadError &&
+    !durationTooLong;
 
-  // "다음" — 5초 초과면 하이라이트(2/4), 이하면 블러 확인(3/4)으로 전환 (S3·S4).
-  // duration 확정 전에는 canProceed가 false라 이 경로가 열리지 않는다.
-  const goNext = () => {
-    if (duration === null) return;
-    setStep(getNextStep("select", duration));
+  // 진행 중 = 닫기·중복 게시 차단 (B12)
+  const busy =
+    analyze.isPending || trim.status === "trimming" || confirm.isPending;
+
+  /** 트리밍 산출 objectURL 정리 — 원본 objectURL(useVideoDuration 소관)은 건드리지 않는다 */
+  const revokeTrim = () => {
+    if (
+      trim.status === "ready" &&
+      trim.objectUrl !== null &&
+      trim.objectUrl !== objectUrl
+    ) {
+      URL.revokeObjectURL(trim.objectUrl);
+    }
+    setTrim({ status: "idle" });
+  };
+
+  // 닫힐 때마다 전체 초기화 — 재오픈 시 이전 파일·스텝·진행 상태가 남지 않는다
+  const close = () => {
+    revokeTrim();
+    setFile(null);
+    setRawFile(null);
+    setStep("select");
+    setSuggestions([]);
+    setManualFallback(false);
+    setSelectFailure(null);
+    setAnalyzingFailure(null);
+    setSegment(null);
+    setCompleted(false);
+    analyze.reset();
+    analyze.resetFlow();
+    confirm.reset();
+    confirm.resetFlow();
+    closeModal();
+  };
+
+  // Esc·scrim은 Radix onOpenChange(false)로 전달 — 진행 중에는 무시한다 (B12)
+  const handleOpenChange = (next: boolean) => {
+    if (!next && busy) return;
+    if (!next) close();
   };
 
   const handleSelectFile = (candidate: UploadCandidate, source: File) => {
     setFile(candidate);
     setRawFile(source);
+    setSelectFailure(null);
+    // 다른 파일 = 새 흐름 — 이전 presign·PUT 산출물 재사용 방지
+    analyze.reset();
+    analyze.resetFlow();
   };
 
-  // 닫힐 때마다 입력을 초기화해 다시 열면 이전 제목·파일·스텝이 남지 않는다 (AC10)
-  // 하이라이트 선택도 리셋 — 재오픈 잔존·5초 이하 새 영상의 하이라이트 카드 오표시 방지 (MSG-120 S4·S8)
-  const close = () => {
-    setTitle("");
-    setFile(null);
-    setRawFile(null);
-    setStep("select");
-    setHighlightSelection(null);
-    closeModal();
+  /** 선분석 실행 (B3) — 성공 시 highlights 유무로 하이라이트/미리보기 분기 (B4) */
+  const runAnalysis = async (source: File) => {
+    if (duration === null) return;
+    setStep("analyzing");
+    setAnalyzingFailure(null);
+    try {
+      const highlights = await analyze.mutateAsync(source);
+      const list = fromServerHighlights(highlights);
+      setSuggestions(list);
+      setManualFallback(false);
+      if (getStepAfterAnalysis(highlights) === "preview") {
+        // 추천 없음(5초 이하 등) — 전체 구간(상한 28초 클램프)으로 바로 미리보기 (B4)
+        goPreview(clampSegment({ start: 0, end: duration }, duration));
+      } else {
+        setStep("highlight");
+      }
+    } catch (error) {
+      handleAnalysisError(error);
+    }
   };
 
-  // Esc·scrim 클릭은 Radix가 onOpenChange(false)로 전달 — 이 모달만 닫는다 (AC11·AC13)
-  const handleOpenChange = (next: boolean) => {
-    if (!next) close();
+  const handleAnalysisError = (error: unknown) => {
+    // 준비 단계(presign·원본 PUT) 실패 — 로딩 모달에서 단계 구분 표시 + 재시도 (B11)
+    if (error instanceof UploadFlowError && error.stage !== "finalize") {
+      setAnalyzingFailure(error.stage);
+      return;
+    }
+    const failure = resolveAnalysisFailure(developCodeOf(error));
+    if (failure.step === "select") {
+      // 파일 자체 문제(3426·3425·3413) — 선택 스텝 복귀 + 다른 파일 선택 유도 (B5)
+      setSelectFailure(SELECT_FAILURE_MESSAGES[failure.kind]);
+      setFile(null);
+      setRawFile(null);
+      analyze.reset();
+      analyze.resetFlow();
+      setStep("select");
+    } else {
+      // 3502·네트워크 등 — 직접 구간 지정 폴백 + 재분석 가능 (B5)
+      setSuggestions([]);
+      setManualFallback(true);
+      setStep("highlight");
+    }
+  };
+
+  /** 미리보기 진입 — 선택 구간으로 트리밍 시작 (B8) */
+  const goPreview = (selected: Segment) => {
+    setSegment(selected);
+    setStep("preview");
+    void prepareTrim(selected);
+  };
+
+  const prepareTrim = async (selected: Segment) => {
+    if (rawFile === null || duration === null) return;
+    // 전체 구간이면 원본 그대로 — wasm 로드 생략
+    if (coversWholeVideo(selected, duration)) {
+      setTrim({
+        status: "ready",
+        blob: rawFile,
+        durationSec: duration,
+        objectUrl,
+      });
+      return;
+    }
+    setTrim({ status: "trimming" });
+    try {
+      const result = await trimToSegment(rawFile, selected);
+      setTrim({
+        status: "ready",
+        blob: result.blob,
+        durationSec: result.durationSec,
+        objectUrl: URL.createObjectURL(result.blob),
+      });
+    } catch {
+      // HEVC MOV 등 로컬 측정·컷 실패 (리스크 4) — 안내 + 재시도
+      setTrim({
+        status: "error",
+        message: "영상을 자르지 못했어요. 다시 시도해주세요",
+      });
+    }
+  };
+
+  /** [업로드하기] (B9) — 실패 시 단계 구분 표시, 재클릭 재시도는 성공 단계 스킵 (B11) */
+  const handlePublish = async () => {
+    if (trim.status !== "ready" || confirm.isPending) return;
+    try {
+      await confirm.mutateAsync({
+        blob: trim.blob,
+        lat: location.center.lat,
+        lng: location.center.lng,
+        durationSec: Math.min(30, Math.max(1, Math.round(trim.durationSec))),
+      });
+      setCompleted(true);
+    } catch {
+      // 실패 표시는 confirm.error 파생 (아래 submitFailureMessage)
+    }
+  };
+
+  const submitFailureMessage = confirm.isError
+    ? STAGE_FAILURE_MESSAGES[
+        confirm.error instanceof UploadFlowError
+          ? confirm.error.stage
+          : "finalize"
+      ]
+    : null;
+
+  // 하이라이트 스텝을 거쳤으면 미리보기에서 되돌아갈 수 있다
+  const wentThroughHighlight = suggestions.length > 0 || manualFallback;
+  const backToHighlight = () => {
+    revokeTrim();
+    confirm.reset();
+    setStep("highlight");
   };
 
   return (
@@ -137,34 +313,49 @@ export const UploadModal = () => {
       srTitle="영상 업로드"
       scrollable
     >
-      {step === "highlight" && duration !== null ? (
+      {completed ? (
+        // 확정 성공 — 완료 모달 (B13). 블러 완료는 폴링 워처가 토스트로 통지한다 (B14·B16)
+        <ModalCard
+          title="업로드 완료!"
+          description="잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요"
+          confirmText="확인"
+          onConfirm={close}
+          onClose={close}
+        />
+      ) : step === "analyzing" ? (
+        <AnalyzingModal
+          failureMessage={
+            analyzingFailure !== null
+              ? STAGE_FAILURE_MESSAGES[analyzingFailure]
+              : null
+          }
+          onRetry={() => rawFile !== null && void runAnalysis(rawFile)}
+          onCancel={() => {
+            setAnalyzingFailure(null);
+            setStep("select");
+          }}
+        />
+      ) : step === "highlight" && duration !== null ? (
         <HighlightStep
           objectUrl={objectUrl}
           duration={duration}
+          suggestions={suggestions}
+          manualFallback={manualFallback}
+          onRetryAnalysis={() => rawFile !== null && void runAnalysis(rawFile)}
+          onNext={goPreview}
           onClose={close}
-          onNext={(result) => {
-            // 선택 결과를 상위에 보관 후 블러 확인(3/4)으로 전환 (MSG-120 S3·S11)
-            setHighlightSelection(result);
-            setStep("blur");
-          }}
         />
-      ) : step === "blur" && duration !== null ? (
-        <BlurStep
-          objectUrl={objectUrl}
-          duration={duration}
-          onClose={close}
-          // 확인 시 4/4 미리보기로 전환 (MSG-120 S1, MSG-119 콘솔 로그 대체).
-          // BlurStep 시그니처는 유지 — payload는 계속 생성되며 상위에서 미사용(고아 방지).
-          onConfirm={() => setStep("preview")}
-        />
-      ) : step === "preview" && duration !== null ? (
+      ) : step === "preview" && segment !== null ? (
         <PreviewStep
-          objectUrl={objectUrl}
-          highlightSelection={highlightSelection}
-          locationLabel={PREVIEW_LOCATION_LABEL}
-          onPublish={close}
-          onBack={() => setStep("blur")}
-          onClose={close}
+          trim={trim}
+          segment={segment}
+          locationLabel={location.label}
+          onRetryTrim={() => segment !== null && void prepareTrim(segment)}
+          onPublish={() => void handlePublish()}
+          submitting={confirm.isPending}
+          submitFailureMessage={submitFailureMessage}
+          onBack={wentThroughHighlight ? backToHighlight : null}
+          onClose={busy ? undefined : close}
         />
       ) : (
         <ModalCard
@@ -174,7 +365,7 @@ export const UploadModal = () => {
           confirmText="다음"
           confirmDisabled={!canProceed}
           onCancel={close}
-          onConfirm={goNext}
+          onConfirm={() => rawFile !== null && void runAnalysis(rawFile)}
           onClose={close}
         >
           <UploadDropzone
@@ -182,60 +373,44 @@ export const UploadModal = () => {
             onSelectFile={handleSelectFile}
           />
 
-          <div className="flex w-full flex-col gap-xs">
-            <label
-              htmlFor="upload-title"
-              className="text-fm-body-strong text-foreground"
-            >
-              제목
-            </label>
-            <Input
-              id="upload-title"
-              placeholder="영상 제목을 입력해주세요"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="border-border bg-surface-soft"
-            />
-          </div>
+          {/* 길이 초과 사유 (B1) — [다음] 비활성 이유를 시각으로 알린다 */}
+          {durationTooLong && (
+            <p role="alert" className="text-fm-label text-error">
+              영상이 너무 길어요 — 최대 {MAX_DURATION_SEC}초까지 올릴 수 있어요
+            </p>
+          )}
+          {/* 선분석 실패로 선택 스텝 복귀한 사유 (B5) */}
+          {selectFailure !== null && (
+            <p role="alert" className="text-fm-label text-error">
+              {selectFailure}
+            </p>
+          )}
 
+          {/* 위치 태그 — 뷰포트 중심 행정동 (B2). "변경" UI는 제외 범위 — 미노출 (오탐 방지 5) */}
           <div className="flex w-full items-center gap-xs">
             <span className="shrink-0 text-fm-body-strong text-foreground">
               위치 태그
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-sm py-1.75 text-fm-label text-primary">
               <MapPin className="size-3" />
-              {LOCATION_LABEL}
+              {location.label}
             </span>
-            {/* 격자 재선택은 범위 밖 — disabled로 비활성 표시해 클릭 오인 방지 (AC7) */}
-            <button
-              type="button"
-              disabled
-              className="shrink-0 text-fm-label text-foreground-muted disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              변경
-            </button>
           </div>
 
-          {/* 하이라이트 진입은 "다음" 버튼이 담당 — 카드는 정적 안내 (S5) */}
-          {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 (S7) */}
+          {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 */}
           <InfoBox
             tone="soft"
             title="AI 하이라이트 자동 추천"
             body={
               videoLoadError
                 ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
-                : "5초를 초과하는 영상은 AI가 최적 구간을 자동 분석해 3~5개 구간을 추천해요"
+                : "다음 단계에서 AI가 영상을 분석해 최적 하이라이트 구간을 추천해요"
             }
           />
           <InfoBox
-            tone="soft"
-            title="AI 자동 블러 처리"
-            body="업로드 전 얼굴과 번호판을 자동 감지해 블러 처리합니다"
-          />
-          <InfoBox
             tone="dark"
-            title="업로드 전 최종 확인"
-            body="AI 처리가 끝나면 미리보기에서 확인한 뒤 지도에 게시돼요"
+            title="업로드 후 AI 자동 블러"
+            body="게시 후 얼굴과 번호판을 자동으로 가려요. 처리가 끝나면 알려드릴게요"
           />
         </ModalCard>
       )}

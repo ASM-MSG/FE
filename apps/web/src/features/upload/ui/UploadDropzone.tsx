@@ -17,7 +17,8 @@ interface UploadDropzoneProps {
   onSelectFile: (file: UploadCandidate, source: File) => void;
 }
 
-const CONSTRAINT_TEXT = "최대 60초 · MP4, MOV · 500MB 이하";
+// MSG-329 B1 — 구 "최대 60초" 폐기, 서버 검증(3425·3413)과 일치하는 제약 안내
+const CONSTRAINT_TEXT = "최대 180초 · MP4, MOV · 500MB 이하";
 const REJECT_TEXT = "MP4·MOV 형식, 500MB 이하 영상만 올릴 수 있어요";
 
 /**

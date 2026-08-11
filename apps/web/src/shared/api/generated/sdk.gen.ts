@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -123,6 +123,21 @@ export const report = <ThrowOnError extends boolean = false>(options: Options<Re
 export const issuePresignedUrl = <ThrowOnError extends boolean = false>(options: Options<IssuePresignedUrlData, ThrowOnError>): RequestResult<IssuePresignedUrlResponses, unknown, ThrowOnError> => (options.client ?? client).post<IssuePresignedUrlResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/videos/presigned-url',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 하이라이트 선분석
+ *
+ * 업로드 확정 전 원본(presign purpose=HIGHLIGHT_PREVIEW 로 올린 pending 키)의 AI 하이라이트 구간을 동기로 계산해 돌려준다. 원본 길이에 따라 응답까지 수 초에서 수십 초 걸린다(30초 1080p 기준 5초 내외). highlights 가 빈 배열이면 추천 없음이니 FE 는 추천 단계를 스킵한다. 실패 시 FE 는 직접 구간 지정으로 폴백한다 — 3502(분석 서버 문제, 재시도 가능)·3426(원본 파일 불량, 재시도 무의미)·3425(3분 초과)·3413(400, 허용 크기 초과). 결과는 저장되지 않는 임시 값이며, 같은 키로 이후 업로드 확정(POST /api/videos)이 가능하다.
+ */
+export const highlightPreview = <ThrowOnError extends boolean = false>(options: Options<HighlightPreviewData, ThrowOnError>): RequestResult<HighlightPreviewResponses, unknown, ThrowOnError> => (options.client ?? client).post<HighlightPreviewResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/videos/highlight-preview',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -364,7 +379,7 @@ export const update = <ThrowOnError extends boolean = false>(options: Options<Up
 /**
  * 구역 목록 조회
  *
- * 전체 구역(zone) 목록을 반환한다. FE 가 캐시해 gridId 로 표시명을 로컬 산술하고 구역 오버레이에 쓴다. 시딩 전이면 빈 배열(전 시스템이 행정동 폴백으로 동작).
+ * 전체 구역(zone) 목록을 반환한다. 검색바에서 구역을 골라 지도를 옮기거나 구역 범위를 오버레이로 그릴 때 쓴다 — 표시명은 격자 응답의 zoneName·zoneCell 을 그대로 조립하면 되므로 이 목록으로 이름을 계산할 필요가 없다. 시딩 전이면 빈 배열(전 시스템이 행정동 폴백으로 동작).
  */
 export const getZones = <ThrowOnError extends boolean = false>(options?: Options<GetZonesData, ThrowOnError>): RequestResult<GetZonesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetZonesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -508,6 +523,8 @@ export const getActiveMissions = <ThrowOnError extends boolean = false>(options?
  * 뷰포트 내 핫구역 조회
  *
  * 지도 화면 bbox(남서~북동 좌표) 안의 핫구역을 핫스코어 내림차순으로 반환한다. 전국 상위 K(50)·최소 임계(3) 판정 후 뷰포트 필터 — 없으면 빈 목록이다.
+ *
+ * 항목마다 표시 이름 재료가 함께 온다: zoneName이 null이면 regionName(행정동)이 표시 이름이다(폴백에는 칸 번호를 붙이지 않는다). 이름 때문에 마커마다 단건 조회를 돌릴 필요가 없다.
  */
 export const getHotZones = <ThrowOnError extends boolean = false>(options: Options<GetHotZonesData, ThrowOnError>): RequestResult<GetHotZonesResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetHotZonesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -518,7 +535,9 @@ export const getHotZones = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * 뷰포트 내 색칠 격자 조회 (커서 페이지네이션)
  *
- * 지도 화면 bbox(남서~북동 좌표) 안에서 내가 점령한 격자를 (grid_y, grid_x) 오름차순으로 반환한다. 응답의 nextCursor를 다음 요청 cursor에 넣어 이어서 조회한다. bbox 한 변의 span은 최대 0.5도.
+ * 지도 화면 bbox(남서~북동 좌표) 안에서 내가 점령한 격자를 (grid_y, grid_x) 오름차순으로 반환한다. 응답의 nextCursor를 다음 요청 cursor에 넣어 이어서 조회한다. bbox span 상한은 0.5도로 위도·경도 각 변에 따로 적용된다(정확히 0.5도는 허용). 초과 시 잘라서 응답하지 않고 400 + developCode 4402(VIEWPORT_TOO_LARGE)로 거절한다.
+ *
+ * 항목마다 표시 이름 재료가 함께 온다: zoneName이 null이면 regionName(행정동)이 표시 이름이다(폴백에는 칸 번호를 붙이지 않는다). 이름 때문에 다른 API를 더 호출할 필요가 없다.
  */
 export const getOccupiedInViewport = <ThrowOnError extends boolean = false>(options: Options<GetOccupiedInViewportData, ThrowOnError>): RequestResult<GetOccupiedInViewportResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetOccupiedInViewportResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -530,6 +549,8 @@ export const getOccupiedInViewport = <ThrowOnError extends boolean = false>(opti
  * 단일 격자 색칠 상태 조회
  *
  * 특정 격자를 내가 점령(색칠)했는지와 내 영상 수를 반환한다. 미점령 격자도 404가 아니라 occupied=false로 응답한다.
+ *
+ * 표시 이름 재료가 함께 온다: zoneName이 null이면 regionName(행정동)이 표시 이름이다(폴백에는 칸 번호를 붙이지 않는다). regionName은 아직 아무도 영상을 올리지 않은 격자에도 실리고, 어느 행정동에도 속하지 않거나 서비스 범위(한국) 밖인 격자면 null이다(에러가 아니다).
  */
 export const getCell = <ThrowOnError extends boolean = false>(options: Options<GetCellData, ThrowOnError>): RequestResult<GetCellResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetCellResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -595,7 +616,7 @@ export const getFriendProfile = <ThrowOnError extends boolean = false>(options: 
 /**
  * 친구 격자 뷰포트 조회
  *
- * 지도 화면 bbox(남서~북동 좌표) 안에서 그 친구가 점령한 격자를 (grid_y, grid_x) 오름차순으로 반환한다. 응답 형상·검증 규칙·에러는 내 격자 조회(GET /api/grids)와 같다 — 응답의 nextCursor 를 다음 요청 cursor 에 넣어 이어 조회하고, bbox 한 변의 span 은 최대 0.5도다. 격자 색상은 내려주지 않는다(FE 단일색 렌더). 친구가 아닌 사용자·본인·존재하지 않는 사용자 조회는 모두 같은 404 다.
+ * 지도 화면 bbox(남서~북동 좌표) 안에서 그 친구가 점령한 격자를 (grid_y, grid_x) 오름차순으로 반환한다. 응답 형상·검증 규칙·에러는 내 격자 조회(GET /api/grids)와 같다 — 응답의 nextCursor 를 다음 요청 cursor 에 넣어 이어 조회하고, bbox span 상한 0.5도는 위도·경도 각 변에 따로 적용되며 초과 시 400 + 4402(VIEWPORT_TOO_LARGE)로 거절된다. 격자 색상은 내려주지 않는다(FE 단일색 렌더). 친구가 아닌 사용자·본인·존재하지 않는 사용자 조회는 모두 같은 404 다.
  */
 export const getFriendGrids = <ThrowOnError extends boolean = false>(options: Options<GetFriendGridsData, ThrowOnError>): RequestResult<GetFriendGridsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetFriendGridsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -22,6 +22,8 @@ describe("unwrapEnvelope", () => {
         videoCount: 0,
         zoneName: null,
         zoneCell: null,
+        // 2026-08-11 명세 재생성으로 신설된 필수 필드 (행정동 폴백 라벨)
+        regionName: null,
       },
     };
 
@@ -31,6 +33,7 @@ describe("unwrapEnvelope", () => {
       videoCount: 0,
       zoneName: null,
       zoneCell: null,
+      regionName: null,
     });
   });
 

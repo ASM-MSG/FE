@@ -1,13 +1,17 @@
 /**
- * AI 하이라이트 추천 — 선택/트리머 순수 로직 (MSG-118 L1~L9).
+ * AI 하이라이트 추천 — 선택/트리머 순수 로직 (MSG-118 → MSG-329 재설계).
  * 플랫폼 API(window·File·DOM·video 등)를 참조하지 않는다 — 초 단위 숫자만 다루므로 RN 재사용 대상.
- * 실제 영상 duration 캡처·재생은 UI 경계(use-video-duration / VideoPreview)에 격리한다.
+ * 추천은 목 생성이 아니라 서버 선분석(highlight-preview) 응답 [[시작,끝]]에서 파생하고(B6),
+ * 사유 라벨은 없다(응답이 시간쌍뿐 — Figma 사유 문구는 플레이스홀더, 티켓 13 확정).
  */
 
-/** 직접 구간 최소 길이 — 5초. [L2] */
+/** 직접 구간 최소 길이 — 5초. [B7] */
 export const SEGMENT_MIN_SEC = 5;
-/** 직접 구간 최대 길이 — 30초. [L3] */
-export const SEGMENT_MAX_SEC = 30;
+/**
+ * 직접 구간 최대 길이 — 28초. [B7]
+ * 구 30초 상한 폐기 — 스트림 카피 키프레임 밀림 대비 durationSec≤30 여유 (티켓 13 확정).
+ */
+export const SEGMENT_MAX_SEC = 28;
 
 /** 시간 구간 — 시작·끝(초). */
 export interface Segment {
@@ -15,59 +19,46 @@ export interface Segment {
   end: number;
 }
 
-/** AI 추천 구간 — 구간 + 식별자 + 추천 사유. */
+/** AI 추천 구간 — 서버 시간쌍 + 카드 선택 식별자. */
 export interface HighlightSuggestion extends Segment {
   id: string;
-  reason: string;
 }
 
 /** 선택 방식 — AI 추천 vs 직접 지정. */
 export type SelectionMode = "ai" | "manual";
 
 /**
- * 선택 상태 — mode가 단일 선택을 강제한다(상호 배타). [L5]
- * manualSegment는 트리머의 현재 구간 값으로 항상 유효 값을 보유하며,
- * mode==="manual"일 때만 "선택된 구간"으로 취급된다.
+ * 선택 상태 — mode가 단일 선택을 강제한다(상호 배타).
+ * "ai"는 항상 selectedAi와 함께만 성립한다(불가능 상태 배제) — 미선택 상태는 없다:
+ * 추천이 있으면 첫 번째가 기본 선택(B6), 없으면 수동 구간이 선택이다(B5 폴백).
  */
-export interface HighlightSelectionState {
-  /** 현재 선택 방식 — null이면 미선택 */
-  mode: SelectionMode | null;
-  /** AI 방식으로 선택된 추천 구간 — 미선택이면 null */
-  selectedAi: HighlightSuggestion | null;
-  /** 트리머의 현재 구간 값 (드래그로 갱신) */
-  manualSegment: Segment;
-}
-
-/** 콘솔 로그 payload. [L9] */
-export interface SelectionResult {
-  start: number;
-  end: number;
-  mode: SelectionMode;
-}
-
-/** AI 추천 사유 시드 (Figma 5개 구간 사유). */
-const HIGHLIGHT_REASONS = [
-  "움직임·밝기 지속",
-  "장면 변화 풍부",
-  "조회수 예측 상위",
-  "색감·구도 안정형",
-  "동작 다이나믹",
-] as const;
+export type HighlightSelectionState =
+  | { mode: "ai"; selectedAi: HighlightSuggestion; manualSegment: Segment }
+  | { mode: "manual"; selectedAi: null; manualSegment: Segment };
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max);
 
 /**
- * AI 하이라이트 추천을 제공할지 판정한다. 영상 길이가 5초를 초과할 때만 true. [L1]
- * 정확히 5초 및 그 이하이면 false (최소 구간 길이를 확보할 수 없음).
+ * 서버 선분석 응답 [[시작초, 끝초], ...]을 추천 목록으로 변환한다. [B6]
+ * 배열 순서(=추천 우선순위)를 보존하고, 시간쌍이 아닌 형상(원소 부족·역전·비수치)은 걸러낸다.
  */
-export const shouldOfferHighlight = (duration: number): boolean =>
-  duration > SEGMENT_MIN_SEC;
+export const fromServerHighlights = (
+  pairs: number[][] | null | undefined,
+): HighlightSuggestion[] =>
+  (pairs ?? [])
+    .filter(
+      (pair): pair is [number, number] =>
+        pair.length >= 2 &&
+        Number.isFinite(pair[0]) &&
+        Number.isFinite(pair[1]) &&
+        pair[1] > pair[0],
+    )
+    .map(([start, end], index) => ({ id: `ai-${index + 1}`, start, end }));
 
 /**
- * 시작 핸들을 newStart로 옮길 때의 clamp 결과. 끝은 고정. [L2·L3·L4]
- * - 끝-5초보다 뒤로 못 감(최소 길이), 끝-30초보다 앞으로 못 감(최대 길이), 0 미만 불가(경계).
- * (하한이 0이므로 duration 상한은 시작 핸들에 불필요 — 끝 핸들만 duration을 받는다.)
+ * 시작 핸들을 newStart로 옮길 때의 clamp 결과. 끝은 고정. [B7]
+ * - 끝-5초보다 뒤로 못 감(최소 길이), 끝-28초보다 앞으로 못 감(최대 길이), 0 미만 불가(경계).
  */
 export const adjustStartHandle = (
   segment: Segment,
@@ -79,8 +70,8 @@ export const adjustStartHandle = (
 };
 
 /**
- * 끝 핸들을 newEnd로 옮길 때의 clamp 결과. 시작은 고정. [L2·L3·L4]
- * - 시작+5초보다 앞으로 못 감(최소 길이), 시작+30초보다 뒤로 못 감(최대 길이), duration 초과 불가(경계).
+ * 끝 핸들을 newEnd로 옮길 때의 clamp 결과. 시작은 고정. [B7]
+ * - 시작+5초보다 앞으로 못 감(최소 길이), 시작+28초보다 뒤로 못 감(최대 길이), duration 초과 불가(경계).
  */
 export const adjustEndHandle = (
   segment: Segment,
@@ -92,10 +83,7 @@ export const adjustEndHandle = (
   return { start: segment.start, end: clamp(newEnd, min, max) };
 };
 
-/**
- * 임의 구간을 5~30초 길이·[0, duration] 범위로 정규화한다. [L2·L3·L4·L8]
- * 목업 구간 생성·초기 구간 계산에서 유효성을 보장한다.
- */
+/** 임의 구간을 5~28초 길이·[0, duration] 범위로 정규화한다. [B7] */
 export const clampSegment = (segment: Segment, duration: number): Segment => {
   const length = Math.min(
     clamp(segment.end - segment.start, SEGMENT_MIN_SEC, SEGMENT_MAX_SEC),
@@ -105,9 +93,7 @@ export const clampSegment = (segment: Segment, duration: number): Segment => {
   return { start, end: start + length };
 };
 
-/**
- * 밴드 본체 드래그 — 길이를 유지한 채 구간을 delta만큼 이동하고 경계에서 정지한다. [S7]
- */
+/** 밴드 본체 드래그 — 길이를 유지한 채 구간을 delta만큼 이동하고 경계에서 정지한다. */
 export const moveSegment = (
   segment: Segment,
   delta: number,
@@ -118,63 +104,60 @@ export const moveSegment = (
   return { start, end: start + length };
 };
 
-/** 트리머 초기 구간 — 진입 시 표시용 기본 밴드(선택은 아님, 추정 5). */
+/** 트리머 초기 구간 — 진입 시 표시용 기본 밴드. */
 const initialManualSegment = (duration: number): Segment =>
   clampSegment(
     { start: duration * 0.2, end: duration * 0.2 + SEGMENT_MAX_SEC },
     duration,
   );
 
-/** 초기 선택 상태 — 미선택(mode=null). [L6·추정 5] */
+/**
+ * 초기 선택 상태 — 추천이 있으면 첫 번째(배열 순서 = 우선순위)가 기본 선택(B6),
+ * 없으면(3502 직접 지정 폴백 등) 수동 모드로 진입한다(B5).
+ */
 export const createInitialSelection = (
   duration: number,
-): HighlightSelectionState => ({
-  mode: null,
-  selectedAi: null,
-  manualSegment: initialManualSegment(duration),
-});
+  suggestions: HighlightSuggestion[],
+): HighlightSelectionState =>
+  suggestions.length > 0
+    ? {
+        mode: "ai",
+        selectedAi: suggestions[0],
+        manualSegment: initialManualSegment(duration),
+      }
+    : {
+        mode: "manual",
+        selectedAi: null,
+        manualSegment: initialManualSegment(duration),
+      };
 
-/** AI 추천 구간을 선택한다 — 직접 지정 선택을 해제한다(상호 배타). [L5] */
+/** AI 추천 구간을 선택한다 — 직접 지정 선택을 해제한다(상호 배타). */
 export const selectAi = (
   state: HighlightSelectionState,
   suggestion: HighlightSuggestion,
 ): HighlightSelectionState => ({
-  ...state,
   mode: "ai",
   selectedAi: suggestion,
+  manualSegment: state.manualSegment,
 });
 
-/** 직접 구간을 지정/갱신한다 — AI 추천 선택을 해제한다(상호 배타). [L5] */
+/** 직접 구간을 지정/갱신한다 — AI 추천 선택을 해제한다(상호 배타). */
 export const selectManual = (
-  state: HighlightSelectionState,
+  _state: HighlightSelectionState,
   segment: Segment,
 ): HighlightSelectionState => ({
-  ...state,
   mode: "manual",
   selectedAi: null,
   manualSegment: segment,
 });
 
-/** 현재 선택된 구간 — 미선택이면 null. [L6·L9] */
-export const getSelectedSegment = (
-  state: HighlightSelectionState,
-): Segment | null => {
-  if (state.mode === "ai") {
-    return state.selectedAi
-      ? { start: state.selectedAi.start, end: state.selectedAi.end }
-      : null;
-  }
-  if (state.mode === "manual") {
-    return { start: state.manualSegment.start, end: state.manualSegment.end };
-  }
-  return null;
-};
+/** 현재 선택된 구간 — 미선택 상태가 없으므로 항상 존재한다. */
+export const getSelectedSegment = (state: HighlightSelectionState): Segment =>
+  state.mode === "ai"
+    ? { start: state.selectedAi.start, end: state.selectedAi.end }
+    : { start: state.manualSegment.start, end: state.manualSegment.end };
 
-/** 다음 단계로 진행 가능한지 — 구간이 하나라도 선택되면 true. [L6] */
-export const canProceedToNextStep = (state: HighlightSelectionState): boolean =>
-  getSelectedSegment(state) !== null;
-
-/** 초를 m:ss 형식으로 포맷한다 (예: 3 → "0:03", 75 → "1:15"). [L7] */
+/** 초를 m:ss 형식으로 포맷한다 (예: 3 → "0:03", 75 → "1:15"). */
 export const formatTimecode = (seconds: number): string => {
   const total = Math.floor(seconds);
   const minutes = Math.floor(total / 60);
@@ -183,51 +166,10 @@ export const formatTimecode = (seconds: number): string => {
 };
 
 /**
- * 목업 AI 추천 구간 3~5개를 생성한다. [L8]
- * 각 구간은 5~30초 길이·[0, duration] 범위를 만족한다(clampSegment로 보장).
- * 개수는 영상 길이에 따라 3(짧음)~5(김)로 가변.
+ * 구간의 시간 정보 중심 라벨 — "0:03 – 0:08 · 5초". [B6]
+ * 추천 카드·선택 요약·미리보기 구간 카드가 공유한다(사유 라벨 없음, 티켓 13 확정).
  */
-export const buildMockHighlights = (
-  duration: number,
-): HighlightSuggestion[] => {
-  const count = Math.max(3, Math.min(5, Math.floor(duration / 10) + 1));
-  const desiredLength = clamp(
-    Math.round(duration / count),
-    SEGMENT_MIN_SEC,
-    Math.min(SEGMENT_MAX_SEC, duration),
-  );
-  // 구간 길이가 고정이므로 시작점이 겹치지 않도록 [0, duration - length]를 균등 분할한다.
-  const maxStart = Math.max(0, duration - desiredLength);
-  const step = count > 1 ? maxStart / (count - 1) : 0;
-
-  return Array.from({ length: count }, (_, i) => {
-    const start = clamp(step * i, 0, maxStart);
-    return {
-      id: `mock-${i + 1}`,
-      reason: HIGHLIGHT_REASONS[i % HIGHLIGHT_REASONS.length],
-      start,
-      end: start + desiredLength,
-    };
-  });
-};
-
-/** 선택 결과 payload — 콘솔 로그용. 미선택이면 null. [L9] */
-export const toSelectionResult = (
-  state: HighlightSelectionState,
-): SelectionResult | null => {
-  const segment = getSelectedSegment(state);
-  if (!segment || !state.mode) return null;
-  return { start: segment.start, end: segment.end, mode: state.mode };
-};
-
-/** 초를 "Ns" 표기로 — 소수 최대 1자리, 정수는 소수점 생략(6→"6s", 6.25→"6.3s"). (MSG-120 Q1) */
-const formatSeconds = (value: number): string =>
-  `${Math.round(value * 10) / 10}s`;
-
-/**
- * 4/4 미리보기 하이라이트 카드용 구간 라벨. [MSG-120 L1]
- * 초 단위 "s" 표기를 " – "로 이은 range 문자열(예: {start:1.2,end:6.2} → "1.2s – 6.2s").
- * 2/4·3/4의 formatTimecode(m:ss)와 달리 Figma 4/4 예시대로 "Ns" 표기를 쓴다(Q1).
- */
-export const formatSelectionRange = (result: SelectionResult): string =>
-  `${formatSeconds(result.start)} – ${formatSeconds(result.end)}`;
+export const formatSegmentLabel = (segment: Segment): string =>
+  `${formatTimecode(segment.start)} – ${formatTimecode(segment.end)} · ${Math.round(
+    segment.end - segment.start,
+  )}초`;
