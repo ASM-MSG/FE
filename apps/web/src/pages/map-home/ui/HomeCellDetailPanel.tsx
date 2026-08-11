@@ -4,7 +4,9 @@ import type {
   HomeCellBadge,
   HomeCellDetail,
 } from "@/features/map-home/model/home-cell-detail";
+import { decodeGridCenter } from "@/entities/cell";
 import { formatDuration } from "@/features/explore/model/explore-cells";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { formatRelativeTime, formatViewCountKo } from "@/shared/format";
 import { CellActionRow } from "./CellActionRow";
 import { useEscapeClose } from "./use-escape-close";
@@ -90,6 +92,10 @@ export const HomeCellDetailPanel = ({
   // Escape 닫기 (AC 9-1) — 입력 요소 타깃 무시 계약 포함 (use-escape-close, MSG-277 공용 추출)
   useEscapeClose(onClose);
 
+  // [영상 추가] = 격자 고정 진입 — 이 격자 중심을 지목해 업로드 모달을 연다 (위치 태그·확정 좌표가 이 격자를 따른다)
+  const openUploadModal = useUploadModalStore((s) => s.openModal);
+  const handleUpload = () => openUploadModal(decodeGridCenter(detail.gridId));
+
   const cover = detail.coverVideo;
   const coverDuration = cover ? formatDuration(cover.durationSec) : null;
 
@@ -125,7 +131,7 @@ export const HomeCellDetailPanel = ({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-md">
-          <CellActionRow />
+          <CellActionRow onUpload={handleUpload} />
 
           {/* 전역 대표 영상 1건 — 후보가 없으면(`/cover` data null) 영역 자체를 그리지 않는다.
               재생 배선은 제외 범위(격자 상세 연동 티켓)라 표시 전용이다 */}

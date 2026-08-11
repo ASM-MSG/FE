@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { reverseGeocodeOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import type { RegionResponseDto } from "@/shared/api/generated";
@@ -22,7 +23,10 @@ export const formatUploadLocationLabel = (
  * enabled=false면 조회하지 않는다 — UploadModal은 AppLayout에 상시 마운트라 열림 시에만 조회.
  */
 export const useUploadLocation = (enabled: boolean = true) => {
-  const center = useViewportStore((s) => s.center);
+  const viewportCenter = useViewportStore((s) => s.center);
+  // 격자 고정 진입(격자 상세 [영상 추가])이 지목한 좌표가 있으면 뷰포트 중심보다 우선한다
+  const target = useUploadModalStore((s) => s.target);
+  const center = target ?? viewportCenter;
   const query = useQuery({
     ...reverseGeocodeOptions({ query: { lat: center.lat, lng: center.lng } }),
     select: unwrapEnvelope,

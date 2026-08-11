@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { SEOMYEON_CENTER } from "@/shared/geolocation";
 import { envelopeResponse } from "@/test/envelope-response";
 import { stubFetch } from "@/test/stub-fetch";
@@ -28,6 +29,7 @@ const createWrapper = () => {
 
 beforeEach(() => {
   useViewportStore.setState({ center: SEOMYEON_CENTER });
+  useUploadModalStore.setState({ target: null });
 });
 
 afterEach(() => {
@@ -83,5 +85,31 @@ describe("formatUploadLocationLabel — 라벨 파생 순수 함수 (B2)", () =>
     ).toBe("부산 부산진구 서면");
     expect(formatUploadLocationLabel(null)).toBe("현재 위치");
     expect(formatUploadLocationLabel(undefined)).toBe("현재 위치");
+  });
+});
+
+describe("useUploadLocation — 지목 격자 우선 (격자 고정 진입)", () => {
+  it("스토어에 지목 좌표(target)가 있으면 뷰포트 중심 대신 그 좌표로 조회·전송한다 (AC1)", async () => {
+    useViewportStore.setState({ center: SEOMYEON_CENTER });
+    useUploadModalStore.setState({ target: { lat: 35.1652, lng: 129.0656 } });
+    const received = stubFetch(() =>
+      envelopeResponse({
+        regionCode: "2644057000",
+        regionName: "부산 부산진구 전포동",
+        parentCode: "26440",
+      }),
+    );
+
+    const { result } = renderHook(() => useUploadLocation(), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() =>
+      expect(result.current.label).toBe("부산 부산진구 전포동"),
+    );
+
+    const url = new URL(received[0].request.url);
+    expect(url.searchParams.get("lat")).toBe("35.1652");
+    expect(url.searchParams.get("lng")).toBe("129.0656");
+    expect(result.current.center).toEqual({ lat: 35.1652, lng: 129.0656 });
   });
 });

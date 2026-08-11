@@ -49,12 +49,41 @@ const UPLOAD_INTENT_KEY = "fillmap.upload.pending-intent";
  * 다른 탭·재방문으로 새지 않는다.
  */
 export const uploadIntentStorage = {
-  /** 비로그인 업로드 게이트 진입 시 저장 */
-  save: (): void => {
-    sessionStorage.setItem(UPLOAD_INTENT_KEY, "1");
+  /**
+   * 비로그인 업로드 게이트 진입 시 저장. target은 격자 고정 진입의 지목 좌표 —
+   * 함께 영속화해야 카카오 리다이렉트 복귀 재개가 지목 격자를 잇는다(없으면 "1" 플래그만).
+   * shared는 최하층이라 entities의 LatLng를 참조하지 않고 구조 동형 타입으로 받는다
+   */
+  save: (target?: { lat: number; lng: number }): void => {
+    sessionStorage.setItem(
+      UPLOAD_INTENT_KEY,
+      target ? JSON.stringify(target) : "1",
+    );
   },
   /** 읽기 — 부수효과 없음(oauthStateStorage.peek과 동일 규약). 해제는 clear가 맡는다 */
   peek: (): boolean => sessionStorage.getItem(UPLOAD_INTENT_KEY) !== null,
+  /** 지목 좌표 읽기 — 좌표 없는 의도("1"·구형식)면 null. 부수효과 없음 */
+  peekTarget: (): { lat: number; lng: number } | null => {
+    const raw = sessionStorage.getItem(UPLOAD_INTENT_KEY);
+    if (raw === null || raw === "1") return null;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        typeof (parsed as { lat?: unknown }).lat === "number" &&
+        typeof (parsed as { lng?: unknown }).lng === "number"
+      ) {
+        return {
+          lat: (parsed as { lat: number }).lat,
+          lng: (parsed as { lng: number }).lng,
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
   /** 소진·해제 — 재개(소진)·취소·stale 청소 경로에서 호출, 여러 번 호출해도 무해하다 */
   clear: (): void => {
     sessionStorage.removeItem(UPLOAD_INTENT_KEY);
