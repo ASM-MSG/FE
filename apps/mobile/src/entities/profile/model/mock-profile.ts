@@ -15,6 +15,8 @@ import type { ProfileData } from "./profile";
 export const MOCK_PROFILE: ProfileData = {
   nickname: "필맵퍼",
   email: "fillmapper@fillmap.app",
+  // 미설정(null) — 웹 MOCK_PROFILE(MSG-378) 미러, parity 테스트가 고정
+  profileImageUrl: null,
   joinedAt: "2026-01-12",
   streakDays: 12,
   collectionRate: { regionLabel: "부산", pct: 34 },

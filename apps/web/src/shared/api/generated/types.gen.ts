@@ -51,13 +51,13 @@ export type VideoReplaceResponseDto = {
 };
 
 /**
- * 닉네임 수정 요청
+ * 프로필 이미지 변경 확정 요청 (MSG-373)
  */
-export type NicknameUpdateRequestDto = {
+export type ProfileImageUpdateRequestDto = {
     /**
-     * 새 닉네임 (2~20자)
+     * presign 발급으로 받은 pending 키. 그 URL 로 업로드를 마친 뒤 그대로 전달한다.
      */
-    nickname: string;
+    s3Key: string;
 };
 
 export type ApiResponseDtoUserProfileResponseDto = {
@@ -67,7 +67,7 @@ export type ApiResponseDtoUserProfileResponseDto = {
 };
 
 /**
- * 내 프로필 응답. 조회·닉네임 수정이 같은 형태를 반환한다.
+ * 내 프로필 응답. 조회·닉네임 수정·프로필 이미지 변경이 같은 형태를 반환한다.
  */
 export type UserProfileResponseDto = {
     /**
@@ -76,6 +76,24 @@ export type UserProfileResponseDto = {
     email: string | null;
     /**
      * 닉네임 — 카카오 로그인 시 카카오 닉네임이 자동 저장되며, 이후 수정 가능
+     */
+    nickname: string;
+    /**
+     * 프로필 이미지 공개 URL — 미설정이면 null 이고 기본 프로필 표시는 FE 몫이다 (MSG-373)
+     */
+    profileImageUrl: string | null;
+    /**
+     * 가입 시각 — DB 저장값(UTC) 그대로다. "2026.01.12" 같은 표기는 FE 몫 (MSG-373)
+     */
+    createdAt: string;
+};
+
+/**
+ * 닉네임 수정 요청
+ */
+export type NicknameUpdateRequestDto = {
+    /**
+     * 새 닉네임 (2~20자)
      */
     nickname: string;
 };
@@ -294,6 +312,10 @@ export type PresignedUrlRequestDto = {
      * 업로드할 파일 크기(바이트). 서버 상한 초과 시 거부
      */
     contentLength: number;
+    /**
+     * 발급 용도. 미지정(null)은 UPLOAD 와 동일. 하이라이트 선분석 원본은 HIGHLIGHT_PREVIEW 로 발급받아 전용 크기 상한(기본 2GiB)을 적용받는다
+     */
+    purpose?: string;
 };
 
 export type ApiResponseDtoPresignedUrlResponseDto = {
@@ -312,6 +334,74 @@ export type PresignedUrlResponseDto = {
     uploadUrl: string;
     /**
      * 업로드 대상 S3 객체 키. 이후 메타데이터 저장 요청에 그대로 전달한다.
+     */
+    s3Key: string;
+    /**
+     * presigned URL 유효 시간(초)
+     */
+    expiresInSec: number;
+};
+
+/**
+ * 하이라이트 선분석 요청 (MSG-351). 원본은 presign(purpose=HIGHLIGHT_PREVIEW)으로 먼저 올린다.
+ */
+export type HighlightPreviewRequestDto = {
+    /**
+     * presign 으로 올린 원본의 pending 키. videos/pending/{내 userId}/ prefix 여야 한다
+     */
+    s3Key: string;
+};
+
+export type ApiResponseDtoHighlightPreviewResponseDto = {
+    developCode: number;
+    message: string;
+    data: HighlightPreviewResponseDto;
+};
+
+/**
+ * 하이라이트 선분석 응답 (MSG-351). 결과는 저장되지 않는 임시 값이다 — 확정본의 하이라이트는 업로드 확정 후 블러 파이프라인이 따로 계산한다.
+ */
+export type HighlightPreviewResponseDto = {
+    /**
+     * [[시작초, 끝초], ...] 최대 3구간, 초는 소수점 둘째 자리. 배열 순서가 추천 우선순위(첫 요소가 최우선)다. 각 구간은 5초 이상이고 시작점끼리 5초 이상 벌어진다. 5초 미만 원본이거나 조건을 채우는 구간이 없으면 빈 배열 [] — 추천 없음이니 FE 는 추천 단계를 스킵한다
+     */
+    highlights: Array<Array<number>>;
+};
+
+/**
+ * 프로필 이미지 업로드용 presigned URL 발급 요청 (MSG-373)
+ */
+export type ProfileImagePresignRequestDto = {
+    /**
+     * 이미지 파일 확장자 (점 없이). jpg, jpeg, png, webp — heic·heif 는 받지 않는다
+     */
+    extension: string;
+    /**
+     * 이미지 MIME 타입. 확장자와 쌍이 맞아야 한다
+     */
+    contentType: string;
+    /**
+     * 업로드할 파일 크기(바이트). 5MB 초과 시 거부
+     */
+    contentLength: number;
+};
+
+export type ApiResponseDtoProfileImagePresignResponseDto = {
+    developCode: number;
+    message: string;
+    data: ProfileImagePresignResponseDto;
+};
+
+/**
+ * 프로필 이미지 presigned URL 발급 응답. uploadUrl 로 S3 에 직접 PUT 업로드한 뒤 s3Key 로 변경 확정(PUT /api/users/me/profile-image)을 호출한다.
+ */
+export type ProfileImagePresignResponseDto = {
+    /**
+     * S3 에 직접 PUT 업로드할 presigned URL
+     */
+    uploadUrl: string;
+    /**
+     * 업로드 대상 S3 객체 키. 변경 확정 요청에 그대로 전달한다.
      */
     s3Key: string;
     /**
@@ -659,7 +749,7 @@ export type ApiResponseDtoListZoneResponseDto = {
 };
 
 /**
- * 격자 표시명 계산용 구역(zone). 정수 사각형 + 이름 + 소속 행정동.
+ * 구역(zone)의 이름과 격자 사각형 범위 — 검색바 구역 이동·범위 오버레이용. 격자 표시명은 서버가 계산해 격자 응답에 함께 싣는다.
  */
 export type ZoneResponseDto = {
     /**
@@ -762,6 +852,14 @@ export type VideoPlaybackResponseDto = {
      * 격자 중심점 행정동 이름 — 구역 밖 격자의 폴백 라벨. 무귀속(해상 등)이거나 미판정이면 null
      */
     regionName: string | null;
+    /**
+     * AI 추천 하이라이트 구간 [[시작초, 끝초], ...]. 최대 3구간, 초는 소수점 둘째 자리. 배열 순서가 추천 우선순위(첫 요소가 최우선 추천). 없으면 null (READY 이전·FAILED·0구간 포함, 빈 배열은 내려가지 않는다) 예시: [[0.0, 4.25], [12.0, 18.5], [20.0, 27.5]]
+     */
+    highlights: Array<Array<number>> | null;
+    /**
+     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
+     */
+    nickname: string;
 };
 
 export type ApiResponseDtoListTrendingKeywordResponseDto = {
@@ -839,11 +937,11 @@ export type ExploreGridResponseDto = {
      */
     gridId: string;
     /**
-     * 격자 위도 인덱스 (FE 지도 이동·라벨 조합)
+     * 격자 세로 인덱스 (EPSG:5179 평면 y / 100 — 위도가 아니다). FE 지도 이동·라벨 조합
      */
     gridY: number;
     /**
-     * 격자 경도 인덱스
+     * 격자 가로 인덱스 (EPSG:5179 평면 x / 100 — 경도가 아니다)
      */
     gridX: number;
     /**
@@ -937,13 +1035,13 @@ export type RegionStatResponseDto = {
 export type ApiResponseDtoRegionStatResponseDto = {
     developCode: number;
     message: string;
-    data: RegionStatResponseDto;
+    data: RegionStatResponseDto | null;
 };
 
 export type ApiResponseDtoRegionResponseDto = {
     developCode: number;
     message: string;
-    data: RegionResponseDto;
+    data: RegionResponseDto | null;
 };
 
 /**
@@ -1123,11 +1221,11 @@ export type HotZoneResponseDto = {
      */
     gridId: string;
     /**
-     * 격자 세로 인덱스 (위도 기반 정수)
+     * 격자 세로 인덱스 (EPSG:5179 평면 y / 100 — 위도가 아니다)
      */
     gridY: number;
     /**
-     * 격자 가로 인덱스 (경도 기반 정수)
+     * 격자 가로 인덱스 (EPSG:5179 평면 x / 100 — 경도가 아니다)
      */
     gridX: number;
     /**
@@ -1135,13 +1233,17 @@ export type HotZoneResponseDto = {
      */
     score: number;
     /**
-     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 지도 마커는 라벨을 그리지 않으므로 행정동 폴백 재료를 싣지 않는다(마커를 누르면 단일 격자 조회가 라벨을 준다).
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 마커 라벨은 같은 항목의 regionName(행정동)이다(추가 호출 없음).
      */
     zoneName: string | null;
     /**
      * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단) — 마커 배지용. zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
      */
     zoneCell: string | null;
+    /**
+     * 격자 중심점이 속한 행정동 전체 이름. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoOccupiedGridPageResponseDto = {
@@ -1173,21 +1275,25 @@ export type OccupiedGridResponseDto = {
      */
     gridId: string;
     /**
-     * 격자 세로 인덱스 (위도 기반 정수)
+     * 격자 세로 인덱스 (EPSG:5179 평면 y / 100 — 위도가 아니다)
      */
     gridY: number;
     /**
-     * 격자 가로 인덱스 (경도 기반 정수)
+     * 격자 가로 인덱스 (EPSG:5179 평면 x / 100 — 경도가 아니다)
      */
     gridX: number;
     /**
-     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 지도 오버레이는 라벨을 그리지 않으므로 행정동 폴백 재료를 싣지 않는다(셀을 누르면 단일 격자 조회가 라벨을 준다).
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 표시 이름은 같은 항목의 regionName(행정동)이다(추가 호출 없음).
      */
     zoneName: string | null;
     /**
      * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단) — 셀 배지용. zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
      */
     zoneCell: string | null;
+    /**
+     * 격자 중심점이 속한 행정동 전체 이름. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoGridCellResponseDto = {
@@ -1213,13 +1319,17 @@ export type GridCellResponseDto = {
      */
     videoCount: number;
     /**
-     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 표시 이름은 함께 호출하는 GET /api/regions/stats/by-grid 응답의 regionName(행정동)으로 폴백한다.
+     * 격자가 속한 구역 이름. 구역 밖 격자면 null — 이때 표시 이름은 같은 응답의 regionName(행정동)이다(추가 호출 없음).
      */
     zoneName: string | null;
     /**
      * 구역 내 위치 코드 "{행}-{열}" (행 A는 구역 북단, 열 1은 서단). zoneName 과 항상 쌍이라 구역 밖 격자면 함께 null 이다.
      */
     zoneCell: string | null;
+    /**
+     * 격자 중심점이 속한 행정동 전체 이름. 아직 아무도 영상을 올리지 않은 격자에도 실린다. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoGridVideoPageResponseDto = {
@@ -1252,6 +1362,10 @@ export type GridGlobalVideoResponseDto = {
      * 촬영 시각 (표시용). 정렬 tie-break 키는 createdAt 이다
      */
     recordedAt: string;
+    /**
+     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
+     */
+    nickname: string;
 };
 
 /**
@@ -1307,7 +1421,7 @@ export type GridVideoResponseDto = {
 export type ApiResponseDtoGridCoverVideoResponseDto = {
     developCode: number;
     message: string;
-    data: GridCoverVideoResponseDto;
+    data: GridCoverVideoResponseDto | null;
 };
 
 /**
@@ -1334,6 +1448,42 @@ export type GridCoverVideoResponseDto = {
      * 촬영 시각 (표시용). 정렬 tie-break 키는 createdAt 이다
      */
     recordedAt: string;
+    /**
+     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
+     */
+    nickname: string;
+};
+
+export type ApiResponseDtoListRegionAggregateResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<RegionAggregateResponseDto>;
+};
+
+/**
+ * 행정 단위로 묶어 센 점령 격자 집계 한 항목
+ */
+export type RegionAggregateResponseDto = {
+    /**
+     * 묶음 키 — 행정동 코드를 단위 길이로 자른 접두(동 10자리, 구 5자리, 시 2자리). 행정동이 판정되지 않은 격자 묶음만 null 이다.
+     */
+    regionCode: string | null;
+    /**
+     * 단위 표시 이름(동 "부전2동", 구 "부산진구", 시 "부산광역시"). "부산광역시 214" 를 "부산 214" 로 줄이는 표기 축약은 클라이언트 몫이다. 행정동이 판정되지 않은 격자 묶음만 null 이다.
+     */
+    name: string | null;
+    /**
+     * 마커 대표 좌표 위도 — 그 묶음에 속한 점령 격자 중심의 평균이다(행정 경계 무게중심이 아니다)
+     */
+    lat: number;
+    /**
+     * 마커 대표 좌표 경도
+     */
+    lng: number;
+    /**
+     * 그 단위 안 점령 격자 수. 항목을 더 묶어 합산해도 같은 뷰포트 개별 조회 총수와 일치한다
+     */
+    count: number;
 };
 
 export type ApiResponseDtoListFriendListItemResponseDto = {
@@ -1371,7 +1521,7 @@ export type ApiResponseDtoFriendProfileResponseDto = {
 };
 
 /**
- * 개인 도감 요약 — 점령한 격자 수·올린 영상 총합·방문한 행정동 수.
+ * 개인 도감 요약 — 점령한 격자 수·올린 영상 총합·방문한 행정동 수·현재/최장 스트릭·획득 뱃지 수.
  */
 export type CollectionSummaryResponseDto = {
     /**
@@ -1386,6 +1536,18 @@ export type CollectionSummaryResponseDto = {
      * 내가 방문한 서로 다른 행정동 수
      */
     visitedRegionCount: number;
+    /**
+     * 현재 스트릭 (연속 업로드 일수). 마지막 기록이 KST 그제 이전이면 끊긴 것으로 보고 0
+     */
+    currentStreak: number;
+    /**
+     * 최장 스트릭. 끊겨도 유지되는 역대 최고 기록
+     */
+    maxStreak: number;
+    /**
+     * 획득한 뱃지 수
+     */
+    badgeCount: number;
 };
 
 /**
@@ -1590,6 +1752,26 @@ export type RegionVideoResponseDto = {
      * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
      */
     zoneCell: string | null;
+};
+
+export type ApiResponseDtoListUploadHistoryResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<UploadHistoryResponseDto>;
+};
+
+/**
+ * 날짜별 업로드 기록 항목 — 업로드가 있었던 KST 날짜 하나와 그날의 건수.
+ */
+export type UploadHistoryResponseDto = {
+    /**
+     * 업로드가 있었던 KST 날짜
+     */
+    uploadDate: string;
+    /**
+     * 그날 업로드한 영상 수 (1 이상)
+     */
+    uploadCount: number;
 };
 
 export type ApiResponseDtoCollectionSummaryResponseDto = {
@@ -1897,6 +2079,38 @@ export type ReplaceResponses = {
 
 export type ReplaceResponse = ReplaceResponses[keyof ReplaceResponses];
 
+export type RemoveProfileImageData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/profile-image';
+};
+
+export type RemoveProfileImageResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoUserProfileResponseDto;
+};
+
+export type RemoveProfileImageResponse = RemoveProfileImageResponses[keyof RemoveProfileImageResponses];
+
+export type UpdateProfileImageData = {
+    body: ProfileImageUpdateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/profile-image';
+};
+
+export type UpdateProfileImageResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoUserProfileResponseDto;
+};
+
+export type UpdateProfileImageResponse = UpdateProfileImageResponses[keyof UpdateProfileImageResponses];
+
 export type UpdateNicknameData = {
     body: NicknameUpdateRequestDto;
     path?: never;
@@ -1981,6 +2195,38 @@ export type IssuePresignedUrlResponses = {
 };
 
 export type IssuePresignedUrlResponse = IssuePresignedUrlResponses[keyof IssuePresignedUrlResponses];
+
+export type HighlightPreviewData = {
+    body: HighlightPreviewRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/videos/highlight-preview';
+};
+
+export type HighlightPreviewResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoHighlightPreviewResponseDto;
+};
+
+export type HighlightPreviewResponse = HighlightPreviewResponses[keyof HighlightPreviewResponses];
+
+export type IssueProfileImagePresignedUrlData = {
+    body: ProfileImagePresignRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/profile-image/presigned-url';
+};
+
+export type IssueProfileImagePresignedUrlResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoProfileImagePresignResponseDto;
+};
+
+export type IssueProfileImagePresignedUrlResponse = IssueProfileImagePresignedUrlResponses[keyof IssueProfileImagePresignedUrlResponses];
 
 export type UnregisterData = {
     body?: never;
@@ -2759,6 +3005,43 @@ export type GetGridCoverResponses = {
 
 export type GetGridCoverResponse = GetGridCoverResponses[keyof GetGridCoverResponses];
 
+export type GetOccupiedAggregatesInViewportData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+        /**
+         * 집계 단위 — DONG(동), SIGUNGU(시군구), SIDO(시도). 대소문자 무관
+         */
+        unit: string;
+    };
+    url: '/api/grids/aggregation';
+};
+
+export type GetOccupiedAggregatesInViewportResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListRegionAggregateResponseDto;
+};
+
+export type GetOccupiedAggregatesInViewportResponse = GetOccupiedAggregatesInViewportResponses[keyof GetOccupiedAggregatesInViewportResponses];
+
 export type GetFriendsData = {
     body?: never;
     path?: never;
@@ -2863,6 +3146,45 @@ export type GetFriendGridVideosResponses = {
 
 export type GetFriendGridVideosResponse = GetFriendGridVideosResponses[keyof GetFriendGridVideosResponses];
 
+export type GetFriendGridAggregatesData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query: {
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+        /**
+         * 집계 단위 — DONG(동), SIGUNGU(시군구), SIDO(시도). 대소문자 무관
+         */
+        unit: string;
+    };
+    url: '/api/friends/{userId}/grids/aggregation';
+};
+
+export type GetFriendGridAggregatesResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListRegionAggregateResponseDto;
+};
+
+export type GetFriendGridAggregatesResponse = GetFriendGridAggregatesResponses[keyof GetFriendGridAggregatesResponses];
+
 export type GetReceivedRequestsData = {
     body?: never;
     path?: never;
@@ -2933,6 +3255,22 @@ export type GetRegionVideosResponses = {
 };
 
 export type GetRegionVideosResponse = GetRegionVideosResponses[keyof GetRegionVideosResponses];
+
+export type GetUploadHistoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/collections/upload-history';
+};
+
+export type GetUploadHistoryResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListUploadHistoryResponseDto;
+};
+
+export type GetUploadHistoryResponse = GetUploadHistoryResponses[keyof GetUploadHistoryResponses];
 
 export type GetSummaryData = {
     body?: never;

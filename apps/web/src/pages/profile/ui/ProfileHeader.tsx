@@ -1,5 +1,4 @@
 import { Avatar, Button } from "@fillmap/ui-web";
-import { avatarFallback } from "@/entities/profile";
 
 interface ProfileHeaderProps {
   nickname: string;
@@ -7,8 +6,11 @@ interface ProfileHeaderProps {
   email: string | null;
   /** 표시용 가입일 — formatJoinedDate 결과 "YYYY.MM.DD" (AC 3) */
   joinedDateLabel: string;
-  /** 아바타 이미지 URL — 없으면 이니셜 fallback (Figma 그라데이션 원은 플레이스홀더) */
-  avatarSrc?: string;
+  /**
+   * 아바타 이미지 URL — profileImageUrl ?? 기본 이미지 에셋을 패널이 배선한다 (MSG-378 기준 16,
+   * 구 닉네임 첫 글자 fallback 대체. Figma 그라데이션 원·"필" 이니셜은 구 표현 플레이스홀더)
+   */
+  avatarSrc: string;
   /** [편집] 클릭 핸들러 — 프로필 편집 모달 열기 (MSG-125에서 배선) */
   onEdit?: () => void;
 }
@@ -34,12 +36,7 @@ export const ProfileHeader = ({
 
   return (
     <div className="flex items-center gap-sm">
-      <Avatar
-        size="lg"
-        src={avatarSrc}
-        alt={nickname}
-        fallback={avatarFallback(nickname)}
-      />
+      <Avatar size="lg" src={avatarSrc} alt={nickname} />
       <div className="flex min-w-0 flex-1 flex-col gap-xxs">
         <p className="truncate text-fm-title text-foreground">{nickname}</p>
         <p

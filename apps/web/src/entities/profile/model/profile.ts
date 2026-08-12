@@ -10,9 +10,10 @@ import type { UserProfileResponseDto } from "@/shared/api/generated/types.gen";
  * 명세 필드명 변경·제거 시 이 Pick이 typecheck로 잡는다.
  * - email: 가입 이메일 — 명세상 `string | null` (카카오 가입은 이메일 미수집, MSG-310)
  * - nickname: 닉네임 — 카카오 로그인 시 자동 저장, 이후 수정 가능
+ * - profileImageUrl: 프로필 이미지 공개 URL — 미설정이면 null, 기본 이미지 표시는 FE 몫 (MSG-378)
  */
 type ProfileSpecFields = Required<
-  Pick<UserProfileResponseDto, "email" | "nickname">
+  Pick<UserProfileResponseDto, "email" | "nickname" | "profileImageUrl">
 >;
 
 /**

@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
+import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
@@ -48,6 +49,7 @@ export const ProfilePanel = () => {
               nickname={data.nickname}
               email={data.email}
               joinedDateLabel={formatJoinedDate(data.joinedAt)}
+              avatarSrc={data.profileImageUrl ?? DEFAULT_PROFILE_IMAGE}
               onEdit={() => setEditOpen(true)}
             />
 

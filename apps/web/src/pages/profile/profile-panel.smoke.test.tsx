@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOCK_PROFILE } from "@/entities/profile";
 import { useAuthStore } from "@/features/auth/model/auth-store";
+import { stubInstantLoadImage } from "@/test/instant-load-image";
 import { ProfilePanel } from "./ProfilePanel";
 
 /**
@@ -63,6 +64,19 @@ describe("프로필 패널 스모크", () => {
     expect(await screen.findByText(MOCK_PROFILE.nickname)).toBeTruthy();
     expect(screen.getByText(`${MOCK_PROFILE.streakDays}일 연속`)).toBeTruthy();
     expect(screen.queryByText("준비 중인 페이지예요")).toBeNull();
+  });
+
+  it("profileImageUrl null(mock)이면 헤더 아바타가 기본 이미지고 닉네임 첫 글자 fallback이 없다 (MSG-378 기준 16)", async () => {
+    stubInstantLoadImage();
+    renderPanel();
+    await screen.findByText(MOCK_PROFILE.nickname);
+
+    const avatar = (await screen.findByAltText(
+      MOCK_PROFILE.nickname,
+    )) as HTMLImageElement;
+    expect(avatar.src).toContain("default-profile-image");
+    // 구 avatarFallback(닉네임 첫 글자) 대체 확인 — MSG-378에서 기본 이미지 에셋으로 전환
+    expect(screen.queryByText(MOCK_PROFILE.nickname.slice(0, 1))).toBeNull();
   });
 
   it("비활성 › 행 5개는 포커스 가능한 button + aria-disabled + '준비 중' 캡션이다 (AC 7·10, A4)", async () => {

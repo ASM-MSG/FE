@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   Avatar,
   Chip,
@@ -7,8 +7,15 @@ import {
   ModalCard,
   Switch,
 } from "@fillmap/ui-web";
-import { avatarFallback, type ProfileData } from "@/entities/profile";
+import { DEFAULT_PROFILE_IMAGE, type ProfileData } from "@/entities/profile";
 import { canSaveProfile, locationStatusLabel } from "../model/profile-edit";
+import {
+  PROFILE_IMAGE_ACCEPT,
+  PROFILE_IMAGE_SIZE_MESSAGE,
+  isWithinProfileImageSize,
+  profileImageErrorMessage,
+} from "../model/profile-image";
+import { useProfileImageUpload } from "../model/use-profile-image-upload";
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -21,8 +28,15 @@ interface ProfileEditModalProps {
  * 프로필 편집 모달 (MSG-125) — Figma node 13399:2153.
  * DialogShell(스크림·포털·ESC/바깥클릭 닫기·포커스 트랩)로 ModalCard를 감싼다 (ReportDialog 패턴).
  * 폼 상태(닉네임·위치정보 토글)는 로컬 state이며 닫힐 때 초기값으로 복원된다(ReportDialog S9 선례 → AC 8).
- * 저장은 닫힘만 — 저장 처리(API·클라이언트 상태 반영)는 제외 범위 (A4).
- * [변경] 칩은 활성 외관 + 핸들러 미배선(클릭 no-op) — 업로드는 제외 범위 (AC 11).
+ * 닉네임 저장은 여전히 닫힘만 — 닉네임 저장 API는 제외 범위 (MSG-378 추정 9).
+ *
+ * [MSG-378] [변경] 칩을 실제 이미지 업로드로 배선:
+ * - 칩 클릭 → 숨김 file input(accept: jpeg·png·webp — heic 제외) 열기 (기준 8)
+ * - 파일 선택 → objectURL 로컬 미리보기 (기준 9), 5MB 초과는 요청 없이 즉시 안내 (기준 10)
+ * - [저장] → presign → S3 PUT → 확정 훅 실행, 성공 시 닫힘 + ["profile"] 캐시 병합 (기준 11)
+ * - 실패 시 인라인 안내 문구(role="alert") + 모달 유지 (기준 12), 진행 중 저장 비활성 (기준 13)
+ * - 파일 미선택 저장은 기존 동작(닫힘만) 유지 (기준 14)
+ * - 닫힐 때 선택 상태·objectURL 폐기(revoke) → 재오픈 시 원래 이미지 복원 (기준 15)
  */
 export const ProfileEditModal = ({
   open,
@@ -33,16 +47,75 @@ export const ProfileEditModal = ({
   const [locationEnabled, setLocationEnabled] = useState(
     profile.locationEnabled,
   );
+  // 선택 파일 + objectURL 미리보기 (기준 9) — 닫힐 때 revoke·폐기 (기준 15)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // 5MB 사전 검증 안내 (기준 10) — 서버 거부 문구는 upload.error에서 파생 (기준 12)
+  const [sizeError, setSizeError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const nicknameId = useId();
   const locationId = useId();
 
-  // 닫힐 때 폼을 초기값으로 되돌려 재오픈 시 변경이 반영되지 않게 한다 (AC 8)
+  // objectURL 폐기는 이 cleanup이 소유한다 — 재선택(의존 변경)·닫기(선택 해제)·
+  // 언마운트(라우트 이탈 등) 세 경로 모두 여기서 revoke된다 (기준 15).
+  // 미리보기는 마운트 이후 파일 선택으로만 생기므로 StrictMode 이중 마운트
+  // (초기 previewUrl=null에서 cleanup 재실행)에도 표시 중인 URL이 무효화되지 않는다.
+  useEffect(() => {
+    if (previewUrl === null) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  const upload = useProfileImageUpload();
+  const errorMessage =
+    sizeError ??
+    (upload.error !== null ? profileImageErrorMessage(upload.error) : null);
+
+  const discardSelection = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setSizeError(null);
+  };
+
+  // 닫힐 때 폼·선택 이미지를 초기 상태로 되돌려 재오픈 시 변경이 반영되지 않게 한다 (AC 8, 기준 15)
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setNickname(profile.nickname);
       setLocationEnabled(profile.locationEnabled);
+      discardSelection();
+      upload.reset(); // 이전 실패 문구가 재오픈 시 남지 않게
     }
     onOpenChange(next);
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // 같은 파일 재선택도 change가 발화하도록 입력값을 비운다 (취소 후 동일 파일 재선택 경로)
+    event.target.value = "";
+    if (file === undefined) return;
+    if (!isWithinProfileImageSize(file.size)) {
+      // 업로드 요청 없이 즉시 안내, 기존 미리보기는 유지 (기준 10)
+      setSizeError(PROFILE_IMAGE_SIZE_MESSAGE);
+      return;
+    }
+    setSelectedFile(file);
+    // 검출기가 setState 경유 데이터 흐름을 추적하지 못하는 오탐: 이 URL은 위
+    // previewUrl effect cleanup이 재선택·닫기·언마운트 전 경로에서 revoke하며,
+    // 언마운트 revoke는 스모크 테스트("언마운트되면 objectURL이 폐기된다")로 고정됨
+    // oxlint-disable-next-line react-doctor/no-create-object-url-without-revoke
+    setPreviewUrl(URL.createObjectURL(file));
+    setSizeError(null);
+    upload.reset();
+  };
+
+  const handleConfirm = () => {
+    // 이미지 미선택 저장은 기존 동작(닫힘만) — 업로드 요청 없음 (기준 14)
+    if (selectedFile === null) {
+      handleOpenChange(false);
+      return;
+    }
+    upload.mutate(selectedFile, {
+      onSuccess: () => handleOpenChange(false),
+    });
   };
 
   return (
@@ -55,19 +128,30 @@ export const ProfileEditModal = ({
         title="프로필 편집"
         cancelText="취소"
         confirmText="저장"
-        confirmDisabled={!canSaveProfile(nickname)}
+        confirmDisabled={!canSaveProfile(nickname) || upload.isPending}
         onCancel={() => handleOpenChange(false)}
-        onConfirm={() => handleOpenChange(false)}
+        onConfirm={handleConfirm}
         onClose={() => handleOpenChange(false)}
       >
-        {/* 아바타 미리보기 + [변경] — 88px는 variant에 없어 size-22 오버라이드,
-            fallback은 닉네임 첫 글자 (ProfileHeader 선례, AC 3) */}
+        {/* 아바타 미리보기 + [변경] — 88px는 variant에 없어 size-22 오버라이드.
+            src 우선순위: 로컬 미리보기 → 저장된 이미지 → 기본 이미지 (기준 9·16 —
+            닉네임 첫 글자 fallback은 기본 이미지 에셋으로 대체, fallback 미전달) */}
         <div className="flex flex-col items-center gap-md">
           <Avatar
             size="lg"
+            src={previewUrl ?? profile.profileImageUrl ?? DEFAULT_PROFILE_IMAGE}
             alt={profile.nickname}
-            fallback={avatarFallback(profile.nickname)}
             className="size-22"
+          />
+          {/* 숨김 파일 입력 — [변경] 칩이 대신 연다 (기준 8). aria-hidden 접근 트리 제외 */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={PROFILE_IMAGE_ACCEPT}
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+            onChange={handleFileChange}
           />
           {/* 순수 프레젠테이셔널 트리거라 토글 시맨틱(aria-pressed)을 제거한다 —
               Chip은 aria-pressed={active}를 항상 렌더하지만 {...props}가 뒤에
@@ -76,8 +160,15 @@ export const ProfileEditModal = ({
           <Chip
             text="변경"
             aria-pressed={undefined}
+            onClick={() => fileInputRef.current?.click()}
             className="border border-primary bg-transparent text-primary"
           />
+          {/* 크기 사전 검증·업로드 실패 인라인 안내 (기준 10·12, 추정 3 — Figma 오류 상태 부재) */}
+          {errorMessage !== null && (
+            <p role="alert" className="text-center text-fm-caption text-error">
+              {errorMessage}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-xs">

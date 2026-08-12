@@ -15,6 +15,7 @@ const cell = (
   videoCount: 4,
   zoneName: "서면",
   zoneCell: "A-14",
+  regionName: null,
   ...overrides,
 });
 
@@ -24,6 +25,7 @@ const COVER: GridCoverVideoResponseDto = {
   durationSec: 27,
   viewCount: 1400,
   recordedAt: "2026-07-31T18:03:11",
+  nickname: "minji_b",
 };
 
 describe("canOpenDetail — 셀 탭 상세 오픈 판정 (MSG-252 AC 9·10)", () => {

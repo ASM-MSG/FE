@@ -22,6 +22,7 @@ describe("unwrapEnvelope", () => {
         videoCount: 0,
         zoneName: null,
         zoneCell: null,
+        regionName: null,
       },
     };
 
@@ -31,6 +32,7 @@ describe("unwrapEnvelope", () => {
       videoCount: 0,
       zoneName: null,
       zoneCell: null,
+      regionName: null,
     });
   });
 

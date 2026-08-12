@@ -72,6 +72,8 @@ const buildVideos = (videoIdBase: number, sampleSize: number): CellVideo[] =>
       recordedAt: isoAgo(VIDEO_AGES[i % VIDEO_AGES.length]),
       durationSec: VIDEO_DURATIONS[i % VIDEO_DURATIONS.length],
       thumbnailUrl: VIDEO_THUMBS[i % VIDEO_THUMBS.length],
+      // 명세 추가 필드(2026-08-11 스냅샷) — 화면 미사용, 목-명세 정렬용
+      nickname: VIDEO_HANDLES[i % VIDEO_HANDLES.length].slice(1),
     } satisfies GridGlobalVideoResponseDto),
     // FE 확장 필드 (CellVideoExtension) — 명세 대응 없음
     title: VIDEO_TITLES[i % VIDEO_TITLES.length],

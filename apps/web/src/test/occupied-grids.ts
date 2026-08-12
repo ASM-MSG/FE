@@ -9,7 +9,14 @@ import type { OccupiedGridResponseDto } from "@/shared/api/generated";
 /** gridId 하나로 점령 격자 응답 항목을 만든다 — 구역 밖(zone 쌍 null) 기본 */
 export const occupiedGridOf = (gridId: string): OccupiedGridResponseDto => {
   const [gridY, gridX] = gridId.split("_").map(Number);
-  return { gridId, gridY, gridX, zoneName: null, zoneCell: null };
+  return {
+    gridId,
+    gridY,
+    gridX,
+    zoneName: null,
+    zoneCell: null,
+    regionName: null,
+  };
 };
 
 export const MOCK_OCCUPIED_GRIDS: OccupiedGridResponseDto[] =

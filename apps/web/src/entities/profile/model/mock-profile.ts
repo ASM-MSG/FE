@@ -18,6 +18,8 @@ import type { ProfileData } from "./profile";
 export const MOCK_PROFILE: ProfileData = {
   nickname: MOCK_DEX.summary.nickname,
   email: "fillmapper@fillmap.app",
+  // 미설정(null) — 화면은 기본 프로필 이미지 에셋을 표시한다 (MSG-378 기준 16)
+  profileImageUrl: null,
   joinedAt: "2026-01-12",
   streakDays: MOCK_DEX.summary.streakDays,
   collectionRate: { regionLabel: "부산", pct: 34 },
