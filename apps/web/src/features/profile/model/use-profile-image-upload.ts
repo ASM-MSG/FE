@@ -18,8 +18,9 @@ const confirmFn = updateProfileImageMutation().mutationFn!;
  * - presign·확정: 생성 SDK mutationFn + 봉투 언랩 (httpClient 파이프라인 — Authorization·에러 정규화)
  * - S3 PUT: **raw fetch** — httpClient를 타면 baseUrl·Authorization·봉투 언랩이 붙어
  *   presigned 요청이 깨진다. 비2xx는 fetch가 reject하지 않으므로 response.ok를 명시 검사한다
- * - 성공 시 확정 응답을 ["profile"] 캐시에 병합(setQueryData) — profileImageUrl만 (추정 4).
- *   프로필 조회가 아직 mock이라 invalidate로는 반영 불가 (스펙 리스크 — 새로고침 시 mock 복귀는 의도된 한계)
+ * - 성공 시 확정 응답을 ["profile"] 캐시에 병합(setQueryData) — profileImageUrl만.
+ *   조회가 실 API(getMe)로 전환된 뒤에도(MSG-378 확장 기준 19) invalidate 대신 setQueryData를
+ *   유지한다 — 확정 응답(UserProfileResponseDto)이 변경 후 상태의 정본이라 재조회 왕복이 잉여다
  */
 export const useProfileImageUpload = () => {
   const queryClient = useQueryClient();

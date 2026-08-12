@@ -94,9 +94,9 @@ export const profileImageErrorMessage = (error: unknown): string => {
 };
 
 /**
- * 확정 응답을 기존 캐시 데이터에 병합한다 — profileImageUrl만 반영 (기준 7, 추정 4).
- * 확정 응답의 email·nickname은 실서버 계정 값이라 mock 출처 화면 데이터와 섞지 않는다
- * (섞으면 화면이 두 사용자를 말하게 된다) — 프로필 조회 실 API 전환 티켓에서 일원화.
+ * 확정 응답을 기존 캐시 데이터에 병합한다 — profileImageUrl만 반영 (기준 7).
+ * 이 뮤테이션이 바꾸는 값은 이미지뿐이다 — 나머지 필드(email·nickname·FE 확장)는
+ * 조회 병합(fetchProfile — MSG-378 확장 기준 18)이 정본이라 여기서 덮지 않는다.
  */
 export const mergeProfileImage = (
   prev: ProfileData,

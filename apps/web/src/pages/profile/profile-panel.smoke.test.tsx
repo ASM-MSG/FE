@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOCK_PROFILE } from "@/entities/profile";
 import { useAuthStore } from "@/features/auth/model/auth-store";
+import { profileQueryOptions } from "@/features/profile/model/use-profile-query";
 import { stubInstantLoadImage } from "@/test/instant-load-image";
 import { ProfilePanel } from "./ProfilePanel";
 
@@ -32,9 +33,17 @@ const LocationProbe = () => {
   return <output data-testid="location">{location.pathname}</output>;
 };
 
-const renderPanel = () =>
-  render(
-    <QueryClientProvider client={new QueryClient()}>
+// MSG-378 확장: 프로필 조회가 getMe 실 API로 전환돼 mock 자동 반환이 사라졌다.
+// 이 스모크의 대상은 쿼리 소스가 아니라 패널 동작이므로 캐시를 시딩한다
+// (소스 검증은 use-profile-query.test 몫 — 기준 18). staleTime Infinity로 마운트
+// 재조회를 막아 케이스별 fetch 목([로그아웃] 등)에 프로필 조회가 섞이지 않게 한다.
+const renderPanel = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { staleTime: Infinity } },
+  });
+  queryClient.setQueryData(profileQueryOptions().queryKey, MOCK_PROFILE);
+  return render(
+    <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={["/profile"]}>
         <Routes>
           <Route path="/profile" element={<ProfilePanel />} />
@@ -43,6 +52,7 @@ const renderPanel = () =>
       </MemoryRouter>
     </QueryClientProvider>,
   );
+};
 
 afterEach(() => {
   cleanup();
