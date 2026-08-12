@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { VideoMiniSelection } from "@/features/map-home/model/video-mini-panel-store";
@@ -8,7 +10,15 @@ import { VideoMiniPanel } from "./VideoMiniPanel";
  * video 요소(선택 영상 videoSrc)·메타(제목·소유 문구·시간·조회수)·닫기 버튼 렌더와
  * 열림 시 닫기 버튼 포커스(교체 시 이동 없음)를 고정한다.
  * 열림/교체 전환 자체는 스토어 테스트(video-mini-panel-store)가 커버 — 여기서는 렌더 계약만.
+ * MSG-326: 패널이 재생 조회 훅(use-video-playback-query)을 쓰게 되어 QueryClientProvider
+ * 래퍼만 추가 — 픽스처는 전부 videoSrc 보유(목 경로)라 쿼리 비활성, 기존 단정 불변.
  */
+
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={new QueryClient()}>
+    {children}
+  </QueryClientProvider>
+);
 
 // jsdom은 HTMLMediaElement.play를 구현하지 않아 autoplay 시도(추정 4)가 콘솔 노이즈를 남긴다 —
 // 계약 대상이 아니므로 무해한 스텁으로 대체한다
@@ -53,6 +63,7 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
   it("선택 영상 videoSrc의 video 요소와 제목·조회수 메타가 렌더된다 (AC 5)", () => {
     const { container } = render(
       <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      { wrapper },
     );
 
     const video = container.querySelector("video");
@@ -68,6 +79,7 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
   it("내 영상이면 '내 영상 · M월 D일', 타인이면 @핸들 소유 문구가 보인다 — 카드와 동일 분기 (AC 5, 추정 5)", () => {
     const { rerender } = render(
       <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      { wrapper },
     );
     expect(screen.getByText(/내 영상/)).toBeTruthy();
     expect(screen.getByText(/7월 15일/)).toBeTruthy();
@@ -78,7 +90,9 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
 
   it("닫기 버튼 클릭 시 onClose가 호출된다 (AC 5)", () => {
     const onClose = vi.fn();
-    render(<VideoMiniPanel selected={MINE_SELECTION} onClose={onClose} />);
+    render(<VideoMiniPanel selected={MINE_SELECTION} onClose={onClose} />, {
+      wrapper,
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "미니 패널 닫기" }));
 
@@ -88,6 +102,7 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
   it("열릴 때 포커스가 닫기 버튼으로 이동하고, 교체 시에는 이동하지 않는다 (AC 6)", () => {
     const { rerender } = render(
       <VideoMiniPanel selected={MINE_SELECTION} onClose={() => {}} />,
+      { wrapper },
     );
 
     const closeButton = screen.getByRole("button", { name: "미니 패널 닫기" });

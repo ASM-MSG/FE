@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type {
-  GridCellResponseDto,
-  GridCoverVideoResponseDto,
-} from "@/shared/api/generated";
+import type { GridCellResponseDto } from "@/shared/api/generated";
 import { canOpenDetail, deriveHomeCellDetail } from "./home-cell-detail";
+
+// MSG-326(추정 1): 대표 영상 단독 섹션이 영상 목록 피드로 대체되면서 coverVideo 필드·
+// cover 입력이 제거됐다 — COVER 픽스처와 coverVideo 단정만 걷어냈고 나머지 단정은 불변.
 
 const SEOMYEON_GRID_ID = "39064_112221";
 
@@ -18,15 +18,6 @@ const cell = (
   regionName: null,
   ...overrides,
 });
-
-const COVER: GridCoverVideoResponseDto = {
-  videoId: 1042,
-  thumbnailUrl: "https://cdn.example/thumb.jpg",
-  durationSec: 27,
-  viewCount: 1400,
-  recordedAt: "2026-07-31T18:03:11",
-  nickname: "minji_b",
-};
 
 describe("canOpenDetail — 셀 탭 상세 오픈 판정 (MSG-252 AC 9·10)", () => {
   it("테마 비활성이면 내 점령 격자만 상세를 연다", () => {
@@ -46,11 +37,10 @@ describe("canOpenDetail — 셀 탭 상세 오픈 판정 (MSG-252 AC 9·10)", ()
   });
 });
 
-describe("deriveHomeCellDetail — API 3종 → 상세 표시 모델 (MSG-325 기준 8)", () => {
+describe("deriveHomeCellDetail — API 응답 → 상세 표시 모델 (MSG-325 기준 8)", () => {
   it("제목은 구역 라벨이고, 내 점령이면 배지가 붙고, 서브타이틀은 내 영상 수다", () => {
     const detail = deriveHomeCellDetail({
       cell: cell(),
-      cover: COVER,
       regionName: "부산광역시 부산진구 부전1동",
       activeTheme: null,
     });
@@ -64,7 +54,6 @@ describe("deriveHomeCellDetail — API 3종 → 상세 표시 모델 (MSG-325 �
   it("미점령 격자는 점령 배지가 없다 — 미점령도 404가 아니라 occupied=false로 온다", () => {
     const detail = deriveHomeCellDetail({
       cell: cell({ occupied: false, videoCount: 0 }),
-      cover: null,
       regionName: null,
       activeTheme: null,
     });
@@ -76,7 +65,6 @@ describe("deriveHomeCellDetail — API 3종 → 상세 표시 모델 (MSG-325 �
   it("테마 활성 상세는 점령 배지 뒤에 테마 배지가 붙고 accent가 테마다", () => {
     const detail = deriveHomeCellDetail({
       cell: cell(),
-      cover: COVER,
       regionName: null,
       activeTheme: "hot",
     });
@@ -88,34 +76,27 @@ describe("deriveHomeCellDetail — API 3종 → 상세 표시 모델 (MSG-325 �
     expect(detail.accent).toBe("hot");
   });
 
-  it("대표 영상 후보가 없으면(cover null) coverVideo가 null이다 — 그 영역만 비표시", () => {
-    const detail = deriveHomeCellDetail({
-      cell: cell(),
-      cover: null,
-      regionName: "부산광역시 부산진구 부전1동",
-      activeTheme: null,
-    });
+  it("행정동이 있으면 regionLabel에 실리고, 없으면(by-grid null) null이다", () => {
+    expect(
+      deriveHomeCellDetail({
+        cell: cell(),
+        regionName: "부산광역시 부산진구 부전1동",
+        activeTheme: null,
+      }).regionLabel,
+    ).toBe("부산광역시 부산진구 부전1동");
 
-    expect(detail.coverVideo).toBeNull();
-    expect(detail.regionLabel).toBe("부산광역시 부산진구 부전1동");
-  });
-
-  it("행정동이 없으면(by-grid null) regionLabel이 null이다 — cover 유무와 독립 분기", () => {
-    const detail = deriveHomeCellDetail({
-      cell: cell(),
-      cover: COVER,
-      regionName: null,
-      activeTheme: null,
-    });
-
-    expect(detail.regionLabel).toBeNull();
-    expect(detail.coverVideo).toBe(COVER);
+    expect(
+      deriveHomeCellDetail({
+        cell: cell(),
+        regionName: null,
+        activeTheme: null,
+      }).regionLabel,
+    ).toBeNull();
   });
 
   it("구역 밖 격자는 제목이 행정동명으로 폴백한다 (기준 6 연결)", () => {
     const detail = deriveHomeCellDetail({
       cell: cell({ zoneName: null, zoneCell: null }),
-      cover: null,
       regionName: "부산광역시 부산진구 부전1동",
       activeTheme: null,
     });

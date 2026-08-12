@@ -1,9 +1,13 @@
 import { create } from "zustand";
-import type { CellVideo } from "@/entities/cell";
+import type { FeedVideo } from "./grid-videos";
 
-/** 미니 패널 선택 — 영상 데이터 + 내 영상 여부(메타 문구 분기 근거) (3차 AC 1) */
+/**
+ * 미니 패널 선택 — 영상 데이터 + 내 영상 여부(메타 문구 분기 근거) (3차 AC 1).
+ * MSG-326: video 타입을 CellVideo → FeedVideo(상위 타입)로 완화 — 격자 상세 실 API
+ * 항목과 테마 피드의 CellVideo(구조적 할당 가능)가 같은 스토어를 쓴다.
+ */
 export interface VideoMiniSelection {
-  video: CellVideo;
+  video: FeedVideo;
   mine: boolean;
 }
 
@@ -11,7 +15,7 @@ interface VideoMiniPanelState {
   /** 선택 영상 — null이면 미니 패널 닫힘 (3차 AC 1) */
   selected: VideoMiniSelection | null;
   /** 영상 카드 클릭 — 이미 열린 상태에서 다른 영상이면 교체 (3차 AC 1, 추정 7 — 재클릭도 교체) */
-  open: (video: CellVideo, mine: boolean) => void;
+  open: (video: FeedVideo, mine: boolean) => void;
   /** 닫기 — 닫기 버튼·컨텍스트 변경(셀 상세 select/close 체인)·Escape 우선 배선의 대상 (3차 AC 2·3) */
   close: () => void;
 }

@@ -1,8 +1,9 @@
-import type { CellVideo } from "@/entities/cell";
+import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import { formatMonthDay, formatRelativeTime } from "@/shared/format";
 
 interface VideoOwnerMetaProps {
-  video: CellVideo;
+  /** MSG-326: CellVideo → FeedVideo(상위 타입) 완화 — 실 API 항목·목 항목 공용 */
+  video: FeedVideo;
   /** 내 영상 여부 — 문구 분기: 내 영상 "내 영상 · M월 D일" / 다른 사용자 "@핸들 · 상대시간" */
   mine: boolean;
 }

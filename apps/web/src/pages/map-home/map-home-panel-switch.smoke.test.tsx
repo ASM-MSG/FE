@@ -52,7 +52,15 @@ const stubDetail = (
       if (pathname.startsWith("/api/grids/")) {
         if (mode === "pending") return new Promise<Response>(() => {});
         if (mode === "error") return new Response(null, { status: 500 });
-        if (pathname.endsWith("/cover")) return envelopeResponse(null);
+        // MSG-326: 상세 패널이 영상 목록 2종을 함께 조회한다 — 빈 목록 응답 (분기 단정과 무관)
+        if (pathname.endsWith("/my-videos")) return envelopeResponse([]);
+        if (pathname.endsWith("/videos")) {
+          return envelopeResponse({
+            videos: [],
+            hasNext: false,
+            nextCursor: null,
+          });
+        }
         return envelopeResponse({
           gridId: SEOMYEON,
           occupied: true,

@@ -22,14 +22,16 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   </QueryClientProvider>
 );
 
-/** gridId별 응답 — cell은 격자마다 다른 videoCount, cover·stat는 null(빈 분기) */
+// MSG-326(추정 1): 대표 영상(getGridCover) 조회가 영상 목록 훅으로 대체·제거돼
+// cover 스텁·coverVideo 단정만 걷어냈다 — 나머지 단정은 불변.
+
+/** gridId별 응답 — cell은 격자마다 다른 videoCount, stat는 null(빈 분기) */
 const stubDetail = () => {
   const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
     async (request) => {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/grids/")) {
         const gridId = url.pathname.split("/")[3];
-        if (url.pathname.endsWith("/cover")) return envelopeResponse(null);
         return envelopeResponse({
           gridId,
           occupied: true,
@@ -121,7 +123,7 @@ describe("useGridDetailQuery", () => {
     expect(result.current.detail).toBeNull();
   });
 
-  it("대표 영상·행정동만 실패하면 상세는 그대로 보여준다 — 선택적 정보다", async () => {
+  it("행정동만 실패하면 상세는 그대로 보여준다 — 선택적 정보다", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn<(input: Request) => Promise<Response>>(async (request) => {
@@ -145,7 +147,6 @@ describe("useGridDetailQuery", () => {
 
     await waitFor(() => expect(result.current.detail).not.toBeNull());
     expect(result.current.isError).toBe(false);
-    expect(result.current.detail?.coverVideo).toBeNull();
     expect(result.current.detail?.regionLabel).toBeNull();
   });
 });

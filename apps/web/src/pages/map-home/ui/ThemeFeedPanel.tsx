@@ -1,14 +1,15 @@
 import { cn } from "@fillmap/ui-web";
-import type { CellVideo } from "@/entities/cell";
+import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import { THEME_META, type ThemeId } from "@/features/map-home/model/theme";
 import type { ThemeFeed } from "@/features/map-home/model/theme-feed";
-import { FeedVideoCard } from "./FeedVideoCard";
+import { FeedVideoList } from "./FeedVideoList";
 import { useEscapeClose } from "./use-escape-close";
 
 interface ThemeFeedPanelProps {
   feed: ThemeFeed;
-  /** 영상 카드 클릭 — 미니 디테일 패널 열기/교체 (3차 AC 4·8, 셀 상세와 공통 배선) */
-  onVideoSelect: (video: CellVideo, mine: boolean) => void;
+  /** 영상 카드 클릭 — 미니 디테일 패널 열기/교체 (3차 AC 4·8, 셀 상세와 공통 배선).
+      MSG-326: CellVideo → FeedVideo(상위 타입) 완화 — 스토어 open과 동일 시그니처 */
+  onVideoSelect: (video: FeedVideo, mine: boolean) => void;
   /** 닫기 — Escape 배선 (추정 6 — 칩 해제와 동일 효과). 칩 재클릭·전환 닫힘은 스토어 연동이 담당 */
   onClose: () => void;
 }
@@ -78,16 +79,10 @@ export const ThemeFeedPanel = ({
                   · {section.videos.length}개
                 </span>
               </h3>
-              <div className="flex flex-col gap-sm">
-                {section.videos.map((video) => (
-                  <FeedVideoCard
-                    key={video.videoId}
-                    video={video}
-                    mine={video.mine}
-                    onSelect={() => onVideoSelect(video, video.mine)}
-                  />
-                ))}
-              </div>
+              <FeedVideoList
+                items={section.videos}
+                onVideoSelect={onVideoSelect}
+              />
             </section>
           ))}
         </div>
