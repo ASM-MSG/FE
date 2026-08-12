@@ -1,4 +1,3 @@
-import type { ProfileData } from "@/entities/profile";
 import { ApiError } from "@/shared/api/api-error";
 import type {
   ProfileImagePresignRequestDto,
@@ -94,11 +93,14 @@ export const profileImageErrorMessage = (error: unknown): string => {
 };
 
 /**
- * 확정 응답을 기존 캐시 데이터에 병합한다 — profileImageUrl만 반영 (기준 7).
- * 이 뮤테이션이 바꾸는 값은 이미지뿐이다 — 나머지 필드(email·nickname·FE 확장)는
- * 조회 병합(fetchProfile — MSG-378 확장 기준 18)이 정본이라 여기서 덮지 않는다.
+ * 확정 응답을 기존 캐시 데이터(getMe 봉투의 data)에 병합한다 — profileImageUrl만 반영 (기준 7).
+ * 이 뮤테이션이 바꾸는 값은 이미지뿐이다 — 나머지 필드(email·nickname·createdAt)는
+ * 조회(getMe — MSG-329 전환)가 정본이라 여기서 덮지 않는다.
  */
 export const mergeProfileImage = (
-  prev: ProfileData,
+  prev: UserProfileResponseDto,
   confirmed: UserProfileResponseDto,
-): ProfileData => ({ ...prev, profileImageUrl: confirmed.profileImageUrl });
+): UserProfileResponseDto => ({
+  ...prev,
+  profileImageUrl: confirmed.profileImageUrl,
+});

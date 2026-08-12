@@ -1,5 +1,5 @@
 /**
- * 재생 staleTime 유도 (MSG-326 기준 4, 추정 5).
+ * 재생 순수 로직 (MSG-326 기준 4·12, 추정 5) — staleTime 유도 + 재생 불가 사유 문구.
  * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
  */
 
@@ -18,4 +18,23 @@ const SAFETY_MARGIN_SEC = 30;
 export const playbackStaleTime = (expiresInSec: number | null): number => {
   if (expiresInSec === null) return 0;
   return Math.max(0, (expiresInSec - SAFETY_MARGIN_SEC) * 1000);
+};
+
+/**
+ * 재생 불가 사유 문구 (playbackUrl null 분기 — 기준 12, MSG-329 병합 승계) —
+ * "처리 중"으로 뭉뚱그리지 않는다: FAILED는 기다려도 재생되지 않고(재업로드 필요),
+ * 소유자 BLINDED도 별도 사유다.
+ * 서버 계약: READY 아님·BLINDED(소유자)면 playbackUrl null (GetPlayback 명세).
+ */
+export const playbackUnavailableMessage = (video: {
+  processingStatus: string;
+  status: string;
+}): string => {
+  if (video.status === "BLINDED") {
+    return "블라인드 처리된 영상이라 재생할 수 없어요";
+  }
+  if (video.processingStatus === "FAILED") {
+    return "영상 처리에 실패했어요. 다시 업로드가 필요해요";
+  }
+  return "AI가 아직 처리 중인 영상이에요. 처리가 끝나면 재생할 수 있어요";
 };

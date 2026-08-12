@@ -6,28 +6,28 @@ import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
+import { DeleteAccountModal } from "@/features/profile/ui/DeleteAccountModal";
 import { ProfileEditModal } from "@/features/profile/ui/ProfileEditModal";
 import { ActivityCard } from "./ui/ActivityCard";
 import { ProfileHeader } from "./ui/ProfileHeader";
 import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
 
 /**
- * 프로필 패널 (MSG-124) — 지속 셸(MapShell) 지도 위 388px 좌측 오버레이 (AC 1).
- * Figma node 13399:2106은 지도 위 플로팅 카드(400px)지만, 티켓 명시 결정으로
- * 홈·탐색·도감과 동일한 전고 사이드탭(w-97) 패턴을 따른다 — Figma에서는 섹션 구성·콘텐츠만.
- * 구성: 프로필 헤더 → "내 활동" 카드 → "설정" 3행 → "계정" 3행(앱 버전은 정보 행) → [로그아웃].
- * 전부 mock이고 › 행은 렌더만 — 실동작 없음 (핸들러 미배선, A4).
- * [로그아웃]은 useLogout 훅(/api/auth/logout + 로컬 우선 종료)에 배선 (MSG-324 기준 12 — 구 목 스토어 배선 대체).
- * 종료 후에는 홈으로 이동한다 (MSG-325 — 비로그인 상태로 보호 화면에 남지 않게).
- * [편집]은 프로필 편집 모달을 연다 (MSG-125 AC 1) — 모달 open 상태는 이 패널이 보유.
- * 본문은 패널 내부 세로 스크롤(AC 11), [로그아웃]은 본문 마지막 항목 + 콘텐츠가 짧으면
- * mt-auto로 패널 하단 정렬 (A6). 로딩/오류 게이트는 use-dex-query 패턴 미러링 (A7).
+ * 프로필 패널 (MSG-124 → MSG-329 실 API 전환) — 지속 셸(MapShell) 지도 위 좌측 오버레이.
+ * 조회는 GET /api/users/me (A1) — 헤더에 닉네임·가입일(createdAt→KST 표기, MSG-378)·
+ * 이메일(null이면 세그먼트 생략, A2)·아바타(profileImageUrl ?? 기본 이미지, MSG-378 기준 16)를
+ * 표시하고, "내 활동" 카드는 "—"다 (A4 — MSG-327 도감 유도 판단 대기).
+ * 앱 버전은 빌드 주입 값(__APP_VERSION__, A5). 오류 게이트는 제목+안내+[다시 시도] (A3).
+ * "계정" 섹션에 [계정 삭제] 행 신설 — danger 확인 모달 → DELETE /api/users/me,
+ * 성공 시 세션·캐시 정리(훅 소관) 후 홈 이동 (A10·A11).
+ * [로그아웃]은 기존 배선(logout API + 로컬 우선 종료 + 홈 이동) 그대로 (A12 — 코드 불변).
  */
 export const ProfilePanel = () => {
   const { data, isLoading, isError, refetch } = useProfileQuery();
   const [editOpen, setEditOpen] = useState(false);
-  // 로그아웃 후 홈으로 — 비로그인 상태로 보호 화면에 남지 않게 하고, 사이드레일 활성 탭도
-  // 자연히 '홈'이 된다(getActiveNavKey가 pathname 기반). MSG-124 F2("패널에 머묾") 대체
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  // 로그아웃·계정 삭제 후 홈으로 — 비로그인 상태로 보호 화면에 남지 않게 하고, 사이드레일
+  // 활성 탭도 자연히 '홈'이 된다(getActiveNavKey가 pathname 기반)
   const navigate = useNavigate();
   const { mutate: logout, isPending: isLoggingOut } = useLogout({
     onFinished: () => navigate(ROUTES.home),
@@ -54,13 +54,10 @@ export const ProfilePanel = () => {
             />
 
             <ProfileSection title="내 활동">
-              <ActivityCard
-                streakDays={data.streakDays}
-                collectionRate={data.collectionRate}
-              />
+              <ActivityCard />
             </ProfileSection>
 
-            {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 3행 → 약관 → 처리방침 → [로그아웃] (AC 10) */}
+            {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 3행 → 약관 → 처리방침 → [계정 삭제] → [로그아웃] */}
             <ProfileSection title="설정">
               <SettingRow label="위치정보 동의 관리" />
               <SettingRow label="알림 설정" />
@@ -68,14 +65,19 @@ export const ProfilePanel = () => {
             </ProfileSection>
 
             <ProfileSection title="계정">
-              {/* 앱 버전은 정보 행 — 포커스 대상 아님, › 없음 (AC 8). 티켓·Figma 순서상 첫 행이며
-                  비포커스라 AC 10 포커스 순회(약관 → 처리방침)에는 관여하지 않는다 */}
-              <SettingInfoRow label="앱 버전" value={data.appVersion} />
+              {/* 앱 버전은 정보 행 — 포커스 대상 아님, › 없음 (AC 8). 값은 빌드 주입 (A5) */}
+              <SettingInfoRow label="앱 버전" value={__APP_VERSION__} />
               <SettingRow label="서비스 이용약관" />
               <SettingRow label="개인정보 처리방침" />
+              {/* [계정 삭제] — 활성 행, 클릭 시 비가역 삭제 확인 모달 (A10) */}
+              <SettingRow
+                label="계정 삭제"
+                tone="danger"
+                onClick={() => setDeleteOpen(true)}
+              />
             </ProfileSection>
 
-            {/* [로그아웃] — logout API + 로컬 세션 종료 후 홈으로 이동 (MSG-325 — F2 대체) */}
+            {/* [로그아웃] — logout API + 로컬 세션 종료 후 홈으로 이동 (A12 — 기존 배선 유지) */}
             <div className="mt-auto flex flex-col pt-md">
               <Button
                 text="로그아웃"
@@ -88,11 +90,18 @@ export const ProfilePanel = () => {
             </div>
           </div>
 
-          {/* 프로필 편집 모달 (MSG-125) — 포털 렌더라 패널 DOM 밖(전면 스크림)에 뜬다 */}
+          {/* 프로필 편집 모달 — 포털 렌더라 패널 DOM 밖(전면 스크림)에 뜬다 */}
           <ProfileEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
             profile={data}
+          />
+
+          {/* 계정 삭제 확인 모달 (A10·A11) — 성공 시 홈 이동은 여기(라우터 보유층)서 주입 */}
+          <DeleteAccountModal
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            onDeleted={() => navigate(ROUTES.home)}
           />
         </>
       )}
@@ -114,7 +123,7 @@ const ProfileSection = ({
   </section>
 );
 
-/** 오류 상태 + 재시도 (A7) — DexErrorState와 동일 패턴(제목+보조 문구+primary sm 버튼) */
+/** 오류 상태 + 재시도 (A3) — DexErrorState와 동일 패턴(제목+보조 문구+primary sm 버튼) */
 const ProfileErrorState = ({ onRetry }: { onRetry: () => void }) => (
   <div className="flex flex-1 flex-col items-center justify-center gap-md px-lg text-center">
     <div className="flex flex-col gap-xxs">

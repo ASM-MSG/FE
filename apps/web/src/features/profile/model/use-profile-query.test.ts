@@ -1,69 +1,91 @@
+import { createElement, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MOCK_PROFILE } from "@/entities/profile";
+import { toProfileData } from "@/entities/profile";
+import { getMeQueryKey } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { envelopeResponse } from "@/test/envelope-response";
-import { fetchProfile, profileQueryOptions } from "./use-profile-query";
+import { stubFetch } from "@/test/stub-fetch";
+import { useProfileQuery } from "./use-profile-query";
 
 /**
- * 프로필 조회 쿼리 — MSG-378 확장에서 mock 반환 → getMe 실 API로 전환 (기준 18·19).
- * 구 케이스 "현재 소스는 mock이며 queryFn 내부 교체만으로 전환 가능"은 그 교체가
- * 실제로 일어나 폐기·대체됐다 (동작 변경을 스펙 부록이 요구 — 빌드 리포트 기록).
+ * 프로필 조회 실 API 전환 (MSG-329 A1·A2 + MSG-378 병합 재기준화) — 구 mock 소스
+ * (MOCK_PROFILE 반환)와 수동 queryKey ["profile"]을 폐기하고 생성 옵션(getMeOptions)
+ * +unwrapEnvelope로 대체한다. MSG-378 병합분: profileImageUrl·가입일(createdAt→joinedAt)도
+ * 서버 값으로 매핑된다.
  */
 
-/** getMe 응답 대역 — mock과 겹치지 않는 값으로 서버 출처를 판별한다 */
+/** getMe 응답 대역 — 명세 4필드 전부 (MSG-373 UserProfileResponseDto) */
 const SERVER_ME = {
-  email: "server-account@kakao.com",
-  nickname: "서버닉네임",
+  email: "fillmapper@fillmap.app",
+  nickname: "필맵퍼",
   profileImageUrl: "https://cdn.fillmap.test/profile/me.png",
   createdAt: "2026-05-02T09:00:00",
 };
 
-const stubGetMe = () => {
-  const fetchMock = vi.fn<(input: Request) => Promise<Response>>(async () =>
-    envelopeResponse(SERVER_ME),
-  );
-  vi.stubGlobal("fetch", fetchMock);
-  return fetchMock;
+const createHarness = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return { queryClient, wrapper };
 };
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("profile query — getMe 실 API 전환 (MSG-378 확장 기준 18·19)", () => {
-  it("queryKey는 API 전환과 무관한 고정 키 ['profile']이다 — 업로드 캐시 병합(setQueryData)과 정합 (기준 19)", () => {
-    expect(profileQueryOptions().queryKey).toEqual(["profile"]);
+describe("useProfileQuery — GET /api/users/me (A1)", () => {
+  it("생성 옵션 경유로 /api/users/me를 호출하고 명세 4필드(가입일은 joinedAt으로)를 ProfileData로 매핑한다", async () => {
+    const received = stubFetch(() => envelopeResponse(SERVER_ME));
+    const { wrapper } = createHarness();
+
+    const { result } = renderHook(() => useProfileQuery(), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(new URL(received[0].request.url).pathname).toBe("/api/users/me");
+    expect(result.current.data).toEqual({
+      nickname: SERVER_ME.nickname,
+      email: SERVER_ME.email,
+      profileImageUrl: SERVER_ME.profileImageUrl,
+      joinedAt: SERVER_ME.createdAt,
+      locationEnabled: true,
+    });
   });
 
-  it("fetchProfile은 GET /api/users/me를 정확히 1회 호출한다 (기준 18)", async () => {
-    const fetchMock = stubGetMe();
+  it("수동 queryKey ['profile']이 아니라 생성 getMeQueryKey로 캐시된다 (A1)", async () => {
+    stubFetch(() => envelopeResponse(SERVER_ME));
+    const { queryClient, wrapper } = createHarness();
 
-    await fetchProfile();
+    const { result } = renderHook(() => useProfileQuery(), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [request] = fetchMock.mock.calls[0];
-    expect(request.method).toBe("GET");
-    expect(new URL(request.url).pathname).toBe("/api/users/me");
+    expect(queryClient.getQueryState(getMeQueryKey())).toBeDefined();
+    expect(queryClient.getQueryState(["profile"])).toBeUndefined();
   });
 
-  it("명세 필드(email·nickname·profileImageUrl)와 가입일(createdAt→joinedAt)은 서버 값이다 (기준 18)", async () => {
-    stubGetMe();
+  it("email null(카카오 가입)은 null 그대로 매핑된다 — 화면은 이메일 세그먼트를 렌더하지 않는다 (A2)", async () => {
+    stubFetch(() =>
+      envelopeResponse({ ...SERVER_ME, email: null, nickname: "카카오유저" }),
+    );
+    const { wrapper } = createHarness();
 
-    const data = await fetchProfile();
+    const { result } = renderHook(() => useProfileQuery(), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(data.email).toBe(SERVER_ME.email);
-    expect(data.nickname).toBe(SERVER_ME.nickname);
-    expect(data.profileImageUrl).toBe(SERVER_ME.profileImageUrl);
-    expect(data.joinedAt).toBe(SERVER_ME.createdAt);
+    expect(result.current.data?.email).toBeNull();
   });
+});
 
-  it("FE 확장 필드(streakDays·collectionRate·appVersion·locationEnabled)는 mock 값으로 병합된다 — ProfileData 계약 유지 (기준 18·19)", async () => {
-    stubGetMe();
-
-    const data = await fetchProfile();
-
-    expect(data.streakDays).toBe(MOCK_PROFILE.streakDays);
-    expect(data.collectionRate).toEqual(MOCK_PROFILE.collectionRate);
-    expect(data.appVersion).toBe(MOCK_PROFILE.appVersion);
-    expect(data.locationEnabled).toBe(MOCK_PROFILE.locationEnabled);
+describe("toProfileData — 명세 응답 → 화면 계약 매핑 (A1·A6)", () => {
+  it("locationEnabled는 기존 클라이언트 값(켜짐)을 유지한다 — 서버 반영 없음 (A6)", () => {
+    expect(toProfileData({ ...SERVER_ME, email: null })).toEqual({
+      email: null,
+      nickname: SERVER_ME.nickname,
+      profileImageUrl: SERVER_ME.profileImageUrl,
+      joinedAt: SERVER_ME.createdAt,
+      locationEnabled: true,
+    });
   });
 });

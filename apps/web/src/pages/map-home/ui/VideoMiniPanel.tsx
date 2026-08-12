@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Film, X } from "lucide-react";
 import { Button } from "@fillmap/ui-web";
 import { useVideoPlaybackQuery } from "@/features/map-home/model/use-video-playback-query";
+import { playbackUnavailableMessage } from "@/features/map-home/model/video-playback";
 import type { VideoMiniSelection } from "@/features/map-home/model/video-mini-panel-store";
 import { formatViewCountKo } from "@/shared/format";
 import { VideoOwnerMeta } from "./VideoOwnerMeta";
@@ -18,7 +19,7 @@ interface VideoMiniPanelProps {
  * 좌측 패널(w-97) 오른쪽에 flush로 붙는 전고 보조 패널 — 배경 지도 조작은 차단하지 않는다
  * (백드롭 없음). 재생 소스는 videoSrc(목 — 테마 피드 과도기, 추정 8) > getPlayback 응답
  * playbackUrl 순이고, 재생 조회는 로딩(placeholder)·실패(문구+재시도)·playbackUrl null
- * (처리 중·실패 영상 상태 문구) 3분기를 가진다 (기준 12).
+ * (처리 중·실패·블라인드 상태 문구 — MSG-329 병합 승계) 3분기를 가진다 (기준 12).
  * 제목은 서버에 영상 제목이 없어 목 title > zone 라벨("서면 I-6") > 행정동 > "영상" 폴백
  * (추정 4), 조회수는 재생 응답 값 우선 (추정 3).
  * 열릴 때(마운트) 포커스를 닫기 버튼으로 옮기고, 카드 교체(리렌더)에는 옮기지 않는다 (AC 6).
@@ -96,13 +97,13 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
           </div>
         ) : isPending ? (
           <Film aria-hidden className="size-8 text-foreground-inverse/40" />
-        ) : (
+        ) : playback ? (
           // 조회는 성공했는데 playbackUrl null — non-READY(처리 중·실패)·BLINDED (기준 12)
           <p className="px-md text-center text-fm-caption text-foreground-inverse">
-            {playback?.processingStatus === "FAILED"
-              ? "처리에 실패한 영상이에요"
-              : "아직 준비 중인 영상이에요"}
+            {playbackUnavailableMessage(playback)}
           </p>
+        ) : (
+          <Film aria-hidden className="size-8 text-foreground-inverse/40" />
         )}
       </div>
 

@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { ROUTES } from "@/app/routes";
 import type { LatLng } from "@/entities/cell";
+import { buildCellClickHandler } from "./grid-click-routing";
 import { useMapOverlayStore } from "./map-overlay-store";
 import {
   buildClusterMarkers,
@@ -11,6 +13,7 @@ import {
   buildGridLines,
   excludeSectionCells,
 } from "@/features/map-home/model/grid-overlay";
+import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { toOccupiedOverlays } from "@/features/map-home/model/occupied-grid-overlay";
 import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
@@ -85,6 +88,34 @@ export const MapShell = () => {
   );
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
+
+  // 점령 격자 클릭 우선 라우팅 (MSG-329 후속) — 어느 탭·어떤 선택 상태에서든 점령 격자
+  // 클릭은 격자 상세가 우선한다. select()가 미니 패널까지 체인으로 닫아 이전 선택을
+  // 초기화하고, 탐색·도감·프로필에서는 홈으로 전환해 상세를 보여준다
+  const navigate = useNavigate();
+  const selectCell = useHomeCellDetailStore((s) => s.select);
+  const expandSidebar = useSidebarStore((s) => s.setCollapsed);
+  const occupiedIds = useMemo(
+    () => occupiedGrids.map((grid) => grid.gridId),
+    [occupiedGrids],
+  );
+  const openGridDetail = useCallback(
+    (cellId: string) => {
+      selectCell(cellId);
+      expandSidebar(false);
+      navigate(ROUTES.home);
+    },
+    [selectCell, expandSidebar, navigate],
+  );
+  const handleCellClick = useMemo(
+    () =>
+      buildCellClickHandler({
+        occupiedIds,
+        openGridDetail,
+        sectionHandler: onOverlayCellClick,
+      }),
+    [occupiedIds, openGridDetail, onOverlayCellClick],
+  );
   const mapRef = useRef<MapCanvasHandle>(null);
   const [initialCenter, setInitialCenter] = useState<LatLng>(SEOMYEON_CENTER);
 
@@ -122,7 +153,7 @@ export const MapShell = () => {
           gridLines={gridLines}
           route={routeOverlay ?? undefined}
           clusters={clusters}
-          onOverlayCellClick={onOverlayCellClick ?? undefined}
+          onOverlayCellClick={handleCellClick}
         />
       </div>
 

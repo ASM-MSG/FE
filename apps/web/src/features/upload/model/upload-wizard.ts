@@ -1,45 +1,60 @@
 /**
- * 업로드 위저드 스텝 전이 — 순수 로직 (MSG-119 L1·L2).
- * 플랫폼 API(window·File·DOM 등)를 참조하지 않는다 — 스텝 문자열과 초 단위 숫자만 다루므로 RN 재사용 대상.
- * 블러 확인은 5초 초과/이하와 무관하게 항상 거치는 필수 프라이버시 게이트이고,
- * 하이라이트는 5초 초과 영상에서만 거친다.
+ * 업로드 위저드 스텝 전이 — 순수 로직 (MSG-329 재편, 디자인 ver 11).
+ * 플랫폼 API(window·File·DOM 등)를 참조하지 않는다 — RN 재사용 대상.
+ * 구 4단계(select→highlight→blur→preview)는 폐기됐다: 업로드 전 블러 확인 스텝이 사라지고,
+ * 하이라이트 분기는 로컬 5초 판정이 아니라 서버 선분석(highlight-preview) 응답으로 결정된다.
  */
 
-import { shouldOfferHighlight } from "./highlight-selection";
-
-/** 업로드 위저드 스텝 — 정보 입력 → (하이라이트) → 블러 확인 → 미리보기(4/4). */
-export type UploadStep = "select" | "highlight" | "blur" | "preview";
+/** 업로드 위저드 스텝 — 선택 → (선분석 로딩) → 하이라이트 → 미리보기. */
+export type UploadStep = "select" | "analyzing" | "highlight" | "preview";
 
 /**
- * 현재 스텝과 영상 길이로 다음 스텝을 판정한다. [L1·L2]
- * - "select": 5초를 초과하면 "highlight"(하이라이트 제공), 5초 이하이면 "blur"(하이라이트 건너뜀).
- *   경계는 shouldOfferHighlight를 재사용해 하이라이트 제공 조건과 정합을 유지한다.
- * - "highlight": duration과 무관하게 항상 "blur"(블러 확인은 필수 게이트).
+ * 선분석 응답의 highlights로 로딩 다음 스텝을 판정한다. [B4]
+ * 빈 배열(5초 이하 등 추천 없음)·null·undefined(DTO 주석: 없으면 null — 리스크 8)는
+ * 하이라이트 스텝을 스킵하고 바로 미리보기로 간다.
  */
-export const getNextStep = (
-  current: UploadStep,
-  duration: number,
-): UploadStep => {
-  if (current === "select") {
-    return shouldOfferHighlight(duration) ? "highlight" : "blur";
-  }
-  return "blur";
-};
+export const getStepAfterAnalysis = (
+  highlights: number[][] | null | undefined,
+): UploadStep =>
+  highlights !== null && highlights !== undefined && highlights.length > 0
+    ? "highlight"
+    : "preview";
 
 /**
- * 현재 스텝과 영상 길이로 이전 스텝을 판정한다. [MSG-352 C2]
- * - "preview": 항상 "blur"(블러 확인은 필수 게이트라 반드시 거쳐 왔다).
- * - "blur": 5초를 초과하면 "highlight"를 거쳐 왔고, 이하면 건너뛰고 왔으므로 "select".
- *   경계는 shouldOfferHighlight를 재사용해 전진 판정(getNextStep)과 정합을 유지한다.
- * - "highlight": 항상 "select". ("select"는 시작점 — 자기 자신을 반환한다)
+ * 선분석 실패의 복귀 지점·사유 — developCode별 분기 (B5, 티켓 12).
+ * step으로 좁히면 kind가 함께 좁혀지는 판별 유니언 — UI 안내 문구 분기용.
  */
-export const getPrevStep = (
-  current: UploadStep,
-  duration: number,
-): UploadStep => {
-  if (current === "preview") return "blur";
-  if (current === "blur") {
-    return shouldOfferHighlight(duration) ? "highlight" : "select";
+export type AnalysisFailure =
+  | {
+      /** 3502류 — 하이라이트 스텝의 직접 지정 폴백 */
+      step: "highlight";
+      kind: "analysis-error";
+      retryable: true;
+    }
+  | {
+      /** 파일 자체 문제 — 선택 스텝 복귀 */
+      step: "select";
+      kind: "corrupt-file" | "too-long" | "too-large";
+      retryable: false;
+    };
+
+/**
+ * 선분석 실패 코드별 복귀 지점을 판정한다. [B5]
+ * - 3426(원본 불량)·3425(180초 초과)·3413(크기 초과): 파일 자체 문제 — 선택 스텝 복귀
+ * - 3502(분석 서버 문제)·그 외/코드 없음(네트워크 등): 직접 구간 지정 폴백 + 재시도 가능
+ *   (티켓 12의 기본 문장 "분석 실패 시 직접 구간 지정으로 폴백")
+ */
+export const resolveAnalysisFailure = (
+  developCode?: number,
+): AnalysisFailure => {
+  switch (developCode) {
+    case 3426:
+      return { step: "select", kind: "corrupt-file", retryable: false };
+    case 3425:
+      return { step: "select", kind: "too-long", retryable: false };
+    case 3413:
+      return { step: "select", kind: "too-large", retryable: false };
+    default:
+      return { step: "highlight", kind: "analysis-error", retryable: true };
   }
-  return "select";
 };

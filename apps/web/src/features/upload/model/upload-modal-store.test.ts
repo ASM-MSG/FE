@@ -108,6 +108,21 @@ describe("업로드 모달 스토어 — 카카오 OAuth 리다이렉트 생존 
     expect(after.uploadStore.getState().open).toBe(true);
   });
 
+  it("게이트에 지목 격자(target)가 있으면 리다이렉트(새 로드) 복귀 후 재개에도 지목이 유지된다 (격자 고정 진입)", async () => {
+    const before = await loadSession();
+    // 격자 상세 [영상 추가] — 지목 격자와 함께 게이트 진입
+    before.uploadStore.getState().openModal({ lat: 35.158, lng: 129.06 });
+
+    const after = await loadSession(); // 카카오 콜백 복귀 — 메모리 소실, 영속 의도만 생존
+    after.authStore.getState().setAccessToken("token");
+
+    expect(after.uploadStore.getState().open).toBe(true);
+    expect(after.uploadStore.getState().target).toEqual({
+      lat: 35.158,
+      lng: 129.06,
+    });
+  });
+
   it("업로드 의도 없이 카카오 로그인만 하면(리다이렉트 복귀) 위저드가 열리지 않는다", async () => {
     const after = await loadSession(); // 의도 영속화 없이 콜백 복귀
 
@@ -151,5 +166,58 @@ describe("업로드 모달 스토어 — 카카오 OAuth 리다이렉트 생존 
     later.authStore.getState().setAccessToken("token");
 
     expect(later.uploadStore.getState().open).toBe(false);
+  });
+});
+
+describe("업로드 모달 스토어 — 격자 고정 진입 (지목 격자)", () => {
+  beforeEach(() => {
+    useUploadModalStore.setState({
+      open: false,
+      pendingAfterLogin: false,
+      target: null,
+    });
+    useLoginModalStore.setState({ open: false });
+    useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
+  });
+
+  it("격자 상세에서 openModal(target)로 열면 지목 좌표가 저장된다 (AC1)", () => {
+    useUploadModalStore.getState().openModal({ lat: 35.158, lng: 129.06 });
+
+    expect(useUploadModalStore.getState().open).toBe(true);
+    expect(useUploadModalStore.getState().target).toEqual({
+      lat: 35.158,
+      lng: 129.06,
+    });
+  });
+
+  it("일반 진입(openModal 무인자)은 이전 지목을 잇지 않는다 (AC2·AC4)", () => {
+    useUploadModalStore.getState().openModal({ lat: 35.158, lng: 129.06 });
+    useUploadModalStore.getState().closeModal();
+
+    useUploadModalStore.getState().openModal();
+
+    expect(useUploadModalStore.getState().target).toBeNull();
+  });
+
+  it("closeModal은 지목을 해제한다 (AC4)", () => {
+    useUploadModalStore.getState().openModal({ lat: 35.158, lng: 129.06 });
+    useUploadModalStore.getState().closeModal();
+
+    expect(useUploadModalStore.getState().target).toBeNull();
+  });
+
+  it("비로그인 게이트를 거쳐도 로그인 재개 시 지목 격자가 유지된다 (AC3)", () => {
+    useAuthStore.setState({ accessToken: null, isAuthenticated: false });
+
+    useUploadModalStore.getState().openModal({ lat: 35.158, lng: 129.06 }); // 게이트
+    expect(useUploadModalStore.getState().open).toBe(false);
+
+    useAuthStore.getState().setAccessToken("token"); // 재개
+
+    expect(useUploadModalStore.getState().open).toBe(true);
+    expect(useUploadModalStore.getState().target).toEqual({
+      lat: 35.158,
+      lng: 129.06,
+    });
   });
 });

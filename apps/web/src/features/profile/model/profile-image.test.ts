@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { ProfileData } from "@/entities/profile";
 import type { UserProfileResponseDto } from "@/shared/api/generated";
 import { ApiError } from "@/shared/api/api-error";
 import {
@@ -117,17 +116,14 @@ describe("profileImageErrorMessage — 에러 → 안내 문구 매핑 (기준 6
   });
 });
 
-// 기준 7: 확정 응답 + 기존 ProfileData → profileImageUrl만 갱신 (추정 4)
+// 기준 7: 확정 응답 + 기존 getMe 캐시(봉투 data) → profileImageUrl만 갱신 (추정 4).
+// MSG-329 병합으로 캐시 원본이 ProfileData가 아니라 명세 DTO가 됐다 — 계약도 DTO 기준
 describe("mergeProfileImage — 캐시 병합 (기준 7)", () => {
-  const prev: ProfileData = {
+  const prev: UserProfileResponseDto = {
     nickname: "필맵퍼",
     email: "fillmapper@fillmap.app",
     profileImageUrl: null,
-    joinedAt: "2026-01-12",
-    streakDays: 7,
-    collectionRate: { regionLabel: "부산", pct: 34 },
-    appVersion: "1.0.0",
-    locationEnabled: true,
+    createdAt: "2026-01-12T09:00:00",
   };
   const confirmed: UserProfileResponseDto = {
     email: "server-account@kakao.com",
@@ -136,7 +132,7 @@ describe("mergeProfileImage — 캐시 병합 (기준 7)", () => {
     createdAt: "2026-08-11T09:00:00",
   };
 
-  it("profileImageUrl만 확정 응답 값으로 갱신된 새 ProfileData를 만든다", () => {
+  it("profileImageUrl만 확정 응답 값으로 갱신된 새 객체를 만든다", () => {
     const merged = mergeProfileImage(prev, confirmed);
     expect(merged.profileImageUrl).toBe(
       "https://cdn.fillmap.kr/profile/42.png",
@@ -145,14 +141,10 @@ describe("mergeProfileImage — 캐시 병합 (기준 7)", () => {
     expect(prev.profileImageUrl).toBeNull(); // 원본 불변
   });
 
-  it("FE 확장 필드와 mock 출처 email·nickname은 유지한다 — 화면이 두 사용자를 말하지 않게 (추정 4)", () => {
+  it("기존 캐시의 email·nickname·createdAt은 유지한다 — 화면이 두 사용자를 말하지 않게 (추정 4)", () => {
     const merged = mergeProfileImage(prev, confirmed);
     expect(merged.email).toBe(prev.email);
     expect(merged.nickname).toBe(prev.nickname);
-    expect(merged.joinedAt).toBe(prev.joinedAt);
-    expect(merged.streakDays).toBe(prev.streakDays);
-    expect(merged.collectionRate).toEqual(prev.collectionRate);
-    expect(merged.appVersion).toBe(prev.appVersion);
-    expect(merged.locationEnabled).toBe(prev.locationEnabled);
+    expect(merged.createdAt).toBe(prev.createdAt);
   });
 });

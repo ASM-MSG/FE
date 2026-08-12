@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { playbackStaleTime } from "./video-playback";
+import {
+  playbackStaleTime,
+  playbackUnavailableMessage,
+} from "./video-playback";
 
 /**
  * 재생 staleTime 유도 (MSG-326 기준 4, 추정 5).
@@ -19,5 +22,34 @@ describe("playbackStaleTime — expiresInSec → staleTime(ms) (기준 4)", () =
 
   it("null(playbackUrl 없음)이면 0이다", () => {
     expect(playbackStaleTime(null)).toBe(0);
+  });
+});
+
+// MSG-329 병합 승계 (구 use-video-playback.ts) — 재생 불가 사유를 상태별로 구분한다
+describe("playbackUnavailableMessage — 재생 불가 사유 문구 (기준 12)", () => {
+  it("FAILED는 '처리 중'이 아니라 실패 안내를 돌려준다", () => {
+    expect(
+      playbackUnavailableMessage({
+        processingStatus: "FAILED",
+        status: "ACTIVE",
+      }),
+    ).toBe("영상 처리에 실패했어요. 다시 업로드가 필요해요");
+  });
+
+  it("소유자 블라인드는 블라인드 안내를 돌려준다", () => {
+    expect(
+      playbackUnavailableMessage({
+        processingStatus: "READY",
+        status: "BLINDED",
+      }),
+    ).toBe("블라인드 처리된 영상이라 재생할 수 없어요");
+  });
+
+  it("처리 중(UPLOADED·ENCODING·BLURRING)은 처리 중 안내를 돌려준다", () => {
+    for (const processingStatus of ["UPLOADED", "ENCODING", "BLURRING"]) {
+      expect(
+        playbackUnavailableMessage({ processingStatus, status: "ACTIVE" }),
+      ).toBe("AI가 아직 처리 중인 영상이에요. 처리가 끝나면 재생할 수 있어요");
+    }
   });
 });

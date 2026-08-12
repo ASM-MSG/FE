@@ -15,9 +15,11 @@ interface VideoPreviewProps {
   onTimeUpdate?: (currentTime: number) => void;
   /**
    * 영상 위에 얹을 오버레이 슬롯 — relative 컨테이너 내부에 렌더한다.
-   * 블러 감지 박스·타임코드 등 표시용(MSG-119 S9·S10). 미지정이면 아무것도 얹지 않는다(하위 호환).
+   * 미지정이면 아무것도 얹지 않는다(하위 호환).
    */
   overlay?: ReactNode;
+  /** 네이티브 재생 컨트롤 표시 — 미리보기 최종 확인·블러 확인 모달용 (MSG-329 B8·B16) */
+  controls?: boolean;
   className?: string;
 }
 
@@ -27,7 +29,7 @@ interface VideoPreviewProps {
  * playSegment는 imperative handle로 노출 — 리스트/트리머의 재생 버튼이 호출한다.
  */
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  ({ objectUrl, onTimeUpdate, overlay, className }, ref) => {
+  ({ objectUrl, onTimeUpdate, overlay, controls, className }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const stopAtRef = useRef<number | null>(null);
 
@@ -38,7 +40,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
         video.currentTime = segment.start;
         stopAtRef.current = segment.end;
         // autoplay 정책/소스 미준비로 실패해도 unhandled rejection을 남기지 않는다 — UI는 재생 안 됨으로 자연히 드러남
-        video.play().catch(() => {});
+        video.play()?.catch(() => {}); // play()가 Promise를 안 주는 환경(jsdom 등) 가드 — VideoMiniPanel과 동일
       },
     }));
 
@@ -68,6 +70,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             src={objectUrl}
             onTimeUpdate={handleTimeUpdate}
             playsInline
+            controls={controls}
             className="size-full object-contain"
           />
         ) : (

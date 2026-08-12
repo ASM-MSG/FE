@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { LatLng } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { uploadIntentStorage } from "@/shared/storage";
@@ -13,8 +14,15 @@ interface UploadModalState {
    * 함께 영속화하고, 새 로드가 저장값으로 초기화(hydrate)해 이어받는다(C11).
    */
   pendingAfterLogin: boolean;
-  /** 업로드 진입 — 비로그인이면 위저드 대신 로그인 모달을 연다 (MSG-352 C9) */
-  openModal: () => void;
+  /**
+   * 지목 격자 좌표 (격자 고정 진입) — 격자 상세의 [영상 추가]가 넘긴 격자 중심.
+   * null이면 일반 진입(FAB·사이드레일)이라 지도 뷰포트 중심을 쓴다(use-upload-location).
+   * 업로드 의도와 함께 sessionStorage에 영속화돼 카카오 리다이렉트(새 로드)도 생존한다 —
+   * 지목 격자가 조용히 뷰포트 중심으로 바뀌어 다른 위치에 게시되는 경로 봉쇄.
+   */
+  target: LatLng | null;
+  /** 업로드 진입 — 비로그인이면 위저드 대신 로그인 모달을 연다 (MSG-352 C9). target은 지목 격자 */
+  openModal: (target?: LatLng) => void;
   closeModal: () => void;
 }
 
@@ -34,18 +42,22 @@ export const useUploadModalStore = create<UploadModalState>((set) => ({
   // 전이 시 스토리지를 직접 조회하지 않는 이유: 같은 세션의 테스트·리셋이 남긴 저장값이
   // 메모리 상태와 무관하게 재개를 일으키는 경로(스퓨리어스 재개)를 봉쇄하기 위함이다
   pendingAfterLogin: uploadIntentStorage.peek(),
-  openModal: () => {
+  // C11 hydrate — 영속 의도의 지목 좌표도 함께 복원한다 (리다이렉트 복귀 재개가 격자 고정을 잇는다)
+  target: uploadIntentStorage.peekTarget(),
+  openModal: (target) => {
     if (!useAuthStore.getState().isAuthenticated) {
       // 로그인 모달을 먼저 연다 — "모달 열림 = 이전 의도 무효" 구독(아래 stale 가드)이
-      // 잔존 의도를 청소한 뒤에 이번 의도를 세팅해야 게이트의 의도가 지워지지 않는다
+      // 잔존 의도를 청소한 뒤에 이번 의도를 세팅해야 게이트의 의도가 지워지지 않는다.
+      // 지목 격자도 함께 보존해 재개(C10)가 격자 고정 진입을 잇는다
       useLoginModalStore.getState().openModal();
-      set({ pendingAfterLogin: true });
-      uploadIntentStorage.save(); // C11: 카카오 리다이렉트 생존용 영속화
+      set({ pendingAfterLogin: true, target: target ?? null });
+      uploadIntentStorage.save(target); // C11: 카카오 리다이렉트 생존용 영속화 (지목 좌표 포함)
       return;
     }
-    set({ open: true });
+    // 매 진입마다 지목을 명시 세팅한다 — 일반 진입이 직전 지목을 이어받는 경로 차단
+    set({ open: true, target: target ?? null });
   },
-  closeModal: () => set({ open: false }),
+  closeModal: () => set({ open: false, target: null }),
 }));
 
 // C10·C11: 비로그인→로그인 전이 시 보류된 업로드 의도를 재개 — 로그인 모달을 닫고

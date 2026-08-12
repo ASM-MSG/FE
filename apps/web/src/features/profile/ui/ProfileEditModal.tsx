@@ -8,7 +8,12 @@ import {
   Switch,
 } from "@fillmap/ui-web";
 import { DEFAULT_PROFILE_IMAGE, type ProfileData } from "@/entities/profile";
-import { canSaveProfile, locationStatusLabel } from "../model/profile-edit";
+import { useUpdateNickname } from "../api/use-profile-mutations";
+import {
+  canSaveProfile,
+  locationStatusLabel,
+  nicknameError,
+} from "../model/profile-edit";
 import {
   PROFILE_IMAGE_ACCEPT,
   PROFILE_IMAGE_SIZE_MESSAGE,
@@ -25,18 +30,24 @@ interface ProfileEditModalProps {
 }
 
 /**
- * 프로필 편집 모달 (MSG-125) — Figma node 13399:2153.
- * DialogShell(스크림·포털·ESC/바깥클릭 닫기·포커스 트랩)로 ModalCard를 감싼다 (ReportDialog 패턴).
- * 폼 상태(닉네임·위치정보 토글)는 로컬 state이며 닫힐 때 초기값으로 복원된다(ReportDialog S9 선례 → AC 8).
- * 닉네임 저장은 여전히 닫힘만 — 닉네임 저장 API는 제외 범위 (MSG-378 추정 9).
+ * 프로필 편집 모달 (MSG-125 → MSG-329 A7~A9 닉네임 실 API + MSG-378 이미지 업로드) —
+ * Figma node 13399:2153. DialogShell(스크림·포털·ESC/바깥클릭 닫기·포커스 트랩)로
+ * ModalCard를 감싼다 (ReportDialog 패턴).
  *
- * [MSG-378] [변경] 칩을 실제 이미지 업로드로 배선:
+ * [저장]은 두 API를 조건부로 배선한다 (MSG-329 ↔ MSG-378 병합):
+ * - 이미지 선택이 있으면 presign → S3 PUT → 확정 훅, 성공 시 getMe 캐시 병합 (기준 11)
+ * - 닉네임이 바뀌었으면 PUT /api/users/me/nickname — 성공 시 getMe invalidate(훅 소관) (A8)
+ * - 둘 다면 이미지 → 닉네임 순차 실행, 모두 성공해야 닫힌다. 어느 한쪽 실패 시 모달
+ *   유지 + 오류 표시 + 재시도 가능 (A9·기준 12)
+ * - 둘 다 무변경 저장은 기존 동작(닫힘만) — 요청 없음 (기준 14)
+ * 닉네임 검증은 2~20자(trim) — 범위 밖이면 [저장] 비활성 + 사유 안내 (A7).
+ * 위치정보 토글은 클라이언트 값 유지 — 서버 반영 없음 (A6, 제외 범위).
+ *
+ * [MSG-378] [변경] 칩 = 이미지 업로드 배선:
  * - 칩 클릭 → 숨김 file input(accept: jpeg·png·webp — heic 제외) 열기 (기준 8)
  * - 파일 선택 → objectURL 로컬 미리보기 (기준 9), 5MB 초과는 요청 없이 즉시 안내 (기준 10)
- * - [저장] → presign → S3 PUT → 확정 훅 실행, 성공 시 닫힘 + ["profile"] 캐시 병합 (기준 11)
- * - 실패 시 인라인 안내 문구(role="alert") + 모달 유지 (기준 12), 진행 중 저장 비활성 (기준 13)
- * - 파일 미선택 저장은 기존 동작(닫힘만) 유지 (기준 14)
- * - 닫힐 때 선택 상태·objectURL 폐기(revoke) → 재오픈 시 원래 이미지 복원 (기준 15)
+ * - 진행 중 저장 비활성 (기준 13), 닫힐 때 선택 상태·objectURL 폐기(revoke) →
+ *   재오픈 시 원래 이미지 복원 (기준 15)
  */
 export const ProfileEditModal = ({
   open,
@@ -47,8 +58,9 @@ export const ProfileEditModal = ({
   const [locationEnabled, setLocationEnabled] = useState(
     profile.locationEnabled,
   );
-  // 선택 파일 + objectURL 미리보기 (기준 9) — 닫힐 때 revoke·폐기 (기준 15)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  // 선택 파일은 핸들러에서만 읽혀 ref로 둔다(렌더 미사용 — react-doctor 환류).
+  // objectURL 미리보기는 렌더 소비라 state (기준 9) — 닫힐 때 revoke·폐기 (기준 15)
+  const selectedFileRef = useRef<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   // 5MB 사전 검증 안내 (기준 10) — 서버 거부 문구는 upload.error에서 파생 (기준 12)
   const [sizeError, setSizeError] = useState<string | null>(null);
@@ -66,23 +78,37 @@ export const ProfileEditModal = ({
   }, [previewUrl]);
 
   const upload = useProfileImageUpload();
+  // onSaved는 훅 레벨 onSuccess 경유라 isPending이 아직 true인 시점에 불린다(TanStack v5
+  // 콜백 순서) — handleOpenChange의 진행 중 가드를 우회해 prop을 직접 닫는다 (MSG-329 관례).
+  // 폼 상태 복원은 불필요: 닉네임은 저장값 그대로고 이미지 선택은 업로드 성공 시 이미 폐기됨
+  const {
+    mutate: saveNickname,
+    isPending: isSavingNickname,
+    isError: isNicknameError,
+    reset: resetNickname,
+  } = useUpdateNickname({ onSaved: () => onOpenChange(false) });
+  const isSaving = upload.isPending || isSavingNickname;
+
   const errorMessage =
     sizeError ??
     (upload.error !== null ? profileImageErrorMessage(upload.error) : null);
 
   const discardSelection = () => {
-    setSelectedFile(null);
+    selectedFileRef.current = null;
     setPreviewUrl(null);
     setSizeError(null);
   };
 
-  // 닫힐 때 폼·선택 이미지를 초기 상태로 되돌려 재오픈 시 변경이 반영되지 않게 한다 (AC 8, 기준 15)
+  // 닫힐 때 폼·선택 이미지·오류 상태를 초기값으로 되돌려 재오픈 시 변경·실패 흔적이
+  // 남지 않게 한다 (AC 8, 기준 15)
   const handleOpenChange = (next: boolean) => {
     if (!next) {
+      if (isSaving) return; // 저장 진행 중에는 닫지 않는다 — 결과 불명 상태 방지
       setNickname(profile.nickname);
       setLocationEnabled(profile.locationEnabled);
       discardSelection();
       upload.reset(); // 이전 실패 문구가 재오픈 시 남지 않게
+      resetNickname();
     }
     onOpenChange(next);
   };
@@ -97,7 +123,7 @@ export const ProfileEditModal = ({
       setSizeError(PROFILE_IMAGE_SIZE_MESSAGE);
       return;
     }
-    setSelectedFile(file);
+    selectedFileRef.current = file;
     // 검출기가 setState 경유 데이터 흐름을 추적하지 못하는 오탐: 이 URL은 위
     // previewUrl effect cleanup이 재선택·닫기·언마운트 전 경로에서 revoke하며,
     // 언마운트 revoke는 스모크 테스트("언마운트되면 objectURL이 폐기된다")로 고정됨
@@ -108,15 +134,30 @@ export const ProfileEditModal = ({
   };
 
   const handleConfirm = () => {
-    // 이미지 미선택 저장은 기존 동작(닫힘만) — 업로드 요청 없음 (기준 14)
+    const trimmed = nickname.trim();
+    // 닉네임 무변경 저장은 요청 없이 마무리 — 이미지·닉네임 둘 다 무변경이면
+    // 기존 동작(닫힘만, 기준 14)
+    const finishWithNickname = () => {
+      if (trimmed !== profile.nickname) saveNickname(trimmed);
+      else handleOpenChange(false);
+    };
+    const selectedFile = selectedFileRef.current;
     if (selectedFile === null) {
-      handleOpenChange(false);
+      finishWithNickname();
       return;
     }
+    // 이미지 → 닉네임 순차 — 실패 지점의 오류만 표시되고 성공분은 재요청되지 않는다:
+    // 업로드 성공 즉시 선택을 폐기해(확정 응답이 getMe 캐시에 병합돼 아바타는 저장된 URL로
+    // 전환) 닉네임 실패 후 재시도가 이미지를 다시 올리지 않는다
     upload.mutate(selectedFile, {
-      onSuccess: () => handleOpenChange(false),
+      onSuccess: () => {
+        discardSelection();
+        finishWithNickname();
+      },
     });
   };
+
+  const validationMessage = nicknameError(nickname);
 
   return (
     <DialogShell
@@ -127,8 +168,8 @@ export const ProfileEditModal = ({
       <ModalCard
         title="프로필 편집"
         cancelText="취소"
-        confirmText="저장"
-        confirmDisabled={!canSaveProfile(nickname) || upload.isPending}
+        confirmText={isSaving ? "저장 중…" : "저장"}
+        confirmDisabled={!canSaveProfile(nickname) || isSaving}
         onCancel={() => handleOpenChange(false)}
         onConfirm={handleConfirm}
         onClose={() => handleOpenChange(false)}
@@ -180,6 +221,16 @@ export const ProfileEditModal = ({
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
           />
+          {/* 범위 밖 사유 안내 (A7) — 비활성 [저장]의 이유를 시각으로 알린다 */}
+          {validationMessage !== null && (
+            <p className="text-fm-label text-error">{validationMessage}</p>
+          )}
+          {/* 저장 실패 — 모달 유지 + 오류 표시 + [저장] 재시도 가능 (A9) */}
+          {isNicknameError && (
+            <p role="alert" className="text-fm-label text-error">
+              닉네임 저장에 실패했어요. 다시 시도해주세요
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-xs">

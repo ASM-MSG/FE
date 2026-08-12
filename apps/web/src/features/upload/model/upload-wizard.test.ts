@@ -1,50 +1,76 @@
 import { describe, expect, it } from "vitest";
-import { getNextStep, getPrevStep } from "./upload-wizard";
+import { getStepAfterAnalysis, resolveAnalysisFailure } from "./upload-wizard";
 
-describe("getNextStep — 위저드 스텝 전이", () => {
-  // L1: select에서 duration > 5초이면 highlight, 5초 이하(정확히 5초 포함)이면 blur
-  it("1단계에서 5초를 초과하는 영상은 다음 스텝이 highlight다", () => {
-    expect(getNextStep("select", 5.01)).toBe("highlight");
-    expect(getNextStep("select", 6)).toBe("highlight");
-    expect(getNextStep("select", 60)).toBe("highlight");
+/**
+ * MSG-329 재설계 — 구 4단계(select→highlight→blur→preview) 전이는 디자인 ver 11에서
+ * 폐기됐다(블러 스텝 삭제, 하이라이트 분기는 로컬 5초 판정 → 서버 선분석 응답 기반).
+ * 신 스텝: select → analyzing → (highlight) → preview.
+ */
+describe("getStepAfterAnalysis — 선분석 응답의 highlights로 다음 스텝을 판정한다 (B4)", () => {
+  it("highlights가 있으면 하이라이트 스텝으로 간다", () => {
+    expect(getStepAfterAnalysis([[0, 5.5]])).toBe("highlight");
+    expect(
+      getStepAfterAnalysis([
+        [0, 4.25],
+        [12, 18.5],
+        [20, 27.5],
+      ]),
+    ).toBe("highlight");
   });
 
-  it("1단계에서 정확히 5초이거나 그 이하인 영상은 하이라이트를 건너뛰고 blur로 간다", () => {
-    expect(getNextStep("select", 5)).toBe("blur");
-    expect(getNextStep("select", 4.9)).toBe("blur");
-    expect(getNextStep("select", 1)).toBe("blur");
+  it("빈 배열이면 하이라이트 스텝을 스킵하고 바로 미리보기로 간다 (5초 이하 영상)", () => {
+    expect(getStepAfterAnalysis([])).toBe("preview");
   });
 
-  // L2: highlight에서는 duration과 무관하게 항상 blur
-  it("2단계(highlight)에서는 영상 길이와 무관하게 항상 blur로 간다", () => {
-    expect(getNextStep("highlight", 6)).toBe("blur");
-    expect(getNextStep("highlight", 120)).toBe("blur");
-    expect(getNextStep("highlight", 3)).toBe("blur");
+  it("null·undefined도 추천 없음으로 간주해 미리보기로 간다 — DTO 주석(없으면 null)과 티켓(빈 배열) 모두 커버 (리스크 8)", () => {
+    expect(getStepAfterAnalysis(null)).toBe("preview");
+    expect(getStepAfterAnalysis(undefined)).toBe("preview");
   });
 });
 
-describe("getPrevStep — 이전 단계 복귀 전이 (MSG-352 C2)", () => {
-  // C2: preview(4/4)의 이전 단계는 항상 blur(3/4)
-  it("미리보기(preview)에서는 영상 길이와 무관하게 blur로 돌아간다", () => {
-    expect(getPrevStep("preview", 42)).toBe("blur");
-    expect(getPrevStep("preview", 3)).toBe("blur");
+describe("resolveAnalysisFailure — 선분석 실패 코드별 복귀 지점을 순수 함수로 판정한다 (B5)", () => {
+  it("3502(분석 서버 문제)는 하이라이트 스텝의 직접 구간 지정 폴백 + 재시도 가능이다", () => {
+    expect(resolveAnalysisFailure(3502)).toEqual({
+      step: "highlight",
+      kind: "analysis-error",
+      retryable: true,
+    });
   });
 
-  // C2: blur(3/4)의 이전 단계는 전진 판정(shouldOfferHighlight)과 정합 —
-  // 5초 초과면 highlight를 거쳐 왔고, 5초 이하면 highlight를 건너뛰고 왔다
-  it("블러 확인(blur)에서 5초를 초과하는 영상은 highlight로 돌아간다", () => {
-    expect(getPrevStep("blur", 5.01)).toBe("highlight");
-    expect(getPrevStep("blur", 42)).toBe("highlight");
+  it("3426(원본 파일 불량)은 선택 스텝 복귀 + 다른 파일 선택 유도(재시도 무의미)다", () => {
+    expect(resolveAnalysisFailure(3426)).toEqual({
+      step: "select",
+      kind: "corrupt-file",
+      retryable: false,
+    });
   });
 
-  it("블러 확인(blur)에서 정확히 5초이거나 그 이하인 영상은 select로 돌아간다", () => {
-    expect(getPrevStep("blur", 5)).toBe("select");
-    expect(getPrevStep("blur", 3)).toBe("select");
+  it("3425(길이 초과)는 선택 스텝 복귀 + 길이 사유다", () => {
+    expect(resolveAnalysisFailure(3425)).toEqual({
+      step: "select",
+      kind: "too-long",
+      retryable: false,
+    });
   });
 
-  // C2: highlight(2/4)의 이전 단계는 항상 select(1/4)
-  it("하이라이트(highlight)에서는 영상 길이와 무관하게 select로 돌아간다", () => {
-    expect(getPrevStep("highlight", 42)).toBe("select");
-    expect(getPrevStep("highlight", 6)).toBe("select");
+  it("3413(크기 초과)은 선택 스텝 복귀 + 크기 사유다", () => {
+    expect(resolveAnalysisFailure(3413)).toEqual({
+      step: "select",
+      kind: "too-large",
+      retryable: false,
+    });
+  });
+
+  it("그 외 코드·코드 없음(네트워크 등)은 3502와 같은 직접 지정 폴백이다 — 티켓 12의 기본 폴백 문장", () => {
+    expect(resolveAnalysisFailure(9999)).toEqual({
+      step: "highlight",
+      kind: "analysis-error",
+      retryable: true,
+    });
+    expect(resolveAnalysisFailure(undefined)).toEqual({
+      step: "highlight",
+      kind: "analysis-error",
+      retryable: true,
+    });
   });
 });

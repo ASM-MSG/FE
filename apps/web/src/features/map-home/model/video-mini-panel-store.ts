@@ -5,6 +5,9 @@ import type { FeedVideo } from "./grid-videos";
  * 미니 패널 선택 — 영상 데이터 + 내 영상 여부(메타 문구 분기 근거) (3차 AC 1).
  * MSG-326: video 타입을 CellVideo → FeedVideo(상위 타입)로 완화 — 격자 상세 실 API
  * 항목과 테마 피드의 CellVideo(구조적 할당 가능)가 같은 스토어를 쓴다.
+ * 재생 소스 판별은 FeedVideo 하나로 수렴한다(MSG-329 serverVideoId 병합 정리):
+ * videoSrc 보유(목 — 테마 피드 과도기)면 그대로 재생, 없으면 video.videoId(실 서버 id)로
+ * GET /api/videos/{videoId}를 지연 조회한다 — use-video-playback-query 참조.
  */
 export interface VideoMiniSelection {
   video: FeedVideo;

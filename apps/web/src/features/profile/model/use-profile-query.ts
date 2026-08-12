@@ -1,33 +1,18 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
-import { MOCK_PROFILE, type ProfileData } from "@/entities/profile";
+import { useQuery } from "@tanstack/react-query";
+import { toProfileData, type ProfileData } from "@/entities/profile";
 import { unwrapEnvelope } from "@/shared/api/envelope";
-import { getMe } from "@/shared/api/generated";
+// 생성 옵션은 barrel 미재수출 — 직접 경로 import (MSG-323 관례)
+import { getMeOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 
 /**
- * 프로필 조회 queryFn — GET /api/users/me (MSG-378 확장 기준 18, mock 반환에서 전환).
- * 생성 SDK 호출 + 봉투 언랩(map-home 쿼리 관례) 뒤 ProfileData로 병합한다:
- * 명세 필드(email·nickname·profileImageUrl)와 가입일(createdAt→joinedAt)은 서버 값,
- * 명세에 없는 FE 확장 필드(streakDays·collectionRate·appVersion·locationEnabled)는
- * mock 값 유지 — 필드별 환류 상태는 entities/profile의 ProfileExtension 주석 참조.
+ * 프로필 조회 훅 (MSG-329 A1) — `GET /api/users/me` 생성 옵션 + 봉투 언랩 + ProfileData 매핑.
+ * 구 mock 소스(MOCK_PROFILE)·수동 queryKey ["profile"]은 폐기 — 캐시 키는 getMeQueryKey다.
+ * select는 파생 전용이라 캐시 원본은 봉투 그대로다 — 업로드 확정의 setQueryData 병합
+ * (use-profile-image-upload, MSG-378 기준 19)도 같은 키의 봉투에 쓴다.
+ * 뷰는 이 훅으로 로딩/에러/데이터 상태를 받는다 (A3 오류 게이트 포함).
  */
-export const fetchProfile = async (): Promise<ProfileData> => {
-  const { data } = await getMe({ throwOnError: true });
-  const me = unwrapEnvelope(data);
-  return {
-    ...MOCK_PROFILE,
-    email: me.email,
-    nickname: me.nickname,
-    profileImageUrl: me.profileImageUrl,
-    joinedAt: me.createdAt,
-  };
-};
-
-/** API 전환과 무관한 고정 쿼리 옵션 (queryKey: ["profile"], 반환 타입: ProfileData — 기준 19) */
-export const profileQueryOptions = () =>
-  queryOptions({
-    queryKey: ["profile"] as const,
-    queryFn: fetchProfile,
+export const useProfileQuery = () =>
+  useQuery({
+    ...getMeOptions(),
+    select: (envelope): ProfileData => toProfileData(unwrapEnvelope(envelope)),
   });
-
-/** 프로필 조회 훅 — 뷰는 이 훅으로 로딩/에러/데이터 상태를 받는다 */
-export const useProfileQuery = () => useQuery(profileQueryOptions());

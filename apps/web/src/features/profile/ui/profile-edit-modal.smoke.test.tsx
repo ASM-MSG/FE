@@ -8,7 +8,9 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MOCK_PROFILE, type ProfileData } from "@/entities/profile";
+import type { ProfileData } from "@/entities/profile";
+import type { GetMeResponse } from "@/shared/api/generated";
+import { getMeQueryKey } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { stubInstantLoadImage } from "@/test/instant-load-image";
 import {
   MAX_PROFILE_IMAGE_BYTES,
@@ -22,6 +24,16 @@ import { ProfileEditModal } from "./ProfileEditModal";
  * 실동작(기준 9·11 브라우저 확인)은 검증 단계의 dev 서버 몫.
  * 스타일·픽셀 단정은 넣지 않는다.
  */
+
+/** 프로필 픽스처 — 구 MOCK_PROFILE 대체 (MSG-329 병합으로 mock 소스 폐기). 닉네임은
+ * 케이스에서 바꾸지 않아 [저장]이 닉네임 PUT을 부르지 않는다(무변경 스킵 — 기준 14 계열) */
+const PROFILE: ProfileData = {
+  email: "fillmapper@fillmap.app",
+  nickname: "필맵퍼",
+  profileImageUrl: null,
+  joinedAt: "2026-05-02T09:00:00",
+  locationEnabled: true,
+};
 
 const PRESIGN_PATH = "/api/users/me/profile-image/presigned-url";
 const CONFIRM_PATH = "/api/users/me/profile-image";
@@ -81,14 +93,28 @@ const Harness = ({
   );
 };
 
-const renderModal = (profile: ProfileData = MOCK_PROFILE) => {
+const renderModal = (profile: ProfileData = PROFILE) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  queryClient.setQueryData(["profile"], profile);
+  // 조회 캐시는 getMe 봉투 그대로다 (MSG-329 전환) — 병합 단정도 봉투 data를 읽는다
+  queryClient.setQueryData<GetMeResponse>(getMeQueryKey(), {
+    developCode: 1000,
+    message: "성공",
+    data: {
+      email: profile.email,
+      nickname: profile.nickname,
+      profileImageUrl: profile.profileImageUrl,
+      createdAt: profile.joinedAt,
+    },
+  });
   render(<Harness queryClient={queryClient} profile={profile} />);
   return queryClient;
 };
+
+/** getMe 캐시(봉투)의 data — 병합 결과 관찰 지점 */
+const cachedMe = (queryClient: QueryClient) =>
+  (queryClient.getQueryData(getMeQueryKey()) as GetMeResponse).data;
 
 const fileInput = (): HTMLInputElement => {
   const input = document.querySelector('input[type="file"]');
@@ -174,9 +200,7 @@ describe("프로필 편집 모달 — 이미지 업로드", () => {
     expect(
       screen.getAllByRole("dialog", { name: "프로필 편집" }).length,
     ).toBeGreaterThan(0);
-    expect(
-      (queryClient.getQueryData(["profile"]) as ProfileData).profileImageUrl,
-    ).toBe(MOCK_PROFILE.profileImageUrl);
+    expect(cachedMe(queryClient).profileImageUrl).toBe(PROFILE.profileImageUrl);
   });
 
   it("업로드 진행 중에는 저장 버튼이 비활성화된다 (기준 13)", async () => {
@@ -218,7 +242,7 @@ describe("프로필 편집 모달 — 이미지 업로드", () => {
     selectFile(pngFile());
     // 선택 즉시 모달 아바타가 로컬 미리보기로 바뀐다 (기준 9의 jsdom 대역)
     const preview = (await screen.findByAltText(
-      MOCK_PROFILE.nickname,
+      PROFILE.nickname,
     )) as HTMLImageElement;
     expect(preview.src).toBe("blob:preview-1");
 
@@ -228,7 +252,7 @@ describe("프로필 편집 모달 — 이미지 업로드", () => {
     // 재오픈 — profileImageUrl null이라 기본 이미지 에셋으로 복원 (기준 16)
     fireEvent.click(screen.getByRole("button", { name: "모달 열기" }));
     const restored = (await screen.findByAltText(
-      MOCK_PROFILE.nickname,
+      PROFILE.nickname,
     )) as HTMLImageElement;
     expect(restored.src).toContain("default-profile-image");
   });
@@ -264,10 +288,87 @@ describe("프로필 편집 모달 — 이미지 업로드", () => {
       "image/png",
     );
 
-    const cached = queryClient.getQueryData(["profile"]) as ProfileData;
+    const cached = cachedMe(queryClient);
     expect(cached.profileImageUrl).toBe(NEW_IMAGE_URL);
-    // mock 출처 email·nickname은 확정 응답 값으로 덮이지 않는다 (추정 4)
-    expect(cached.nickname).toBe(MOCK_PROFILE.nickname);
-    expect(cached.email).toBe(MOCK_PROFILE.email);
+    // 기존 캐시의 email·nickname은 확정 응답 값으로 덮이지 않는다 (추정 4 — 최소 병합)
+    expect(cached.nickname).toBe(PROFILE.nickname);
+    expect(cached.email).toBe(PROFILE.email);
+  });
+});
+
+// MSG-329 병합 — [저장]의 닉네임 배선(A8)과 이미지→닉네임 순차 실행(병합 신설 로직)
+describe("프로필 편집 모달 — 닉네임 저장 배선 (MSG-329 A8)", () => {
+  const NICKNAME_PATH = "/api/users/me/nickname";
+
+  /** successFetchMock + 닉네임 PUT 라우트 — 순서 검증용으로 pathname을 기록한다 */
+  const fetchMockWithNickname = () => {
+    const base = successFetchMock();
+    const paths: string[] = [];
+    const mock = vi.fn(
+      async (input: Request | string | URL, init?: RequestInit) => {
+        if (input instanceof Request) {
+          const pathname = new URL(input.url).pathname;
+          paths.push(pathname);
+          if (pathname === NICKNAME_PATH) {
+            expect(input.method).toBe("PUT");
+            expect(await input.clone().json()).toEqual({
+              nickname: "새닉네임",
+            });
+            return envelope({
+              email: PROFILE.email,
+              nickname: "새닉네임",
+              profileImageUrl: null,
+              createdAt: PROFILE.joinedAt,
+            });
+          }
+        } else {
+          paths.push(String(input));
+        }
+        return base(input, init);
+      },
+    );
+    return { mock, paths };
+  };
+
+  /** 닉네임 변경 → [저장] → 닫힘 대기 — 두 케이스 공용 진행부 */
+  const saveNewNicknameAndAwaitClose = async () => {
+    fireEvent.change(screen.getByLabelText("닉네임"), {
+      target: { value: "새닉네임" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() =>
+      expect(screen.queryAllByRole("dialog", { name: "프로필 편집" })).toEqual(
+        [],
+      ),
+    );
+  };
+
+  it("닉네임을 바꿔 저장하면 PUT /api/users/me/nickname이 호출되고 성공 시 모달이 닫힌다 (A8)", async () => {
+    const { mock, paths } = fetchMockWithNickname();
+    vi.stubGlobal("fetch", mock);
+    renderModal();
+
+    await saveNewNicknameAndAwaitClose();
+
+    // 이미지 미선택 — 닉네임 PUT만 나간다
+    expect(paths).toEqual([NICKNAME_PATH]);
+  });
+
+  it("이미지+닉네임을 함께 저장하면 업로드(확정)가 먼저, 닉네임 PUT이 뒤따르고 모두 성공해야 닫힌다", async () => {
+    const { mock, paths } = fetchMockWithNickname();
+    vi.stubGlobal("fetch", mock);
+    const queryClient = renderModal();
+    selectFile(pngFile());
+
+    await saveNewNicknameAndAwaitClose();
+
+    // presign → S3 PUT → 확정 → 닉네임 순차 (병합 결정 — 실패 지점 단일 표시·성공분 재요청 없음)
+    expect(paths).toEqual([
+      PRESIGN_PATH,
+      S3_UPLOAD_URL,
+      CONFIRM_PATH,
+      NICKNAME_PATH,
+    ]);
+    expect(cachedMe(queryClient).profileImageUrl).toBe(NEW_IMAGE_URL);
   });
 });

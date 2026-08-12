@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { envelopeResponse } from "@/test/envelope-response";
 import { useGridDetailQuery } from "./use-grid-detail-query";
@@ -51,13 +51,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** 공통 렌더 — 서면 격자 선택 고정 (시나리오별 차이는 스텁·단정에만 둔다) */
+const renderDetail = () =>
+  renderHook(() => useGridDetailQuery(SEOMYEON, null), { wrapper });
+
 describe("useGridDetailQuery", () => {
   it("격자 응답을 표시 모델로 조합한다 — 제목은 구역 라벨", async () => {
     stubDetail();
 
-    const { result } = renderHook(() => useGridDetailQuery(SEOMYEON, null), {
-      wrapper,
-    });
+    const { result } = renderDetail();
 
     await waitFor(() => expect(result.current.detail).not.toBeNull());
     expect(result.current.detail?.gridId).toBe(SEOMYEON);
@@ -113,9 +115,7 @@ describe("useGridDetailQuery", () => {
       ),
     );
 
-    const { result } = renderHook(() => useGridDetailQuery(SEOMYEON, null), {
-      wrapper,
-    });
+    const { result } = renderDetail();
 
     await waitFor(() => expect(result.current.isError).toBe(true), {
       timeout: 5000,
@@ -141,12 +141,78 @@ describe("useGridDetailQuery", () => {
       }),
     );
 
-    const { result } = renderHook(() => useGridDetailQuery(SEOMYEON, null), {
-      wrapper,
-    });
+    const { result } = renderDetail();
 
     await waitFor(() => expect(result.current.detail).not.toBeNull());
     expect(result.current.isError).toBe(false);
     expect(result.current.detail?.regionLabel).toBeNull();
+  });
+});
+
+/** 행정동(by-grid)만 영구 보류하는 스텁 — 선택 정보 병리 지연 모사 (일괄 게이트·유예 상한
+ * 공용). MSG-326 병합: cover 조회가 영상 목록 훅으로 대체·제거돼 남은 선택 정보는 stat뿐 */
+const stubHungStat = () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<(input: Request) => Promise<Response>>(async (request) => {
+      const url = new URL(request.url);
+      if (url.pathname === "/api/regions/stats/by-grid") {
+        return new Promise<Response>(() => {}); // 영구 보류
+      }
+      if (url.pathname.startsWith("/api/grids/")) {
+        return envelopeResponse({
+          gridId: SEOMYEON,
+          occupied: true,
+          videoCount: 4,
+          zoneName: "서면",
+          zoneCell: "A-14",
+          regionName: null,
+        });
+      }
+      return envelopeResponse(null);
+    }),
+  );
+};
+
+describe("useGridDetailQuery — 일괄 렌더 게이트 (점진 등장 방지)", () => {
+  it("격자 응답만 오고 행정동이 미정착이면 detail을 내놓지 않는다 — 전부 정착 후 한 번에", async () => {
+    // stat 응답만 영구 보류 — cell 도착 후에도 detail이 비어 있어야 한다
+    stubHungStat();
+
+    const { result } = renderDetail();
+
+    // cell 응답이 처리될 시간을 주고도 detail은 여전히 비어 있어야 한다 (일괄 게이트)
+    await waitFor(() =>
+      expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThanOrEqual(2),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(result.current.detail).toBeNull();
+    expect(result.current.isError).toBe(false);
+  });
+});
+
+describe("useGridDetailQuery — 선택 정보 유예 상한 (영구 로딩 방지)", () => {
+  it("행정동이 계속 매달려도 유예(3초)가 지나면 격자 정보만으로 상세를 내놓는다", async () => {
+    vi.useFakeTimers();
+    try {
+      stubHungStat();
+
+      const { result } = renderDetail();
+
+      // cell 정착 후에도 유예 안에서는 일괄 게이트가 로딩을 유지한다
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(100);
+      });
+      expect(result.current.detail).toBeNull();
+
+      // 유예 경과 — 선택 정보 없이(빈 분기) 상세를 내놓는다
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+      expect(result.current.detail).not.toBeNull();
+      expect(result.current.detail?.label).toBe("서면 A-14");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

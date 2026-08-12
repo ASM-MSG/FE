@@ -15,6 +15,7 @@ const cell = (
   videoCount: 4,
   zoneName: "서면",
   zoneCell: "A-14",
+  // 2026-08-11 명세 재생성으로 신설된 필수 필드 (행정동 폴백 라벨)
   regionName: null,
   ...overrides,
 });
