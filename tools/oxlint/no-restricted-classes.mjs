@@ -15,9 +15,11 @@
 
 const RESTRICTIONS = [
   {
-    // 스페이싱·사이징 계열의 정수 px 임의값 — 스케일 클래스로 전부 표현 가능
+    // 스페이싱·사이징 계열의 정수 px 임의값 — 스케일 클래스로 전부 표현 가능.
+    // 끝의 !?는 Tailwind v4 important 접미사(w-[40px]!) 우회 차단 — 원본 eslint 패턴에는
+    // 없던 갭으로, PR 리뷰 지적으로 이식 시점에 보수 (docs/spec/MSG-386.md 작업 로그)
     pattern:
-      /^(?:.*:)?-?(?:p[xytblrse]?|m[xytblrse]?|w|h|size|gap(?:-[xy])?|min-w|max-w|min-h|max-h|space-[xy]|translate(?:-[xy])?|top|bottom|left|right|inset(?:-[xy])?|indent)-\[\d+px\]$/,
+      /^(?:.*:)?-?(?:p[xytblrse]?|m[xytblrse]?|w|h|size|gap(?:-[xy])?|min-w|max-w|min-h|max-h|space-[xy]|translate(?:-[xy])?|top|bottom|left|right|inset(?:-[xy])?|indent)-\[\d+px\]!?$/,
     message:
       "px 임의값 금지 — 정수 px는 스케일 클래스로 전부 표현됩니다 (예: w-[40px]→w-10, 6px→1.5, 1px→px). docs/DESIGN_SYSTEM.md 1조",
   },
@@ -60,6 +62,11 @@ function collectStrings(node, out) {
     case "TemplateLiteral":
       for (const quasi of node.quasis) {
         out.push({ node: quasi, value: quasi.value.cooked ?? quasi.value.raw })
+      }
+      // 템플릿 내부 ${...}의 조건식/논리식도 검사 — 빠뜨리면 `${cond ? "w-[40px]" : ""}`가
+      // 우회 경로가 된다 (PR 리뷰 지적)
+      for (const expression of node.expressions) {
+        collectStrings(expression, out)
       }
       break
     case "JSXExpressionContainer":
