@@ -79,7 +79,7 @@ description: "FillMap 페이지 개발 파이프라인 오케스트레이터 —
   → 커밋(사용자) → PR(검증 요약 첨부) → 지라 코멘트 환류
 ```
 
-머지 후 사용자가 회고를 요청하면 task-retro 스킬이 `_workspace/`·`docs/spec/`·PR 리뷰 스레드를 수집해 `docs/retro/MSG-{번호}.html`을 생성한다 (파이프라인 밖 온디맨드 단계).
+머지 후 사용자가 회고를 요청하면 task-retro 스킬이 `_workspace/`·`docs/spec/`·PR 리뷰 스레드를 수집해 `~/fillmaphtml/MSG-{번호}.html`(레포 밖 개인 폴더)을 생성한다 (파이프라인 밖 온디맨드 단계).
 
 `_workspace/`는 커밋하지 않는다(.gitignore). 삭제도 하지 않는다 — 후속 요청("MSG-123 보완해줘")의 컨텍스트다.
 
