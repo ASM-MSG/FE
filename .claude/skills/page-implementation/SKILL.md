@@ -30,7 +30,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 
 ### 3단계: 연결 및 스코프 확인
 
-라우트 등록, 로직-뷰 연결 후 **변경한 패키지 스코프**로 게이트를 확인한다: `pnpm --filter web test run`·`pnpm --filter web typecheck`·`pnpm --filter web lint`, ui-web 승격이 있었으면 `--filter @fillmap/ui-web`도 추가. 루트 풀 게이트 5종(test·typecheck·lint·format:check·check:duplication)은 여기서 돌리지 않는다 — 검증 단계(page-verification)가 최종 1회 실행하므로 중복이고, 티켓당 풀 게이트 반복이 파이프라인 소요의 주범이었다(MSG-380 감사). 스코프 게이트 실패를 남긴 채 검증으로 넘기는 것은 금지 — 스코프 그린은 빌더의 완료 조건이다.
+라우트 등록, 로직-뷰 연결 후 **변경한 패키지 스코프**로 게이트를 확인한다: `pnpm --filter web test run`·`pnpm --filter web typecheck`·`pnpm --filter web lint`, ui-web 승격이 있었으면 `--filter @fillmap/ui-web`도 추가. 루트 풀 게이트 6종(test·typecheck·lint·format:check·check:duplication·openapi-ts 드리프트)은 여기서 돌리지 않는다 — 검증 단계(page-verification)가 최종 1회 실행하므로 중복이고, 티켓당 풀 게이트 반복이 파이프라인 소요의 주범이었다(MSG-380 감사). 스코프 게이트 실패를 남긴 채 검증으로 넘기는 것은 금지 — 스코프 그린은 빌더의 완료 조건이다.
 
 ## 디렉토리 구조 (FSD)
 

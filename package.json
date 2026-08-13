@@ -25,9 +25,11 @@
     "node": ">=24"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.99.0",
     "husky": "^9.1.7",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
-    "react-doctor": "^0.9.3"
+    "react-doctor": "^0.9.3",
+    "typescript": "~6.0.3"
   }
 }

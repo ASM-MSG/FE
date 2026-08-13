@@ -21,11 +21,12 @@ pnpm typecheck          # 전 패키지 — web(tsc -b) + ui-web(stories 포함 
 pnpm lint               # 전 패키지 — apps/web + packages/ui-web
 pnpm format:check       # oxfmt — CI와 동일 게이트 (불일치 시 pnpm format으로 정리)
 pnpm check:duplication  # nose 베이스라인 대비 신규 중복 — 의도 중복이면 --write-baseline 등재를 리포트에 기록
+pnpm openapi-ts && git diff --exit-code apps/web/src/shared/api/generated  # 생성물 드리프트 — CI 동일 게이트 (MSG-386 CI 실패 환류로 추가)
 ```
 
 반드시 루트에서 실행한다 — `--filter web`으로 좁히면 ui-web 승격 산출물(컴포넌트·스토리)이 검사에서 빠진다. 하나라도 실패하면 이후 단계를 진행하되, 리포트 최상단에 실패를 명시한다.
 
-**이 풀 게이트 5종은 파이프라인에서 검증 단계 1회만 실행한다** — 빌더는 스코프 게이트만 돌리고 넘어온다(MSG-380 게이트 단일화). 재작업 루프의 중간 회차에서는 실패 항목과 관련된 게이트·테스트만 재실행하고, **최종 통과 회차에서 풀 5종을 다시 확인**한 뒤에만 "커밋 가능"을 판정한다.
+**이 풀 게이트 6종은 파이프라인에서 검증 단계 1회만 실행한다** — 빌더는 스코프 게이트만 돌리고 넘어온다(MSG-380 게이트 단일화). 재작업 루프의 중간 회차에서는 실패 항목과 관련된 게이트·테스트만 재실행하고, **최종 통과 회차에서 풀 게이트를 다시 확인**한 뒤에만 "커밋 가능"을 판정한다.
 
 스페이싱·사이징 px 임의값, 색상 임의값, RN 경계 규칙(model의 라우터/window 참조)은 oxlint가 기계 강제한다(MSG-386에서 eslint 대체 — 토큰 규칙은 `tools/oxlint/` 자작 플러그인) — 이 범위는 lint 통과가 곧 감사 통과다. 단, 변경 파일에 lint 비활성 주석(`eslint-disable`·`oxlint-disable` 계열)이 새로 생겼으면 우회 시도이므로 사유를 검증하고 리포트에 기록한다.
 
