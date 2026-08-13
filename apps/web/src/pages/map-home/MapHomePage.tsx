@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { Toast } from "@fillmap/ui-web";
 import { MOCK_CELLS, type LatLng } from "@/entities/cell";
 import { MOCK_COLLECTED_VIDEOS } from "@/entities/dex";
 import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
@@ -11,6 +12,7 @@ import {
   buildRouteOverlay,
   themeCellGridIds,
 } from "@/features/map-home/model/theme-overlay";
+import { useGridCardPlay } from "@/features/map-home/model/use-grid-card-play";
 import { useGridDetailQuery } from "@/features/map-home/model/use-grid-detail-query";
 import { useGridVideosQuery } from "@/features/map-home/model/use-grid-videos-query";
 import { useHotZoneCells } from "@/features/map-home/model/use-hotzones-query";
@@ -35,6 +37,15 @@ import { VideoMiniPanel } from "./ui/VideoMiniPanel";
 
 // 내 수집 영상 id 전체 — 테마 피드의 mine 판정 키 (MSG-277 AC 4). 영상 id는 셀 접두라 전역 유일
 const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.videoId);
+
+/** 카드 재생 안내 토스트 자동 소멸(ms) — ReportDialog TOAST_DURATION_MS 관례와 동일 값 */
+const CARD_PLAY_TOAST_MS = 3000;
+
+/** 카드 재생 안내 문구 — useGridCardPlay notice 사유별 */
+const CARD_PLAY_NOTICE_MESSAGE = {
+  empty: "이 격자에 재생할 영상이 없어요.",
+  error: "영상 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+} as const;
 
 /**
  * Escape 우선순위 래핑 (MSG-277 3차 AC 13) — 미니 패널이 열려 있으면 그것만 닫고,
@@ -159,42 +170,25 @@ export const MapHomePage = () => {
   // 분기하고 상세 성립을 막지 않는다. 선택이 없으면(null) 두 쿼리 모두 비활성 (기준 7)
   const gridVideos = useGridVideosQuery(selectedCellId);
 
-  // 지역 격자 카드 클릭 (사용자 보완 2) — 지도 이동(AC 7 유지) + 격자 상세를 열고,
-  // 영상 목록 도착 시 첫 영상을 오른쪽 미니 패널에서 자동 재생한다. 카드 DTO에는 커버
-  // videoId가 없어 기존 격자 탭과 같은 목록 조회(useGridVideosQuery)를 경유한다 —
-  // 자동 재생은 카드 클릭 진입에만 걸리고, 지도 격자 탭의 기존 UX(수동 선택)는 불변
-  const [autoPlayGridId, setAutoPlayGridId] = useState<string | null>(null);
+  // 지역 격자 카드 클릭 (사용자 피드백 — 상세 미오픈) — 지도 이동(AC 7 유지)만 하고,
+  // 격자 상세(home-cell-detail-store)는 열지 않는다: 좌측은 지역 패널 그대로, 오른쪽
+  // 미니 패널에서 첫 영상만 재생한다(useGridCardPlay — 목록 조회·미니 오픈·안내 소유).
+  // 지도 격자 탭 → 상세 흐름은 불변
+  const cardPlay = useGridCardPlay();
   const handleGridCardSelect = useCallback(
     (gridId: string, center: LatLng) => {
       moveTo(center);
-      selectCell(gridId);
-      setAutoPlayGridId(gridId);
+      cardPlay.play(gridId);
     },
-    [moveTo, selectCell],
+    [moveTo, cardPlay.play],
   );
+
+  // 카드 재생 안내 토스트 — 빈 목록·조회 실패를 조용히 무시하지 않는다 (ReportDialog 관례)
   useEffect(() => {
-    if (autoPlayGridId === null) return;
-    // 다른 격자 선택·상세 닫힘으로 컨텍스트가 바뀌면 예약을 철회한다
-    if (selectedCellId !== autoPlayGridId) {
-      setAutoPlayGridId(null);
-      return;
-    }
-    const first = gridVideos.items[0];
-    if (first) {
-      openMiniPanel(first, first.mine);
-      setAutoPlayGridId(null);
-    } else if (gridVideos.isEmpty || gridVideos.isError) {
-      // 재생할 영상이 없거나 목록 실패 — 상세만 남기고 예약 해제
-      setAutoPlayGridId(null);
-    }
-  }, [
-    autoPlayGridId,
-    selectedCellId,
-    gridVideos.items,
-    gridVideos.isEmpty,
-    gridVideos.isError,
-    openMiniPanel,
-  ]);
+    if (cardPlay.notice === null) return;
+    const timer = setTimeout(cardPlay.dismissNotice, CARD_PLAY_TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [cardPlay.notice, cardPlay.dismissNotice]);
 
   // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
   const themeFeed = useMemo(
@@ -266,6 +260,12 @@ export const MapHomePage = () => {
       )}
       {/* 상단 테마 칩 — 좌측 패널 오른쪽 홈 오버레이 (AC 1, A6). 미니 열림 시 우측 이동 (3차 AC 15) */}
       <ThemeChipsBar />
+      {/* 격자 카드 재생 안내 토스트 (사용자 피드백) — 빈 목록·조회 실패, 3초 자동 소멸 */}
+      {cardPlay.notice && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-120 px-md">
+          <Toast title={CARD_PLAY_NOTICE_MESSAGE[cardPlay.notice]} />
+        </div>
+      )}
     </>
   );
 };

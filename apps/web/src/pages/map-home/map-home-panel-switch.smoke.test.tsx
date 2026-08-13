@@ -279,7 +279,7 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.getByText("서면 A-14")).toBeTruthy();
   });
 
-  it("격자 카드를 클릭하면 지도 이동과 함께 상세로 전환되고 오른쪽 미니 패널에서 첫 영상이 재생된다 (사용자 보완 2)", async () => {
+  it("격자 카드를 클릭하면 상세를 열지 않고 지역 리스트를 유지한 채 오른쪽 미니 패널에서 첫 영상이 재생된다 (사용자 피드백 — 상세 미오픈)", async () => {
     stubDetail("ready", [], () => BUJEON_REGION, [
       {
         videoId: 501,
@@ -290,14 +290,16 @@ describe("홈 좌측 패널 분기", () => {
         nickname: "필맵퍼",
       },
     ]);
-    authenticate();
+    await renderRegionHome();
 
-    renderHome();
-    fireEvent.click(await screen.findByRole("button", { name: /서면 A-14/ }));
+    fireEvent.click(screen.getByRole("button", { name: /서면 A-14/ }));
 
-    // 기존 지도 격자 탭과 같은 메커니즘 — 상세 전환 + 영상 목록 도착 시 미니 패널 자동 재생
-    expect(await screen.findByText("내 영상 4개")).toBeTruthy();
+    // 오른쪽 미니 패널만 뜬다 — 좌측은 동 헤더 + 격자 카드 리스트(RegionPanel) 그대로
     expect(await screen.findByLabelText("영상 미니 패널")).toBeTruthy();
+    expect(screen.getByText("부전제1동")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /서면 A-14/ })).toBeTruthy();
+    // 격자 상세(영상 추가·공유·저장 UI 포함)는 열리지 않는다
+    expect(screen.queryByText("내 영상 4개")).toBeNull();
     expect(mapShellStub.moveTo).toHaveBeenCalledTimes(1);
   });
 
