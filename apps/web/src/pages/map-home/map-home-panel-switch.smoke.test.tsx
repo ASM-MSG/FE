@@ -1,5 +1,11 @@
 import { Outlet, Route, Routes } from "react-router-dom";
-import { act, cleanup, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
@@ -10,6 +16,7 @@ import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { envelopeResponse } from "@/test/envelope-response";
+import { READY_PLAYBACK } from "@/test/playback-fixture";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { MapHomePage } from "./MapHomePage";
 
@@ -50,9 +57,9 @@ const REGION_GRIDS = {
   ],
 };
 
-/** 지도 명령 API는 이 화면의 분기와 무관 — Outlet context 계약만 만족시킨다 */
+/** 지도 명령 API — moveTo는 격자 카드 클릭의 지도 이동 배선 단정용 스파이 (사용자 보완 2) */
 const mapShellStub = {
-  moveTo: () => {},
+  moveTo: vi.fn(),
   zoomIn: () => {},
   zoomOut: () => {},
   locate: () => {},
@@ -80,26 +87,31 @@ const authenticate = signInForTest;
 const stubDetail = (
   mode: "ready" | "pending" | "error",
   occupiedGridIds: string[] = [],
-  region: typeof BUJEON_REGION | null = BUJEON_REGION,
+  region: () => typeof BUJEON_REGION | null = () => BUJEON_REGION,
+  gridVideos: unknown[] = [],
 ) => {
   vi.stubGlobal(
     "fetch",
     vi.fn<(input: Request) => Promise<Response>>(async (request) => {
       const { pathname } = new URL(request.url);
       if (pathname === "/api/regions/reverse-geocode") {
-        return envelopeResponse(region);
+        return envelopeResponse(region());
       }
       if (/^\/api\/regions\/.+\/grids$/.test(pathname)) {
         return envelopeResponse(REGION_GRIDS);
       }
+      // 단건 재생 조회 — 미니 패널 자동 재생 흐름 (사용자 보완 2)
+      if (pathname.startsWith("/api/videos/")) {
+        return envelopeResponse({ ...READY_PLAYBACK, videoId: 501 });
+      }
       if (pathname.startsWith("/api/grids/")) {
         if (mode === "pending") return new Promise<Response>(() => {});
         if (mode === "error") return new Response(null, { status: 500 });
-        // MSG-326: 상세 패널이 영상 목록 2종을 함께 조회한다 — 빈 목록 응답 (분기 단정과 무관)
+        // MSG-326: 상세 패널이 영상 목록 2종을 함께 조회한다 (분기 단정과 무관)
         if (pathname.endsWith("/my-videos")) return envelopeResponse([]);
         if (pathname.endsWith("/videos")) {
           return envelopeResponse({
-            videos: [],
+            videos: gridVideos,
             hasNext: false,
             nextCursor: null,
           });
@@ -126,6 +138,7 @@ const stubDetail = (
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  mapShellStub.moveTo.mockClear();
   useHomeCellDetailStore.setState({ selectedCellId: null });
   useThemeFilterStore.setState({ activeTheme: null });
   useSidebarStore.setState({ collapsed: false });
@@ -173,14 +186,19 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.queryByText(/격자 정보를 불러오는 중/)).toBeNull();
   });
 
-  it("선택이 없으면 지역 격자 리스트 자리다 — 행정동 헤더 + 격자 카드 (AC 4·5·18)", async () => {
-    stubDetail("ready");
+  /** 로그인 상태로 홈을 띄우고 초기 지역 패널(헤더·격자 카드) 도착을 기다린다 — 지역 흐름 공용 셋업 */
+  const renderRegionHome = async () => {
     authenticate();
-
     renderHome();
-
     expect(await screen.findByText("부전제1동")).toBeTruthy();
     expect(await screen.findByText("서면 A-14")).toBeTruthy();
+  };
+
+  it("선택이 없으면 지역 격자 리스트 자리다 — 행정동 헤더 + 격자 카드 (AC 4·5·18)", async () => {
+    stubDetail("ready");
+
+    await renderRegionHome();
+
     expect(screen.getByText("138개 영상")).toBeTruthy();
   });
 
@@ -237,8 +255,54 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.getByText("부전제1동")).toBeTruthy();
   });
 
+  it("지도를 이동하면 헤더 행정동이 재검색 버튼 라벨과 함께 즉시 갱신되고 격자 리스트는 유지된다 (사용자 보완 1)", async () => {
+    // 이동 후 중심의 행정동이 부전제2동으로 바뀌는 시나리오 — 가변 스텁
+    let reverseRegion = BUJEON_REGION;
+    stubDetail("ready", [], () => reverseRegion);
+    await renderRegionHome();
+
+    reverseRegion = {
+      regionCode: "2644057000",
+      regionName: "부전제2동",
+      parentCode: "2644000000",
+    };
+    act(() => useViewportStore.setState({ center: { lat: 35.2, lng: 129.2 } }));
+
+    // 헤더는 라이브 갱신(디바운스 후), 격자 리스트는 표시 지역(부전제1동) 그대로,
+    // 재검색 버튼이 새 행정동 라벨로 노출된다 — 리스트 갱신은 버튼 클릭 시에만
+    expect(
+      await screen.findByText("부전제2동", undefined, { timeout: 3000 }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /부전제2동 장소 불러오기/ }),
+    ).toBeTruthy();
+    expect(screen.getByText("서면 A-14")).toBeTruthy();
+  });
+
+  it("격자 카드를 클릭하면 지도 이동과 함께 상세로 전환되고 오른쪽 미니 패널에서 첫 영상이 재생된다 (사용자 보완 2)", async () => {
+    stubDetail("ready", [], () => BUJEON_REGION, [
+      {
+        videoId: 501,
+        thumbnailUrl: "data:,thumb",
+        durationSec: 24,
+        viewCount: 10,
+        recordedAt: "2026-08-01T00:00:00Z",
+        nickname: "필맵퍼",
+      },
+    ]);
+    authenticate();
+
+    renderHome();
+    fireEvent.click(await screen.findByRole("button", { name: /서면 A-14/ }));
+
+    // 기존 지도 격자 탭과 같은 메커니즘 — 상세 전환 + 영상 목록 도착 시 미니 패널 자동 재생
+    expect(await screen.findByText("내 영상 4개")).toBeTruthy();
+    expect(await screen.findByLabelText("영상 미니 패널")).toBeTruthy();
+    expect(mapShellStub.moveTo).toHaveBeenCalledTimes(1);
+  });
+
   it("지도 중심이 행정동 밖(data null)이면 빈 상태 안내가 뜬다 (AC 12)", async () => {
-    stubDetail("ready", [], null);
+    stubDetail("ready", [], () => null);
     authenticate();
 
     renderHome();

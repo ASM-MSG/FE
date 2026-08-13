@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { MOCK_CELLS } from "@/entities/cell";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { MOCK_CELLS, type LatLng } from "@/entities/cell";
 import { MOCK_COLLECTED_VIDEOS } from "@/entities/dex";
 import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
@@ -159,6 +159,43 @@ export const MapHomePage = () => {
   // 분기하고 상세 성립을 막지 않는다. 선택이 없으면(null) 두 쿼리 모두 비활성 (기준 7)
   const gridVideos = useGridVideosQuery(selectedCellId);
 
+  // 지역 격자 카드 클릭 (사용자 보완 2) — 지도 이동(AC 7 유지) + 격자 상세를 열고,
+  // 영상 목록 도착 시 첫 영상을 오른쪽 미니 패널에서 자동 재생한다. 카드 DTO에는 커버
+  // videoId가 없어 기존 격자 탭과 같은 목록 조회(useGridVideosQuery)를 경유한다 —
+  // 자동 재생은 카드 클릭 진입에만 걸리고, 지도 격자 탭의 기존 UX(수동 선택)는 불변
+  const [autoPlayGridId, setAutoPlayGridId] = useState<string | null>(null);
+  const handleGridCardSelect = useCallback(
+    (gridId: string, center: LatLng) => {
+      moveTo(center);
+      selectCell(gridId);
+      setAutoPlayGridId(gridId);
+    },
+    [moveTo, selectCell],
+  );
+  useEffect(() => {
+    if (autoPlayGridId === null) return;
+    // 다른 격자 선택·상세 닫힘으로 컨텍스트가 바뀌면 예약을 철회한다
+    if (selectedCellId !== autoPlayGridId) {
+      setAutoPlayGridId(null);
+      return;
+    }
+    const first = gridVideos.items[0];
+    if (first) {
+      openMiniPanel(first, first.mine);
+      setAutoPlayGridId(null);
+    } else if (gridVideos.isEmpty || gridVideos.isError) {
+      // 재생할 영상이 없거나 목록 실패 — 상세만 남기고 예약 해제
+      setAutoPlayGridId(null);
+    }
+  }, [
+    autoPlayGridId,
+    selectedCellId,
+    gridVideos.items,
+    gridVideos.isEmpty,
+    gridVideos.isError,
+    openMiniPanel,
+  ]);
+
   // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
   const themeFeed = useMemo(
     () =>
@@ -219,7 +256,7 @@ export const MapHomePage = () => {
             onClose={closeThemeFeedMiniFirst}
           />
         ) : (
-          <RegionPanel onGridSelect={moveTo} />
+          <RegionPanel onGridSelect={handleGridCardSelect} />
         )}
       </aside>
       {/* 영상 미니 디테일 패널 — 좌측 패널 오른쪽 flush 보조 패널 (3차 AC 8~11).

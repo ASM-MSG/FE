@@ -4,6 +4,7 @@ import type { LatLng } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { headerRegionName } from "@/features/region/model/region-header";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { shouldShowReload } from "@/features/region/model/region-reload";
 import { useRegionGridsQuery } from "@/features/region/model/use-region-grids-query";
@@ -14,15 +15,20 @@ import { RegionReloadButton } from "./RegionReloadButton";
 import { RetryNotice } from "./RetryNotice";
 
 interface RegionPanelProps {
-  /** 격자 카드 클릭 — 격자 중심으로 지도 이동 (AC 7) */
-  onGridSelect: (center: LatLng) => void;
+  /**
+   * 격자 카드 클릭 — 지도 이동(AC 7) + 격자 상세·첫 영상 재생 배선(사용자 보완 2)은
+   * 페이지(MapHomePage)가 조립한다
+   */
+  onGridSelect: (gridId: string, center: LatLng) => void;
 }
 
 /**
  * 지역 격자 패널 (MSG-328 AC 4~12, Figma 14357-18972) — 홈 좌측 패널의 기본 분기.
  * 지도 중심(viewport-store)의 reverse-geocode로 현재 행정동을 판별해 헤더에 표시하고,
- * 그 행정동의 격자 카드를 세로 리스트로 보여준다. 지도를 이동해 중심 행정동이 달라지면
- * 하단에 "{새 행정동} 장소 불러오기" 재검색 버튼이 뜨고, 클릭 시에만 리스트가 갱신된다
+ * 그 행정동의 격자 카드를 세로 리스트로 보여준다. 헤더 텍스트는 재검색 버튼 라벨과
+ * 동일하게 지도 이동을 따라 라이브 갱신된다(사용자 보완 1 — 선택 로직 region-header,
+ * 전체 보기 명시 선택은 예외로 고정). 지도를 이동해 중심 행정동이 달라지면 하단에
+ * "{새 행정동} 장소 불러오기" 재검색 버튼이 뜨고, **격자 리스트**는 클릭 시에만 갱신된다
  * (기확정 해석 — 자동 갱신 아님). "전체 보기"는 패널 안 전체 지역 리스트로 전환한다.
  *
  * 5개 지역·검색 엔드포인트 모두 익명 401 실측(2026-08-13, api.fillmap.kr) — 비로그인은
@@ -35,6 +41,7 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
   const center = useViewportStore((s) => s.center);
 
   const displayed = useRegionPanelStore((s) => s.displayedRegion);
+  const origin = useRegionPanelStore((s) => s.origin);
   const mode = useRegionPanelStore((s) => s.mode);
   const showRegion = useRegionPanelStore((s) => s.showRegion);
   const openRegionList = useRegionPanelStore((s) => s.openRegionList);
@@ -49,10 +56,13 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
   const currentRegion = reverse.region;
   useEffect(() => {
     if (displayed === null && currentRegion !== null) {
-      showRegion({
-        regionCode: currentRegion.regionCode,
-        regionName: currentRegion.regionName,
-      });
+      showRegion(
+        {
+          regionCode: currentRegion.regionCode,
+          regionName: currentRegion.regionName,
+        },
+        "auto",
+      );
     }
   }, [displayed, currentRegion, showRegion]);
 
@@ -90,7 +100,10 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
                 전체 지역
               </h2>
             </header>
-            <RegionListView onSelect={showRegion} />
+            {/* 전체 보기의 지역 선택 = 명시 선택(manual) — 헤더가 선택 지역명에 고정된다 */}
+            <RegionListView
+              onSelect={(region) => showRegion(region, "manual")}
+            />
           </>
         ) : displayed === null ? (
           reverse.isError ? (
@@ -111,9 +124,14 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
         ) : (
           <>
             <header className="flex items-center justify-between gap-sm">
-              {/* 행정동 표기는 서버 regionName 원문 (추정 8) — 길면 truncate */}
+              {/* 행정동 표기는 서버 regionName 원문 (추정 8) — 길면 truncate.
+                  헤더는 지도 이동에 라이브 동기화(auto), 전체 보기 선택은 고정(manual) */}
               <h2 className="truncate text-fm-heading text-foreground">
-                {displayed.regionName}
+                {headerRegionName(
+                  displayed.regionName,
+                  currentRegion?.regionName ?? null,
+                  origin,
+                )}
               </h2>
               <button
                 type="button"
@@ -166,10 +184,13 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
         <RegionReloadButton
           regionName={reloadTarget.regionName}
           onClick={() =>
-            showRegion({
-              regionCode: reloadTarget.regionCode,
-              regionName: reloadTarget.regionName,
-            })
+            showRegion(
+              {
+                regionCode: reloadTarget.regionCode,
+                regionName: reloadTarget.regionName,
+              },
+              "auto",
+            )
           }
         />
       )}

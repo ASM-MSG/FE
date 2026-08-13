@@ -8,8 +8,11 @@ interface RegionGridCardProps {
   grid: ExploreGridResponseDto;
   /** 상위 응답의 행정동 이름 — zoneName null 격자의 라벨 폴백 (AC 6) */
   regionName: string;
-  /** 카드 클릭 — 격자 중심 좌표로 지도 이동 (AC 7). 상세 열림은 지도 격자 탭 흐름에 위임 */
-  onSelect: (center: LatLng) => void;
+  /**
+   * 카드 클릭 — 격자 중심 좌표로 지도 이동(AC 7) + 격자 상세·첫 영상 재생
+   * (사용자 보완 2 — gridId가 상세·영상 목록 조회 키)
+   */
+  onSelect: (gridId: string, center: LatLng) => void;
 }
 
 /**
@@ -30,7 +33,10 @@ export const RegionGridCard = ({
     <button
       type="button"
       onClick={() =>
-        onSelect(cellCenterAt({ gridX: grid.gridX, gridY: grid.gridY }))
+        onSelect(
+          grid.gridId,
+          cellCenterAt({ gridX: grid.gridX, gridY: grid.gridY }),
+        )
       }
       className="flex w-full flex-col gap-xs text-left transition-opacity active:opacity-80"
     >
