@@ -11,6 +11,7 @@ interface VideoOwnerMetaProps {
 /**
  * 영상 소유 메타 한 줄 (MSG-277 AC 4·5) — FeedVideoCard·VideoMiniPanel 공용.
  * 카드와 그 카드로 연 미니 패널이 같은 영상의 동일 표기를 보여야 해서 분기를 한곳에 둔다 (리뷰 반영).
+ * 평문판은 model의 videoOwnerLabel — 표기 분기를 바꾸면 둘을 함께 갱신한다.
  */
 export const VideoOwnerMeta = ({ video, mine }: VideoOwnerMetaProps) =>
   mine ? (

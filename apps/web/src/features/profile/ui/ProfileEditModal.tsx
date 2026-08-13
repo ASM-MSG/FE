@@ -114,6 +114,10 @@ export const ProfileEditModal = ({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // 저장 진행 중 재선택 차단 (PR #51 리뷰 반영) — 재선택이 upload.reset()으로 진행 중
+    // 뮤테이션의 가드를 풀면, 늦게 완료된 이전 업로드가 새 선택을 캐시에서 덮어쓸 수 있다.
+    // disabled 속성(아래 input·Chip)의 프로그램틱 경로 방어
+    if (isSaving) return;
     const file = event.target.files?.[0];
     // 같은 파일 재선택도 change가 발화하도록 입력값을 비운다 (취소 후 동일 파일 재선택 경로)
     event.target.value = "";
@@ -192,6 +196,7 @@ export const ProfileEditModal = ({
             className="hidden"
             aria-hidden="true"
             tabIndex={-1}
+            disabled={isSaving}
             onChange={handleFileChange}
           />
           {/* 순수 프레젠테이셔널 트리거라 토글 시맨틱(aria-pressed)을 제거한다 —
@@ -201,6 +206,7 @@ export const ProfileEditModal = ({
           <Chip
             text="변경"
             aria-pressed={undefined}
+            disabled={isSaving}
             onClick={() => fileInputRef.current?.click()}
             className="border border-primary bg-transparent text-primary"
           />

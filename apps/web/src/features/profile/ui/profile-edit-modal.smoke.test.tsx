@@ -128,6 +128,10 @@ const selectFile = (file: File) => {
 
 const pngFile = () => new File(["png-bytes"], "pic.png", { type: "image/png" });
 
+/** 파일 선택 열림 관찰 스파이 — jsdom에서 실제 픽커가 뜨지 않게 no-op (기준 8·재선택 차단 공용) */
+const spyOnOpenPicker = () =>
+  vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+
 /** fetch 목 장착 → 렌더 → png 선택 → [저장] 클릭 — 실패(기준 12)·성공(기준 11 대역) 케이스 공용 진행부 */
 const saveSelectedPngWith = (fetchMock: typeof fetch) => {
   vi.stubGlobal("fetch", fetchMock);
@@ -162,9 +166,7 @@ describe("프로필 편집 모달 — 이미지 업로드", () => {
 
     expect(fileInput().getAttribute("accept")).toBe(PROFILE_IMAGE_ACCEPT);
 
-    const openPicker = vi
-      .spyOn(HTMLInputElement.prototype, "click")
-      .mockImplementation(() => {});
+    const openPicker = spyOnOpenPicker();
     fireEvent.click(screen.getByRole("button", { name: "변경" }));
     expect(openPicker).toHaveBeenCalledTimes(1);
   });
@@ -220,6 +222,34 @@ describe("프로필 편집 모달 — 이미지 업로드", () => {
     await waitFor(() =>
       expect((saveButton as HTMLButtonElement).disabled).toBe(true),
     );
+  });
+
+  it("저장 진행 중에는 [변경]·파일 재선택이 막힌다 (PR #51 리뷰 반영 — 이전 업로드가 새 선택을 덮어쓰는 레이스 방지)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    renderModal();
+
+    selectFile(pngFile());
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    // 진행 중에는 확인 버튼 텍스트가 "저장 중…"으로 바뀌며 비활성화된다 (기준 13)
+    await waitFor(() =>
+      expect(
+        (screen.getByRole("button", { name: /^저장/ }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true),
+    );
+
+    // [변경] 칩이 파일 선택을 열지 않는다
+    const openPicker = spyOnOpenPicker();
+    fireEvent.click(screen.getByRole("button", { name: "변경" }));
+    expect(openPicker).not.toHaveBeenCalled();
+
+    // 프로그램틱 change 경로도 무시된다 — 미리보기·선택이 갱신되지 않는다
+    selectFile(pngFile());
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
   });
 
   it("이미지를 고르지 않고 저장하면 기존 동작(닫힘만) — 업로드 요청이 없다 (기준 14)", () => {

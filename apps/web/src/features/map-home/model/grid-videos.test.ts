@@ -7,6 +7,7 @@ import {
   mergeFeedItems,
   toFeedItemFromGlobal,
   toFeedItemFromMine,
+  videoOwnerLabel,
 } from "./grid-videos";
 
 /**
@@ -86,5 +87,27 @@ describe("mergeFeedItems — 병합 규칙 (기준 3, MSG-277 정렬 관례)", (
     expect(mergeFeedItems(mine, global).map((v) => v.videoId)).toEqual([
       301, 1042, 2001,
     ]);
+  });
+});
+
+describe("videoOwnerLabel — 소유 메타 평문 라벨 (PR #51 리뷰 반영)", () => {
+  const base = {
+    videoId: 1,
+    thumbnailUrl: null,
+    durationSec: 5,
+    viewCount: null,
+    recordedAt: "2026-07-29T10:00:00",
+  };
+
+  it("내 영상은 '내 영상 · M월 D일'로, 전역 영상은 '@핸들 · 상대시간'으로 구분된다", () => {
+    expect(videoOwnerLabel(base, true)).toBe("내 영상 · 7월 29일");
+    const other = { ...base, uploaderHandle: "@채우미" };
+    expect(videoOwnerLabel(other, false)).toMatch(/^@채우미 · /);
+  });
+
+  it("핸들이 없는 전역 영상은 상대시간만 남는다 — 빈 구분자를 만들지 않는다", () => {
+    const label = videoOwnerLabel(base, false);
+    expect(label).not.toContain("·");
+    expect(label.length).toBeGreaterThan(0);
   });
 });

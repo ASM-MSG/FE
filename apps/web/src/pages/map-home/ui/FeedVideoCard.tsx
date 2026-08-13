@@ -1,5 +1,8 @@
 import { Play } from "lucide-react";
-import type { FeedVideo } from "@/features/map-home/model/grid-videos";
+import {
+  type FeedVideo,
+  videoOwnerLabel,
+} from "@/features/map-home/model/grid-videos";
 import { formatDuration } from "@/features/explore/model/explore-cells";
 import { formatViewCountKo } from "@/shared/format";
 import { VideoOwnerMeta } from "./VideoOwnerMeta";
@@ -9,6 +12,12 @@ interface FeedVideoCardProps {
   video: FeedVideo;
   /** 내 영상 여부 — 메타 문구 분기 (AC 4·5): 내 영상 "내 영상 · M월 D일" / 다른 사용자 "@핸들 · 상대시간" */
   mine: boolean;
+  /**
+   * 목록 내 1-기준 순번 — 접근성 이름의 유일 구분자 (PR #51 리뷰 반영 3차).
+   * 제목·소유 메타는 겹칠 수 있다(같은 날 내 영상, 같은 제목의 목 영상) — 순번을
+   * 이름 맨 앞에 조건 없이 붙여 어떤 조합에서도 카드 이름이 유일함을 보장한다
+   */
+  position: number;
   /** 카드 클릭 — 미니 디테일 패널 열기/교체 배선 (3차 AC 4, no-op div 대체) */
   onSelect: () => void;
 }
@@ -26,6 +35,7 @@ interface FeedVideoCardProps {
 export const FeedVideoCard = ({
   video,
   mine,
+  position,
   onSelect,
 }: FeedVideoCardProps) => {
   const duration = formatDuration(video.durationSec);
@@ -40,7 +50,9 @@ export const FeedVideoCard = ({
   return (
     <button
       type="button"
-      aria-label={`${video.title ?? "영상"} 재생`}
+      // 순번을 무조건 앞에 붙여 카드 이름 유일성을 보장한다 — 제목(같은 목 제목)도
+      // 소유 메타(같은 날 내 영상)도 단독으로는 겹칠 수 있다 (PR #51 리뷰 반영 3차)
+      aria-label={`${position}. ${video.title ?? "영상"} 재생 · ${videoOwnerLabel(video, mine)}`}
       onClick={onSelect}
       className="flex w-full flex-col gap-xxs text-left"
     >

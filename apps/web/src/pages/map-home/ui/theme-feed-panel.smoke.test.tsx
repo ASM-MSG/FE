@@ -105,7 +105,8 @@ describe("테마 피드 패널 스모크", () => {
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(3);
     for (const button of buttons) {
-      expect(button.getAttribute("aria-label")).toMatch(/재생$/);
+      // 재생 라벨 뒤에 소유 메타가 붙는다 — 카드별 접근성 이름 구분 (PR #51 리뷰 반영)
+      expect(button.getAttribute("aria-label")).toMatch(/재생 · /);
     }
     expect(screen.queryByText("전체 보기")).toBeNull();
   });

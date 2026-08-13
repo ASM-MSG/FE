@@ -18,11 +18,12 @@ interface FeedVideoListProps {
  */
 export const FeedVideoList = ({ items, onVideoSelect }: FeedVideoListProps) => (
   <div className="flex flex-col gap-sm">
-    {items.map((item) => (
+    {items.map((item, index) => (
       <FeedVideoCard
         key={item.videoId}
         video={item}
         mine={item.mine}
+        position={index + 1}
         onSelect={() => onVideoSelect(item, item.mine)}
       />
     ))}

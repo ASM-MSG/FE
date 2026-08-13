@@ -2,6 +2,7 @@ import type {
   GridGlobalVideoResponseDto,
   GridVideoResponseDto,
 } from "@/shared/api/generated";
+import { formatMonthDay, formatRelativeTime } from "@/shared/format";
 
 /**
  * 격자 영상 피드 항목 매핑·병합 (MSG-326 기준 1~3).
@@ -83,3 +84,15 @@ export const mergeFeedItems = (
   const mineIds = new Set(mine.map((item) => item.videoId));
   return [...mine, ...global.filter((item) => !mineIds.has(item.videoId))];
 };
+
+/**
+ * 소유 메타 평문 라벨 — 화면 표기(VideoOwnerMeta)와 같은 분기·포맷의 문자열판.
+ * 서버에 영상 제목이 없어 카드 접근성 이름이 전부 "영상 재생"으로 겹치는 문제의
+ * 구분자다 (PR #51 리뷰 반영). 표기 분기를 바꾸면 VideoOwnerMeta와 함께 갱신한다.
+ */
+export const videoOwnerLabel = (video: FeedVideo, mine: boolean): string =>
+  mine
+    ? `내 영상 · ${formatMonthDay(video.recordedAt)}`
+    : [video.uploaderHandle, formatRelativeTime(video.recordedAt)]
+        .filter(Boolean)
+        .join(" · ");
