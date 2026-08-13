@@ -46,6 +46,16 @@ export const ThemeFeedPanel = ({
 }: ThemeFeedPanelProps) => {
   useEscapeClose(onClose);
 
+  // 섹션별 순번 시작 오프셋 — 섹션마다 FeedVideoList 인스턴스가 갈려 순번이 1부터
+  // 재시작하면 다른 섹션의 동일 제목·메타 카드와 접근성 이름이 겹친다 (PR #51 리뷰
+  // 반영 3차). 누적 오프셋으로 패널 전체 연속 순번을 만든다
+  const sectionStartIndexes: number[] = [];
+  let cardOffset = 0;
+  for (const section of feed.sections) {
+    sectionStartIndexes.push(cardOffset);
+    cardOffset += section.videos.length;
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-md">
       <header className="flex items-center gap-xs">
@@ -65,7 +75,7 @@ export const ThemeFeedPanel = ({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* 섹션 간 gap은 카드 간 gap-sm보다 확실히 넓게 — 여백만으로 그룹 경계가 읽히게 (리뷰 반영) */}
         <div className="flex flex-col gap-lg">
-          {feed.sections.map((section) => (
+          {feed.sections.map((section, sectionIndex) => (
             <section key={section.cellId} className="flex flex-col gap-xs">
               {/* 셀 식별 섹션 헤더 (AC 7) — 와이어프레임의 헤더 셀명을 피드 내 요소로 이동 (기확정 1).
                   카드 핸들(fm-body-strong)과 같은 급이면 그룹 경계가 안 읽혀 fm-title + 테마 도트 + 개수로 승격 (리뷰 반영) */}
@@ -81,6 +91,7 @@ export const ThemeFeedPanel = ({
               </h3>
               <FeedVideoList
                 items={section.videos}
+                startIndex={sectionStartIndexes[sectionIndex]}
                 onVideoSelect={onVideoSelect}
               />
             </section>
