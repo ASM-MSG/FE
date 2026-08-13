@@ -63,14 +63,23 @@ export const gateFillCells = (
   zoom: number,
 ): StyledCellOverlay[] => (zoom >= GRID_MIN_ZOOM ? cells : []);
 
-/** 클러스터 집계 소스 (AC 9) — 섹션 게시 셀이 있으면 그것(첫 셀 테마 색 전승), 없으면 상시 점령 셀(primary) */
+/**
+ * 클러스터 집계 소스 (AC 9) — 섹션 게시 셀이 있으면 그것(첫 셀 테마 색 전승), 없으면 상시 점령 셀(primary).
+ * 강조 전용 셀(카드 재생 — emphasized·테마 색 없음, MSG-328)은 테마 게시가 아니므로 정본 판정에서
+ * 제외한다 — 포함하면 무테마 저줌에서 상시 점령 클러스터가 재생 셀 1개짜리로 대체된다 (리뷰 P2).
+ * 테마 셀에 강조가 켜진 경우(색 보유)는 기존대로 테마 정본이다.
+ */
 export const selectClusterSource = (
   sectionCells: StyledCellOverlay[],
   persistentCells: StyledCellOverlay[],
-): { cells: StyledCellOverlay[]; color?: string } =>
-  sectionCells.length > 0
-    ? { cells: sectionCells, color: sectionCells[0].color }
+): { cells: StyledCellOverlay[]; color?: string } => {
+  const themedCells = sectionCells.filter(
+    (cell) => !(cell.emphasized && cell.color === undefined),
+  );
+  return themedCells.length > 0
+    ? { cells: themedCells, color: themedCells[0].color }
     : { cells: persistentCells };
+};
 
 const clampTo = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));

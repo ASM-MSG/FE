@@ -91,3 +91,57 @@ describe("useGridCardPlay — 격자 카드 클릭 재생 (사용자 피드백)"
     expect(useVideoMiniPanelStore.getState().selected).toBeNull();
   });
 });
+
+describe("useGridCardPlay — 재생 중 격자 강조 수명 (사용자 피드백)", () => {
+  it("재생이 열리면 그 격자가 강조 대상(playingGridId)이 된다", async () => {
+    stubGridVideos("ready");
+
+    const result = playSeomyeon();
+
+    await waitFor(() => expect(result.current.playingGridId).toBe(SEOMYEON));
+  });
+
+  it("미니 패널을 닫으면 강조가 해제된다", async () => {
+    stubGridVideos("ready");
+    const result = playSeomyeon();
+    await waitFor(() => expect(result.current.playingGridId).toBe(SEOMYEON));
+
+    act(() => useVideoMiniPanelStore.getState().close());
+
+    await waitFor(() => expect(result.current.playingGridId).toBeNull());
+  });
+
+  it("상세 흐름 등에서 다른 영상으로 교체되면 강조가 해제된다 — 기존 시각 상태와 충돌 없음", async () => {
+    stubGridVideos("ready");
+    const result = playSeomyeon();
+    await waitFor(() => expect(result.current.playingGridId).toBe(SEOMYEON));
+
+    act(() =>
+      useVideoMiniPanelStore.getState().open(
+        {
+          videoId: 999,
+          thumbnailUrl: null,
+          durationSec: 10,
+          viewCount: null,
+          recordedAt: "2026-08-02T00:00:00Z",
+        },
+        true,
+      ),
+    );
+
+    await waitFor(() => expect(result.current.playingGridId).toBeNull());
+  });
+
+  it("다른 카드를 재생하면 이전 강조를 해제하고 새 격자로 이동한다", async () => {
+    stubGridVideos("ready");
+    const result = playSeomyeon();
+    await waitFor(() => expect(result.current.playingGridId).toBe(SEOMYEON));
+
+    act(() => result.current.play("39070_112230"));
+
+    expect(result.current.playingGridId).toBeNull();
+    await waitFor(() =>
+      expect(result.current.playingGridId).toBe("39070_112230"),
+    );
+  });
+});

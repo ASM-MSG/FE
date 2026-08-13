@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { Toast } from "@fillmap/ui-web";
-import { MOCK_CELLS, type LatLng } from "@/entities/cell";
+import { MOCK_CELLS } from "@/entities/cell";
 import { MOCK_COLLECTED_VIDEOS } from "@/entities/dex";
 import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
@@ -9,6 +9,7 @@ import { deriveThemeFeed } from "@/features/map-home/model/theme-feed";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import {
   buildHomeOverlayCells,
+  emphasizeCell,
   buildRouteOverlay,
   themeCellGridIds,
 } from "@/features/map-home/model/theme-overlay";
@@ -112,6 +113,27 @@ export const MapHomePage = () => {
     [activeTheme],
   );
 
+  // 지역 격자 카드 클릭 (사용자 피드백 — 상세 미오픈·지도 이동 없음) — 좌측은 지역 패널
+  // 그대로 두고 오른쪽 미니 패널에서 첫 영상만 재생한다(useGridCardPlay — 목록 조회·
+  // 미니 오픈·안내·강조 수명 소유). 재생 중 격자는 아래 게시 셀에 테두리 강조로 얹는다.
+  // 지도 격자 탭 → 상세 흐름은 불변
+  const cardPlay = useGridCardPlay();
+
+  // 카드 재생 안내 토스트 — 빈 목록·조회 실패를 조용히 무시하지 않는다 (ReportDialog 관례)
+  useEffect(() => {
+    if (cardPlay.notice === null) return;
+    const timer = setTimeout(cardPlay.dismissNotice, CARD_PLAY_TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [cardPlay.notice, cardPlay.dismissNotice]);
+
+  // 게시 셀 = 테마 오버레이 + 재생 중 격자 테두리 강조 (사용자 피드백 — emphasizeCell).
+  // occupiedIds를 함께 넘겨 점령 격자의 채움(18%)을 보존한다 — 셸의 excludeSectionCells가
+  // 게시 id와 겹치는 상시 점령 셀을 빼므로 강조 셀이 채움을 이어받아야 한다 (채움 텅 빔 환류)
+  const publishedCells = useMemo(
+    () => emphasizeCell(overlayCells, cardPlay.playingGridId, occupiedIds),
+    [overlayCells, cardPlay.playingGridId, occupiedIds],
+  );
+
   // 상세 패널의 "전체 보기" — 탐색 제거(MSG-328)로 상세를 닫고 패널 안 전체 지역
   // 리스트를 연다 (스펙 추정 3 — MSG-253 AC 11의 "탐색 이동" 대체)
   const openRegionList = useRegionPanelStore((s) => s.openRegionList);
@@ -141,12 +163,12 @@ export const MapHomePage = () => {
   // 격자선·기본 점령 셀은 셸 상시 층 소유(MSG-263 D9)라 여기서 게시하지 않는다 —
   // 홈 이탈 clear()는 테마 오버레이만 걷어내고 격자·점령 표시는 유지된다 (AC 16·18)
   useEffect(() => {
-    setCells(overlayCells);
+    setCells(publishedCells);
     setRoute(routeOverlay);
     setOnCellClick(handleCellTap);
     return () => clearOverlays();
   }, [
-    overlayCells,
+    publishedCells,
     routeOverlay,
     handleCellTap,
     setCells,
@@ -169,26 +191,6 @@ export const MapHomePage = () => {
   // 격자 영상 목록 (MSG-326 기준 8) — 상세와 독립 조회: 목록 실패·로딩은 피드 영역에서만
   // 분기하고 상세 성립을 막지 않는다. 선택이 없으면(null) 두 쿼리 모두 비활성 (기준 7)
   const gridVideos = useGridVideosQuery(selectedCellId);
-
-  // 지역 격자 카드 클릭 (사용자 피드백 — 상세 미오픈) — 지도 이동(AC 7 유지)만 하고,
-  // 격자 상세(home-cell-detail-store)는 열지 않는다: 좌측은 지역 패널 그대로, 오른쪽
-  // 미니 패널에서 첫 영상만 재생한다(useGridCardPlay — 목록 조회·미니 오픈·안내 소유).
-  // 지도 격자 탭 → 상세 흐름은 불변
-  const cardPlay = useGridCardPlay();
-  const handleGridCardSelect = useCallback(
-    (gridId: string, center: LatLng) => {
-      moveTo(center);
-      cardPlay.play(gridId);
-    },
-    [moveTo, cardPlay.play],
-  );
-
-  // 카드 재생 안내 토스트 — 빈 목록·조회 실패를 조용히 무시하지 않는다 (ReportDialog 관례)
-  useEffect(() => {
-    if (cardPlay.notice === null) return;
-    const timer = setTimeout(cardPlay.dismissNotice, CARD_PLAY_TOAST_MS);
-    return () => clearTimeout(timer);
-  }, [cardPlay.notice, cardPlay.dismissNotice]);
 
   // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
   const themeFeed = useMemo(
@@ -250,7 +252,7 @@ export const MapHomePage = () => {
             onClose={closeThemeFeedMiniFirst}
           />
         ) : (
-          <RegionPanel onGridSelect={handleGridCardSelect} />
+          <RegionPanel onGridSelect={cardPlay.play} />
         )}
       </aside>
       {/* 영상 미니 디테일 패널 — 좌측 패널 오른쪽 flush 보조 패널 (3차 AC 8~11).

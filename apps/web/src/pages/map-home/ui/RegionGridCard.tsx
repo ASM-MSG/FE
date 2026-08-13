@@ -1,5 +1,4 @@
 import { Play } from "lucide-react";
-import { cellCenterAt, type LatLng } from "@/entities/cell";
 import { gridCardLabel } from "@/features/region/model/grid-card";
 import type { ExploreGridResponseDto } from "@/shared/api/generated/types.gen";
 import { formatDuration } from "@/shared/format";
@@ -9,10 +8,10 @@ interface RegionGridCardProps {
   /** 상위 응답의 행정동 이름 — zoneName null 격자의 라벨 폴백 (AC 6) */
   regionName: string;
   /**
-   * 카드 클릭 — 격자 중심 좌표로 지도 이동(AC 7) + 격자 상세·첫 영상 재생
-   * (사용자 보완 2 — gridId가 상세·영상 목록 조회 키)
+   * 카드 클릭 — 그 격자의 첫 영상을 오른쪽 미니 패널에서 재생 + 지도 테두리 강조
+   * (사용자 피드백 — 지도 이동·격자 상세 없음, gridId가 영상 목록 조회 키)
    */
-  onSelect: (gridId: string, center: LatLng) => void;
+  onSelect: (gridId: string) => void;
 }
 
 /**
@@ -32,12 +31,7 @@ export const RegionGridCard = ({
   return (
     <button
       type="button"
-      onClick={() =>
-        onSelect(
-          grid.gridId,
-          cellCenterAt({ gridX: grid.gridX, gridY: grid.gridY }),
-        )
-      }
+      onClick={() => onSelect(grid.gridId)}
       className="flex w-full flex-col gap-xs text-left transition-opacity active:opacity-80"
     >
       <span className="relative flex aspect-[340/196] w-full items-center justify-center overflow-hidden rounded-md bg-surface">

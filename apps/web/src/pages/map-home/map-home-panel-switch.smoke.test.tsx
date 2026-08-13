@@ -9,6 +9,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
+import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { SEOMYEON_CENTER } from "@/shared/geolocation";
@@ -143,6 +144,7 @@ afterEach(() => {
   useThemeFilterStore.setState({ activeTheme: null });
   useSidebarStore.setState({ collapsed: false });
   useViewportStore.setState({ bounds: null, center: SEOMYEON_CENTER });
+  useVideoMiniPanelStore.setState({ selected: null });
   signOutForTest();
   useRegionPanelStore.setState(useRegionPanelStore.getInitialState(), true);
 });
@@ -279,7 +281,8 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.getByText("서면 A-14")).toBeTruthy();
   });
 
-  it("격자 카드를 클릭하면 상세를 열지 않고 지역 리스트를 유지한 채 오른쪽 미니 패널에서 첫 영상이 재생된다 (사용자 피드백 — 상세 미오픈)", async () => {
+  /** 격자 영상 1건 스텁으로 홈을 띄우고 서면 카드 클릭까지 진행한다 — 카드 재생 흐름 공용 셋업 */
+  const clickSeomyeonCard = async () => {
     stubDetail("ready", [], () => BUJEON_REGION, [
       {
         videoId: 501,
@@ -291,8 +294,11 @@ describe("홈 좌측 패널 분기", () => {
       },
     ]);
     await renderRegionHome();
-
     fireEvent.click(screen.getByRole("button", { name: /서면 A-14/ }));
+  };
+
+  it("격자 카드를 클릭하면 상세를 열지 않고 지역 리스트를 유지한 채 오른쪽 미니 패널에서 첫 영상이 재생된다 (사용자 피드백 — 상세 미오픈)", async () => {
+    await clickSeomyeonCard();
 
     // 오른쪽 미니 패널만 뜬다 — 좌측은 동 헤더 + 격자 카드 리스트(RegionPanel) 그대로
     expect(await screen.findByLabelText("영상 미니 패널")).toBeTruthy();
@@ -300,7 +306,28 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.getByRole("button", { name: /서면 A-14/ })).toBeTruthy();
     // 격자 상세(영상 추가·공유·저장 UI 포함)는 열리지 않는다
     expect(screen.queryByText("내 영상 4개")).toBeNull();
-    expect(mapShellStub.moveTo).toHaveBeenCalledTimes(1);
+    // 지도는 움직이지 않는다 (사용자 피드백 — moveTo 제거)
+    expect(mapShellStub.moveTo).not.toHaveBeenCalled();
+  });
+
+  it("카드 재생 중 격자는 지도에 테두리 강조로 게시되고, 미니 패널을 닫으면 해제된다 (사용자 피드백)", async () => {
+    await clickSeomyeonCard();
+
+    await waitFor(() =>
+      expect(
+        useMapOverlayStore
+          .getState()
+          .cells.some((cell) => cell.id === SEOMYEON && cell.emphasized),
+      ).toBe(true),
+    );
+
+    act(() => useVideoMiniPanelStore.getState().close());
+
+    await waitFor(() =>
+      expect(
+        useMapOverlayStore.getState().cells.some((cell) => cell.emphasized),
+      ).toBe(false),
+    );
   });
 
   it("지도 중심이 행정동 밖(data null)이면 빈 상태 안내가 뜬다 (AC 12)", async () => {

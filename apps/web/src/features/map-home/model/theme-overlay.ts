@@ -1,6 +1,7 @@
 import {
   cellCornersAt,
   cellIndexAt,
+  decodeGridCorners,
   encodeGridId,
   type CellCorners,
   type CellOverlay,
@@ -33,6 +34,8 @@ export interface StyledCellOverlay extends CellOverlay {
   hatched?: boolean;
   /** 점령 셀 스타일 (MSG-263 AC 10 — Figma: primary 채움 18% + 실선 테두리 40%) */
   occupied?: boolean;
+  /** 테두리 강조 (MSG-328 사용자 피드백 — 카드 재생 중 격자): 진한 실선 테두리 */
+  emphasized?: boolean;
 }
 
 /**
@@ -83,6 +86,38 @@ export const buildHomeOverlayCells = (
  */
 export const themeCellGridIds = (themeCells: ThemeCell[]): string[] =>
   renderableThemeCells(themeCells).map((c) => encodeGridId(c.center));
+
+/**
+ * 재생 중 격자 테두리 강조 (MSG-328 사용자 피드백) — 게시 목록에 강조 표시를 얹는다.
+ * 강조는 테두리만 바꾸고 **채움은 그 격자의 기존 렌더를 보존**한다(사용자 버그 환류):
+ * - 이미 게시된 셀(활성 테마 셀)이면 emphasized만 켠다 — 중복 폴리곤 없음, 테마 채움 유지
+ * - 점령 격자면 강조 셀에 occupied를 실어 점령 채움(18%)을 이어받는다 — 셸 상시 층이
+ *   게시 id와 겹치는 점령 셀을 제외하므로(excludeSectionCells), 안 실으면 채움이 텅 빈다
+ * - 원래 채움이 없던 격자(비점령·비테마)만 테두리 전용 셀이다 (MapCanvas 채움 0 처리)
+ * 대상이 없으면(null) 입력을 그대로 반환한다 — 참조 안정(메모 무효화 방지).
+ * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
+ */
+export const emphasizeCell = (
+  cells: StyledCellOverlay[],
+  gridId: string | null,
+  occupiedGridIds: string[],
+): StyledCellOverlay[] => {
+  if (gridId === null) return cells;
+  if (cells.some((cell) => cell.id === gridId)) {
+    return cells.map((cell) =>
+      cell.id === gridId ? { ...cell, emphasized: true } : cell,
+    );
+  }
+  return [
+    ...cells,
+    {
+      id: gridId,
+      corners: decodeGridCorners(gridId),
+      emphasized: true,
+      ...(occupiedGridIds.includes(gridId) ? { occupied: true } : {}),
+    },
+  ];
+};
 
 /** 지도 게시용 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (AC 8) */
 export interface RouteOverlay {

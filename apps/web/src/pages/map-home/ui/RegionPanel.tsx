@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Button } from "@fillmap/ui-web";
-import type { LatLng } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
@@ -16,10 +15,10 @@ import { RetryNotice } from "./RetryNotice";
 
 interface RegionPanelProps {
   /**
-   * 격자 카드 클릭 — 지도 이동(AC 7) + 격자 상세·첫 영상 재생 배선(사용자 보완 2)은
-   * 페이지(MapHomePage)가 조립한다
+   * 격자 카드 클릭 — 첫 영상 미니 패널 재생 + 지도 테두리 강조 배선(사용자 피드백 —
+   * 지도 이동·상세 없음)은 페이지(MapHomePage)가 조립한다
    */
-  onGridSelect: (gridId: string, center: LatLng) => void;
+  onGridSelect: (gridId: string) => void;
 }
 
 /**
