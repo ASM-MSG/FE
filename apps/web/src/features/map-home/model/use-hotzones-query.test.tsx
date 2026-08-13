@@ -1,9 +1,11 @@
-import type { ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { encodeGridId, type Bounds } from "@/entities/cell";
+import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { envelopeResponse } from "@/test/envelope-response";
+import { occupiedGridOf } from "@/test/occupied-grids";
+import { queryWrapper as wrapper } from "@/test/query-wrapper";
+import { stubFetch } from "@/test/stub-fetch";
 import { useHotZoneCells } from "./use-hotzones-query";
 
 /**
@@ -16,34 +18,24 @@ const SEOMYEON_VIEWPORT: Bounds = {
   ne: { lat: 35.16, lng: 129.06 },
 };
 
-const wrapper = ({ children }: { children: ReactNode }) => (
-  <QueryClientProvider client={new QueryClient()}>
-    {children}
-  </QueryClientProvider>
-);
-
-const stubHotZones = (gridIds: string[]) => {
-  const fetchMock = vi.fn<(input: Request) => Promise<Response>>(async () =>
+// 공용 fetch 스텁(@/test/stub-fetch) — 수신 요청 목록으로 발사 여부를 단정한다.
+// 핫구역 항목은 점령 격자 픽스처(occupiedGridOf)에 score만 얹는다 — 훅은 gridId만 읽는다
+const stubHotZones = (gridIds: string[]) =>
+  stubFetch(async () =>
     envelopeResponse({
-      hotZones: gridIds.map((gridId) => {
-        const [gridY, gridX] = gridId.split("_").map(Number);
-        return {
-          gridId,
-          gridY,
-          gridX,
-          score: 12,
-          zoneName: null,
-          zoneCell: null,
-        };
-      }),
+      hotZones: gridIds.map((gridId) => ({
+        ...occupiedGridOf(gridId),
+        score: 12,
+      })),
     }),
   );
-  vi.stubGlobal("fetch", fetchMock);
-  return fetchMock;
-};
+
+// 핫구역 조회는 보호 API다 (MSG-328 익명 401 실측) — 기존 성공 경로는 로그인 전제로 고정
+beforeEach(signInForTest);
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  signOutForTest();
 });
 
 // MSG-357 재기준화: 응답 gridId를 구 스텝 하드코딩 값 대신 서면 좌표에서 현행 체계로 파생한다
@@ -93,12 +85,27 @@ describe("useHotZoneCells", () => {
   });
 
   it("요청 대상이 아닌 뷰포트(null)에서는 조회하지 않고 빈 배열이다", async () => {
-    const fetchMock = stubHotZones([SEOMYEON_GRID_IDS[0]]);
+    const received = stubHotZones([SEOMYEON_GRID_IDS[0]]);
 
     const { result } = renderHook(() => useHotZoneCells(null), { wrapper });
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(result.current).toEqual([]);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(received).toHaveLength(0);
+  });
+
+  it("비로그인이면 조회하지 않고(401 재발사 방지), 로그인 전환 시 다시 활성화된다 (사용자 버그 리포트 + 오버레이 복귀 회귀 가드)", async () => {
+    const received = stubHotZones(SEOMYEON_GRID_IDS);
+    signOutForTest();
+    const { result } = renderHook(() => useHotZoneCells(SEOMYEON_VIEWPORT), {
+      wrapper,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(result.current).toEqual([]);
+    expect(received).toHaveLength(0);
+
+    act(signInForTest);
+
+    await waitFor(() => expect(result.current).toHaveLength(2));
   });
 });

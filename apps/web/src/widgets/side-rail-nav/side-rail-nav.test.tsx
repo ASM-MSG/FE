@@ -70,8 +70,20 @@ describe("SideRail 프로필 분기", () => {
     expect(useLoginModalStore.getState().open).toBe(false);
   });
 
-  it("로그아웃 상태의 타 탭 이동은 영향 없다 — 도감 클릭 시 /dex 이동, 모달 안 뜸 (G4)", () => {
+  // 구 G4 케이스("도감 클릭 시 /dex 이동")는 MSG-328 사용자 버그 리포트로 뒤집힘 —
+  // /dex 이동 → RequireAuth 홈 귀환 → MapHomePage 재마운트가 실패 쿼리(grids·hotzones·
+  // reissue 401)를 재발사시켰다. 도감도 프로필과 같은 G1 분기(모달만, URL 불변)로 고정한다.
+  it("로그아웃 상태 도감 클릭은 이동 대신 로그인 모달만 열린다 — URL 불변 (사용자 버그 리포트, G1 확장)", () => {
     useAuthStore.setState({ isAuthenticated: false });
+    renderNav("/");
+
+    fireEvent.click(screen.getByRole("button", { name: "도감" }));
+
+    expect(useLoginModalStore.getState().open).toBe(true);
+    expect(screen.getByTestId("location").textContent).toBe("/");
+  });
+
+  it("로그인 상태 도감 클릭은 기존대로 /dex 이동 — 모달 안 뜸 (G4 보존)", () => {
     renderNav("/");
 
     fireEvent.click(screen.getByRole("button", { name: "도감" }));

@@ -1,7 +1,6 @@
 import { Outlet, Route, Routes } from "react-router-dom";
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
@@ -9,6 +8,7 @@ import { useRegionPanelStore } from "@/features/region/model/region-panel-store"
 import { SEOMYEON_CENTER } from "@/shared/geolocation";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
+import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { envelopeResponse } from "@/test/envelope-response";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { MapHomePage } from "./MapHomePage";
@@ -70,8 +70,7 @@ const renderHome = () =>
   );
 
 /** 지역 패널은 비로그인 조회 게이트(익명 401 실측)가 있어 로그인 상태로 검증한다 */
-const authenticate = () =>
-  useAuthStore.setState({ accessToken: "test-token", isAuthenticated: true });
+const authenticate = signInForTest;
 
 /**
  * 격자 상세 응답만 모드별로 갈아끼운다 — 뷰포트·핫구역·지역 API는 항상 고정 응답.
@@ -131,7 +130,7 @@ afterEach(() => {
   useThemeFilterStore.setState({ activeTheme: null });
   useSidebarStore.setState({ collapsed: false });
   useViewportStore.setState({ bounds: null, center: SEOMYEON_CENTER });
-  useAuthStore.setState({ accessToken: null, isAuthenticated: false });
+  signOutForTest();
   useRegionPanelStore.setState(useRegionPanelStore.getInitialState(), true);
 });
 
@@ -268,6 +267,9 @@ describe("접힘 상태 셀 탭 → 패널 펼침 (사용자 결정 2026-08-10)"
   /** 접힘 + 서면 점령 1건 뷰포트로 홈을 띄우고 셀 클릭 핸들러 등록을 기다린다 */
   const renderCollapsedHome = async () => {
     stubDetail("ready", [SEOMYEON]);
+    // 점령 격자 조회가 인증 게이트를 갖게 됨(MSG-328 사용자 버그 리포트) — 탭 판정의
+    // 전제인 점령 목록이 로그인 상태에서만 도착하므로 로그인 전제로 고정
+    authenticate();
     useSidebarStore.setState({ collapsed: true });
     useViewportStore.setState({
       bounds: {

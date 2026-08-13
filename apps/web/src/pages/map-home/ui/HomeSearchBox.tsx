@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, SearchBar } from "@fillmap/ui-web";
+import { SearchBar } from "@fillmap/ui-web";
 import type { LatLng } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
@@ -18,7 +18,12 @@ interface HomeSearchBoxProps {
  * 결과(장소명·주소, AC 15)를 보여준다. 인기 검색어 클릭은 그 키워드로 즉시 장소 검색을
  * 실행한다(AC 14 — trending은 좌표를 싣지 않는 백엔드 계약). 결과 선택 시 지도 이동 + 닫힘.
  * 구 SearchBox(탐색 이동형)를 대체한다 — 최근 방문·최근 검색 mock 기능은 신 디자인에 없어
- * 폐기(스펙 추정 6). 비로그인은 조회를 게이트하고 로그인 유도를 보여준다(익명 401 실측).
+ * 폐기(스펙 추정 6).
+ *
+ * 비로그인(익명 401 실측)은 입력 진입 자체를 막는다 (MSG-328 사용자 피드백) — 클릭은
+ * mousedown preventDefault로 포커스(보더)를 차단하고, 키보드(Tab) 포커스는 즉시 반환한다.
+ * 두 경로 모두 도감(RequireAuth)과 동일하게 로그인 모달을 연다 — 무반응 아님(a11y).
+ * 드롭다운·검색 쿼리는 로그인 상태에서만 동작한다.
  */
 export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -30,6 +35,22 @@ export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
   const hasInput = input.trim().length > 0;
   const search = usePlaceSearchQuery(input, isAuthenticated && open);
   const trending = useTrendingQuery(isAuthenticated && open && !hasInput);
+
+  // 인증이 풀리면(세션 만료 등) 즉시 게이트와 일치시킨다 (리뷰 P2) — mousedown/focus
+  // 가드는 다음 이벤트에서만 동작하므로, 열린 드롭다운(캐시된 인기 검색어·검색 결과)과
+  // input 포커스가 비로그인 상태에 남는 모순을 여기서 걷는다
+  useEffect(() => {
+    if (isAuthenticated) return;
+    setOpen(false);
+    const active = document.activeElement;
+    if (
+      rootRef.current &&
+      active instanceof HTMLElement &&
+      rootRef.current.contains(active)
+    ) {
+      active.blur();
+    }
+  }, [isAuthenticated]);
 
   // 바깥 클릭 시 드롭다운 닫기 (구 SearchBox 패턴 유지)
   useEffect(() => {
@@ -58,12 +79,33 @@ export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
   };
 
   return (
-    <div ref={rootRef} className="relative">
+    <div
+      ref={rootRef}
+      className="relative"
+      // 비로그인 클릭 차단 — 검색바 전체(아이콘 포함)에서 포커스 진입을 막고 로그인 모달.
+      // capture 단계 preventDefault라 input이 포커스(보더)를 얻지 않는다
+      onMouseDownCapture={
+        isAuthenticated
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              openLoginModal();
+            }
+      }
+    >
       <SearchBar
         placeholder="장소, 격자 검색"
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onFocus={() => setOpen(true)}
+        onFocus={(e) => {
+          // 키보드(Tab) 진입 — 클릭과 동일하게 모달, 포커스는 즉시 반환 (무반응·트랩 금지)
+          if (!isAuthenticated) {
+            e.currentTarget.blur();
+            openLoginModal();
+            return;
+          }
+          setOpen(true);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") commitSearch(input);
           else if (e.key === "Escape") setOpen(false);
@@ -73,19 +115,7 @@ export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
 
       {open && (
         <div className="absolute inset-x-0 top-full z-20 mt-xs flex max-h-[70vh] flex-col gap-sm overflow-y-auto rounded-md border border-border bg-background p-md shadow-raised">
-          {!isAuthenticated ? (
-            <div className="flex flex-col items-center gap-sm py-xs text-center">
-              <p className="text-fm-body text-foreground-muted">
-                로그인하면 장소와 격자를 검색할 수 있어요.
-              </p>
-              <Button
-                text="로그인"
-                variant="primary"
-                size="sm"
-                onClick={openLoginModal}
-              />
-            </div>
-          ) : hasInput ? (
+          {hasInput ? (
             <PlaceResultList
               places={search.places}
               isError={search.isError}

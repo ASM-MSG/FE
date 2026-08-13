@@ -1555,6 +1555,32 @@
       ]
     },
     {
+      "id": "5fee5c79fd95fdca",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "fc0fc9db6f557884",
+          "source_digest": "fnv1a64:bdf82d7d7bd87585",
+          "file": "apps/web/src/pages/map-home/ui/home-search-box.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 54,
+          "end_line": 63,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "5f8822cbb489dcbf",
+          "source_digest": "fnv1a64:0bf088e72b7114a6",
+          "file": "apps/web/src/pages/map-home/ui/home-search-box.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 69,
+          "end_line": 77,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "606ecb3c83e79d7f",
       "note": "consolidate `createClient` — 3 copies — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -1640,32 +1666,6 @@
           "lang": "typescript",
           "start_line": 3,
           "end_line": 16,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "6afb694f0188170f",
-      "note": "local duplication — extract a method from the repeated block — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "8d85d5787e3fa213",
-          "source_digest": "fnv1a64:7608a641ed6c11d1",
-          "file": "apps/web/src/pages/map-home/ui/RegionListView.tsx",
-          "lang": "typescript",
-          "start_line": 31,
-          "end_line": 63,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "c17eb6891b2519b1",
-          "source_digest": "fnv1a64:15ce84a0c506c4b6",
-          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
-          "lang": "typescript",
-          "start_line": 135,
-          "end_line": 162,
           "kind": "Block",
           "is_fragment": false
         }
@@ -1780,56 +1780,6 @@
       ]
     },
     {
-      "id": "7b0c5a5a1dce1073",
-      "note": "consolidate `button` — 4 copies",
-      "members": [
-        {
-          "id": "bf1496328f912448",
-          "source_digest": "fnv1a64:55683730775070df",
-          "file": "packages/ui-web/src/bottom-nav.tsx",
-          "lang": "typescript",
-          "start_line": 44,
-          "end_line": 64,
-          "kind": "Block",
-          "name": "button",
-          "is_fragment": false
-        },
-        {
-          "id": "ed38394caf4d5912",
-          "source_digest": "fnv1a64:8ffc1bda51812698",
-          "file": "packages/ui-web/src/side-rail.tsx",
-          "lang": "typescript",
-          "start_line": 52,
-          "end_line": 67,
-          "kind": "Block",
-          "name": "button",
-          "is_fragment": false
-        },
-        {
-          "id": "6b0ae61144e8c9d1",
-          "source_digest": "fnv1a64:141cf8eeed7241e3",
-          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
-          "lang": "typescript",
-          "start_line": 147,
-          "end_line": 158,
-          "kind": "Block",
-          "name": "button",
-          "is_fragment": false
-        },
-        {
-          "id": "1df184390d07dff9",
-          "source_digest": "fnv1a64:883685501a1c5716",
-          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
-          "lang": "typescript",
-          "start_line": 191,
-          "end_line": 202,
-          "kind": "Block",
-          "name": "button",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "7b163cfc57fd7558",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -1892,8 +1842,36 @@
       ]
     },
     {
-      "id": "7db7ec132c9a7414",
-      "note": "consolidate `div` — 5 copies",
+      "id": "7fa9d71702ce1547",
+      "note": "local duplication — extract a helper",
+      "members": [
+        {
+          "id": "3da57a49c6ba2ee6",
+          "source_digest": "fnv1a64:a2a0186072f6f08b",
+          "file": "packages/ui-web/src/dialog-shell.stories.tsx",
+          "lang": "typescript",
+          "start_line": 46,
+          "end_line": 70,
+          "kind": "Function",
+          "name": "ScrollableDemo",
+          "is_fragment": false
+        },
+        {
+          "id": "ab0f69262056b0f0",
+          "source_digest": "fnv1a64:251444a8cc581c7a",
+          "file": "packages/ui-web/src/dialog-shell.stories.tsx",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 38,
+          "kind": "Function",
+          "name": "PlaygroundDemo",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "84951c343be6c96e",
+      "note": "consolidate `div` — 4 copies",
       "members": [
         {
           "id": "aed0c37e692c45e7",
@@ -1918,17 +1896,6 @@
           "is_fragment": false
         },
         {
-          "id": "9d9206e31c8fa587",
-          "source_digest": "fnv1a64:bcc6788cb2d9216d",
-          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
-          "lang": "typescript",
-          "start_line": 77,
-          "end_line": 87,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        },
-        {
           "id": "a6dcede64664809f",
           "source_digest": "fnv1a64:3f5bcff4de54bf6d",
           "file": "apps/web/src/pages/map-home/ui/VideoMiniPanel.tsx",
@@ -1948,34 +1915,6 @@
           "end_line": 18,
           "kind": "Block",
           "name": "div",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "7fa9d71702ce1547",
-      "note": "local duplication — extract a helper",
-      "members": [
-        {
-          "id": "3da57a49c6ba2ee6",
-          "source_digest": "fnv1a64:a2a0186072f6f08b",
-          "file": "packages/ui-web/src/dialog-shell.stories.tsx",
-          "lang": "typescript",
-          "start_line": 46,
-          "end_line": 70,
-          "kind": "Function",
-          "name": "ScrollableDemo",
-          "is_fragment": false
-        },
-        {
-          "id": "ab0f69262056b0f0",
-          "source_digest": "fnv1a64:251444a8cc581c7a",
-          "file": "packages/ui-web/src/dialog-shell.stories.tsx",
-          "lang": "typescript",
-          "start_line": 16,
-          "end_line": 38,
-          "kind": "Function",
-          "name": "PlaygroundDemo",
           "is_fragment": false
         }
       ]
@@ -2118,6 +2057,56 @@
           "end_line": 22,
           "kind": "Function",
           "name": "cell",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "949089afde520fdb",
+      "note": "consolidate `button` — 4 copies",
+      "members": [
+        {
+          "id": "bf1496328f912448",
+          "source_digest": "fnv1a64:55683730775070df",
+          "file": "packages/ui-web/src/bottom-nav.tsx",
+          "lang": "typescript",
+          "start_line": 44,
+          "end_line": 64,
+          "kind": "Block",
+          "name": "button",
+          "is_fragment": false
+        },
+        {
+          "id": "ed38394caf4d5912",
+          "source_digest": "fnv1a64:8ffc1bda51812698",
+          "file": "packages/ui-web/src/side-rail.tsx",
+          "lang": "typescript",
+          "start_line": 52,
+          "end_line": 67,
+          "kind": "Block",
+          "name": "button",
+          "is_fragment": false
+        },
+        {
+          "id": "692c84c0f9280505",
+          "source_digest": "fnv1a64:141cf8eeed7241e3",
+          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
+          "lang": "typescript",
+          "start_line": 177,
+          "end_line": 188,
+          "kind": "Block",
+          "name": "button",
+          "is_fragment": false
+        },
+        {
+          "id": "9a80cb0499921885",
+          "source_digest": "fnv1a64:883685501a1c5716",
+          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
+          "lang": "typescript",
+          "start_line": 221,
+          "end_line": 232,
+          "kind": "Block",
+          "name": "button",
           "is_fragment": false
         }
       ]
@@ -3018,6 +3007,32 @@
       ]
     },
     {
+      "id": "b6bde63ce706f0dd",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "978e0893f905dfea",
+          "source_digest": "fnv1a64:18f2ca7aaebbb56e",
+          "file": "apps/web/src/pages/map-home/ui/home-search-box.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 46,
+          "end_line": 65,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "6210070288d7cb2a",
+          "source_digest": "fnv1a64:3025b1694db7eac4",
+          "file": "apps/web/src/pages/map-home/ui/home-search-box.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 33,
+          "end_line": 38,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "ba666b096d789b53",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -3902,6 +3917,32 @@
           "lang": "typescript",
           "start_line": 37,
           "end_line": 62,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "f89bf31757257fe3",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "8d85d5787e3fa213",
+          "source_digest": "fnv1a64:7608a641ed6c11d1",
+          "file": "apps/web/src/pages/map-home/ui/RegionListView.tsx",
+          "lang": "typescript",
+          "start_line": 31,
+          "end_line": 63,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "193ae5307e0bec15",
+          "source_digest": "fnv1a64:15ce84a0c506c4b6",
+          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
+          "lang": "typescript",
+          "start_line": 165,
+          "end_line": 192,
           "kind": "Block",
           "is_fragment": false
         }

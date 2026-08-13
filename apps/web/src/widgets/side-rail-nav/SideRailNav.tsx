@@ -41,8 +41,11 @@ export const SideRailNav = () => {
         if (!isNavKey(key)) return;
         // 로그아웃 상태의 프로필은 이동 대신 로그인 모달을 연다 (URL 불변) — MSG-46 후속 2 G1.
         // 활성 탭 토글보다 앞에 둔다 — 로그아웃 직후 /profile에 머문 상태에서
-        // 프로필 재클릭이 접기 토글로 빠지면 데모 흐름이 끊긴다 (후속 1 결정 유지)
-        if (key === "profile" && !isAuthenticated) {
+        // 프로필 재클릭이 접기 토글로 빠지면 데모 흐름이 끊긴다 (후속 1 결정 유지).
+        // 도감도 같은 분기다 (MSG-328 사용자 버그 리포트) — 이동을 허용하면
+        // /dex → RequireAuth 홈 귀환 → MapHomePage 재마운트가 실패 쿼리(grids·hotzones
+        // 401 + reissue)를 클릭마다 재발사시킨다. RequireAuth 래핑은 직접 URL 진입 방어로 존치
+        if ((key === "profile" || key === "dex") && !isAuthenticated) {
           openLoginModal();
           return;
         }
