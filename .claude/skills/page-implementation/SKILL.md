@@ -30,7 +30,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 
 ### 3단계: 연결 및 스코프 확인
 
-라우트 등록, 로직-뷰 연결 후 **변경한 패키지 스코프**로 게이트를 확인한다: `pnpm --filter web test run`·`pnpm --filter web typecheck`·`pnpm --filter web lint`, ui-web 승격이 있었으면 `--filter @fillmap/ui-web`도 추가. 루트 풀 게이트 5종(test·typecheck·lint·format:check·check:duplication)은 여기서 돌리지 않는다 — 검증 단계(page-verification)가 최종 1회 실행하므로 중복이고, 티켓당 풀 게이트 반복이 파이프라인 소요의 주범이었다(MSG-380 감사). 스코프 게이트 실패를 남긴 채 검증으로 넘기는 것은 금지 — 스코프 그린은 빌더의 완료 조건이다.
+라우트 등록, 로직-뷰 연결 후 **변경한 패키지 스코프**로 게이트를 확인한다: `pnpm --filter web test run`·`pnpm --filter web typecheck`·`pnpm --filter web lint`, ui-web 승격이 있었으면 `--filter @fillmap/ui-web`도 추가. 루트 풀 게이트 6종(test·typecheck·lint·format:check·check:duplication·openapi-ts 드리프트)은 여기서 돌리지 않는다 — 검증 단계(page-verification)가 최종 1회 실행하므로 중복이고, 티켓당 풀 게이트 반복이 파이프라인 소요의 주범이었다(MSG-380 감사). 스코프 게이트 실패를 남긴 채 검증으로 넘기는 것은 금지 — 스코프 그린은 빌더의 완료 조건이다.
 
 ## 디렉토리 구조 (FSD)
 
@@ -52,7 +52,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 
 - 색상·크기·타이포는 토큰 클래스만: `bg-primary`, `gap-md`, `text-fm-body` 등. hex와 색상 임의값(`bg-[#fff]`) 금지
 - 시맨틱 토큰(`primary`, `background`) 우선, 원시 토큰(`blue-500`)은 시맨틱으로 표현 불가할 때만
-- 토큰에 없는 컴포넌트 고유 치수는 Tailwind 숫자 스케일 클래스로 쓴다 — `w-[40px]`이 아니라 `w-10`. v4는 0.25 배수를 전부 지원하므로 정수 px는 모두 표현 가능(6px=`1.5`, 7px=`1.75`, 1px=`px`). 정수 px 임의값은 eslint(better-tailwindcss)가 거부하며, 임의값은 vh·%·`calc()` 등 스케일 표현 불가 값에만 남긴다
+- 토큰에 없는 컴포넌트 고유 치수는 Tailwind 숫자 스케일 클래스로 쓴다 — `w-[40px]`이 아니라 `w-10`. v4는 0.25 배수를 전부 지원하므로 정수 px는 모두 표현 가능(6px=`1.5`, 7px=`1.75`, 1px=`px`). 정수 px 임의값은 oxlint(자작 no-restricted-classes 플러그인 — `tools/oxlint/`, MSG-386에서 eslint 대체)가 거부하며, 임의값은 vh·%·`calc()` 등 스케일 표현 불가 값에만 남긴다
 - 단위 의미: 시맨틱 토큰은 px 고정, 숫자 스케일은 rem(사용자 폰트 설정 추종). 목록과 상세는 `docs/DESIGN_SYSTEM.md` 참조
 
 ## RN 대비 경계 규칙
@@ -62,7 +62,7 @@ description: "FillMap 웹 페이지 구현 컨벤션 — 디렉토리 구조(FSD
 - **웹 전용 API 직접 참조 금지**: `window`, `document`, `localStorage`를 로직에서 직접 쓰지 않는다. 필요하면 `shared/`에 어댑터(예: `storage.ts`)를 만들어 경유한다 — RN에서는 어댑터 구현만 교체
 - **라우터 격리**: 훅·스토어가 `react-router`를 직접 import하지 않는다. 네비게이션이 필요한 로직은 콜백을 주입받는다
 - **뷰-레이어 훅 예외**: widgets/pages의 조립 전용 훅(예: `widgets/map-shell/use-map-shell.ts` — Outlet context로 지도 명령을 전달)은 라우터를 import할 수 있다. RN 재사용 대상이 아니므로 파일 상단 JSDoc에 뷰-레이어 훅임을 선언하고, model/스토어 파일과 물리적으로 분리한다
-- 이 중 기계 판별 가능한 부분(model·스토어의 라우터 import, window/document/localStorage 참조)은 eslint(no-restricted-imports/globals)가 강제한다 — 위반 시 lint가 대안을 안내하므로 억지로 우회(eslint-disable)하지 말고 어댑터/콜백 설계로 푼다
+- 이 중 기계 판별 가능한 부분(model·스토어의 라우터 import, window/document/localStorage 참조)은 oxlint(no-restricted-imports/globals, `.oxlintrc.json` overrides)가 강제한다 — 위반 시 lint가 대안을 안내하므로 억지로 우회(비활성 주석)하지 말고 어댑터/콜백 설계로 푼다
 - **지도 격리**: 지도 SDK(`react-naver-maps` — MSG-254에서 카카오맵을 대체)는 웹 전용이다. 지도 관련 코드는 지도 컴포넌트 경계(MapCanvas·naver-sdk-loader) 안에만 두고, 지도 상태(중심좌표·줌 등)는 플랫폼 중립 스토어로 분리한다. 줌 값은 네이버 의미 체계(클수록 확대, 6~21)가 정본이다
 - **선제적 패키지 생성 금지**: `ui-native`, `packages/core` 등을 미리 만들지 않는다. 경계만 지키면 분리는 필요해질 때 싸게 할 수 있다
 

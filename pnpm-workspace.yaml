@@ -3,4 +3,11 @@ packages:
   - "packages/*"
 
 catalog:
-  typescript: "~6.0.3"
+  typescript: "~7.0.2"
+
+# hey-api(openapi-ts)는 TS의 JS 컴파일러 API(ts.SyntaxKind)로 코드를 생성하는데
+# TS 7(네이티브)에는 그 API가 없어 크래시한다(MSG-386 CI 실측). 그래서 hey-api와
+# typescript ~6.0.3을 워크스페이스 루트 devDep으로 두어 peer를 6.x로 맺고,
+# 각 패키지의 tsc는 catalog(7.x)를 쓴다. hey-api가 TS 7을 지원하면 루트 것을
+# 제거하고 apps/web devDep + catalog로 되돌릴 것. (scoped overrides·packageExtensions로는
+# peer 재지정이 안 되는 것을 클린 설치로 확증함)

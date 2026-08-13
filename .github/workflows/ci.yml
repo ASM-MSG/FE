@@ -42,11 +42,8 @@ jobs:
           git diff --exit-code -- apps/web/src/shared/api/generated
           test -z "$(git status --porcelain apps/web/src/shared/api/generated)"
 
-      # oxlint(Rust 기반)로 범용 룰을 먼저 빠르게 훑고, 커스텀 룰(토큰·RN 경계)은 계속 ESLint가 담당한다.
-      # eslint.config에서 eslint-plugin-oxlint로 겹치는 룰은 이미 꺼둬서 중복 리포트 없음.
-      - name: Lint (oxlint fast pass)
-        run: pnpm lint:oxlint
-
+      # oxlint 단일 실행(MSG-386) — 범용 룰 + 커스텀 룰(토큰: tools/oxlint JS 플러그인, RN 경계:
+      # 네이티브 no-restricted-imports/globals)을 루트 .oxlintrc.json 하나로 검사한다. eslint 제거됨.
       - name: Lint
         run: pnpm lint
 

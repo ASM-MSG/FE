@@ -1,0 +1,85 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // MSG-386: eslint 4개 설정을 oxlint 단일 설정으로 이식 — 규칙 정본은 이 파일 하나다.
+  // 토큰 규칙(디자인 시스템 1조)은 JS 플러그인(tools/oxlint/)으로 구현 — jsPlugins는 alpha API.
+  "jsPlugins": ["./tools/oxlint/no-restricted-classes.mjs"],
+  "plugins": ["eslint", "unicorn", "typescript", "oxc", "react"],
+  "env": {
+    "builtin": true,
+    "browser": true
+  },
+  "ignorePatterns": [
+    "**/dist",
+    "apps/web/src/shared/api/generated",
+    "apps/mobile/.expo",
+    "apps/mobile/expo-env.d.ts",
+    "apps/mobile/.rnstorybook/storybook.requires.ts",
+    "packages/ui-web/storybook-static",
+    "_workspace",
+    ".claude"
+  ],
+  "rules": {
+    // react-hooks recommended 상당 — 원본 eslint 구성과 동일한 심각도(error/warn)
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    // 디자인 시스템 1조 기계 강제 (better-tailwindcss/no-restricted-classes 이식)
+    "fillmap/no-restricted-classes": "error"
+  },
+  "overrides": [
+    {
+      // react-refresh vite 프리셋 상당(only-export-components + allowConstantExport)
+      // — Fast Refresh는 vite(apps/web)에서만 의미가 있으므로 원본과 동일하게 web 한정
+      "files": ["apps/web/**"],
+      "rules": {
+        "react/only-export-components": [
+          "error",
+          { "allowConstantExport": true }
+        ]
+      }
+    },
+    {
+      // RN 대비 경계 규칙(page-implementation 스킬) 기계 강제 — 로직 레이어는 플랫폼 중립.
+      // widgets/pages의 뷰-레이어 훅(라우터 연결용)은 이 glob에 안 걸리므로 예외가 자동 성립한다.
+      "files": [
+        "apps/web/src/features/*/model/**",
+        "apps/web/src/entities/*/model/**",
+        "apps/web/src/widgets/**/*-store.*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["react-router*"],
+                "message": "model 레이어는 라우터를 몰라야 합니다(RN 재사용 대상). 네비게이션은 콜백 주입 또는 뷰-레이어 훅에서 처리하세요."
+              }
+            ]
+          }
+        ],
+        "no-restricted-globals": [
+          "error",
+          {
+            "name": "window",
+            "message": "model 레이어에서 window 직접 접근 금지 — shared/ 어댑터를 경유하세요 (RN 경계 규칙)"
+          },
+          {
+            "name": "document",
+            "message": "model 레이어에서 document 직접 접근 금지 — shared/ 어댑터를 경유하세요 (RN 경계 규칙)"
+          },
+          {
+            "name": "localStorage",
+            "message": "localStorage 직접 접근 금지 — shared/의 storage 어댑터를 사용하세요 (RN 경계 규칙)"
+          }
+        ]
+      }
+    },
+    {
+      // apps/mobile의 순수 JS 파일(metro 설정 등)은 commonjs+node 컨텍스트
+      "files": ["apps/mobile/**/*.js"],
+      "env": {
+        "node": true
+      }
+    }
+  ]
+}

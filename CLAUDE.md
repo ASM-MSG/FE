@@ -27,7 +27,8 @@ pnpm 모노레포 — apps/web(React 19 + Vite) + apps/mobile(Expo, 대부분 �
 **변경 이력 (최근 5행 이내 — 전체는 `docs/HARNESS_CHANGELOG.md`, 밀려난 행은 그리로 이관):**
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
-| 2026-08-11 | react-doctor pre-commit을 React 패키지 4곳별 실행으로 재작성 — 루트 단일 실행은 React 규칙이 꺼진 가짜 그린 | .husky/pre-commit | MSG-329 — React 규칙 경고가 PR 리뷰에서야 드러나던 공백 해소 |
-| 2026-08-13 | 소요 시간 개선 5종 — docs/STATUS.md 신설(에이전트 탐색 대체·티켓당 한 줄 append), 스펙 영속화(docs/spec + 작업 로그·검토한 대안), 게이트 단일화(빌더 스코프/검증자 풀 1회), 검증 프로파일(화면/로직/경미), codex Stop 게이트→커밋 전 온디맨드. CLAUDE.md는 문서 지도+이력 아카이브로 재편(구성 원칙 개정 — 근거는 CHANGELOG) | CLAUDE.md, docs/, skills 4종, agents 3종, codex 상태 | MSG-380 — 감사 실측: 검증 15~50분, 풀 게이트 3~5회/티켓, 에이전트별 재탐색 3회/티켓. BE 레포 status.md 패턴 차용 |
+| 2026-08-13 | 검증 풀 게이트에 openapi-ts 드리프트 검사 추가(5종→6종), hey-api는 루트 devDep+TS ~6.0.3 peer로 이전 | skills/page-verification·page-implementation, agents 2종, package.json | MSG-386 CI 실패 환류 — CI에만 있던 드리프트 게이트가 검증 스킬에 없어 hey-api TS 7 비호환을 로컬이 못 잡음 (MSG-298 좌시프트 원칙 누락 보수) |
 | 2026-08-13 | task-retro 스킬 신설 — 머지 후 요청 시 결정·트레이드오프 회고를 docs/retro/MSG-XXX.html로 생성 | skills/task-retro | MSG-380 — 회고 재료(기각 대안)는 작업 중 포착, 합성은 머지 후 온디맨드 |
 | 2026-08-13 | 테스트 템플릿 신설 — 유형 선택 매트릭스(로직/스토어/쿼리 훅/스모크/흐름)와 단정 범위, test-first에 템플릿 선택 의무화, 검증 감사에 템플릿 부합 추가 | skills/page-implementation(+references/test-templates.md), skills/page-verification | MSG-380 — 템플릿 없는 TDD가 무의미 테스트를 양산(사용자 보고). Testing Trophy·공식 가이드 리서치 기반 |
+| 2026-08-13 | 린트 강제 주체 서술 현행화 — eslint → oxlint(자작 토큰 플러그인 + 네이티브 규칙), 우회 감사를 lint 비활성 주석 일반형으로 | skills/page-implementation, skills/page-verification | MSG-386 — oxlint 단일화·TS 7.0.2 상향에 따른 문서-코드 동기화 |
+| 2026-08-13 | 티켓 브랜치 생성 전 기존 브랜치(로컬·원격 `*MSG-{번호}*`) 조회 의무화 — 존재 시 사용자 브랜치가 정본, 없을 때만 생성+보고 | skills/fillmap-page-dev, skills/ticket-to-spec | MSG-386 사고 — 사용자 생성 브랜치를 조회 없이 두고 하네스가 임의 브랜치를 파서 갈라짐 |
