@@ -31,7 +31,7 @@ pnpm --filter mobile storybook   # ui-native on-device 스토리북 (EXPO_PUBLIC
 
 pnpm check:duplication   # 코드 중복 감지(nose CLI 필요 — brew install corca-ai/tap/nose). CI는 advisory 게이트
 pnpm doctor              # React 코드 상태 진단(성능·a11y·아키텍처 등, react-doctor). CI는 advisory, pre-commit은 staged 파일만 경고
-pnpm lint:oxlint         # oxlint(Rust 기반) 범용 룰 고속 검사 — 커스텀 룰(토큰·RN 경계)은 계속 eslint가 담당, CI 필수 게이트
+pnpm lint                # oxlint 단일 실행(MSG-386, eslint 제거) — 범용 룰 + 커스텀 룰(토큰: tools/oxlint JS 플러그인, RN 경계), CI 필수 게이트
 pnpm format              # oxfmt로 전체 포맷 적용
 pnpm format:check        # oxfmt 포맷 검사만(자동 수정 없음) — CI 필수 게이트
 ```
@@ -119,4 +119,4 @@ MSG-120 docs: README에 브랜치 전략 설명 추가
 ### 스타일
 
 - Tailwind + 디자인 토큰 사용 — 임의 색상·수치 하드코딩 대신 토큰 사용 ([docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) 준수)
-- 컴포넌트 고유 치수는 Tailwind 숫자 스케일 클래스(rem 기반, 사용자 폰트 설정 추종) 사용 — px 임의값(`w-[40px]`)은 eslint가 금지. 시맨틱 토큰(`p-md` 등)은 px 고정
+- 컴포넌트 고유 치수는 Tailwind 숫자 스케일 클래스(rem 기반, 사용자 폰트 설정 추종) 사용 — px 임의값(`w-[40px]`)은 oxlint가 금지. 시맨틱 토큰(`p-md` 등)은 px 고정

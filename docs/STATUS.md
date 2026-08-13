@@ -83,3 +83,4 @@
 ## 티켓 이력 (2026-08-13 이후 — 티켓당 한 줄 append)
 
 - MSG-380: 하네스 개선 — 이 문서(STATUS.md) 신설, docs/spec·docs/retro 경로 신설 (코드 변경 없음)
+- MSG-386: 린트 툴체인 oxlint 단일화 — eslint 계열 직접 devDep 8종·설정 4파일 제거, 루트 `.oxlintrc.json` + 토큰 규칙 자작 플러그인(`tools/oxlint/no-restricted-classes.mjs`), react-refresh 상당은 oxlint 네이티브 `react/only-export-components`(web 한정) 판정, TS catalog 7.0.2 상향. exhaustive-deps warn 검사 복원(기존 하이브리드에서 미검사 공백이었음). eslint는 react-doctor 전이 의존성으로만 잔존

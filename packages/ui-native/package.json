@@ -9,7 +9,6 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -22,20 +21,13 @@
     "react-native": ">=0.76"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@storybook/react-native": "^10.5.4",
     "@types/react": "~19.2.2",
-    "eslint": "^10.6.0",
-    "eslint-plugin-better-tailwindcss": "^4.7.0",
-    "eslint-plugin-oxlint": "^1.76.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.7.0",
     "nativewind": "^4.2.6",
     "react": "19.2.3",
     "react-native": "0.86.2",
     "storybook": "^10.5.4",
     "tailwindcss": "^3.4.0",
-    "typescript": "catalog:",
-    "typescript-eslint": "^8.62.0"
+    "typescript": "catalog:"
   }
 }

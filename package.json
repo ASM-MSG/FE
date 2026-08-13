@@ -7,8 +7,7 @@
     "dev": "pnpm --filter web dev",
     "dev:mobile": "pnpm --filter mobile start",
     "build": "pnpm --filter web build",
-    "lint": "pnpm -r run lint",
-    "lint:oxlint": "oxlint apps/web/src apps/mobile/src packages/ui-web/src packages/ui-native/src packages/design-tokens/src --ignore-pattern 'apps/web/src/shared/api/generated/**'",
+    "lint": "oxlint",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm --filter web test run && pnpm --filter mobile test run",
     "openapi-ts": "pnpm --filter web openapi-ts",
@@ -26,7 +25,6 @@
     "node": ">=24"
   },
   "devDependencies": {
-    "eslint-plugin-oxlint": "^1.76.0",
     "husky": "^9.1.7",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
