@@ -28,7 +28,10 @@ export const useProcessingWatcher = () => {
   const hydrate = useProcessingStore((s) => s.hydrate);
   const untrack = useProcessingStore((s) => s.untrack);
   const [notices, setNotices] = useState<ProcessingNotice[]>([]);
-  const handles = useRef(new Map<number, ProcessingPollHandle>());
+  // 폴 핸들 맵 lazy 초기화 — useRef(new Map())은 렌더마다 버려지는 Map을 만든다
+  // (react-doctor 환류). 읽기는 전부 effect 안이라 렌더 중 ref 접근도 없다
+  const handlesRef = useRef<Map<number, ProcessingPollHandle> | null>(null);
+  const getHandles = () => (handlesRef.current ??= new Map());
 
   const pushNotice = useCallback((notice: ProcessingNotice) => {
     setNotices((prev) => [
@@ -44,7 +47,7 @@ export const useProcessingWatcher = () => {
 
   // 대기 목록 ↔ 폴 핸들 동기화 — 새 항목은 폴링 시작(+즉시 1회 조회), 사라진 항목은 중지
   useEffect(() => {
-    const map = handles.current;
+    const map = getHandles();
     for (const entry of pending) {
       if (map.has(entry.videoId)) continue;
       // 마지막 조회의 playbackUrl·gridId 보관 — READY 통지의 재생 소스(B16)와 격자 쿼리 갱신용
@@ -101,7 +104,7 @@ export const useProcessingWatcher = () => {
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
       hydrate();
-      for (const handle of handles.current.values()) {
+      for (const handle of getHandles().values()) {
         void handle.checkNow();
       }
     };
@@ -112,7 +115,7 @@ export const useProcessingWatcher = () => {
 
   // 언마운트 시 전체 폴링 중지
   useEffect(() => {
-    const map = handles.current;
+    const map = getHandles();
     return () => {
       for (const handle of map.values()) handle.stop();
       map.clear();

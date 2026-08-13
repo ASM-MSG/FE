@@ -105,9 +105,29 @@ describe("테마 피드 패널 스모크", () => {
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(3);
     for (const button of buttons) {
-      expect(button.getAttribute("aria-label")).toMatch(/재생$/);
+      // 재생 라벨 뒤에 소유 메타가 붙는다 — 카드별 접근성 이름 구분 (PR #51 리뷰 반영)
+      expect(button.getAttribute("aria-label")).toMatch(/재생 · /);
     }
     expect(screen.queryByText("전체 보기")).toBeNull();
+  });
+
+  it("순번이 섹션 경계를 넘어 이어져 패널 전체에서 카드 이름이 유일하다 (PR #51 리뷰 반영 3차)", () => {
+    render(
+      <ThemeFeedPanel
+        feed={FEED}
+        onVideoSelect={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    const names = screen
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label"));
+
+    // 섹션별 리셋(1·2·1)이면 다른 섹션의 동일 제목·메타 카드와 겹칠 수 있다 —
+    // 패널 단위 연속 순번(1·2·3)이 유일성의 근거다
+    expect(names.map((name) => name?.split(".")[0])).toEqual(["1", "2", "3"]);
+    expect(new Set(names).size).toBe(3);
   });
 
   it("일반 타깃(body)의 Escape는 피드를 닫고, input 타깃은 무시한다 (추정 6 — 상세 패널 Escape 계약 공유)", () => {

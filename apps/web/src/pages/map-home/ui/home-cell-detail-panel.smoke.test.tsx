@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { HomeCellDetail } from "@/features/map-home/model/home-cell-detail";
+import type { GridVideosResult } from "@/features/map-home/model/use-grid-videos-query";
 import { HomeCellDetailPanel } from "./HomeCellDetailPanel";
 
 /**
@@ -18,14 +19,24 @@ import { HomeCellDetailPanel } from "./HomeCellDetailPanel";
 // 픽스처 갱신만 — Escape 단정 2케이스는 여전히 불변
 // MSG-325: 표시 모델이 실 API 파생으로 바뀌어(결정 B①) 필드가 줄어든 데 따른 픽스처 갱신만 —
 // Escape 단정 2케이스는 여전히 불변
+// MSG-326: coverVideo 제거(추정 1 — 목록 피드로 대체) + videos·onVideoSelect 필수 prop
+// 신설(기준 8)에 따른 픽스처 갱신만 — Escape 단정 2케이스는 여전히 불변
 const DETAIL: HomeCellDetail = {
   gridId: "39064_112221",
   label: "서면 A-14",
   subtitle: "내 영상 0개",
   badges: [],
   regionLabel: "부산광역시 부산진구 부전1동",
-  coverVideo: null,
   accent: "primary",
+};
+
+/** 목록 결과 픽스처 — 빈 목록. Escape 단정은 피드 상태와 무관하다 */
+const EMPTY_VIDEOS: GridVideosResult = {
+  items: [],
+  isPending: false,
+  isError: false,
+  isEmpty: true,
+  retry: () => {},
 };
 
 /** onViewAll 필수 prop 신설(MSG-253 AC 11)에 따른 렌더 인자 — Escape 단정과 무관한 no-op */
@@ -43,6 +54,8 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
         <input aria-label="검색어" />
         <HomeCellDetailPanel
           detail={DETAIL}
+          videos={EMPTY_VIDEOS}
+          onVideoSelect={() => {}}
           onClose={onClose}
           onViewAll={noopViewAll}
         />
@@ -59,6 +72,8 @@ describe("홈 셀 상세 패널 Escape 배선", () => {
     render(
       <HomeCellDetailPanel
         detail={DETAIL}
+        videos={EMPTY_VIDEOS}
+        onVideoSelect={() => {}}
         onClose={onClose}
         onViewAll={noopViewAll}
       />,

@@ -14,11 +14,24 @@ import { stubFetch } from "@/test/stub-fetch";
 import { VideoMiniPanel } from "./VideoMiniPanel";
 
 /**
- * 영상 미니 디테일 패널 스모크 (MSG-277 3차 AC 5·6).
+ * 영상 미니 디테일 패널 스모크 (MSG-277 3차 AC 5·6 → MSG-326 실 재생 배선).
  * video 요소(선택 영상 videoSrc)·메타(제목·소유 문구·시간·조회수)·닫기 버튼 렌더와
  * 열림 시 닫기 버튼 포커스(교체 시 이동 없음)를 고정한다.
  * 열림/교체 전환 자체는 스토어 테스트(video-mini-panel-store)가 커버 — 여기서는 렌더 계약만.
+ * MSG-326: 패널이 재생 조회 훅(use-video-playback-query)을 쓴다 — 목 픽스처는 전부
+ * videoSrc 보유(쿼리 비활성)라 기존 단정 불변이고, 서버 영상(videoSrc 없음)은
+ * video.videoId로 playbackUrl을 지연 조회한다 (MSG-329 serverVideoId 병합 정리).
  */
+
+// 패널이 재생 조회 훅(useQuery)을 품어 QueryClient 전제가 생겼다 —
+// 목 경로(videoSrc 보유)는 조회하지 않는다
+const withQueryClient = (ui: React.ReactNode) => (
+  <QueryClientProvider
+    client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+  >
+    {ui}
+  </QueryClientProvider>
+);
 
 // jsdom은 HTMLMediaElement.play를 구현하지 않아 autoplay 시도(추정 4)가 콘솔 노이즈를 남긴다 —
 // 계약 대상이 아니므로 무해한 스텁으로 대체한다
@@ -54,16 +67,6 @@ const OTHER_SELECTION: VideoMiniSelection = {
   },
   mine: false,
 };
-
-// 패널이 서버 영상 지연 조회(useVideoPlayback — useQuery)를 품게 돼 QueryClient 전제가
-// 생겼다 (MSG-329 후속 — 기존 단정은 불변). 목 경로(serverVideoId 없음)는 조회하지 않는다
-const withQueryClient = (ui: React.ReactNode) => (
-  <QueryClientProvider
-    client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-  >
-    {ui}
-  </QueryClientProvider>
-);
 
 describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
   afterEach(() => {
@@ -139,7 +142,7 @@ describe("영상 미니 디테일 패널 스모크 (3차 AC 5·6)", () => {
   });
 });
 
-/** 서버 영상 선택 (격자 상세 대표 영상) — videoSrc 없이 serverVideoId로 playbackUrl 지연 조회 */
+/** 서버 영상 선택 (격자 상세 피드) — videoSrc 없이 video.videoId로 playbackUrl 지연 조회 */
 const SERVER_SELECTION: VideoMiniSelection = {
   video: {
     videoId: 42,
@@ -150,23 +153,18 @@ const SERVER_SELECTION: VideoMiniSelection = {
     thumbnailUrl: "data:,thumb",
   },
   mine: false,
-  serverVideoId: 42,
 };
 
 const renderServer = (body: Record<string, unknown>) => {
   stubFetch(() => envelopeResponse(body));
   return render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <VideoMiniPanel selected={SERVER_SELECTION} onClose={() => {}} />
-    </QueryClientProvider>,
+    withQueryClient(
+      <VideoMiniPanel selected={SERVER_SELECTION} onClose={() => {}} />,
+    ),
   );
 };
 
-describe("서버 영상 미니 패널 — playbackUrl 지연 조회 (MSG-329 후속 재생 배선)", () => {
+describe("서버 영상 미니 패널 — playbackUrl 지연 조회 (MSG-326 기준 9·12)", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

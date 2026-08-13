@@ -2,10 +2,12 @@ import type { VideoPlaybackResponseDto } from "@/shared/api/generated";
 
 /**
  * 단건 재생 조회(GET /api/videos/{videoId}) 응답 픽스처 — READY 기본형.
- * use-video-playback 훅 테스트와 미니 패널 스모크가 공유한다 (중복 게이트 추출).
+ * 미니 패널 스모크가 사용한다 (구 use-video-playback 훅 테스트는 MSG-326
+ * use-video-playback-query로 통일되며 정리).
  */
 export const READY_PLAYBACK: VideoPlaybackResponseDto = {
   videoId: 42,
+  nickname: "필맵퍼",
   playbackUrl: "https://cdn.example.com/blurred.mp4",
   thumbnailUrl: null,
   gridId: "16846_11428",

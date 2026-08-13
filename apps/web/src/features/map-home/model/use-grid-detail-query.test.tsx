@@ -22,14 +22,16 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   </QueryClientProvider>
 );
 
-/** gridId별 응답 — cell은 격자마다 다른 videoCount, cover·stat는 null(빈 분기) */
+// MSG-326(추정 1): 대표 영상(getGridCover) 조회가 영상 목록 훅으로 대체·제거돼
+// cover 스텁·coverVideo 단정만 걷어냈다 — 나머지 단정은 불변.
+
+/** gridId별 응답 — cell은 격자마다 다른 videoCount, stat는 null(빈 분기) */
 const stubDetail = () => {
   const fetchMock = vi.fn<(input: Request) => Promise<Response>>(
     async (request) => {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/grids/")) {
         const gridId = url.pathname.split("/")[3];
-        if (url.pathname.endsWith("/cover")) return envelopeResponse(null);
         return envelopeResponse({
           gridId,
           occupied: true,
@@ -121,7 +123,7 @@ describe("useGridDetailQuery", () => {
     expect(result.current.detail).toBeNull();
   });
 
-  it("대표 영상·행정동만 실패하면 상세는 그대로 보여준다 — 선택적 정보다", async () => {
+  it("행정동만 실패하면 상세는 그대로 보여준다 — 선택적 정보다", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn<(input: Request) => Promise<Response>>(async (request) => {
@@ -143,18 +145,18 @@ describe("useGridDetailQuery", () => {
 
     await waitFor(() => expect(result.current.detail).not.toBeNull());
     expect(result.current.isError).toBe(false);
-    expect(result.current.detail?.coverVideo).toBeNull();
     expect(result.current.detail?.regionLabel).toBeNull();
   });
 });
 
-/** cover만 영구 보류하는 스텁 — 선택 정보 병리 지연 모사 (일괄 게이트·유예 상한 공용) */
-const stubHungCover = () => {
+/** 행정동(by-grid)만 영구 보류하는 스텁 — 선택 정보 병리 지연 모사 (일괄 게이트·유예 상한
+ * 공용). MSG-326 병합: cover 조회가 영상 목록 훅으로 대체·제거돼 남은 선택 정보는 stat뿐 */
+const stubHungStat = () => {
   vi.stubGlobal(
     "fetch",
     vi.fn<(input: Request) => Promise<Response>>(async (request) => {
       const url = new URL(request.url);
-      if (url.pathname.endsWith("/cover")) {
+      if (url.pathname === "/api/regions/stats/by-grid") {
         return new Promise<Response>(() => {}); // 영구 보류
       }
       if (url.pathname.startsWith("/api/grids/")) {
@@ -164,6 +166,7 @@ const stubHungCover = () => {
           videoCount: 4,
           zoneName: "서면",
           zoneCell: "A-14",
+          regionName: null,
         });
       }
       return envelopeResponse(null);
@@ -172,15 +175,15 @@ const stubHungCover = () => {
 };
 
 describe("useGridDetailQuery — 일괄 렌더 게이트 (점진 등장 방지)", () => {
-  it("격자 응답만 오고 대표 영상·행정동이 미정착이면 detail을 내놓지 않는다 — 전부 정착 후 한 번에", async () => {
-    // cover 응답만 영구 보류 — cell 도착 후에도 detail이 비어 있어야 한다
-    stubHungCover();
+  it("격자 응답만 오고 행정동이 미정착이면 detail을 내놓지 않는다 — 전부 정착 후 한 번에", async () => {
+    // stat 응답만 영구 보류 — cell 도착 후에도 detail이 비어 있어야 한다
+    stubHungStat();
 
     const { result } = renderDetail();
 
     // cell 응답이 처리될 시간을 주고도 detail은 여전히 비어 있어야 한다 (일괄 게이트)
     await waitFor(() =>
-      expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThanOrEqual(3),
+      expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThanOrEqual(2),
     );
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(result.current.detail).toBeNull();
@@ -189,10 +192,10 @@ describe("useGridDetailQuery — 일괄 렌더 게이트 (점진 등장 방지)"
 });
 
 describe("useGridDetailQuery — 선택 정보 유예 상한 (영구 로딩 방지)", () => {
-  it("cover가 계속 매달려도 유예(3초)가 지나면 격자 정보만으로 상세를 내놓는다", async () => {
+  it("행정동이 계속 매달려도 유예(3초)가 지나면 격자 정보만으로 상세를 내놓는다", async () => {
     vi.useFakeTimers();
     try {
-      stubHungCover();
+      stubHungStat();
 
       const { result } = renderDetail();
 

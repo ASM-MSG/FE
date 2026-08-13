@@ -51,13 +51,13 @@ export type VideoReplaceResponseDto = {
 };
 
 /**
- * 닉네임 수정 요청
+ * 프로필 이미지 변경 확정 요청 (MSG-373)
  */
-export type NicknameUpdateRequestDto = {
+export type ProfileImageUpdateRequestDto = {
     /**
-     * 새 닉네임 (2~20자)
+     * presign 발급으로 받은 pending 키. 그 URL 로 업로드를 마친 뒤 그대로 전달한다.
      */
-    nickname: string;
+    s3Key: string;
 };
 
 export type ApiResponseDtoUserProfileResponseDto = {
@@ -67,7 +67,7 @@ export type ApiResponseDtoUserProfileResponseDto = {
 };
 
 /**
- * 내 프로필 응답. 조회·닉네임 수정이 같은 형태를 반환한다.
+ * 내 프로필 응답. 조회·닉네임 수정·프로필 이미지 변경이 같은 형태를 반환한다.
  */
 export type UserProfileResponseDto = {
     /**
@@ -76,6 +76,24 @@ export type UserProfileResponseDto = {
     email: string | null;
     /**
      * 닉네임 — 카카오 로그인 시 카카오 닉네임이 자동 저장되며, 이후 수정 가능
+     */
+    nickname: string;
+    /**
+     * 프로필 이미지 공개 URL — 미설정이면 null 이고 기본 프로필 표시는 FE 몫이다 (MSG-373)
+     */
+    profileImageUrl: string | null;
+    /**
+     * 가입 시각 — DB 저장값(UTC) 그대로다. "2026.01.12" 같은 표기는 FE 몫 (MSG-373)
+     */
+    createdAt: string;
+};
+
+/**
+ * 닉네임 수정 요청
+ */
+export type NicknameUpdateRequestDto = {
+    /**
+     * 새 닉네임 (2~20자)
      */
     nickname: string;
 };
@@ -348,6 +366,48 @@ export type HighlightPreviewResponseDto = {
      * [[시작초, 끝초], ...] 최대 3구간, 초는 소수점 둘째 자리. 배열 순서가 추천 우선순위(첫 요소가 최우선)다. 각 구간은 5초 이상이고 시작점끼리 5초 이상 벌어진다. 5초 미만 원본이거나 조건을 채우는 구간이 없으면 빈 배열 [] — 추천 없음이니 FE 는 추천 단계를 스킵한다
      */
     highlights: Array<Array<number>>;
+};
+
+/**
+ * 프로필 이미지 업로드용 presigned URL 발급 요청 (MSG-373)
+ */
+export type ProfileImagePresignRequestDto = {
+    /**
+     * 이미지 파일 확장자 (점 없이). jpg, jpeg, png, webp — heic·heif 는 받지 않는다
+     */
+    extension: string;
+    /**
+     * 이미지 MIME 타입. 확장자와 쌍이 맞아야 한다
+     */
+    contentType: string;
+    /**
+     * 업로드할 파일 크기(바이트). 5MB 초과 시 거부
+     */
+    contentLength: number;
+};
+
+export type ApiResponseDtoProfileImagePresignResponseDto = {
+    developCode: number;
+    message: string;
+    data: ProfileImagePresignResponseDto;
+};
+
+/**
+ * 프로필 이미지 presigned URL 발급 응답. uploadUrl 로 S3 에 직접 PUT 업로드한 뒤 s3Key 로 변경 확정(PUT /api/users/me/profile-image)을 호출한다.
+ */
+export type ProfileImagePresignResponseDto = {
+    /**
+     * S3 에 직접 PUT 업로드할 presigned URL
+     */
+    uploadUrl: string;
+    /**
+     * 업로드 대상 S3 객체 키. 변경 확정 요청에 그대로 전달한다.
+     */
+    s3Key: string;
+    /**
+     * presigned URL 유효 시간(초)
+     */
+    expiresInSec: number;
 };
 
 /**
@@ -796,6 +856,10 @@ export type VideoPlaybackResponseDto = {
      * AI 추천 하이라이트 구간 [[시작초, 끝초], ...]. 최대 3구간, 초는 소수점 둘째 자리. 배열 순서가 추천 우선순위(첫 요소가 최우선 추천). 없으면 null (READY 이전·FAILED·0구간 포함, 빈 배열은 내려가지 않는다) 예시: [[0.0, 4.25], [12.0, 18.5], [20.0, 27.5]]
      */
     highlights: Array<Array<number>> | null;
+    /**
+     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
+     */
+    nickname: string;
 };
 
 export type ApiResponseDtoListTrendingKeywordResponseDto = {
@@ -1298,6 +1362,10 @@ export type GridGlobalVideoResponseDto = {
      * 촬영 시각 (표시용). 정렬 tie-break 키는 createdAt 이다
      */
     recordedAt: string;
+    /**
+     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
+     */
+    nickname: string;
 };
 
 /**
@@ -1380,6 +1448,42 @@ export type GridCoverVideoResponseDto = {
      * 촬영 시각 (표시용). 정렬 tie-break 키는 createdAt 이다
      */
     recordedAt: string;
+    /**
+     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
+     */
+    nickname: string;
+};
+
+export type ApiResponseDtoListRegionAggregateResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<RegionAggregateResponseDto>;
+};
+
+/**
+ * 행정 단위로 묶어 센 점령 격자 집계 한 항목
+ */
+export type RegionAggregateResponseDto = {
+    /**
+     * 묶음 키 — 행정동 코드를 단위 길이로 자른 접두(동 10자리, 구 5자리, 시 2자리). 행정동이 판정되지 않은 격자 묶음만 null 이다.
+     */
+    regionCode: string | null;
+    /**
+     * 단위 표시 이름(동 "부전2동", 구 "부산진구", 시 "부산광역시"). "부산광역시 214" 를 "부산 214" 로 줄이는 표기 축약은 클라이언트 몫이다. 행정동이 판정되지 않은 격자 묶음만 null 이다.
+     */
+    name: string | null;
+    /**
+     * 마커 대표 좌표 위도 — 그 묶음에 속한 점령 격자 중심의 평균이다(행정 경계 무게중심이 아니다)
+     */
+    lat: number;
+    /**
+     * 마커 대표 좌표 경도
+     */
+    lng: number;
+    /**
+     * 그 단위 안 점령 격자 수. 항목을 더 묶어 합산해도 같은 뷰포트 개별 조회 총수와 일치한다
+     */
+    count: number;
 };
 
 export type ApiResponseDtoListFriendListItemResponseDto = {
@@ -1417,7 +1521,7 @@ export type ApiResponseDtoFriendProfileResponseDto = {
 };
 
 /**
- * 개인 도감 요약 — 점령한 격자 수·올린 영상 총합·방문한 행정동 수.
+ * 개인 도감 요약 — 점령한 격자 수·올린 영상 총합·방문한 행정동 수·현재/최장 스트릭·획득 뱃지 수.
  */
 export type CollectionSummaryResponseDto = {
     /**
@@ -1432,6 +1536,18 @@ export type CollectionSummaryResponseDto = {
      * 내가 방문한 서로 다른 행정동 수
      */
     visitedRegionCount: number;
+    /**
+     * 현재 스트릭 (연속 업로드 일수). 마지막 기록이 KST 그제 이전이면 끊긴 것으로 보고 0
+     */
+    currentStreak: number;
+    /**
+     * 최장 스트릭. 끊겨도 유지되는 역대 최고 기록
+     */
+    maxStreak: number;
+    /**
+     * 획득한 뱃지 수
+     */
+    badgeCount: number;
 };
 
 /**
@@ -1636,6 +1752,26 @@ export type RegionVideoResponseDto = {
      * 구역 내 위치 코드 "{행}-{열}" (행 A 는 구역 북단, 열 1 은 서단). zoneName 과 항상 쌍이라 구역 밖이면 함께 null
      */
     zoneCell: string | null;
+};
+
+export type ApiResponseDtoListUploadHistoryResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<UploadHistoryResponseDto>;
+};
+
+/**
+ * 날짜별 업로드 기록 항목 — 업로드가 있었던 KST 날짜 하나와 그날의 건수.
+ */
+export type UploadHistoryResponseDto = {
+    /**
+     * 업로드가 있었던 KST 날짜
+     */
+    uploadDate: string;
+    /**
+     * 그날 업로드한 영상 수 (1 이상)
+     */
+    uploadCount: number;
 };
 
 export type ApiResponseDtoCollectionSummaryResponseDto = {
@@ -1943,6 +2079,38 @@ export type ReplaceResponses = {
 
 export type ReplaceResponse = ReplaceResponses[keyof ReplaceResponses];
 
+export type RemoveProfileImageData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/profile-image';
+};
+
+export type RemoveProfileImageResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoUserProfileResponseDto;
+};
+
+export type RemoveProfileImageResponse = RemoveProfileImageResponses[keyof RemoveProfileImageResponses];
+
+export type UpdateProfileImageData = {
+    body: ProfileImageUpdateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/profile-image';
+};
+
+export type UpdateProfileImageResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoUserProfileResponseDto;
+};
+
+export type UpdateProfileImageResponse = UpdateProfileImageResponses[keyof UpdateProfileImageResponses];
+
 export type UpdateNicknameData = {
     body: NicknameUpdateRequestDto;
     path?: never;
@@ -2043,6 +2211,22 @@ export type HighlightPreviewResponses = {
 };
 
 export type HighlightPreviewResponse = HighlightPreviewResponses[keyof HighlightPreviewResponses];
+
+export type IssueProfileImagePresignedUrlData = {
+    body: ProfileImagePresignRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/profile-image/presigned-url';
+};
+
+export type IssueProfileImagePresignedUrlResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoProfileImagePresignResponseDto;
+};
+
+export type IssueProfileImagePresignedUrlResponse = IssueProfileImagePresignedUrlResponses[keyof IssueProfileImagePresignedUrlResponses];
 
 export type UnregisterData = {
     body?: never;
@@ -2821,6 +3005,43 @@ export type GetGridCoverResponses = {
 
 export type GetGridCoverResponse = GetGridCoverResponses[keyof GetGridCoverResponses];
 
+export type GetOccupiedAggregatesInViewportData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+        /**
+         * 집계 단위 — DONG(동), SIGUNGU(시군구), SIDO(시도). 대소문자 무관
+         */
+        unit: string;
+    };
+    url: '/api/grids/aggregation';
+};
+
+export type GetOccupiedAggregatesInViewportResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListRegionAggregateResponseDto;
+};
+
+export type GetOccupiedAggregatesInViewportResponse = GetOccupiedAggregatesInViewportResponses[keyof GetOccupiedAggregatesInViewportResponses];
+
 export type GetFriendsData = {
     body?: never;
     path?: never;
@@ -2925,6 +3146,45 @@ export type GetFriendGridVideosResponses = {
 
 export type GetFriendGridVideosResponse = GetFriendGridVideosResponses[keyof GetFriendGridVideosResponses];
 
+export type GetFriendGridAggregatesData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query: {
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+        /**
+         * 집계 단위 — DONG(동), SIGUNGU(시군구), SIDO(시도). 대소문자 무관
+         */
+        unit: string;
+    };
+    url: '/api/friends/{userId}/grids/aggregation';
+};
+
+export type GetFriendGridAggregatesResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListRegionAggregateResponseDto;
+};
+
+export type GetFriendGridAggregatesResponse = GetFriendGridAggregatesResponses[keyof GetFriendGridAggregatesResponses];
+
 export type GetReceivedRequestsData = {
     body?: never;
     path?: never;
@@ -2995,6 +3255,22 @@ export type GetRegionVideosResponses = {
 };
 
 export type GetRegionVideosResponse = GetRegionVideosResponses[keyof GetRegionVideosResponses];
+
+export type GetUploadHistoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/collections/upload-history';
+};
+
+export type GetUploadHistoryResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListUploadHistoryResponseDto;
+};
+
+export type GetUploadHistoryResponse = GetUploadHistoryResponses[keyof GetUploadHistoryResponses];
 
 export type GetSummaryData = {
     body?: never;

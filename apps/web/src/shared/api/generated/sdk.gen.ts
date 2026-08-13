@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileImageData, UpdateProfileImageResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -48,6 +48,32 @@ export const getPlayback = <ThrowOnError extends boolean = false>(options: Optio
 export const replace = <ThrowOnError extends boolean = false>(options: Options<ReplaceData, ThrowOnError>): RequestResult<ReplaceResponses, unknown, ThrowOnError> => (options.client ?? client).put<ReplaceResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/videos/{videoId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 프로필 이미지 제거
+ *
+ * 프로필 이미지를 기본 상태(null)로 되돌린다. 이미 기본 상태여도 성공한다(멱등). 응답은 변경 확정과 같은 프로필 형태다.
+ */
+export const removeProfileImage = <ThrowOnError extends boolean = false>(options?: Options<RemoveProfileImageData, ThrowOnError>): RequestResult<RemoveProfileImageResponses, unknown, ThrowOnError> => (options?.client ?? client).delete<RemoveProfileImageResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/profile-image',
+    ...options
+});
+
+/**
+ * 프로필 이미지 변경 확정
+ *
+ * presign 으로 올린 pending 키를 확정해 프로필 이미지를 교체하고 갱신된 프로필을 반환한다. 내 pending 경로가 아니거나 확장자 없는 키는 1401, S3 에 실제로 없는 키는 1402, 실측 크기가 5MB 를 넘으면 1413. 교체된 이전 이미지는 응답 후 정리된다.
+ */
+export const updateProfileImage = <ThrowOnError extends boolean = false>(options: Options<UpdateProfileImageData, ThrowOnError>): RequestResult<UpdateProfileImageResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateProfileImageResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/profile-image',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -138,6 +164,23 @@ export const issuePresignedUrl = <ThrowOnError extends boolean = false>(options:
 export const highlightPreview = <ThrowOnError extends boolean = false>(options: Options<HighlightPreviewData, ThrowOnError>): RequestResult<HighlightPreviewResponses, unknown, ThrowOnError> => (options.client ?? client).post<HighlightPreviewResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/videos/highlight-preview',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 프로필 이미지 업로드용 presigned URL 발급
+ *
+ * 프로필 이미지를 S3 에 직접 올릴 presigned URL 을 발급한다. 이 URL 로 PUT 업로드한 뒤 받은 s3Key 로 변경 확정(PUT /api/users/me/profile-image)을 호출한다. 허용 형식은 jpg·jpeg·png·webp 이고 크기 상한은 5MB 다 — 확장자와 Content-Type 이 어긋나거나 허용 밖이면 1415, 선언 크기가 상한을 넘으면 1413.
+ *
+ * 아이폰 사진(heic·heif)은 받지 않는다 — 저장해도 대부분의 브라우저가 표시하지 못하기 때문이다. 파일 선택 accept 목록에서 heic 를 빼면 iOS 가 플랫폼 수준에서 JPEG 로 변환해 주므로 정상 경로에서는 거부가 나오지 않고, 그래도 새어 들어온 원본 heic 는 1415 응답을 안내 문구로 처리한다.
+ */
+export const issueProfileImagePresignedUrl = <ThrowOnError extends boolean = false>(options: Options<IssueProfileImagePresignedUrlData, ThrowOnError>): RequestResult<IssueProfileImagePresignedUrlResponses, unknown, ThrowOnError> => (options.client ?? client).post<IssueProfileImagePresignedUrlResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/profile-image/presigned-url',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -592,6 +635,23 @@ export const getGridCover = <ThrowOnError extends boolean = false>(options: Opti
 });
 
 /**
+ * 뷰포트 내 색칠 격자 행정 단위 집계 조회 (줌아웃)
+ *
+ * 지도를 축소한 시야에서 개별 격자 대신, bbox 안에서 내가 점령한 격자를 행정 단위로 묶어 센 목록을 페이지 없이 한 번에 반환한다. 단위 전환 시점은 서버가 정하지 않는다 — 화면 축척에 맞춰 클라이언트가 unit 만 바꿔 부른다.
+ *
+ * 항목마다 마커 식별 키(regionCode), 표시 이름, 대표 좌표, 격자 수가 온다. 대표 좌표는 그 묶음에 속한 점령 격자 중심의 평균이라 마커가 실제 데이터 위에 선다. 어느 단위로 묶어도, 항목을 더 묶어 합산해도 같은 bbox 개별 격자 조회의 총 개수와 일치한다.
+ *
+ * 행정동이 판정되지 않은 격자(해상 등)는 제외가 아니라 regionCode·name 이 null 인 항목 하나로 묶여 온다. 점령 격자가 없으면 빈 배열이다.
+ *
+ * bbox span 상한은 단위별로 다르다(DONG 1도, SIGUNGU 4도, SIDO 10도 — 위도·경도 각 변에 따로 적용). 초과 시 400 + developCode 4402, 좌표가 WGS84 범위를 벗어나거나 bbox 가 뒤집히면 4401, unit 이 없거나 미지원 값이면 4405 다.
+ */
+export const getOccupiedAggregatesInViewport = <ThrowOnError extends boolean = false>(options: Options<GetOccupiedAggregatesInViewportData, ThrowOnError>): RequestResult<GetOccupiedAggregatesInViewportResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetOccupiedAggregatesInViewportResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/grids/aggregation',
+    ...options
+});
+
+/**
  * 친구 목록 조회
  *
  * 수락된 친구 전체를 반환한다 — 누가 먼저 요청했는지와 무관하다. 기본 정렬은 친구가 된 시각 내림차순이고 sort=nickname 이면 닉네임순이다. 친구가 없으면 빈 배열.
@@ -632,6 +692,21 @@ export const getFriendGrids = <ThrowOnError extends boolean = false>(options: Op
 export const getFriendGridVideos = <ThrowOnError extends boolean = false>(options: Options<GetFriendGridVideosData, ThrowOnError>): RequestResult<GetFriendGridVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetFriendGridVideosResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/friends/{userId}/grids/{gridId}/videos',
+    ...options
+});
+
+/**
+ * 친구 격자 행정 단위 집계 조회 (줌아웃)
+ *
+ * 지도를 축소한 시야에서 그 친구가 점령한 격자를 행정 단위로 묶어 센 목록을 페이지 없이 한 번에 반환한다. 파라미터·응답·에러가 내 집계 조회(GET /api/grids/aggregation)와 완전히 같다 — 단위 전환 시점은 서버가 정하지 않고 클라이언트가 화면 축척에 맞춰 unit 만 바꿔 부른다.
+ *
+ * 항목마다 마커 식별 키(regionCode), 표시 이름, 대표 좌표, 격자 수가 온다. 행정동이 판정되지 않은 격자(해상 등)는 제외가 아니라 regionCode·name 이 null 인 항목 하나로 묶여 오고, 그 친구가 점령한 격자가 없으면 빈 배열이다.
+ *
+ * bbox span 상한은 단위별로 다르다(DONG 1도, SIGUNGU 4도, SIDO 10도 — 위도·경도 각 변에 따로 적용). 초과 시 400 + developCode 4402, bbox 가 뒤집히거나 파라미터가 빠지면 4401, unit 이 없거나 미지원 값이면 4405 다. 친구가 아닌 사용자·본인·존재하지 않는 사용자 조회는 모두 같은 404 다.
+ */
+export const getFriendGridAggregates = <ThrowOnError extends boolean = false>(options: Options<GetFriendGridAggregatesData, ThrowOnError>): RequestResult<GetFriendGridAggregatesResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetFriendGridAggregatesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/friends/{userId}/grids/aggregation',
     ...options
 });
 
@@ -680,9 +755,20 @@ export const getRegionVideos = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
+ * 날짜별 업로드 기록 조회
+ *
+ * 로그인 사용자 본인의 업로드를 KST 날짜로 접어, 업로드가 있었던 날과 그날의 건수를 날짜 오름차순으로 반환한다(잔디 재료 — 빈 날은 항목 없음, 빈 칸 채우기는 FE 몫). 삭제·블라인드된 영상의 업로드도 센다. 업로드 0건 사용자는 에러 없이 빈 배열을 받는다.
+ */
+export const getUploadHistory = <ThrowOnError extends boolean = false>(options?: Options<GetUploadHistoryData, ThrowOnError>): RequestResult<GetUploadHistoryResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetUploadHistoryResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/collections/upload-history',
+    ...options
+});
+
+/**
  * 개인 도감 요약 조회
  *
- * 로그인 사용자의 점령한 격자 수·올린 영상 총합·방문한 행정동 수를 한 번에 반환한다. 점령 0건 사용자도 에러 없이 세 값이 모두 0으로 응답한다.
+ * 로그인 사용자의 점령한 격자 수·올린 영상 총합·방문한 행정동 수에 더해 현재 스트릭·최장 스트릭·획득 뱃지 수를 한 번에 반환한다. 현재 스트릭은 마지막 기록이 KST 그제 이전이면 0이다. 업로드 경험 0 사용자도 에러 없이 여섯 값이 모두 0으로 응답한다.
  */
 export const getSummary = <ThrowOnError extends boolean = false>(options?: Options<GetSummaryData, ThrowOnError>): RequestResult<GetSummaryResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetSummaryResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

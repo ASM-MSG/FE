@@ -10,17 +10,23 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { envelopeResponse } from "@/test/envelope-response";
+import { stubInstantLoadImage } from "@/test/instant-load-image";
 import { ProfilePanel } from "./ProfilePanel";
 
 /**
- * 프로필 패널 스모크 (MSG-124 승격 → MSG-329 실 API 재설계).
+ * 프로필 패널 스모크 (MSG-124 승격 → MSG-329 실 API 재설계 + MSG-378 병합).
  * mock(MOCK_PROFILE) 소스가 폐기되고 GET /api/users/me 실 연동으로 바뀌어 fetch 스텁
- * 기반으로 재설계했다. 고정 범위: 실 응답 렌더(A1)·명세 부재 필드 처리(A4)·앱 버전
- * 빌드 주입(A5)·오류/재시도(A3)·[계정 삭제] 행 신설(A10)·로그아웃 회귀(A12)·편집 모달.
+ * 기반으로 재설계했다. 고정 범위: 실 응답 렌더(A1)·가입일 KST 표기·기본 아바타(MSG-378)·
+ * 앱 버전 빌드 주입(A5)·오류/재시도(A3)·[계정 삭제] 행 신설(A10)·로그아웃 회귀(A12)·편집 모달.
  * 스타일·간격 단정은 넣지 않는다 — 픽셀 판정은 브라우저 검증의 몫.
  */
 
-const PROFILE = { email: "fillmapper@fillmap.app", nickname: "필맵퍼" };
+const PROFILE = {
+  email: "fillmapper@fillmap.app",
+  nickname: "필맵퍼",
+  profileImageUrl: null,
+  createdAt: "2026-05-02T09:00:00",
+};
 
 /** 현재 경로 노출 대역 — 클릭이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
 const LocationProbe = () => {
@@ -67,18 +73,33 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("프로필 패널 스모크 (MSG-329)", () => {
-  it("실 API 응답의 닉네임·이메일이 표시되고, 가입일 줄과 mock 활동 수치는 없다 (A1·A4)", async () => {
+describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
+  it("실 API 응답의 닉네임·가입일(KST)·이메일이 표시되고, mock 활동 수치는 없다 (A1·A4·MSG-378)", async () => {
     stubApi();
     renderPanel();
 
     expect(await screen.findByText(PROFILE.nickname)).toBeTruthy();
-    expect(screen.getByText(PROFILE.email)).toBeTruthy();
-    // 가입일 줄 미렌더 (A4 — 명세 부재)
-    expect(screen.queryByText(/가입일/)).toBeNull();
+    // 가입일은 서버 createdAt(UTC)의 KST 표기 — 이메일과 한 메타 라벨 (MSG-378·MSG-322)
+    expect(
+      screen.getByText(`가입일 2026.05.02 · ${PROFILE.email}`),
+    ).toBeTruthy();
     // "내 활동" 카드는 "—" (A4 — mock 값 잔존 금지)
     expect(screen.getAllByText("—")).toHaveLength(2);
     expect(screen.queryByText(/일 연속/)).toBeNull();
+  });
+
+  it("profileImageUrl null이면 헤더 아바타가 기본 이미지고 닉네임 첫 글자 fallback이 없다 (MSG-378 기준 16)", async () => {
+    stubApi();
+    stubInstantLoadImage();
+    renderPanel();
+    await screen.findByText(PROFILE.nickname);
+
+    const avatar = (await screen.findByAltText(
+      PROFILE.nickname,
+    )) as HTMLImageElement;
+    expect(avatar.src).toContain("default-profile-image");
+    // 구 avatarFallback(닉네임 첫 글자) 대체 확인 — MSG-378에서 기본 이미지 에셋으로 전환
+    expect(screen.queryByText(PROFILE.nickname.slice(0, 1))).toBeNull();
   });
 
   it("앱 버전 행은 빌드 주입 값(vitest 센티널)을 표시하는 정보 행이다 (A5)", async () => {

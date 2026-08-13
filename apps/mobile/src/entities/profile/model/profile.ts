@@ -7,6 +7,8 @@
 export interface ProfileData {
   nickname: string;
   email: string;
+  /** 프로필 이미지 URL — 미설정이면 null (웹 MSG-378 미러 — parity 정합, 모바일 표시 배선은 후속) */
+  profileImageUrl: string | null;
   /** 가입일 ISO 문자열 — 표시 포맷은 formatJoinedDate가 담당 (AC 3) */
   joinedAt: string;
   /** 연속 스트릭 일수 — 도감 MOCK_COLLECTION_SUMMARY.streakDays와 같은 사용자 값 (AC 4) */

@@ -16,6 +16,7 @@ import {
   themeCellGridIds,
 } from "@/features/map-home/model/theme-overlay";
 import { useGridDetailQuery } from "@/features/map-home/model/use-grid-detail-query";
+import { useGridVideosQuery } from "@/features/map-home/model/use-grid-videos-query";
 import { useHotZoneCells } from "@/features/map-home/model/use-hotzones-query";
 import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
@@ -157,6 +158,10 @@ export const MapHomePage = () => {
     retry: retryDetail,
   } = useGridDetailQuery(selectedCellId, activeTheme);
 
+  // 격자 영상 목록 (MSG-326 기준 8) — 상세와 독립 조회: 목록 실패·로딩은 피드 영역에서만
+  // 분기하고 상세 성립을 막지 않는다. 선택이 없으면(null) 두 쿼리 모두 비활성 (기준 7)
+  const gridVideos = useGridVideosQuery(selectedCellId);
+
   // 테마 피드 파생 (MSG-277 AC 1·3) — 칩 클릭 즉시 피드, 표시는 아래 분기 우선순위를 따른다
   const themeFeed = useMemo(
     () =>
@@ -194,6 +199,8 @@ export const MapHomePage = () => {
           detail ? (
             <HomeCellDetailPanel
               detail={detail}
+              videos={gridVideos}
+              onVideoSelect={openMiniPanel}
               onClose={closeDetailMiniFirst}
               onViewAll={handleViewAll}
             />

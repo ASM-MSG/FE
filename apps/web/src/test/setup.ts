@@ -41,3 +41,23 @@ if (globalThis.localStorage === undefined) {
 const { registerApiErrorInterceptor } =
   await import("@/shared/api/error-interceptor");
 registerApiErrorInterceptor();
+
+/**
+ * React 스케줄러 해체 배수 (CI 플레이크 수정 — PR #51).
+ * React 19의 스케줄러는 커밋·언마운트 후속 작업을 setImmediate로 미루는데, 파일의
+ * 마지막 테스트가 끝나면 vitest가 jsdom 환경(window)을 해체한 뒤에야 그 작업이
+ * 실행되어 "window is not defined" unhandled error로 러너가 exit 1이 된다
+ * (use-upload-location.test.tsx에서 CI 실증 — 느린 러너에서만 표면화).
+ * 매 테스트 뒤 명시적 unmount(cleanup) 후 이벤트 루프를 두 바퀴 양보해, window가
+ * 살아 있는 동안 잔여 스케줄러 작업을 소진시킨다 (테스트당 ~1ms).
+ * setImmediate는 이 파일의 tsconfig(DOM lib)에 없어 setTimeout(0)을 쓴다 —
+ * immediate(check 단계)는 다음 타이머 단계보다 먼저 돌므로 배수 효과는 동일하다.
+ */
+const { cleanup } = await import("@testing-library/react");
+const { afterEach } = await import("vitest");
+afterEach(async () => {
+  cleanup();
+  // 두 바퀴 양보 — 스케줄러가 5ms 프레임을 넘겨 yield하면 다음 immediate로 재예약된다
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+});

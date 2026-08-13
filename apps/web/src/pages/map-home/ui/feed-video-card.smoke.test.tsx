@@ -28,7 +28,14 @@ describe("피드 영상 카드 button화 (3차 AC 4)", () => {
   });
 
   it("접근성 이름에 영상 제목이 포함된 button으로 렌더된다 — no-op div 대체 (AC 4)", () => {
-    render(<FeedVideoCard video={VIDEO} mine={false} onSelect={() => {}} />);
+    render(
+      <FeedVideoCard
+        video={VIDEO}
+        mine={false}
+        position={1}
+        onSelect={() => {}}
+      />,
+    );
 
     expect(
       screen.getByRole("button", { name: /거리 야경 감성 스팟/ }),
@@ -37,7 +44,9 @@ describe("피드 영상 카드 button화 (3차 AC 4)", () => {
 
   it("클릭 시 onSelect가 호출된다 (AC 4)", () => {
     const onSelect = vi.fn();
-    render(<FeedVideoCard video={VIDEO} mine onSelect={onSelect} />);
+    render(
+      <FeedVideoCard video={VIDEO} mine position={1} onSelect={onSelect} />,
+    );
 
     fireEvent.click(
       screen.getByRole("button", { name: /거리 야경 감성 스팟/ }),
