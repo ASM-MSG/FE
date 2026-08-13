@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Cell, CellVideo } from "@/entities/cell";
 import { useCellDetailStore } from "./cell-detail-store";
-import { useExploreFilterStore } from "./explore-filter-store";
 
 const video = (videoId: number): CellVideo => ({
   videoId,
@@ -83,17 +82,5 @@ describe("cell-detail-store 선택/영상 액션", () => {
   });
 });
 
-describe("필터 스토어 변경과 선택 상태의 독립성 (AC 8)", () => {
-  beforeEach(() => {
-    useCellDetailStore.setState({ selectedCellId: null, activeVideoId: null });
-    useExploreFilterStore.getState().reset();
-  });
-
-  it("검색어·지역 필터를 변경해도 selectedCellId는 유지된다", () => {
-    useCellDetailStore.getState().select(cellA);
-    useExploreFilterStore.getState().applySearch("광안리");
-    useExploreFilterStore.getState().selectRegion("해운대구");
-    useExploreFilterStore.getState().clearFilters();
-    expect(useCellDetailStore.getState().selectedCellId).toBe("A");
-  });
-});
+// "필터 스토어 변경과 선택 상태의 독립성 (구 MSG-115 AC 8)" 블록은 MSG-328에서 제거 —
+// 상대 스토어(explore-filter-store)가 탐색 페이지와 함께 삭제돼 독립성 계약의 대상이 소멸했다.

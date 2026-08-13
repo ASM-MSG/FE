@@ -4,7 +4,7 @@
  */
 export const ROUTES = {
   home: "/",
-  explore: "/explore",
+  // explore는 MSG-328에서 제거 — 지역 탐색·검색이 홈 좌측 패널로 통합됐다. 재추가 금지.
   upload: "/upload",
   dex: "/dex",
   profile: "/profile",

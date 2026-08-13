@@ -1,9 +1,12 @@
 import { Outlet, Route, Routes } from "react-router-dom";
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
+import { SEOMYEON_CENTER } from "@/shared/geolocation";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { envelopeResponse } from "@/test/envelope-response";
@@ -11,12 +14,41 @@ import { renderWithProviders } from "@/test/render-with-providers";
 import { MapHomePage } from "./MapHomePage";
 
 /**
- * 좌측 패널 분기 스모크 (MSG-325 리뷰 반영).
+ * 좌측 패널 분기 스모크 (MSG-325 리뷰 반영 → MSG-328 지역 패널 교체).
  * 분기 우선순위는 **선택 컨텍스트(selectedCellId)** 기준이어야 한다 — 상세 데이터(detail)
- * 기준으로 분기하면, 격자를 바꿔 탭할 때 새 응답이 오기 전 상세 자리가 요약 패널로
+ * 기준으로 분기하면, 격자를 바꿔 탭할 때 새 응답이 오기 전 상세 자리가 기본 패널로
  * 튀었다가 되돌아온다(entityQueryPolicy로 placeholderData를 뺀 뒤의 부작용).
+ * 기본 분기는 MSG-328에서 요약 패널(CellSummaryPanel) → 지역 격자 리스트(RegionPanel)로
+ * 교체됐다 — 관련 단정도 함께 갱신 (AC 18 보존 + AC 4·5·12 신규).
  */
 const SEOMYEON = "39064_112221";
+
+/** reverse-geocode 응답 — 서면 좌표의 행정동 (지명은 서면 기준, MVP 지역) */
+const BUJEON_REGION = {
+  regionCode: "2644056000",
+  regionName: "부전제1동",
+  parentCode: "2644000000",
+};
+
+/** 지역 격자 카드 응답 — 서면 A-14 1장 */
+const REGION_GRIDS = {
+  regionCode: "2644056000",
+  regionName: "부전제1동",
+  gridCount: 1,
+  videoCount: 138,
+  grids: [
+    {
+      gridId: SEOMYEON,
+      gridY: 39064,
+      gridX: 112221,
+      videoCount: 138,
+      coverThumbnailUrl: null,
+      coverDurationSec: 84,
+      zoneName: "서면",
+      zoneCell: "A-14",
+    },
+  ],
+};
 
 /** 지도 명령 API는 이 화면의 분기와 무관 — Outlet context 계약만 만족시킨다 */
 const mapShellStub = {
@@ -37,18 +69,30 @@ const renderHome = () =>
     </Routes>,
   );
 
+/** 지역 패널은 비로그인 조회 게이트(익명 401 실측)가 있어 로그인 상태로 검증한다 */
+const authenticate = () =>
+  useAuthStore.setState({ accessToken: "test-token", isAuthenticated: true });
+
 /**
- * 격자 상세 응답만 모드별로 갈아끼운다 — 뷰포트·핫구역은 항상 빈 응답.
+ * 격자 상세 응답만 모드별로 갈아끼운다 — 뷰포트·핫구역·지역 API는 항상 고정 응답.
  * "선택은 됐는데 데이터는 아직"(pending)과 조회 실패(error)를 같은 스텁으로 만든다.
+ * region 옵션 — reverse-geocode 응답 data (null = 바다·행정동 밖, AC 12).
  */
 const stubDetail = (
   mode: "ready" | "pending" | "error",
   occupiedGridIds: string[] = [],
+  region: typeof BUJEON_REGION | null = BUJEON_REGION,
 ) => {
   vi.stubGlobal(
     "fetch",
     vi.fn<(input: Request) => Promise<Response>>(async (request) => {
       const { pathname } = new URL(request.url);
+      if (pathname === "/api/regions/reverse-geocode") {
+        return envelopeResponse(region);
+      }
+      if (/^\/api\/regions\/.+\/grids$/.test(pathname)) {
+        return envelopeResponse(REGION_GRIDS);
+      }
       if (pathname.startsWith("/api/grids/")) {
         if (mode === "pending") return new Promise<Response>(() => {});
         if (mode === "error") return new Response(null, { status: 500 });
@@ -86,20 +130,23 @@ afterEach(() => {
   useHomeCellDetailStore.setState({ selectedCellId: null });
   useThemeFilterStore.setState({ activeTheme: null });
   useSidebarStore.setState({ collapsed: false });
-  useViewportStore.setState({ bounds: null });
+  useViewportStore.setState({ bounds: null, center: SEOMYEON_CENTER });
+  useAuthStore.setState({ accessToken: null, isAuthenticated: false });
+  useRegionPanelStore.setState(useRegionPanelStore.getInitialState(), true);
 });
 
 describe("홈 좌측 패널 분기", () => {
-  it("선택한 격자가 있으면 상세 데이터가 아직 없어도 요약 패널로 되돌아가지 않는다", async () => {
+  it("선택한 격자가 있으면 상세 데이터가 아직 없어도 지역 패널로 되돌아가지 않는다", async () => {
     stubDetail("pending");
+    authenticate();
     useHomeCellDetailStore.setState({ selectedCellId: SEOMYEON });
 
     renderHome();
 
     expect(await screen.findByText(/격자 정보를 불러오는 중/)).toBeTruthy();
-    // 요약 패널의 어느 상태(정상·로딩·에러)도 이 자리에 나오면 안 된다
-    expect(screen.queryByText(/이 지역 격자/)).toBeNull();
-    expect(screen.queryByText(/이 지역 정보를 불러오는 중/)).toBeNull();
+    // 지역 패널의 어느 상태(정상·로딩·빈)도 이 자리에 나오면 안 된다
+    expect(screen.queryByText("부전제1동")).toBeNull();
+    expect(screen.queryByText(/현재 지역을 확인하는 중/)).toBeNull();
   });
 
   it("상세 응답이 도착하면 상세 패널로 전환된다", async () => {
@@ -127,16 +174,93 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.queryByText(/격자 정보를 불러오는 중/)).toBeNull();
   });
 
-  it("선택이 없으면 요약 패널 자리다 (기존 분기 보존)", async () => {
+  it("선택이 없으면 지역 격자 리스트 자리다 — 행정동 헤더 + 격자 카드 (AC 4·5·18)", async () => {
     stubDetail("ready");
+    authenticate();
 
     renderHome();
 
-    // 이 하네스에는 지도가 없어 뷰포트 bounds가 비어 있다 — 요약 패널의 로딩 상태가 정상
-    await waitFor(() =>
-      expect(screen.getByText(/이 지역 정보를 불러오는 중/)).toBeTruthy(),
+    expect(await screen.findByText("부전제1동")).toBeTruthy();
+    expect(await screen.findByText("서면 A-14")).toBeTruthy();
+    expect(screen.getByText("138개 영상")).toBeTruthy();
+  });
+
+  it("상세를 닫으면 지역 격자 리스트로 복귀한다 (AC 18)", async () => {
+    stubDetail("ready");
+    authenticate();
+    useHomeCellDetailStore.setState({ selectedCellId: SEOMYEON });
+
+    renderHome();
+    expect(await screen.findByText("내 영상 4개")).toBeTruthy();
+
+    act(() => useHomeCellDetailStore.getState().close());
+
+    expect(await screen.findByText("부전제1동")).toBeTruthy();
+    expect(screen.queryByText("내 영상 4개")).toBeNull();
+  });
+
+  it("표시 지역이 있는 상태에서 지도 이동 후 행정동 조회가 실패하면 조용히 숨기지 않고 재시도를 준다 (리뷰 P2)", async () => {
+    // 최초 조회는 성공(지역 채택), 이후 조회는 실패 — 이동 후 일시 장애 시나리오
+    let reverseFails = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<(input: Request) => Promise<Response>>(async (request) => {
+        const { pathname } = new URL(request.url);
+        if (pathname === "/api/regions/reverse-geocode") {
+          if (reverseFails) return new Response(null, { status: 500 });
+          return envelopeResponse(BUJEON_REGION);
+        }
+        if (/^\/api\/regions\/.+\/grids$/.test(pathname)) {
+          return envelopeResponse(REGION_GRIDS);
+        }
+        if (pathname === "/api/grids") {
+          return envelopeResponse({ grids: [], nextCursor: null });
+        }
+        return envelopeResponse({ hotZones: [] });
+      }),
     );
-    expect(screen.queryByText(/격자 정보를 불러오는 중/)).toBeNull();
+    authenticate();
+
+    renderHome();
+    expect(await screen.findByText("부전제1동")).toBeTruthy();
+
+    reverseFails = true;
+    act(() => useViewportStore.setState({ center: { lat: 35.2, lng: 129.2 } }));
+
+    // 디바운스(500ms) 뒤 새 중심 조회가 실패한다 — 이전 지역 헤더·리스트는 유지하되
+    // 실패·재시도 표면이 노출돼 "장소 불러오기" 흐름이 복구 가능해야 한다
+    expect(
+      await screen.findByText(/현재 지역을 확인하지 못했어요/, undefined, {
+        timeout: 3000,
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "다시 시도" })).toBeTruthy();
+    expect(screen.getByText("부전제1동")).toBeTruthy();
+  });
+
+  it("지도 중심이 행정동 밖(data null)이면 빈 상태 안내가 뜬다 (AC 12)", async () => {
+    stubDetail("ready", [], null);
+    authenticate();
+
+    renderHome();
+
+    expect(await screen.findByText(/행정동이 없어요/)).toBeTruthy();
+    expect(screen.queryByText("부전제1동")).toBeNull();
+  });
+
+  it("비로그인이면 지역 조회 대신 로그인 유도를 보여준다 (익명 401 실측 — 리스크 결정)", async () => {
+    const fetchSpy = vi.fn<(input: Request) => Promise<Response>>();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    renderHome();
+
+    expect(await screen.findByRole("button", { name: "로그인" })).toBeTruthy();
+    // 지역·격자 조회가 발사되지 않는다 — 401 → 세션 만료 오작동 방지 게이트
+    expect(
+      fetchSpy.mock.calls.filter(([request]) =>
+        new URL(request.url).pathname.startsWith("/api/regions"),
+      ),
+    ).toHaveLength(0);
   });
 });
 

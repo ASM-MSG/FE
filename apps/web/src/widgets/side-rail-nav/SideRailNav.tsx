@@ -1,16 +1,15 @@
-import { Compass, Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
+import { Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
 import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
-import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 
+// 탐색 메뉴는 MSG-328에서 제거 — 지역 탐색·검색이 홈 좌측 패널로 통합됐다 (AC 1)
 const items: (SideRailItem & { key: NavKey })[] = [
   { key: "home", label: "홈", icon: <Home className="size-full" /> },
-  { key: "explore", label: "탐색", icon: <Compass className="size-full" /> },
   { key: "upload", label: "업로드", icon: <Upload className="size-full" /> },
   { key: "dex", label: "도감", icon: <LayoutGrid className="size-full" /> },
   { key: "profile", label: "프로필", icon: <User className="size-full" /> },
@@ -25,7 +24,6 @@ export const SideRailNav = () => {
   const navigate = useNavigate();
   const setCollapsed = useSidebarStore((s) => s.setCollapsed);
   const toggle = useSidebarStore((s) => s.toggle);
-  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openLoginModal = useLoginModalStore((s) => s.openModal);
@@ -59,8 +57,6 @@ export const SideRailNav = () => {
           return;
         }
         setCollapsed(false);
-        // 탐색은 네비로 진입하면 브라우즈(전체 조회) — 이전 검색/지역 필터를 비운다
-        if (key === "explore") clearFilters();
         navigate(ROUTES[key]);
       }}
     />

@@ -31,6 +31,19 @@ export const formatMonthDay = (iso: string): string => {
 };
 
 /**
+ * 영상 길이(초)를 `m:ss`로 포맷한다(24→"0:24", 84→"1:24", 605→"10:05").
+ * 값이 `undefined`이면 null을 반환한다 — 배지 미표시 신호.
+ * 원래 features/explore/model/explore-cells.ts에 있었으나 탐색 제거(MSG-328) 후에도
+ * 피드 카드·상세 시트·지역 격자 카드가 크로스 도메인으로 쓰므로 shared로 이동했다.
+ */
+export const formatDuration = (sec?: number): string | null => {
+  if (sec === undefined) return null;
+  const minutes = Math.floor(sec / 60);
+  const seconds = sec % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
+/**
  * 조회수를 한국어 만 단위로 축약한다 (MSG-277 AC 6 — 홈 피드 카드 "조회 {축약}").
  * - 1만 미만: 콤마 표기 (8410 → "8,410")
  * - 1만 이상: 만 단위 소수 첫째 자리 (12000 → "1.2만"), 10 이상은 정수 (124000 → "12만")

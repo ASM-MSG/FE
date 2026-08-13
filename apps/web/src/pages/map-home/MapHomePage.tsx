@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/app/routes";
 import { MOCK_CELLS } from "@/entities/cell";
 import { MOCK_COLLECTED_VIDEOS } from "@/entities/dex";
-import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
-import { SearchBox } from "@/features/explore/ui/SearchBox";
 import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { MOCK_ROUTE, themeCellsOf } from "@/features/map-home/model/theme";
@@ -21,10 +17,12 @@ import { useHotZoneCells } from "@/features/map-home/model/use-hotzones-query";
 import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
-import { CellSummaryPanel } from "./ui/CellSummaryPanel";
+import { HomeSearchBox } from "./ui/HomeSearchBox";
+import { RegionPanel } from "./ui/RegionPanel";
 import {
   HomeCellDetailError,
   HomeCellDetailLoading,
@@ -54,15 +52,13 @@ const withMiniPanelPriority = (close: () => void) => () => {
 
 /**
  * 홈 패널(`/`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 좌측 사이드바 + 상단 테마 칩.
- * 검색바 + 요약(CellSummaryPanel), 칩 클릭 시 테마 피드(ThemeFeedPanel — MSG-277),
- * 셀 선택 시 상세(HomeCellDetailPanel)로 전환된다 (MSG-252).
+ * 검색바(HomeSearchBox) + 지역 격자 리스트(RegionPanel — MSG-328), 칩 클릭 시 테마 피드
+ * (ThemeFeedPanel — MSG-277), 셀 선택 시 상세(HomeCellDetailPanel)로 전환된다 (MSG-252).
  * 테마 오버레이(점령·테마 셀·경로)는 map-overlay-store로 게시하고 렌더는 셸의 MapCanvas가
  * 담당한다 — 지도 SDK를 import하지 않는다(RN 경계). 접힘 시 칩·패널 모두 셸 래퍼로 숨는다(A6).
  */
 export const MapHomePage = () => {
-  const navigate = useNavigate();
   const { moveTo } = useMapShell();
-  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
   const toggleTheme = useThemeFilterStore((s) => s.toggle);
@@ -105,12 +101,13 @@ export const MapHomePage = () => {
     [activeTheme],
   );
 
-  // "전체 보기" — 브라우즈(전체 조회): 이전 필터를 비우고 탐색으로 이동.
-  // 요약·상세 패널이 동일 동작을 공유한다 (MSG-253 AC 11)
+  // 상세 패널의 "전체 보기" — 탐색 제거(MSG-328)로 상세를 닫고 패널 안 전체 지역
+  // 리스트를 연다 (스펙 추정 3 — MSG-253 AC 11의 "탐색 이동" 대체)
+  const openRegionList = useRegionPanelStore((s) => s.openRegionList);
   const handleViewAll = useCallback(() => {
-    clearFilters();
-    navigate(ROUTES.explore);
-  }, [clearFilters, navigate]);
+    closeDetail();
+    openRegionList();
+  }, [closeDetail, openRegionList]);
 
   // 셀 탭 → 상세 오픈/무시 판정 (AC 9·10) — 판정은 순수 함수, 스토어는 상태만
   const expandSidebar = useSidebarStore((s) => s.setCollapsed);
@@ -191,10 +188,10 @@ export const MapHomePage = () => {
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
-        {/* 검색은 드롭다운으로 그 자리에서 — 확정 시 탐색 그리드로 이동해 결과 표시 */}
-        <SearchBox />
-        {/* 분기 우선순위 (MSG-277 확정): 셀 상세 > 테마 피드 > 요약 — 테마 상세를 닫으면
-            칩이 유지된 채 피드로 자연 복귀한다 (AC 13) */}
+        {/* 검색은 드롭다운으로 그 자리에서 — 결과 선택 시 지도 이동 (MSG-328 AC 16) */}
+        <HomeSearchBox onPlaceSelect={moveTo} />
+        {/* 분기 우선순위 (MSG-277 확정 → MSG-328 AC 18 유지): 셀 상세 > 테마 피드 > 지역
+            격자 리스트 — 테마 상세를 닫으면 칩이 유지된 채 피드로 자연 복귀한다 (AC 13) */}
         {selectedCellId !== null ? (
           detail ? (
             <HomeCellDetailPanel
@@ -222,7 +219,7 @@ export const MapHomePage = () => {
             onClose={closeThemeFeedMiniFirst}
           />
         ) : (
-          <CellSummaryPanel onViewAll={handleViewAll} onCellSelect={moveTo} />
+          <RegionPanel onGridSelect={moveTo} />
         )}
       </aside>
       {/* 영상 미니 디테일 패널 — 좌측 패널 오른쪽 flush 보조 패널 (3차 AC 8~11).

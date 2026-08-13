@@ -3,8 +3,7 @@ import {
   type FeedVideo,
   videoOwnerLabel,
 } from "@/features/map-home/model/grid-videos";
-import { formatDuration } from "@/features/explore/model/explore-cells";
-import { formatViewCountKo } from "@/shared/format";
+import { formatDuration, formatViewCountKo } from "@/shared/format";
 import { VideoOwnerMeta } from "./VideoOwnerMeta";
 
 interface FeedVideoCardProps {
