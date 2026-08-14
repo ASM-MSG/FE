@@ -59,6 +59,8 @@ export interface MapCellOverlay {
   hatched?: boolean;
   /** 점령 셀 스타일 (MSG-263 AC 10 — Figma: 채움 18% + 실선 테두리 40%) */
   occupied?: boolean;
+  /** 재생 중 격자 테두리 강조 (MSG-328 사용자 피드백) — 진한 실선, 색 없는 셀은 채움 0 */
+  emphasized?: boolean;
 }
 
 /** 지도에 그릴 격자선 한 선분 — 순수 데이터(id + 두 끝점). 파생(경계 절단·컬링)은 호출부 몫 (MSG-263 AC 9) */
@@ -262,6 +264,10 @@ const GRID_LINE_STROKE_WEIGHT = 1.5;
 // 빗금 선(MSG-252 AC 7, R1) — 채움보다 진하게 그려 교집합이 한눈에 구분되게 한다
 const HATCH_STROKE_WEIGHT = 2;
 const HATCH_STROKE_OPACITY = 0.85;
+// 재생 중 격자 테두리 강조(MSG-328 사용자 피드백) — 기본 셀 테두리(1)보다 두껍고 불투명한
+// 실선으로 "border가 진해지는" 효과. 색은 셀 색 규칙 그대로(색 미지정이면 primary 토큰)
+const EMPHASIS_STROKE_WEIGHT = 3;
+const EMPHASIS_STROKE_OPACITY = 1;
 // 경로 연결선(MSG-252 AC 8) — 이동 동선이라 셀 테두리(1)보다 두껍게
 const ROUTE_STROKE_WEIGHT = 4;
 const ROUTE_STROKE_OPACITY = 0.9;
@@ -470,20 +476,26 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                     key={cell.id}
                     // MSG-357: 꼭짓점 4점(남서→남동→북동→북서 반시계 링)을 그대로 쓴다
                     paths={[cell.corners]}
-                    strokeWeight={1}
+                    // 재생 중 격자(emphasized — MSG-328)는 진한 실선 테두리로 강조한다
+                    strokeWeight={cell.emphasized ? EMPHASIS_STROKE_WEIGHT : 1}
                     // 스타일 미지정 셀은 현행 primary 그대로 — 도감 오버레이·스모크 불변 (MSG-252 AC 13).
                     // occupied 셀은 Figma 점령 스타일(채움 18% + 실선 테두리 40% — MSG-263 AC 10)
                     strokeColor={cell.color ?? semantic.primary}
                     strokeOpacity={
-                      cell.occupied
-                        ? OCCUPIED_STROKE_OPACITY
-                        : OVERLAY_STROKE_OPACITY
+                      cell.emphasized
+                        ? EMPHASIS_STROKE_OPACITY
+                        : cell.occupied
+                          ? OCCUPIED_STROKE_OPACITY
+                          : OVERLAY_STROKE_OPACITY
                     }
                     fillColor={cell.color ?? semantic.primary}
                     fillOpacity={
                       cell.occupied
                         ? OCCUPIED_FILL_OPACITY
-                        : OVERLAY_FILL_OPACITY
+                        : // 강조 전용 셀(테마 색 없음)은 테두리만 — 채움을 더하지 않는다
+                          cell.emphasized && cell.color === undefined
+                          ? 0
+                          : OVERLAY_FILL_OPACITY
                     }
                     // 네이버 Polygon은 clickable=false가 기본 — 핸들러가 있을 때만 클릭을 받는다.
                     // 핸들러 미등록이면 onClick도 없음 — 표시 전용 기존 동작 유지 (MSG-122, R3)

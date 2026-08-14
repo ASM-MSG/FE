@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { Bounds } from "@/entities/cell";
+import { useAuthStore } from "@/features/auth/model/auth-store";
 import { getOccupiedInViewportInfiniteOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import type {
   ApiResponseDtoOccupiedGridPageResponseDto,
@@ -39,9 +40,12 @@ export const flattenGridPages = (
 
 /**
  * 뷰포트 점령 격자 훅 — bounds가 없거나 명세 span 상한을 넘으면 요청하지 않는다.
+ * 비로그인도 요청하지 않는다 (MSG-328 사용자 버그 리포트) — 보호 API(익명 401 실측)라
+ * 게이트 없이는 홈 (재)마운트마다 401 + auth-pipeline reissue가 재발사된다.
  * 반환 데이터는 평탄화된 격자 목록이고, 로딩·에러 상태는 호출부가 그대로 쓴다.
  */
 export const useOccupiedGridsQuery = (bounds: Bounds | null) => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { query: viewport, enabled } = viewportQueryArgs(bounds);
   const query = useInfiniteQuery({
     ...getOccupiedInViewportInfiniteOptions({ query: viewport }),
@@ -50,7 +54,7 @@ export const useOccupiedGridsQuery = (bounds: Bounds | null) => {
     // (브라우저 검증에서 실측). 객체 형태로 주면 커서 없이 뷰포트 파라미터만 나간다
     initialPageParam: { query: viewport },
     getNextPageParam: nextGridsPageParam,
-    enabled,
+    enabled: enabled && isAuthenticated,
     ...mapQueryPolicy,
   });
 

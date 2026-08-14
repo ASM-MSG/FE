@@ -1,6 +1,6 @@
 import { Select } from "radix-ui";
 import { Check, ChevronDown } from "lucide-react";
-import { REPORT_REASONS } from "@/features/explore/model/report";
+import { REPORT_REASONS } from "./model/report";
 
 interface ReportReasonSelectProps {
   /** 선택된 사유 id. 미선택이면 null */

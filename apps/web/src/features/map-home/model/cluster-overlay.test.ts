@@ -215,6 +215,32 @@ describe("selectClusterSource — 집계 소스 선택 (MSG-264 AC 9)", () => {
     expect(source.color).toBeUndefined();
   });
 
+  it("무테마 카드 재생의 강조 전용 셀은 클러스터 정본을 차지하지 않는다 — 저줌 점령 클러스터 유지 (리뷰 P2)", () => {
+    // emphasizeCell이 덧붙이는 강조 전용 셀 — 테마 색 없음(occupied 여부 무관)
+    const emphasizedOnly: StyledCellOverlay = {
+      ...overlayAt("P-1", { lat: 35.157, lng: 129.059 }),
+      emphasized: true,
+      occupied: true,
+    };
+
+    const source = selectClusterSource([emphasizedOnly], PERSISTENT);
+
+    expect(source.cells).toBe(PERSISTENT);
+    expect(source.color).toBeUndefined();
+  });
+
+  it("테마 셀에 강조가 켜진 경우는 기존대로 테마 셀이 클러스터 정본이다 (회귀 없음)", () => {
+    const emphasizedThemed = [
+      { ...themedCells[0], emphasized: true },
+      themedCells[1],
+    ];
+
+    const source = selectClusterSource(emphasizedThemed, PERSISTENT);
+
+    expect(source.cells).toEqual(emphasizedThemed);
+    expect(source.color).toBe("#E8590C");
+  });
+
   it("마커 색은 멤버 셀의 테마 색을 전승하고, 점령 셀 소스 마커는 color 미지정(primary)이다", () => {
     const themedMarkers = buildClusterMarkers(themedCells, 13);
     expect(themedMarkers.length).toBeGreaterThan(0);

@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { formatMonthDay, formatViewCountKo } from "./format";
+import { formatDuration, formatMonthDay, formatViewCountKo } from "./format";
+
+// 원래 features/explore/model/explore-cells.test.ts에 있던 검증 — 함수 이동(MSG-328)에 따라 함께 이동
+describe("formatDuration — 영상 길이 m:ss 포맷", () => {
+  it("초 값을 m:ss로 포맷한다", () => {
+    expect(formatDuration(24)).toBe("0:24");
+    expect(formatDuration(84)).toBe("1:24");
+    expect(formatDuration(605)).toBe("10:05");
+  });
+
+  it("undefined이면 null을 반환한다(배지 미표시 신호)", () => {
+    expect(formatDuration(undefined)).toBeNull();
+  });
+});
 
 describe("formatMonthDay — ISO 시각 → 'M월 D일' 포맷 (AC 8)", () => {
   it("2026-07-21 시각을 '7월 21일'로 포맷한다", () => {

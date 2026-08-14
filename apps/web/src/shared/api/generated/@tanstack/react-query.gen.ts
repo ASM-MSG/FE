@@ -577,7 +577,7 @@ export const setVisibilityMutation = (options?: Partial<Options<SetVisibilityDat
 /**
  * 카테고리 수신 토글
  *
- * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 BADGE/HOTZONE/REMIND(대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다.
+ * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 5종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY, 대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다.
  */
 export const updateMutation = (options?: Partial<Options<UpdateData>>): UseMutationOptions<UpdateResponse, DefaultError, Options<UpdateData>> => {
     const mutationOptions: UseMutationOptions<UpdateResponse, DefaultError, Options<UpdateData>> = {
@@ -817,7 +817,7 @@ export const getPreferencesQueryKey = (options?: Options<GetPreferencesData>) =>
 /**
  * 알림 설정 조회
  *
- * 카테고리 3종(BADGE·HOTZONE·REMIND) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on.
+ * 카테고리 5종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on.
  */
 export const getPreferencesOptions = (options?: Options<GetPreferencesData>) => queryOptions<GetPreferencesResponse, DefaultError, GetPreferencesResponse, ReturnType<typeof getPreferencesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -1078,7 +1078,9 @@ export const getOccupiedAggregatesInViewportQueryKey = (options: Options<GetOccu
 /**
  * 뷰포트 내 색칠 격자 행정 단위 집계 조회 (줌아웃)
  *
- * 지도를 축소한 시야에서 개별 격자 대신, bbox 안에서 내가 점령한 격자를 행정 단위로 묶어 센 목록을 페이지 없이 한 번에 반환한다. 단위 전환 시점은 서버가 정하지 않는다 — 화면 축척에 맞춰 클라이언트가 unit 만 바꿔 부른다.
+ * 응답 data는 {currentRegion, items} 객체다. currentRegion은 뷰포트 중심이 속한 행정동의 이름과 그 동 전체에서 내가 점령한 격자 수·영상 수를 담는다. 화면 범위나 unit과 무관하며, 중심이 해상 또는 서비스 범위 밖일 때만 null이다.
+ *
+ * items는 bbox 안에서 내가 점령한 격자를 행정 단위로 묶어 센 목록이다. 단위 전환 시점은 서버가 정하지 않으며 클라이언트가 화면 축척에 맞춰 unit만 바꿔 부른다. items가 비어 있어도 한국 내 중심점의 currentRegion은 이름과 0 집계를 독립적으로 담는다.
  *
  * 항목마다 마커 식별 키(regionCode), 표시 이름, 대표 좌표, 격자 수가 온다. 대표 좌표는 그 묶음에 속한 점령 격자 중심의 평균이라 마커가 실제 데이터 위에 선다. 어느 단위로 묶어도, 항목을 더 묶어 합산해도 같은 bbox 개별 격자 조회의 총 개수와 일치한다.
  *
@@ -1216,7 +1218,7 @@ export const getFriendGridAggregatesQueryKey = (options: Options<GetFriendGridAg
 /**
  * 친구 격자 행정 단위 집계 조회 (줌아웃)
  *
- * 지도를 축소한 시야에서 그 친구가 점령한 격자를 행정 단위로 묶어 센 목록을 페이지 없이 한 번에 반환한다. 파라미터·응답·에러가 내 집계 조회(GET /api/grids/aggregation)와 완전히 같다 — 단위 전환 시점은 서버가 정하지 않고 클라이언트가 화면 축척에 맞춰 unit 만 바꿔 부른다.
+ * 지도를 축소한 시야에서 그 친구가 점령한 격자를 행정 단위로 묶어 센 목록을 페이지 없이 한 번에 반환한다. 파라미터·에러는 내 집계 조회(GET /api/grids/aggregation)와 같고, 묶음 항목의 공통 필드는 내 집계 조회와 같다. 다만 친구 응답은 currentRegion/items 겉면 없이 기존 배열로 반환한다. 단위 전환 시점은 서버가 정하지 않고 클라이언트가 화면 축척에 맞춰 unit 만 바꿔 부른다.
  *
  * 항목마다 마커 식별 키(regionCode), 표시 이름, 대표 좌표, 격자 수가 온다. 행정동이 판정되지 않은 격자(해상 등)는 제외가 아니라 regionCode·name 이 null 인 항목 하나로 묶여 오고, 그 친구가 점령한 격자가 없으면 빈 배열이다.
  *
@@ -1380,7 +1382,7 @@ export const findMyBadgesQueryKey = (options?: Options<FindMyBadgesData>) => cre
 /**
  * 내 뱃지 전체 목록
  *
- * 시딩된 전체 뱃지를 내 획득 상태와 함께 시딩 순(badges.id 오름차순)으로 반환한다 — 미획득 행은 earned false·earnedAt null·isNew false·featuredRank null. 이번 응답에 노출된 미확인(새 뱃지) 행은 자동으로 확인 처리되어 다음 조회부터 isNew false 가 된다.
+ * 시딩된 뱃지를 내 획득 상태와 함께 시딩 순(badges.id 오름차순)으로 반환한다. 은퇴 뱃지(retired_at 있음)는 획득자에게만 보이고 미획득자 목록에서는 빠진다 — 그래서 사용자마다 행 수가 다를 수 있다. 미획득 행은 earned false·earnedAt null·isNew false·featuredRank null. 이번 응답에 노출된 미확인(새 뱃지) 행은 자동으로 확인 처리되어 다음 조회부터 isNew false 가 된다.
  */
 export const findMyBadgesOptions = (options?: Options<FindMyBadgesData>) => queryOptions<FindMyBadgesResponse, DefaultError, FindMyBadgesResponse, ReturnType<typeof findMyBadgesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

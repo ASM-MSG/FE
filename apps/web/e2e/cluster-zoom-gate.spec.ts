@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { seedLoggedInSession } from "./auth-session-stub.js";
 import { stubOccupiedGrids } from "./occupied-grids-stub.js";
 
 /**
@@ -8,9 +9,12 @@ import { stubOccupiedGrids } from "./occupied-grids-stub.js";
  *
  * MSG-325: 점령 격자 소스가 목에서 실 API로 바뀌어, 로그인하지 않는 e2e에서는 응답이
  * 비어 클러스터가 생기지 않는다. 네트워크 스텁으로 데이터를 고정해 이 회귀 스펙을 유지한다.
+ * MSG-328: 점령 격자 쿼리에 인증 게이트가 생겨(비로그인 미발사) 스텁만으로는 조회 자체가
+ * 없다 — 로그인 세션을 시딩해 쿼리를 활성화한다.
  */
 test.describe("격자 채움 ↔ 클러스터 마커 줌 게이트", () => {
   test.beforeEach(async ({ page }) => {
+    await seedLoggedInSession(page);
     await stubOccupiedGrids(page);
   });
 

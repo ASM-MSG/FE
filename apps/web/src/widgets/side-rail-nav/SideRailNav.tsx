@@ -1,16 +1,15 @@
-import { Compass, Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
+import { Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
 import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
-import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 
+// 탐색 메뉴는 MSG-328에서 제거 — 지역 탐색·검색이 홈 좌측 패널로 통합됐다 (AC 1)
 const items: (SideRailItem & { key: NavKey })[] = [
   { key: "home", label: "홈", icon: <Home className="size-full" /> },
-  { key: "explore", label: "탐색", icon: <Compass className="size-full" /> },
   { key: "upload", label: "업로드", icon: <Upload className="size-full" /> },
   { key: "dex", label: "도감", icon: <LayoutGrid className="size-full" /> },
   { key: "profile", label: "프로필", icon: <User className="size-full" /> },
@@ -25,7 +24,6 @@ export const SideRailNav = () => {
   const navigate = useNavigate();
   const setCollapsed = useSidebarStore((s) => s.setCollapsed);
   const toggle = useSidebarStore((s) => s.toggle);
-  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openLoginModal = useLoginModalStore((s) => s.openModal);
@@ -43,8 +41,11 @@ export const SideRailNav = () => {
         if (!isNavKey(key)) return;
         // 로그아웃 상태의 프로필은 이동 대신 로그인 모달을 연다 (URL 불변) — MSG-46 후속 2 G1.
         // 활성 탭 토글보다 앞에 둔다 — 로그아웃 직후 /profile에 머문 상태에서
-        // 프로필 재클릭이 접기 토글로 빠지면 데모 흐름이 끊긴다 (후속 1 결정 유지)
-        if (key === "profile" && !isAuthenticated) {
+        // 프로필 재클릭이 접기 토글로 빠지면 데모 흐름이 끊긴다 (후속 1 결정 유지).
+        // 도감도 같은 분기다 (MSG-328 사용자 버그 리포트) — 이동을 허용하면
+        // /dex → RequireAuth 홈 귀환 → MapHomePage 재마운트가 실패 쿼리(grids·hotzones
+        // 401 + reissue)를 클릭마다 재발사시킨다. RequireAuth 래핑은 직접 URL 진입 방어로 존치
+        if ((key === "profile" || key === "dex") && !isAuthenticated) {
           openLoginModal();
           return;
         }
@@ -59,8 +60,6 @@ export const SideRailNav = () => {
           return;
         }
         setCollapsed(false);
-        // 탐색은 네비로 진입하면 브라우즈(전체 조회) — 이전 검색/지역 필터를 비운다
-        if (key === "explore") clearFilters();
         navigate(ROUTES[key]);
       }}
     />

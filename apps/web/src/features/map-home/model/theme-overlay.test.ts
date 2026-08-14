@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cellCornersAt,
   cellIndexAt,
+  decodeGridCorners,
   encodeGridId,
   type CellCorners,
 } from "@/entities/cell";
@@ -17,6 +18,7 @@ import {
   buildHatchLines,
   buildHomeOverlayCells,
   buildRouteOverlay,
+  emphasizeCell,
   themeCellGridIds,
 } from "./theme-overlay";
 
@@ -253,5 +255,46 @@ describe("buildHatchLines — 셀 꼭짓점 4점 안 사선 빗금 기하 (AC 7,
         expect(p.lng).toBeLessThanOrEqual(Math.max(...lngs));
       }
     }
+  });
+});
+
+describe("emphasizeCell — 재생 중 격자 테두리 강조 (사용자 피드백)", () => {
+  const SEOMYEON_ID = encodeGridId({ lat: 35.1579, lng: 129.0594 });
+  const baseCell = {
+    id: SEOMYEON_ID,
+    corners: cellCornersAt(cellIndexAt({ lat: 35.1579, lng: 129.0594 })),
+  };
+
+  it("강조 대상이 없으면(null) 입력 목록을 그대로 반환한다", () => {
+    const cells = [baseCell];
+
+    expect(emphasizeCell(cells, null, [])).toBe(cells);
+  });
+
+  it("게시 목록에 이미 있는 격자면 그 셀에 emphasized만 켠다 — 중복 폴리곤 없음", () => {
+    const result = emphasizeCell([baseCell], SEOMYEON_ID, []);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].emphasized).toBe(true);
+    expect(result[0].id).toBe(SEOMYEON_ID);
+  });
+
+  it("게시 목록에 없는 격자면 gridId에서 꼭짓점을 복원한 강조 전용 셀을 덧붙인다", () => {
+    const result = emphasizeCell([], SEOMYEON_ID, []);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe(SEOMYEON_ID);
+    expect(result[0].emphasized).toBe(true);
+    expect(result[0].corners).toEqual(decodeGridCorners(SEOMYEON_ID));
+    // 원래 채움이 없던 격자 — 테두리 전용이 정당 (점령 스타일 미부여)
+    expect(result[0].occupied).toBeUndefined();
+  });
+
+  it("점령 격자를 강조하면 점령 채움 스타일이 보존된다 — 셸이 게시 id와 겹치는 상시 점령 셀을 제외하므로(excludeSectionCells) 강조 셀이 채움을 이어받아야 한다 (사용자 버그 — 채움 텅 빔)", () => {
+    const result = emphasizeCell([], SEOMYEON_ID, [SEOMYEON_ID]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].emphasized).toBe(true);
+    expect(result[0].occupied).toBe(true);
   });
 });

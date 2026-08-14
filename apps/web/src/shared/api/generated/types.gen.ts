@@ -733,11 +733,11 @@ export type CategoryPreferenceDto = {
 };
 
 /**
- * 알림 설정 — 카테고리 3종 전부의 수신 상태 (저장 행 없는 카테고리는 true)
+ * 알림 설정 — 전 카테고리(5종)의 수신 상태 (저장 행 없는 카테고리는 true)
  */
 export type NotificationPreferenceResponseDto = {
     /**
-     * 카테고리별 수신 상태 (BADGE·HOTZONE·REMIND 고정 3종)
+     * 카테고리별 수신 상태 (BADGE·HOTZONE·REMIND·VIDEO·WEEKLY 고정 5종)
      */
     preferences: Array<CategoryPreferenceDto>;
 };
@@ -1155,6 +1155,38 @@ export type MissionResponseDto = {
      * 유형별 렌더 shape 하나(type 에 대응하는 PATH/BOX/CELLS/REGION)
      */
     shape: BoxShape | CellsShape | PathShape | RegionShape;
+    /**
+     * 소개문 원문. 출처 표기 없이 그대로 노출한다
+     */
+    description: string | null;
+    /**
+     * 사람이 읽는 위치 한 줄 — 축제는 행사장, 팝업은 주소, 코스는 시군
+     */
+    placeName: string | null;
+    /**
+     * 원문 링크 — 축제 홈페이지·팝업 상세 페이지. 코스는 없다
+     */
+    sourceUrl: string | null;
+    /**
+     * 운영시간 안내 문구. 여러 줄이면 개행으로 이어 붙인다(팝업 전용)
+     */
+    operationTime: string | null;
+    /**
+     * 대표 이미지 주소 — 우리 스토리지 URL 만 들어간다(MSG-383 §D7)
+     */
+    imageUrl: string | null;
+    /**
+     * 코스 총 거리(미터). 코스가 아니면 없다
+     */
+    distanceMeters: number | null;
+    /**
+     * 코스 소요시간(분). 코스가 아니면 없다
+     */
+    durationMinutes: number | null;
+    /**
+     * 코스 난이도 — 두루누비 등급 1(쉬움)·2(보통)·3(어려움). 코스가 아니면 없다
+     */
+    difficulty: number | null;
 };
 
 /**
@@ -1454,10 +1486,46 @@ export type GridCoverVideoResponseDto = {
     nickname: string;
 };
 
-export type ApiResponseDtoListRegionAggregateResponseDto = {
+export type ApiResponseDtoGridAggregationResponseDto = {
     developCode: number;
     message: string;
-    data: Array<RegionAggregateResponseDto>;
+    data: GridAggregationResponseDto;
+};
+
+/**
+ * 뷰포트 중심이 속한 현재 행정동과 개인 점령 요약
+ */
+export type CurrentRegionResponseDto = {
+    /**
+     * 행정동 코드 10자리
+     */
+    regionCode: string;
+    /**
+     * 동 이름 한 토큰
+     */
+    name: string;
+    /**
+     * 이 행정동 전체에서 내가 점령한 격자 수(뷰포트 무관)
+     */
+    gridCount: number;
+    /**
+     * 이 행정동 전체에서 내 격자에 올린 영상 수(뷰포트 무관)
+     */
+    videoCount: number;
+};
+
+/**
+ * 뷰포트 점령 격자 묶음과 현재 동네 집계
+ */
+export type GridAggregationResponseDto = {
+    /**
+     * 뷰포트 중심이 속한 행정동. 해상이나 서비스 범위 밖이면 null
+     */
+    currentRegion: CurrentRegionResponseDto;
+    /**
+     * 뷰포트 안에서 행정 단위로 묶은 내 점령 격자 목록
+     */
+    items: Array<RegionAggregateResponseDto>;
 };
 
 /**
@@ -1648,6 +1716,12 @@ export type FriendGridVideoResponseDto = {
      * 업로드(방문) 시각 — 정렬 키
      */
     createdAt: string;
+};
+
+export type ApiResponseDtoListRegionAggregateResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<RegionAggregateResponseDto>;
 };
 
 export type ApiResponseDtoListReceivedFriendRequestResponseDto = {
@@ -1843,7 +1917,7 @@ export type ApiResponseDtoListMyBadgeResponseDto = {
 };
 
 /**
- * 내 뱃지 목록 행 — 획득+미획득 전체
+ * 내 뱃지 목록 행 — 획득+미획득 (은퇴 뱃지는 획득자에게만)
  */
 export type MyBadgeResponseDto = {
     /**
@@ -2561,7 +2635,7 @@ export type UpdateData = {
     body: NotificationPreferenceUpdateRequestDto;
     path: {
         /**
-         * 알림 카테고리 — BADGE·HOTZONE·REMIND (대소문자 무시)
+         * 알림 카테고리 — BADGE·HOTZONE·REMIND·VIDEO·WEEKLY (대소문자 무시)
          */
         category: string;
     };
@@ -3037,7 +3111,7 @@ export type GetOccupiedAggregatesInViewportResponses = {
     /**
      * OK
      */
-    200: ApiResponseDtoListRegionAggregateResponseDto;
+    200: ApiResponseDtoGridAggregationResponseDto;
 };
 
 export type GetOccupiedAggregatesInViewportResponse = GetOccupiedAggregatesInViewportResponses[keyof GetOccupiedAggregatesInViewportResponses];

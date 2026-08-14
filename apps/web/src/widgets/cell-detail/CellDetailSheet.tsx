@@ -2,13 +2,10 @@ import { useEffect, useState } from "react";
 import { MoreHorizontal, Play, Share2, X } from "lucide-react";
 import { Button, cn, VideoRow } from "@fillmap/ui-web";
 import type { Cell } from "@/entities/cell";
-import {
-  formatRelativeTime,
-  formatViewCount,
-} from "@/features/explore/model/cell-detail";
-import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
-import { formatDuration } from "@/features/explore/model/explore-cells";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
+import { formatDuration } from "@/shared/format";
+import { formatRelativeTime, formatViewCount } from "./model/cell-detail";
+import { useCellDetailStore } from "./model/cell-detail-store";
 import { CellMoreMenu } from "./CellMoreMenu";
 import { ReportDialog } from "./ReportDialog";
 

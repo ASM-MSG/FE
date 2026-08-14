@@ -5,8 +5,9 @@ import * as mobileFormat from "./format";
  * AC 5·7: 모바일 포맷 유틸 ↔ 웹 원본 동등성 (스펙 — 복제 + parity 테스트,
  * grid.parity.test.ts 선례). 웹 원본은 변수 경로 동적 import로 로드한다 —
  * formatRelativeTime 원본은 웹 shared/format.ts, formatViewCount 원본은 웹
- * features/explore/model/cell-detail.ts. 후자는 내부에서 "@/shared/format" 별칭을
- * 쓰므로 모바일 vitest.config의 "@" → 웹 src 별칭(parity 전용)이 전제다.
+ * widgets/cell-detail/model/cell-detail.ts (MSG-328에서 features/explore → widgets로 이동).
+ * 후자는 내부에서 "@/shared/format" 별칭을 쓰므로 모바일 vitest.config의
+ * "@" → 웹 src 별칭(parity 전용)이 전제다.
  * 웹 파일이 이동하면 이 테스트가 깨진다 — 의도된 드리프트 감지.
  */
 const webPath = (rel: string) =>
@@ -18,7 +19,7 @@ const loadWebFormat = (): Promise<{
 
 const loadWebCellDetail = (): Promise<{
   formatViewCount: typeof mobileFormat.formatViewCount;
-}> => import(webPath("features/explore/model/cell-detail.ts"));
+}> => import(webPath("widgets/cell-detail/model/cell-detail.ts"));
 
 describe("format 동등성 (AC 5·7)", () => {
   it("formatRelativeTime 결과가 웹 원본과 동일하다 — 방금/분/시간/일 경계", async () => {

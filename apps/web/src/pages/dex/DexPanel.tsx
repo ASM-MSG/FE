@@ -15,7 +15,7 @@ import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useCurrentRegionName } from "@/features/dex/model/use-current-region";
 import { useDexQuery } from "@/features/dex/model/use-dex-query";
 import { useRecentRemovalStore } from "@/features/dex/model/recent-removal-store";
-import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
+import { useCellDetailStore } from "@/widgets/cell-detail/model/cell-detail-store";
 import { useCellsQuery } from "@/features/map-home/model/use-cells-query";
 import { CellDetailSheet } from "@/widgets/cell-detail/CellDetailSheet";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";

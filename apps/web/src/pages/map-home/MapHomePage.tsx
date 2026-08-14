@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/app/routes";
+import { Toast } from "@fillmap/ui-web";
 import { MOCK_CELLS } from "@/entities/cell";
 import { MOCK_COLLECTED_VIDEOS } from "@/entities/dex";
-import { useExploreFilterStore } from "@/features/explore/model/explore-filter-store";
-import { SearchBox } from "@/features/explore/ui/SearchBox";
 import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { MOCK_ROUTE, themeCellsOf } from "@/features/map-home/model/theme";
@@ -12,19 +9,23 @@ import { deriveThemeFeed } from "@/features/map-home/model/theme-feed";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import {
   buildHomeOverlayCells,
+  emphasizeCell,
   buildRouteOverlay,
   themeCellGridIds,
 } from "@/features/map-home/model/theme-overlay";
+import { useGridCardPlay } from "@/features/map-home/model/use-grid-card-play";
 import { useGridDetailQuery } from "@/features/map-home/model/use-grid-detail-query";
 import { useGridVideosQuery } from "@/features/map-home/model/use-grid-videos-query";
 import { useHotZoneCells } from "@/features/map-home/model/use-hotzones-query";
 import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
-import { CellSummaryPanel } from "./ui/CellSummaryPanel";
+import { HomeSearchBox } from "./ui/HomeSearchBox";
+import { RegionPanel } from "./ui/RegionPanel";
 import {
   HomeCellDetailError,
   HomeCellDetailLoading,
@@ -37,6 +38,15 @@ import { VideoMiniPanel } from "./ui/VideoMiniPanel";
 
 // 내 수집 영상 id 전체 — 테마 피드의 mine 판정 키 (MSG-277 AC 4). 영상 id는 셀 접두라 전역 유일
 const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.videoId);
+
+/** 카드 재생 안내 토스트 자동 소멸(ms) — ReportDialog TOAST_DURATION_MS 관례와 동일 값 */
+const CARD_PLAY_TOAST_MS = 3000;
+
+/** 카드 재생 안내 문구 — useGridCardPlay notice 사유별 */
+const CARD_PLAY_NOTICE_MESSAGE = {
+  empty: "이 격자에 재생할 영상이 없어요.",
+  error: "영상 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+} as const;
 
 /**
  * Escape 우선순위 래핑 (MSG-277 3차 AC 13) — 미니 패널이 열려 있으면 그것만 닫고,
@@ -54,15 +64,13 @@ const withMiniPanelPriority = (close: () => void) => () => {
 
 /**
  * 홈 패널(`/`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 좌측 사이드바 + 상단 테마 칩.
- * 검색바 + 요약(CellSummaryPanel), 칩 클릭 시 테마 피드(ThemeFeedPanel — MSG-277),
- * 셀 선택 시 상세(HomeCellDetailPanel)로 전환된다 (MSG-252).
+ * 검색바(HomeSearchBox) + 지역 격자 리스트(RegionPanel — MSG-328), 칩 클릭 시 테마 피드
+ * (ThemeFeedPanel — MSG-277), 셀 선택 시 상세(HomeCellDetailPanel)로 전환된다 (MSG-252).
  * 테마 오버레이(점령·테마 셀·경로)는 map-overlay-store로 게시하고 렌더는 셸의 MapCanvas가
  * 담당한다 — 지도 SDK를 import하지 않는다(RN 경계). 접힘 시 칩·패널 모두 셸 래퍼로 숨는다(A6).
  */
 export const MapHomePage = () => {
-  const navigate = useNavigate();
   const { moveTo } = useMapShell();
-  const clearFilters = useExploreFilterStore((s) => s.clearFilters);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
   const toggleTheme = useThemeFilterStore((s) => s.toggle);
@@ -105,12 +113,34 @@ export const MapHomePage = () => {
     [activeTheme],
   );
 
-  // "전체 보기" — 브라우즈(전체 조회): 이전 필터를 비우고 탐색으로 이동.
-  // 요약·상세 패널이 동일 동작을 공유한다 (MSG-253 AC 11)
+  // 지역 격자 카드 클릭 (사용자 피드백 — 상세 미오픈·지도 이동 없음) — 좌측은 지역 패널
+  // 그대로 두고 오른쪽 미니 패널에서 첫 영상만 재생한다(useGridCardPlay — 목록 조회·
+  // 미니 오픈·안내·강조 수명 소유). 재생 중 격자는 아래 게시 셀에 테두리 강조로 얹는다.
+  // 지도 격자 탭 → 상세 흐름은 불변
+  const cardPlay = useGridCardPlay();
+
+  // 카드 재생 안내 토스트 — 빈 목록·조회 실패를 조용히 무시하지 않는다 (ReportDialog 관례)
+  useEffect(() => {
+    if (cardPlay.notice === null) return;
+    const timer = setTimeout(cardPlay.dismissNotice, CARD_PLAY_TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [cardPlay.notice, cardPlay.dismissNotice]);
+
+  // 게시 셀 = 테마 오버레이 + 재생 중 격자 테두리 강조 (사용자 피드백 — emphasizeCell).
+  // occupiedIds를 함께 넘겨 점령 격자의 채움(18%)을 보존한다 — 셸의 excludeSectionCells가
+  // 게시 id와 겹치는 상시 점령 셀을 빼므로 강조 셀이 채움을 이어받아야 한다 (채움 텅 빔 환류)
+  const publishedCells = useMemo(
+    () => emphasizeCell(overlayCells, cardPlay.playingGridId, occupiedIds),
+    [overlayCells, cardPlay.playingGridId, occupiedIds],
+  );
+
+  // 상세 패널의 "전체 보기" — 탐색 제거(MSG-328)로 상세를 닫고 패널 안 전체 지역
+  // 리스트를 연다 (스펙 추정 3 — MSG-253 AC 11의 "탐색 이동" 대체)
+  const openRegionList = useRegionPanelStore((s) => s.openRegionList);
   const handleViewAll = useCallback(() => {
-    clearFilters();
-    navigate(ROUTES.explore);
-  }, [clearFilters, navigate]);
+    closeDetail();
+    openRegionList();
+  }, [closeDetail, openRegionList]);
 
   // 셀 탭 → 상세 오픈/무시 판정 (AC 9·10) — 판정은 순수 함수, 스토어는 상태만
   const expandSidebar = useSidebarStore((s) => s.setCollapsed);
@@ -133,12 +163,12 @@ export const MapHomePage = () => {
   // 격자선·기본 점령 셀은 셸 상시 층 소유(MSG-263 D9)라 여기서 게시하지 않는다 —
   // 홈 이탈 clear()는 테마 오버레이만 걷어내고 격자·점령 표시는 유지된다 (AC 16·18)
   useEffect(() => {
-    setCells(overlayCells);
+    setCells(publishedCells);
     setRoute(routeOverlay);
     setOnCellClick(handleCellTap);
     return () => clearOverlays();
   }, [
-    overlayCells,
+    publishedCells,
     routeOverlay,
     handleCellTap,
     setCells,
@@ -191,10 +221,10 @@ export const MapHomePage = () => {
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
-        {/* 검색은 드롭다운으로 그 자리에서 — 확정 시 탐색 그리드로 이동해 결과 표시 */}
-        <SearchBox />
-        {/* 분기 우선순위 (MSG-277 확정): 셀 상세 > 테마 피드 > 요약 — 테마 상세를 닫으면
-            칩이 유지된 채 피드로 자연 복귀한다 (AC 13) */}
+        {/* 검색은 드롭다운으로 그 자리에서 — 결과 선택 시 지도 이동 (MSG-328 AC 16) */}
+        <HomeSearchBox onPlaceSelect={moveTo} />
+        {/* 분기 우선순위 (MSG-277 확정 → MSG-328 AC 18 유지): 셀 상세 > 테마 피드 > 지역
+            격자 리스트 — 테마 상세를 닫으면 칩이 유지된 채 피드로 자연 복귀한다 (AC 13) */}
         {selectedCellId !== null ? (
           detail ? (
             <HomeCellDetailPanel
@@ -222,7 +252,7 @@ export const MapHomePage = () => {
             onClose={closeThemeFeedMiniFirst}
           />
         ) : (
-          <CellSummaryPanel onViewAll={handleViewAll} onCellSelect={moveTo} />
+          <RegionPanel onGridSelect={cardPlay.play} />
         )}
       </aside>
       {/* 영상 미니 디테일 패널 — 좌측 패널 오른쪽 flush 보조 패널 (3차 AC 8~11).
@@ -232,6 +262,12 @@ export const MapHomePage = () => {
       )}
       {/* 상단 테마 칩 — 좌측 패널 오른쪽 홈 오버레이 (AC 1, A6). 미니 열림 시 우측 이동 (3차 AC 15) */}
       <ThemeChipsBar />
+      {/* 격자 카드 재생 안내 토스트 (사용자 피드백) — 빈 목록·조회 실패, 3초 자동 소멸 */}
+      {cardPlay.notice && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-120 px-md">
+          <Toast title={CARD_PLAY_NOTICE_MESSAGE[cardPlay.notice]} />
+        </div>
+      )}
     </>
   );
 };

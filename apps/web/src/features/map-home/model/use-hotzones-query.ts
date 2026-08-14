@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { decodeGridCenter, type Bounds } from "@/entities/cell";
+import { useAuthStore } from "@/features/auth/model/auth-store";
 import { getHotZonesOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { mapQueryPolicy } from "./map-query-policy";
@@ -15,11 +16,14 @@ import { viewportQueryArgs } from "./viewport-query";
  * 목을 유지하므로(결정 3), 두 소스가 같은 오버레이 파이프라인(buildHomeOverlayCells)을 탄다.
  */
 export const useHotZoneCells = (bounds: Bounds | null): ThemeCell[] => {
+  // 보호 API(익명 401 실측 — MSG-328 사용자 버그 리포트): 비로그인은 조회하지 않는다.
+  // 게이트 없이는 홈 (재)마운트마다 401 + auth-pipeline reissue가 재발사된다
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { query: viewport, enabled } = viewportQueryArgs(bounds);
   const { data } = useQuery({
     ...getHotZonesOptions({ query: viewport }),
     select: unwrapEnvelope,
-    enabled,
+    enabled: enabled && isAuthenticated,
     ...mapQueryPolicy,
   });
 

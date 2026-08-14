@@ -20,7 +20,7 @@ import type { Cell, CellVideo } from "@/entities/cell";
 import type { CollectedVideo, DexData } from "@/entities/dex";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
-import { useCellDetailStore } from "@/features/explore/model/cell-detail-store";
+import { useCellDetailStore } from "@/widgets/cell-detail/model/cell-detail-store";
 import { DexPanel } from "./DexPanel";
 
 /**
