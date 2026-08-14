@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
+import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
@@ -63,6 +64,7 @@ const mapShellStub = {
   moveTo: vi.fn(),
   zoomIn: () => {},
   zoomOut: () => {},
+  zoomTo: vi.fn(),
   locate: () => {},
 };
 
@@ -101,11 +103,19 @@ const stubDetail = (
       if (/^\/api\/regions\/.+\/grids$/.test(pathname)) {
         return envelopeResponse(REGION_GRIDS);
       }
+      // MSG-395: 홈이 상시 조회하는 미션·수집 격자 (칩 미선택 분기 단정과는 무관하나,
+      // 응답 모양이 없으면 파생이 터져 패널 자체가 렌더되지 않는다)
+      if (pathname === "/api/missions/active") return envelopeResponse([]);
+      if (pathname === "/api/collections/grids") return envelopeResponse([]);
+      if (pathname === "/api/collections/videos") return envelopeResponse([]);
       // 단건 재생 조회 — 미니 패널 자동 재생 흐름 (사용자 보완 2)
       if (pathname.startsWith("/api/videos/")) {
         return envelopeResponse({ ...READY_PLAYBACK, videoId: 501 });
       }
       if (pathname.startsWith("/api/grids/")) {
+        // MSG-395: 격자 상세가 시간대 그래프를 함께 조회한다 (표본 0이면 그래프 미표시)
+        if (pathname.endsWith("/hourly-uploads"))
+          return envelopeResponse({ gridId: SEOMYEON, hours: [] });
         if (mode === "pending") return new Promise<Response>(() => {});
         if (mode === "error") return new Response(null, { status: 500 });
         // MSG-326: 상세 패널이 영상 목록 2종을 함께 조회한다 (분기 단정과 무관)
@@ -142,6 +152,10 @@ afterEach(() => {
   mapShellStub.moveTo.mockClear();
   useHomeCellDetailStore.setState({ selectedCellId: null });
   useThemeFilterStore.setState({ activeTheme: null });
+  useMissionSelectionStore.setState(
+    useMissionSelectionStore.getInitialState(),
+    true,
+  );
   useSidebarStore.setState({ collapsed: false });
   useViewportStore.setState({ bounds: null, center: SEOMYEON_CENTER });
   useVideoMiniPanelStore.setState({ selected: null });
@@ -232,6 +246,9 @@ describe("홈 좌측 패널 분기", () => {
         if (/^\/api\/regions\/.+\/grids$/.test(pathname)) {
           return envelopeResponse(REGION_GRIDS);
         }
+        // MSG-395: 홈 상시 조회 (이 테스트의 단정과는 무관하나 응답 모양이 필요하다)
+        if (pathname === "/api/missions/active") return envelopeResponse([]);
+        if (pathname === "/api/collections/grids") return envelopeResponse([]);
         if (pathname === "/api/grids") {
           return envelopeResponse({ grids: [], nextCursor: null });
         }
@@ -393,5 +410,23 @@ describe("접힘 상태 셀 탭 → 패널 펼침 (사용자 결정 2026-08-10)"
     act(() => useMapOverlayStore.getState().onCellClick?.("0_0"));
     expect(useSidebarStore.getState().collapsed).toBe(true);
     expect(useHomeCellDetailStore.getState().selectedCellId).toBeNull();
+  });
+});
+
+describe("칩 선택 상태의 패널 분기 (MSG-395, codex 리뷰 반영)", () => {
+  it("고른 미션이 목록에서 사라지면 지역 패널이 아니라 그 칩의 목록으로 돌아간다", async () => {
+    // 미션 응답은 비어 있는데 선택 id는 남아 있는 상태 — 재조회로 미션이 빠진 뒤와 같다
+    stubDetail("ready");
+    authenticate();
+    useThemeFilterStore.setState({ activeTheme: "festival" });
+    useMissionSelectionStore.setState({ selectedMissionId: 7 });
+
+    renderHome();
+
+    // 지역축제 목록의 빈 상태가 떠야 한다 — 지역 격자 패널(행정동 헤더)로 떨어지면 안 된다
+    expect(
+      await screen.findByText(/지금 진행 중인 지역축제가 없어요/),
+    ).toBeTruthy();
+    expect(screen.queryByText("부전제1동")).toBeNull();
   });
 });

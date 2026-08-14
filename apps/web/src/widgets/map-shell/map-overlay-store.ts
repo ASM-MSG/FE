@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type {
+  LabelOverlay,
   RouteOverlay,
   StyledCellOverlay,
 } from "@/features/map-home/model/theme-overlay";
@@ -10,15 +11,21 @@ interface MapOverlayState {
    * 스타일 필드(color·hatched) 미지정 셀은 기존 primary 렌더 (MSG-252 AC 13 — 도감 게시 불변).
    */
   cells: StyledCellOverlay[];
-  /** 경로 오버레이 (MSG-252 AC 8) — null이면 미표시. 게시자는 홈(경로추천 활성 시)뿐이다 */
-  route: RouteOverlay | null;
+  /**
+   * 경로 오버레이 (MSG-252 AC 8 → MSG-395 다중화) — 빈 배열이면 미표시.
+   * 게시자는 홈(경로추천 활성 시)뿐이며, 목록에 뜬 코스 수만큼 라인이 함께 그려진다.
+   */
+  routes: RouteOverlay[];
+  /** 이름표 마커 (MSG-395 AC 16·18·21) — 미션 호버·선택, 코스 목록에서 게시된다 */
+  labels: LabelOverlay[];
   /**
    * 오버레이 셀 클릭 핸들러 (MSG-122 AC 14·18) — null이면 표시 전용(MSG-121 기존 동작, R3).
    * 게시자는 DexPanel(지도·갤러리 탭)·MapHomePage(MSG-252), 소비자는 MapShell → MapCanvas.
    */
   onCellClick: ((cellId: string) => void) | null;
   setCells: (cells: StyledCellOverlay[]) => void;
-  setRoute: (route: RouteOverlay | null) => void;
+  setRoutes: (routes: RouteOverlay[]) => void;
+  setLabels: (labels: LabelOverlay[]) => void;
   setOnCellClick: (handler: ((cellId: string) => void) | null) => void;
   clear: () => void;
 }
@@ -35,10 +42,12 @@ interface MapOverlayState {
  */
 export const useMapOverlayStore = create<MapOverlayState>((set) => ({
   cells: [],
-  route: null,
+  routes: [],
+  labels: [],
   onCellClick: null,
   setCells: (cells) => set({ cells }),
-  setRoute: (route) => set({ route }),
+  setRoutes: (routes) => set({ routes }),
+  setLabels: (labels) => set({ labels }),
   setOnCellClick: (handler) => set({ onCellClick: handler }),
-  clear: () => set({ cells: [], route: null, onCellClick: null }),
+  clear: () => set({ cells: [], routes: [], labels: [], onCellClick: null }),
 }));

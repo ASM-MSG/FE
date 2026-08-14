@@ -41,8 +41,10 @@ export const MapShell = () => {
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   // 섹션 게시 셀(MSG-121·252) — 게시자 패널(홈 테마 셀)이 게시/해제하고 셸은 중계만 한다
   const sectionCells = useMapOverlayStore((s) => s.cells);
-  // 경로 오버레이(MSG-252 AC 8) — 홈이 경로추천 활성 시에만 게시, null이면 미표시
-  const routeOverlay = useMapOverlayStore((s) => s.route);
+  // 경로 오버레이(MSG-252 AC 8 → MSG-395 다중화) — 홈이 경로추천 활성 시에만 게시
+  const routeOverlays = useMapOverlayStore((s) => s.routes);
+  // 미션·코스 이름표(MSG-395 AC 16·18·21) — 호버·선택·코스 목록에서 게시
+  const labelOverlays = useMapOverlayStore((s) => s.labels);
 
   // 상시 격자선 파생(MSG-263 D9) — MapCanvas가 idle마다 push하는 뷰포트를 직접 구독해
   // 뷰포트∩부산 경계·한 화면 버퍼·줌 게이트(GRID_MIN_ZOOM 미만 숨김, D4)로 재계산 (AC 9·13·16)
@@ -135,6 +137,7 @@ export const MapShell = () => {
       moveTo: (coords) => mapRef.current?.moveTo(coords),
       zoomIn: () => mapRef.current?.zoomIn(),
       zoomOut: () => mapRef.current?.zoomOut(),
+      zoomTo: (zoom) => mapRef.current?.zoomTo(zoom),
       locate: () => {
         getCurrentPosition().then((coords) => mapRef.current?.moveTo(coords));
       },
@@ -151,7 +154,8 @@ export const MapShell = () => {
           onViewportChange={setViewport}
           overlayCells={visibleOverlayCells}
           gridLines={gridLines}
-          route={routeOverlay ?? undefined}
+          routes={routeOverlays}
+          labels={labelOverlays}
           clusters={clusters}
           onOverlayCellClick={handleCellClick}
         />

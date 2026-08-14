@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { MAX_ZOOM, MIN_ZOOM, scaleLabelForZoom } from "./map-scale";
+import {
+  MAP_SCALE_500M_ZOOM,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  scaleLabelForZoom,
+} from "./map-scale";
 
 describe("zoom 유효 범위 (A2) — 축척 표·줌 클램핑(MapCanvas)이 공유하는 단일 정의", () => {
   it("네이버 지도 zoom 범위는 6~21이다", () => {
@@ -37,5 +42,16 @@ describe("scaleLabelForZoom", () => {
     expect(scaleLabelForZoom(Number.NaN)).toBe("128km");
     expect(scaleLabelForZoom(Number.POSITIVE_INFINITY)).toBe("5m");
     expect(scaleLabelForZoom(Number.NEGATIVE_INFINITY)).toBe("128km");
+  });
+});
+
+describe("MAP_SCALE_500M_ZOOM — 경로추천이 맞추는 줌 (MSG-395)", () => {
+  it("축척 표에서 500m 단을 찾아낸다", () => {
+    expect(scaleLabelForZoom(MAP_SCALE_500M_ZOOM)).toBe("500m");
+  });
+
+  it("유효 줌 범위 안이다 — 표에서 라벨이 사라지면 indexOf가 -1이 되어 범위 밖으로 샌다", () => {
+    expect(MAP_SCALE_500M_ZOOM).toBeGreaterThanOrEqual(MIN_ZOOM);
+    expect(MAP_SCALE_500M_ZOOM).toBeLessThanOrEqual(MAX_ZOOM);
   });
 });

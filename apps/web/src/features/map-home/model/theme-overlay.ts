@@ -8,13 +8,7 @@ import {
   type LatLng,
 } from "@/entities/cell";
 import { isGridCellCenterInBusan } from "./grid-overlay";
-import {
-  THEME_META,
-  type MockRoute,
-  type RouteWaypoint,
-  type ThemeCell,
-  type ThemeId,
-} from "./theme";
+import { THEME_META, type ThemeCell, type ThemeId } from "./theme";
 
 /**
  * 테마 오버레이 파생 (MSG-252 AC 2·6·7·8).
@@ -119,25 +113,33 @@ export const emphasizeCell = (
   ];
 };
 
-/** 지도 게시용 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (AC 8) */
+/** 경로 경유지 — 번호 마커(1·2·3…)의 데이터 (MSG-252 AC 8) */
+export interface RouteWaypoint {
+  seq: number;
+  position: LatLng;
+}
+
+/**
+ * 지도 게시용 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (MSG-252 AC 8).
+ * MSG-395: 코스가 목록으로 여럿 뜨므로 배열 게시가 되고, 그래서 `id`가 붙었다.
+ */
 export interface RouteOverlay {
+  id: string;
   path: LatLng[];
   waypoints: RouteWaypoint[];
   color: string;
 }
 
-/** 경로추천 활성 시에만 경로를 게시한다 — 그 외에는 null (AC 8, 표시 전용) */
-export const buildRouteOverlay = (
-  activeTheme: ThemeId | null,
-  route: MockRoute,
-): RouteOverlay | null =>
-  activeTheme === "route"
-    ? {
-        path: route.path,
-        waypoints: route.waypoints,
-        color: THEME_META.route.color,
-      }
-    : null;
+/**
+ * 지도 게시용 이름표 마커 (MSG-395 AC 16·18·21) — 미션·코스 이름을 지도 위에 띄운다.
+ * 셀·경로와 달리 텍스트가 서버 데이터라 렌더 경계(MapCanvas)에서 이스케이프한다.
+ */
+export interface LabelOverlay {
+  id: string;
+  position: LatLng;
+  text: string;
+  color: string;
+}
 
 /** 빗금 선분 개수 기본값 — 셀 폭 안에서 선 간격이 시각적으로 구분되는 밀도 (MSG-263: 100m 셀에도 유지) */
 export const HATCH_LINE_COUNT = 5;
