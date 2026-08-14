@@ -17,7 +17,7 @@ interface BadgeMedalProps {
  * 색상 그룹으로 오분류해 text-foreground(-muted)가 크기 클래스를 밀어낸다 (MSG-108 함정).
  */
 export const BadgeMedal = ({ badge }: BadgeMedalProps) => {
-  const art = resolveBadgeArt(badge.code, badge.iconUrl ?? null);
+  const art = resolveBadgeArt(badge.code, badge.iconUrl);
 
   return (
     <li className="flex flex-col items-center gap-xxs">

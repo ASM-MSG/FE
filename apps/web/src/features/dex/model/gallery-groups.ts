@@ -31,7 +31,7 @@ export const groupVideosByGrid = (
 
   return [...byGrid.entries()]
     .map(([gridId, list]): GalleryGridGroup => {
-      const sorted = [...list].sort(
+      const sorted = list.toSorted(
         (a, b) =>
           b.createdAt.localeCompare(a.createdAt) || a.videoId - b.videoId,
       );

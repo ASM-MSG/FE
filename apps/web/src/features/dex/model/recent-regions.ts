@@ -59,5 +59,8 @@ export const deriveRecentRegions = (grids: CollectedGrid[]): RecentRegion[] => {
 export const excludeRemovedRegions = (
   regions: RecentRegion[],
   removedRegionNames: string[],
-): RecentRegion[] =>
-  regions.filter((r) => !removedRegionNames.includes(r.regionName));
+): RecentRegion[] => {
+  // 목록 길이가 실측 75행이라 filter 안의 includes는 매 행마다 전체 스캔이 된다 — Set 1회 구성으로 상수 조회
+  const removed = new Set(removedRegionNames);
+  return regions.filter((r) => !removed.has(r.regionName));
+};
