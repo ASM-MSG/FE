@@ -1,5 +1,6 @@
 import {
   Component,
+  Fragment,
   forwardRef,
   useEffect,
   useImperativeHandle,
@@ -42,6 +43,8 @@ export interface MapCanvasHandle {
   moveTo: (coords: LatLng) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  /** 지정 줌 단으로 이동 (MSG-395 AC 19) — 유효 범위로 클램프한다 */
+  zoomTo: (zoom: number) => void;
 }
 
 /**
@@ -71,8 +74,18 @@ export interface MapGridLine {
 
 /** 지도에 그릴 경로 오버레이 — 연결선 정점 + 번호 경유지 + 경로 색 (MSG-252 AC 8) */
 export interface MapRouteOverlay {
+  /** 코스 식별자 — 코스가 목록으로 여럿 그려지므로 렌더 키가 필요하다 (MSG-395) */
+  id: string;
   path: LatLng[];
   waypoints: { seq: number; position: LatLng }[];
+  color: string;
+}
+
+/** 지도에 그릴 이름표 마커 — 미션·코스 이름 (MSG-395 AC 16·18·21) */
+export interface MapLabelOverlay {
+  id: string;
+  position: LatLng;
+  text: string;
   color: string;
 }
 
@@ -100,8 +113,10 @@ interface MapCanvasProps {
   overlayCells?: MapCellOverlay[];
   /** 점선 격자선 목록 (MSG-263 AC 9) — 미제공/빈 배열이면 기존 동작과 동일 */
   gridLines?: MapGridLine[];
-  /** 경로 오버레이 (MSG-252 AC 8) — 미제공이면 기존 동작과 동일 */
-  route?: MapRouteOverlay;
+  /** 경로 오버레이 목록 (MSG-252 AC 8 → MSG-395 다중화) — 미제공/빈 배열이면 기존 동작과 동일 */
+  routes?: MapRouteOverlay[];
+  /** 이름표 마커 목록 (MSG-395 AC 16·18·21) — 미제공/빈 배열이면 기존 동작과 동일 */
+  labels?: MapLabelOverlay[];
   /** 클러스터 마커 목록 (MSG-264) — 미제공/빈 배열이면 기존 동작과 동일 */
   clusters?: MapClusterOverlay[];
   /** 오버레이 셀 클릭 (MSG-122 AC 14·18) — 미제공이면 표시 전용 기존 동작과 동일(R3) */
@@ -204,7 +219,8 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
       onViewportChange,
       overlayCells,
       gridLines,
-      route,
+      routes,
+      labels,
       clusters,
       onOverlayCellClick,
     },
@@ -234,7 +250,8 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
         onViewportChange={onViewportChange}
         overlayCells={overlayCells}
         gridLines={gridLines}
-        route={route}
+        routes={routes}
+        labels={labels}
         clusters={clusters}
         onOverlayCellClick={onOverlayCellClick}
         onRetry={retry}
@@ -308,6 +325,30 @@ const clusterMarkerContent = ({
 }: MapClusterOverlay): string =>
   `<div class="flex ${CLUSTER_TIER_SIZE_CLASS[tier]} -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-fm-body-strong text-primary-foreground shadow-raised" style="background-color:${color ?? semantic.primary}">${formatClusterCount(count)}</div>`;
 
+/**
+ * HTML 이스케이프 — 이름표 텍스트는 **서버가 준 미션 제목**이라 그대로 innerHTML에 넣으면
+ * 마크업이 주입된다. 클러스터·경유지 마커는 숫자 전제라 필요 없었던 처리다 (MSG-395).
+ */
+const escapeHtml = (text: string): string =>
+  text.replace(
+    /[&<>"']/g,
+    (char) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[char] ?? char,
+  );
+
+/**
+ * 미션·코스 이름표 HTML (MSG-395 AC 16·18·21) — 흰 알약에 테마 색 점 + 이름.
+ * 앵커가 격자 남서 꼭짓점이라 타일 왼쪽 아래에 걸리게 아래로 살짝 내린다.
+ */
+const labelMarkerContent = ({ text, color }: MapLabelOverlay): string =>
+  `<div class="flex translate-y-1 items-center gap-xxs whitespace-nowrap rounded-full bg-background px-xs py-0.5 text-fm-caption text-foreground shadow-raised"><span class="size-1.5 rounded-full" style="background-color:${color}"></span>${escapeHtml(text)}</div>`;
+
 const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
   (
     {
@@ -317,7 +358,8 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       onViewportChange,
       overlayCells,
       gridLines,
-      route,
+      routes,
+      labels,
       clusters,
       onOverlayCellClick,
       onRetry,
@@ -387,6 +429,12 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
           const map = mapRef.current;
           if (!map) return;
           map.setZoom(Math.max(MIN_ZOOM, map.getZoom() - 1), true);
+        },
+        zoomTo: (zoom) => {
+          mapRef.current?.setZoom(
+            Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom)),
+            true,
+          );
         },
       }),
       [],
@@ -535,15 +583,18 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                     onClick={() => zoomToCluster(cluster)}
                   />
                 ))}
-                {/* 경로추천 오버레이 (MSG-252 AC 8) — 연결선 + 번호 경유지 마커 */}
-                {route && (
-                  <>
-                    <Polyline
-                      path={route.path}
-                      strokeWeight={ROUTE_STROKE_WEIGHT}
-                      strokeColor={route.color}
-                      strokeOpacity={ROUTE_STROKE_OPACITY}
-                    />
+                {/* 경로추천 오버레이 (MSG-252 AC 8 → MSG-395: 코스 목록만큼 다중) —
+                    연결선 + 번호 경유지 마커. 라인이 빈 코스는 마커만 남는다 (AC 21) */}
+                {routes?.map((route) => (
+                  <Fragment key={route.id}>
+                    {route.path.length > 1 && (
+                      <Polyline
+                        path={route.path}
+                        strokeWeight={ROUTE_STROKE_WEIGHT}
+                        strokeColor={route.color}
+                        strokeOpacity={ROUTE_STROKE_OPACITY}
+                      />
+                    )}
                     {route.waypoints.map((waypoint) => (
                       <Marker
                         key={waypoint.seq}
@@ -552,8 +603,17 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                         icon={{ content: routeMarkerContent(waypoint.seq) }}
                       />
                     ))}
-                  </>
-                )}
+                  </Fragment>
+                ))}
+                {/* 미션·코스 이름표 마커 (MSG-395 AC 16·18·21) */}
+                {labels?.map((label) => (
+                  <Marker
+                    key={label.id}
+                    position={label.position}
+                    title={label.text}
+                    icon={{ content: labelMarkerContent(label) }}
+                  />
+                ))}
               </NaverMap>
             </Container>
           </NavermapsProvider>

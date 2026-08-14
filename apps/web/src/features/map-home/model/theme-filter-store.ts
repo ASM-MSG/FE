@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { useHomeCellDetailStore } from "./home-cell-detail-store";
+import { useMissionSelectionStore } from "./mission-selection-store";
 import type { ThemeId } from "./theme";
 
 interface ThemeFilterState {
@@ -21,12 +22,16 @@ export const useThemeFilterStore = create<ThemeFilterState>((set) => ({
   activeTheme: null,
   toggle: (theme) => {
     useHomeCellDetailStore.getState().close();
+    // MSG-395: 칩이 바뀌면 그 칩의 미션 목록도 통째로 바뀐다 — 이전 칩에서 고른 미션이
+    // 남아 있으면 새 목록에 없는 미션의 상세가 열린 채로 보인다
+    useMissionSelectionStore.getState().reset();
     set((s) => ({ activeTheme: s.activeTheme === theme ? null : theme }));
   },
   // 사이드레일로 다른 섹션에 다녀오면 칩·상세가 남지 않도록 홈 언마운트 시 호출된다 (AC 14).
   // 칩 없이 열린 점령 셀 상세(AC 10)도 함께 닫아 복귀 화면을 기본 상태로 보장한다
   reset: () => {
     useHomeCellDetailStore.getState().close();
+    useMissionSelectionStore.getState().reset();
     set({ activeTheme: null });
   },
 }));

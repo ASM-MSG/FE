@@ -10,6 +10,11 @@ export interface MapShellContext {
   moveTo: (coords: LatLng) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  /**
+   * 지정 줌 단으로 이동 (MSG-395 AC 19) — 경로추천 칩이 축척 500m 단으로 맞춘다.
+   * 값은 네이버 의미 체계(클수록 확대, 6~21)이고 범위 클램프는 지도 경계가 맡는다.
+   */
+  zoomTo: (zoom: number) => void;
   /** 현재 위치(폴백 시 서면)로 재이동 */
   locate: () => void;
 }

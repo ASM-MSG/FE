@@ -29,6 +29,12 @@ export const MIN_ZOOM = 6;
 export const MAX_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.length - 1;
 
 /**
+ * 축척 `500m` 단의 zoom (MSG-395 AC 19) — 경로추천 칩이 맞추는 줌.
+ * 표에서 직접 찾아 하드코딩(14)을 피한다: 축척 표가 재보정되면 이 값도 따라 움직인다.
+ */
+export const MAP_SCALE_500M_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("500m");
+
+/**
  * zoom을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.
  * NaN은 클램프를 전파 통과해 undefined 렌더로 이어지므로 최소 zoom 축척으로 방어한다
  * (±Infinity는 클램프가 경계 값으로 흡수 — 별도 가드 불필요).

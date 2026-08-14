@@ -2,11 +2,50 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { decodeGridCenter, type Bounds } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
+import { gatedQueryStatus } from "@/features/region/model/gated-query-status";
+import type { HotZoneResponseDto } from "@/shared/api/generated";
 import { getHotZonesOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { mapQueryPolicy } from "./map-query-policy";
 import type { ThemeCell } from "./theme";
 import { viewportQueryArgs } from "./viewport-query";
+
+const EMPTY_HOT_ZONES: HotZoneResponseDto[] = [];
+
+/**
+ * 뷰포트 내 핫구역 원본 조회 (MSG-395) — 핫스코어·행정동명이 필요한 소비처용.
+ * `useHotZoneCells`가 버리는 `score`·`regionName`을 그대로 남긴다: 동 요약(AC 8~10)이
+ * 행정동으로 걸러내고 스코어 상위 격자만 표본으로 삼기 때문이다.
+ *
+ * 조회 **상태까지** 돌려준다 (codex 리뷰 반영): 배열만 주면 핫구역 요청이 실패해도
+ * 소비처는 "핫구역이 없는 동"과 구분하지 못해, 동 요약이 오류 대신 빈 상태를 띄운다.
+ */
+export interface HotZonesResult {
+  zones: HotZoneResponseDto[];
+  isPending: boolean;
+  isError: boolean;
+  retry: () => void;
+}
+
+export const useHotZones = (bounds: Bounds | null): HotZonesResult => {
+  // 보호 API(익명 401 실측 — MSG-328 사용자 버그 리포트): 비로그인은 조회하지 않는다.
+  // 게이트 없이는 홈 (재)마운트마다 401 + auth-pipeline reissue가 재발사된다
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { query: viewport, enabled } = viewportQueryArgs(bounds);
+  const active = enabled && isAuthenticated;
+  const query = useQuery({
+    ...getHotZonesOptions({ query: viewport }),
+    select: unwrapEnvelope,
+    enabled: active,
+    ...mapQueryPolicy,
+  });
+
+  return {
+    zones: query.data?.hotZones ?? EMPTY_HOT_ZONES,
+    // 비활성 쿼리는 영원히 pending이라 게이트로 눌러준다 (region 훅 관례)
+    ...gatedQueryStatus(query, active),
+  };
+};
 
 /**
  * 뷰포트 내 핫구역 조회 (MSG-325 기준 14) — 핫스코어 내림차순, 없으면 빈 목록.

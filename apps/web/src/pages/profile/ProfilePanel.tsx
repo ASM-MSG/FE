@@ -5,6 +5,7 @@ import { ROUTES } from "@/app/routes";
 import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
+import { useActivityQuery } from "@/features/profile/model/use-activity-query";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
 import { DeleteAccountModal } from "@/features/profile/ui/DeleteAccountModal";
 import { ProfileEditModal } from "@/features/profile/ui/ProfileEditModal";
@@ -16,7 +17,8 @@ import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
  * 프로필 패널 (MSG-124 → MSG-329 실 API 전환) — 지속 셸(MapShell) 지도 위 좌측 오버레이.
  * 조회는 GET /api/users/me (A1) — 헤더에 닉네임·가입일(createdAt→KST 표기, MSG-378)·
  * 이메일(null이면 세그먼트 생략, A2)·아바타(profileImageUrl ?? 기본 이미지, MSG-378 기준 16)를
- * 표시하고, "내 활동" 카드는 "—"다 (A4 — MSG-327 도감 유도 판단 대기).
+ * 표시한다. "내 활동" 카드는 MSG-395에서 실 연동했다 — 스트릭·수집률을 도감 요약과
+ * 행정동 통계에서 유도한다(use-activity-query). 구 A4의 "—" 자리는 조회 전·실패 폴백으로 남았다.
  * 앱 버전은 빌드 주입 값(__APP_VERSION__, A5). 오류 게이트는 제목+안내+[다시 시도] (A3).
  * "계정" 섹션에 [계정 삭제] 행 신설 — danger 확인 모달 → DELETE /api/users/me,
  * 성공 시 세션·캐시 정리(훅 소관) 후 홈 이동 (A10·A11).
@@ -24,6 +26,9 @@ import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
  */
 export const ProfilePanel = () => {
   const { data, isLoading, isError, refetch } = useProfileQuery();
+  // "내 활동" 두 축 (MSG-395) — 프로필 조회와 독립: 활동 조회가 늦거나 실패해도
+  // 닉네임·설정은 그대로 뜨고 카드만 `—`로 남는다
+  const activity = useActivityQuery();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   // 로그아웃·계정 삭제 후 홈으로 — 비로그인 상태로 보호 화면에 남지 않게 하고, 사이드레일
@@ -54,7 +59,7 @@ export const ProfilePanel = () => {
             />
 
             <ProfileSection title="내 활동">
-              <ActivityCard />
+              <ActivityCard activity={activity} />
             </ProfileSection>
 
             {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 3행 → 약관 → 처리방침 → [계정 삭제] → [로그아웃] */}

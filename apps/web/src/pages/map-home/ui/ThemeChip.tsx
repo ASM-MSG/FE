@@ -31,7 +31,9 @@ export const ThemeChip = ({
     aria-pressed={active}
     onClick={onClick}
     className={cn(
-      "flex items-center gap-xxs rounded-full px-sm py-xs text-fm-body-strong shadow-raised transition-colors",
+      // 높이는 고정값으로 잡는다 (사용자 지정 38px) — py-xs(8) + 본문 17 = 33이라 너무
+      // 납작했다. 세로 패딩으로 맞추면 글꼴 줄높이가 바뀔 때 높이가 같이 흔들린다
+      "flex h-9.5 items-center gap-xxs rounded-full px-sm text-fm-body-strong shadow-raised transition-colors",
       active
         ? cn("text-primary-foreground", activeBgClassName)
         : "bg-background text-foreground",

@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Button, cn } from "@fillmap/ui-web";
 import type {
   HomeCellBadge,
@@ -6,10 +6,13 @@ import type {
 } from "@/features/map-home/model/home-cell-detail";
 import { decodeGridCenter } from "@/entities/cell";
 import type { FeedVideo } from "@/features/map-home/model/grid-videos";
+import type { HourlyChart } from "@/features/map-home/model/hourly-uploads";
 import type { GridVideosResult } from "@/features/map-home/model/use-grid-videos-query";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { CellActionRow } from "./CellActionRow";
 import { FeedVideoList } from "./FeedVideoList";
+import { GridHourlyChart } from "./GridHourlyChart";
+import { RegionLocationLine } from "./RegionLocationLine";
 import { useEscapeClose } from "./use-escape-close";
 
 interface HomeCellDetailPanelProps {
@@ -22,6 +25,17 @@ interface HomeCellDetailPanelProps {
   onClose: () => void;
   /** "전체 보기" 클릭 — 요약 패널과 동일하게 탐색으로 이동 (MSG-253 AC 11) */
   onViewAll: () => void;
+  /**
+   * 뒤로 — 제공 시 헤더에 `<`가 뜬다 (MSG-395 AC 6·11·24).
+   * 핫구역 동 요약·코스 상세에서 내려온 격자 상세는 "닫기"가 아니라 "돌아가기"가 맞다.
+   */
+  onBack?: () => void;
+  /** 배지 아래 한 줄 — `핫구역 안 N칸 · …부터 내가 점령 중`·`{코스} N번째 스팟 · 방문 완료` (AC 11·24) */
+  contextLine?: string;
+  /** 자유 배지 — 코스 스팟의 `코스 N번` (AC 24). 테마 배지 매핑 밖이라 중립 톤 */
+  extraBadgeLabel?: string;
+  /** 활발한 시간대 (AC 12) — 표본이 없으면 호출부가 넘기지 않는다 */
+  chart?: HourlyChart;
 }
 
 /** 배지 스타일 매핑 — 연한 배경 pill (Figma 셀 선택 프레임). 토큰 클래스 리터럴만 사용 */
@@ -99,6 +113,10 @@ export const HomeCellDetailPanel = ({
   onVideoSelect,
   onClose,
   onViewAll,
+  onBack,
+  contextLine,
+  extraBadgeLabel,
+  chart,
 }: HomeCellDetailPanelProps) => {
   // Escape 닫기 (AC 9-1) — 입력 요소 타깃 무시 계약 포함 (use-escape-close, MSG-277 공용 추출)
   useEscapeClose(onClose);
@@ -112,7 +130,22 @@ export const HomeCellDetailPanel = ({
     <div className="flex min-h-0 flex-1 flex-col gap-md">
       <header className="flex flex-col gap-xs">
         <div className="flex items-center gap-xs">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="목록으로"
+              className="shrink-0 text-foreground-muted"
+            >
+              <ChevronLeft aria-hidden className="size-5" />
+            </button>
+          )}
           <h2 className="text-fm-title text-foreground">{detail.label}</h2>
+          {extraBadgeLabel && (
+            <span className="rounded-full bg-surface px-xs py-0.5 text-fm-caption text-foreground-muted">
+              {extraBadgeLabel}
+            </span>
+          )}
           {detail.badges.map((badge) => (
             <span
               key={badge.id}
@@ -133,6 +166,9 @@ export const HomeCellDetailPanel = ({
             전체 보기
           </button>
         </div>
+        {contextLine && (
+          <p className="text-fm-caption text-foreground-muted">{contextLine}</p>
+        )}
         <p className="text-fm-caption text-foreground-muted">
           {detail.subtitle}
         </p>
@@ -168,17 +204,13 @@ export const HomeCellDetailPanel = ({
             <FeedVideoList items={videos.items} onVideoSelect={onVideoSelect} />
           )}
 
+          {/* 활발한 시간대 (MSG-395 AC 12) — Figma는 동 요약에 뒀으나 시간대 API가
+              격자 단위라 여기로 옮겼다(사용자 확정). 표본 0이면 호출부가 넘기지 않는다 */}
+          {chart && <GridHourlyChart chart={chart} />}
+
           {/* 위치 줄 — 행정동. by-grid가 무귀속·미판정이면 null이라 줄을 그리지 않는다 */}
           {detail.regionLabel && (
-            <section className="border-t border-border pt-md">
-              <p className="flex items-center gap-xs text-fm-caption text-foreground">
-                <MapPin
-                  aria-hidden
-                  className="size-4 shrink-0 text-foreground-muted"
-                />
-                {detail.regionLabel}
-              </p>
-            </section>
+            <RegionLocationLine regionName={detail.regionLabel} />
           )}
         </div>
       </div>

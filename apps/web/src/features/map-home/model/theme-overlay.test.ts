@@ -6,18 +6,13 @@ import {
   encodeGridId,
   type CellCorners,
 } from "@/entities/cell";
+import { MOCK_CELLS } from "@/entities/cell";
 import { MOCK_DEX } from "@/entities/dex";
-import {
-  MOCK_ROUTE,
-  MOCK_THEME_CELLS,
-  THEME_META,
-  themeCellsOf,
-} from "./theme";
+import { THEME_META, type ThemeCell } from "./theme";
 import { canOpenDetail } from "./home-cell-detail";
 import {
   buildHatchLines,
   buildHomeOverlayCells,
-  buildRouteOverlay,
   emphasizeCell,
   themeCellGridIds,
 } from "./theme-overlay";
@@ -26,6 +21,26 @@ import {
 const OCCUPIED_IDS = MOCK_DEX.collectedCells.map(({ center }) =>
   encodeGridId(center),
 );
+
+/**
+ * MSG-395: 테마별 목 셀 목록(MOCK_THEME_CELLS·MOCK_ROUTE)이 실 미션 API 전환으로 사라졌다.
+ * 오버레이 파생 자체는 그대로라 같은 격자 구성을 이 파일 로컬 픽스처로 옮겨 유지한다 —
+ * 교집합(내 점령)·비교집합이 섞인 구성이어야 빗금 구분이 시연된다.
+ */
+const cellsOf = (ids: string[]): ThemeCell[] =>
+  ids.map((id) => {
+    const source = MOCK_CELLS.find((c) => c.id === id);
+    if (!source) throw new Error(`MOCK_CELLS에 없는 픽스처 셀 id: ${id}`);
+    return { id, center: source.center };
+  });
+
+const ROUTE_CELLS = cellsOf(["A-14", "A-15", "B-07"]);
+const THEME_FIXTURE = {
+  hot: cellsOf(["A-14", "A-15", "B-07", "G-04"]),
+  festival: cellsOf(["C-02", "B-08", "D-01"]),
+  popup: cellsOf(["A-15", "E-06", "H-11"]),
+  route: ROUTE_CELLS,
+} as const;
 
 describe("buildHomeOverlayCells — 기본 상태 (AC 2, MSG-263 개정 2 D9)", () => {
   it("활성 테마가 없으면 아무것도 게시하지 않는다 — 점령 셀 표시는 셸 상시 층(MapShell) 소유다", () => {
@@ -36,12 +51,12 @@ describe("buildHomeOverlayCells — 기본 상태 (AC 2, MSG-263 개정 2 D9)", 
 describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
   const overlays = buildHomeOverlayCells(
     "hot",
-    MOCK_THEME_CELLS.hot,
+    THEME_FIXTURE.hot,
     OCCUPIED_IDS,
   );
 
   it("핫구역 활성 시 테마 셀들이 테마 색으로 강조된다 (AC 6)", () => {
-    for (const cell of MOCK_THEME_CELLS.hot) {
+    for (const cell of THEME_FIXTURE.hot) {
       const overlay = overlays.find((o) => o.id === encodeGridId(cell.center));
       expect(overlay).toBeDefined();
       expect(overlay!.color).toBe(THEME_META.hot.color);
@@ -49,7 +64,7 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
   });
 
   it("테마 셀 ∩ 내 점령 셀만 빗금 표시된다 (AC 7)", () => {
-    for (const cell of MOCK_THEME_CELLS.hot) {
+    for (const cell of THEME_FIXTURE.hot) {
       const overlay = overlays.find((o) => o.id === encodeGridId(cell.center))!;
       expect(overlay.hatched).toBe(
         OCCUPIED_IDS.includes(encodeGridId(cell.center)),
@@ -58,9 +73,7 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
   });
 
   it("테마에 속하지 않는 내 점령 셀은 게시하지 않는다 — 셸 상시 층이 그린다 (MSG-263 개정 2 AC 8, D9)", () => {
-    const themeGridIds = MOCK_THEME_CELLS.hot.map((c) =>
-      encodeGridId(c.center),
-    );
+    const themeGridIds = THEME_FIXTURE.hot.map((c) => encodeGridId(c.center));
     const outside = OCCUPIED_IDS.filter((id) => !themeGridIds.includes(id));
     expect(outside.length).toBeGreaterThan(0);
     for (const id of outside) {
@@ -72,12 +85,12 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
     const ids = overlays.map((o) => o.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.sort()).toEqual(
-      MOCK_THEME_CELLS.hot.map((c) => encodeGridId(c.center)).sort(),
+      THEME_FIXTURE.hot.map((c) => encodeGridId(c.center)).sort(),
     );
   });
 
   it("테마 셀 기하도 100m 격자 스냅 꼭짓점 4점이다 — 격자 정의 단일화 (MSG-263 D5 → MSG-357)", () => {
-    for (const cell of MOCK_THEME_CELLS.hot) {
+    for (const cell of THEME_FIXTURE.hot) {
       const overlay = overlays.find((o) => o.id === encodeGridId(cell.center))!;
       expect(overlay.corners).toEqual(cellCornersAt(cellIndexAt(cell.center)));
     }
@@ -85,7 +98,7 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
 
   it("셀 중심이 부산 행정경계 밖인 테마 셀은 오버레이 대상이 아니다 (MSG-263 AC 4)", () => {
     const withSeaCell = [
-      ...MOCK_THEME_CELLS.hot,
+      ...THEME_FIXTURE.hot,
       { id: "SEA-CELL", center: { lat: 34.95, lng: 129.0 } },
     ];
     const result = buildHomeOverlayCells("hot", withSeaCell, OCCUPIED_IDS);
@@ -99,10 +112,10 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
     for (const theme of ["festival", "popup"] as const) {
       const themed = buildHomeOverlayCells(
         theme,
-        MOCK_THEME_CELLS[theme],
+        THEME_FIXTURE[theme],
         OCCUPIED_IDS,
       );
-      for (const cell of MOCK_THEME_CELLS[theme]) {
+      for (const cell of THEME_FIXTURE[theme]) {
         expect(
           themed.find((o) => o.id === encodeGridId(cell.center))!.color,
         ).toBe(THEME_META[theme].color);
@@ -118,7 +131,7 @@ describe("themeCellGridIds — 탭 판정 id = 게시 id (MSG-325 회귀 방지)
 
   it("목 라벨 id로 판정하면 상세가 열리지 않는다 — 회귀 재현", () => {
     for (const theme of MOCK_SOURCE_THEMES) {
-      const cells = themeCellsOf(theme);
+      const cells = THEME_FIXTURE[theme];
       const overlays = buildHomeOverlayCells(theme, cells, []);
       const mockLabelIds = cells.map((c) => c.id);
 
@@ -131,7 +144,7 @@ describe("themeCellGridIds — 탭 판정 id = 게시 id (MSG-325 회귀 방지)
 
   it("themeCellGridIds가 만든 판정 id 집합은 게시 id 집합과 정확히 같다 — 목·API 소스 공통", () => {
     for (const theme of [...MOCK_SOURCE_THEMES, "hot"] as const) {
-      const cells = themeCellsOf(theme);
+      const cells = THEME_FIXTURE[theme];
       const overlays = buildHomeOverlayCells(theme, cells, []);
 
       expect(themeCellGridIds(cells).sort()).toEqual(
@@ -149,7 +162,7 @@ describe("themeCellGridIds — 탭 판정 id = 게시 id (MSG-325 회귀 방지)
   it("부산 경계 밖 테마 셀은 판정 집합에도 없다 — 게시되지 않은 셀이 탭으로 열리면 안 된다 (MSG-263 AC 4 정합)", () => {
     const SEA_CELL = { id: "SEA-CELL", center: { lat: 34.95, lng: 129.0 } };
     const seaGridId = encodeGridId(SEA_CELL.center);
-    const cells = [...MOCK_THEME_CELLS.hot, SEA_CELL];
+    const cells = [...THEME_FIXTURE.hot, SEA_CELL];
     const overlays = buildHomeOverlayCells("hot", cells, []);
 
     expect(overlays.map((o) => o.id)).not.toContain(seaGridId);
@@ -165,13 +178,9 @@ describe("themeCellGridIds — 탭 판정 id = 게시 id (MSG-325 회귀 방지)
 
 describe("buildHomeOverlayCells — 경로추천 (AC 8)", () => {
   it("경로 주변 셀은 초록(경로 토큰)으로 강조되고, 경로 셀 ∩ 내 점령 셀은 초록 빗금으로 구분된다 — Figma 경로추천 정본(13848:8440), 검증 재작업 1", () => {
-    const overlays = buildHomeOverlayCells(
-      "route",
-      themeCellsOf("route"),
-      OCCUPIED_IDS,
-    );
+    const overlays = buildHomeOverlayCells("route", ROUTE_CELLS, OCCUPIED_IDS);
 
-    for (const cell of MOCK_ROUTE.cells) {
+    for (const cell of ROUTE_CELLS) {
       const overlay = overlays.find((o) => o.id === encodeGridId(cell.center))!;
       expect(overlay.color).toBe(THEME_META.route.color);
       expect(overlay.hatched).toBe(
@@ -181,28 +190,9 @@ describe("buildHomeOverlayCells — 경로추천 (AC 8)", () => {
 
     // 목 경로 셀 3개는 전부 내 점령 — 교집합 케이스가 실제로 시연되는지 고정
     expect(
-      MOCK_ROUTE.cells.filter((c) =>
-        OCCUPIED_IDS.includes(encodeGridId(c.center)),
-      ).length,
+      ROUTE_CELLS.filter((c) => OCCUPIED_IDS.includes(encodeGridId(c.center)))
+        .length,
     ).toBeGreaterThan(0);
-  });
-});
-
-describe("buildRouteOverlay — 경로 데이터 게시 분기 (AC 8)", () => {
-  it("경로추천 활성 시에만 경로(연결선 정점 + 번호 경유지 + 경로 색)를 게시한다", () => {
-    const route = buildRouteOverlay("route", MOCK_ROUTE);
-
-    expect(route).not.toBeNull();
-    expect(route!.path).toEqual(MOCK_ROUTE.path);
-    expect(route!.waypoints).toEqual(MOCK_ROUTE.waypoints);
-    expect(route!.color).toBe(THEME_META.route.color);
-  });
-
-  it("비활성·다른 테마에서는 경로를 게시하지 않는다 (AC 2·6)", () => {
-    expect(buildRouteOverlay(null, MOCK_ROUTE)).toBeNull();
-    expect(buildRouteOverlay("hot", MOCK_ROUTE)).toBeNull();
-    expect(buildRouteOverlay("festival", MOCK_ROUTE)).toBeNull();
-    expect(buildRouteOverlay("popup", MOCK_ROUTE)).toBeNull();
   });
 });
 
