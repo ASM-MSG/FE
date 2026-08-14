@@ -1,6 +1,10 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { MissionView } from "@/features/map-home/model/mission-view";
+import type {
+  CourseView,
+  MissionView,
+} from "@/features/map-home/model/mission-view";
+import { CourseListPanel } from "./CourseListPanel";
 import { MissionListPanel } from "./MissionListPanel";
 
 /**
@@ -74,5 +78,58 @@ describe("지역축제 목록 패널 — 실패 표면 분리 (리뷰 반영)", 
 
     expect(screen.getByRole("button", { name: /송도해변축제/ })).toBeTruthy();
     expect(screen.queryByText(/불러오지 못했어요/)).toBeNull();
+  });
+});
+
+describe("경로추천 목록 카드 — 진행도 실패 표기 (리뷰 반영)", () => {
+  const courseView = {
+    missionId: 3,
+    title: "남파랑길 3코스",
+    placeName: null,
+    dto: { missionId: 3, title: "남파랑길 3코스", placeName: null },
+    shape: {
+      kind: "none",
+      points: [],
+      gridIds: new Set<string>(),
+      spots: [],
+      line: null,
+      polygon: [],
+      bbox: null,
+    },
+    progress: { done: 0, total: 3, completed: false },
+    status: { kind: "always", label: "상시" },
+    path: [],
+    loop: false,
+    spots: [],
+  } as unknown as CourseView;
+
+  const renderCourseList = (progressFailed: boolean) =>
+    render(
+      <CourseListPanel
+        views={[courseView]}
+        isPending={false}
+        isError={false}
+        progressFailed={progressFailed}
+        onRetry={vi.fn()}
+        onSelect={vi.fn()}
+        onHover={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+  it("진행도가 실패하면 카드도 수치를 주장하지 않는다", () => {
+    renderCourseList(true);
+
+    expect(screen.getByText("방문 확인 불가")).toBeTruthy();
+    expect(screen.queryByText("0/3곳 방문")).toBeNull();
+    // 목록은 그대로 보인다
+    expect(screen.getByRole("button", { name: /남파랑길 3코스/ })).toBeTruthy();
+  });
+
+  it("정상이면 수치를 보여준다 (경계)", () => {
+    renderCourseList(false);
+
+    expect(screen.getByText("0/3곳 방문")).toBeTruthy();
+    expect(screen.queryByText("방문 확인 불가")).toBeNull();
   });
 });

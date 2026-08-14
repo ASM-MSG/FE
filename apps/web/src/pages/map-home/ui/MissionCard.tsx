@@ -90,6 +90,11 @@ export const MissionCard = ({
           </span>
 
           <span className="flex items-center gap-xs">
+            {/* 진행도 조회 실패 시 `progressFailed`를 받지 않는다 (리뷰 판단):
+                실패하면 completed가 false로 폴백해 **"방문 완료"는 절대 잘못 뜨지 않고**,
+                남는 `N칸 채우면 완료`는 진행도와 무관한 미션 규칙(targetCount) 문장이라
+                거짓이 아니다. 61장 카드에 "확인 불가"를 반복하면 목록 위 안내만 묻힌다.
+                코스 카드는 다르다 — 거기는 `0/N곳`이라는 **수치**를 주장한다 */}
             <span
               className={cn(
                 "flex-1 truncate text-fm-label font-normal",

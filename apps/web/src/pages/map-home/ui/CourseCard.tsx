@@ -7,6 +7,12 @@ import { THEME_FILL_CLASS, THEME_HOVER_BORDER_CLASS } from "./theme-classes";
 
 interface CourseCardProps {
   view: CourseView;
+  /**
+   * 진행도(내 수집 격자) 조회 실패 — 방문 수치·진행 바를 그리지 않는다 (리뷰 반영).
+   * 실패 시 분자가 0으로 폴백해 `0/N곳 방문` + 빈 바가 확정된 사실처럼 보인다.
+   * 목록 위 안내 배너를 놓친 사용자는 "아직 하나도 안 갔다"로 읽는다
+   */
+  progressFailed: boolean;
   onSelect: (missionId: number) => void;
   onHover: (missionId: number | null) => void;
 }
@@ -17,7 +23,12 @@ interface CourseCardProps {
  * 축제·팝업 카드와 달리 썸네일이 없고 **진행 바**가 자리를 대신한다 — 코스는 여러 지점을
  * 순서대로 채우는 미션이라 "얼마나 왔는지"가 카드의 핵심 정보다.
  */
-export const CourseCard = ({ view, onSelect, onHover }: CourseCardProps) => {
+export const CourseCard = ({
+  view,
+  progressFailed,
+  onSelect,
+  onHover,
+}: CourseCardProps) => {
   const { progress, spots } = view;
   const ratio = progressRatio(progress);
   const videoCount = mockMissionVideoCount(view.missionId);
@@ -51,25 +62,35 @@ export const CourseCard = ({ view, onSelect, onHover }: CourseCardProps) => {
             : `포토스팟 ${spots.length}곳`}
         </span>
 
-        {/* 진행 바 — 폭은 n/N 비율(progressRatio). % 는 스케일로 표현 불가라 인라인 스타일 */}
-        <span
-          aria-hidden
-          className="h-1 w-full overflow-hidden rounded-full bg-surface"
-        >
+        {/* 진행 바 — 폭은 n/N 비율(progressRatio). % 는 스케일로 표현 불가라 인라인 스타일.
+            진행도를 모르면 바 자체를 그리지 않는다 — 빈 바는 "0% 진행"이라는 주장이다 */}
+        {!progressFailed && (
           <span
-            className={cn("block h-full rounded-full", THEME_FILL_CLASS.route)}
-            style={{ width: `${ratio * 100}%` }}
-          />
-        </span>
+            aria-hidden
+            className="h-1 w-full overflow-hidden rounded-full bg-surface"
+          >
+            <span
+              className={cn(
+                "block h-full rounded-full",
+                THEME_FILL_CLASS.route,
+              )}
+              style={{ width: `${ratio * 100}%` }}
+            />
+          </span>
+        )}
 
         <span className="flex items-center gap-xs">
           <span
             className={cn(
               "flex-1 text-fm-label font-normal",
-              progress.completed ? "text-theme-route" : "text-foreground-muted",
+              progress.completed && !progressFailed
+                ? "text-theme-route"
+                : "text-foreground-muted",
             )}
           >
-            {progress.done}/{progress.total}곳 방문
+            {progressFailed
+              ? "방문 확인 불가"
+              : `${progress.done}/${progress.total}곳 방문`}
           </span>
           {videoCount > 0 && (
             <span className="shrink-0 text-fm-label font-normal text-foreground-muted">

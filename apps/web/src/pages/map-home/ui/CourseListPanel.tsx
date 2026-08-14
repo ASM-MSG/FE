@@ -49,6 +49,7 @@ export const CourseListPanel = ({
         <CourseCard
           key={view.missionId}
           view={view}
+          progressFailed={progressFailed}
           onSelect={onSelect}
           onHover={onHover}
         />
