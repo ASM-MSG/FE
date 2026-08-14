@@ -53,6 +53,8 @@ interface HomePanelSwitchProps {
   spotNames: ReadonlyMap<string, string>;
   listPending: boolean;
   listFailed: boolean;
+  /** 진행도 부재료(내 수집 격자) 실패 — 목록은 유지하고 안내만 얹는다 */
+  progressFailed: boolean;
   onListRetry: () => void;
   onSelectMission: (missionId: number) => void;
   onHoverMission: (missionId: number | null) => void;
@@ -98,6 +100,7 @@ export const HomePanelSwitch = ({
   spotNames,
   listPending,
   listFailed,
+  progressFailed,
   onListRetry,
   onSelectMission,
   onHoverMission,
@@ -179,6 +182,7 @@ export const HomePanelSwitch = ({
         theme={eventChip}
         isPending={listPending}
         isError={listFailed}
+        progressFailed={progressFailed}
         onRetry={onListRetry}
         onSelect={onSelectMission}
         onHover={onHoverMission}
@@ -192,6 +196,7 @@ export const HomePanelSwitch = ({
         views={courseViews}
         isPending={listPending}
         isError={listFailed}
+        progressFailed={progressFailed}
         onRetry={onListRetry}
         onSelect={onSelectMission}
         onHover={onHoverMission}

@@ -121,6 +121,7 @@ export const MapHomePage = () => {
     collectedGrids,
     isPending: missionsPending,
     isError: missionListFailed,
+    progressFailed,
     retry: retryMissionList,
   } = useHomeMissions({ activeTheme, selectedMissionId });
 
@@ -302,6 +303,7 @@ export const MapHomePage = () => {
           spotNames={spotNames}
           listPending={missionsPending}
           listFailed={missionListFailed}
+          progressFailed={progressFailed}
           onListRetry={retryMissionList}
           onSelectMission={selectMission}
           onHoverMission={hoverMission}

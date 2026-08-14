@@ -45,12 +45,15 @@ export interface HomeMissions {
   /** 내 수집 격자 — 격자 상세의 점령 시작일 출처 */
   collectedGrids: ReturnType<typeof useCollectedGridsQuery>["grids"];
   isPending: boolean;
-  /**
-   * 목록 실패 — 미션 조회뿐 아니라 **수집 격자 실패도 합류**시킨다 (리뷰 반영):
-   * 진행도의 분자가 통째로 비면 카드가 전부 `0/N`이 되는데, 조용히 두면
-   * "아직 안 채웠다"로 읽힌다
-   */
+  /** 목록 실패 — **미션 조회만** 본다. 목록을 통째로 가리는 판정이라 좁게 유지한다 */
   isError: boolean;
+  /**
+   * 진행도 실패 (리뷰 반영) — 내 수집 격자 조회가 죽으면 분자가 통째로 비어 카드가
+   * 전부 `0/N`이 된다. 조용히 두면 "아직 안 채웠다"로 읽히므로 알리되, `isError`에
+   * 합치지는 않는다 — 합치면 멀쩡한 목록이 사라지고 "목록을 불러오지 못했어요"라는
+   * 틀린 메시지가 뜬다
+   */
+  progressFailed: boolean;
   retry: () => void;
 }
 
@@ -125,7 +128,8 @@ export const useHomeMissions = ({
     spotNames,
     collectedGrids: collected.grids,
     isPending: missions.isPending,
-    isError: missions.isError || collected.isError,
+    isError: missions.isError,
+    progressFailed: collected.isError,
     retry: () => {
       missions.retry();
       collected.retry();

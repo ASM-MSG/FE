@@ -1,6 +1,7 @@
 import type { MissionView } from "@/features/map-home/model/mission-view";
 import { THEME_META, type ThemeId } from "@/features/map-home/model/theme";
 import { ChipListPanel } from "./ChipListPanel";
+import { RetryNotice } from "./RetryNotice";
 import { MissionCard } from "./MissionCard";
 
 interface MissionListPanelProps {
@@ -9,6 +10,8 @@ interface MissionListPanelProps {
   isPending: boolean;
   isError: boolean;
   onRetry: () => void;
+  /** 진행도(내 수집 격자) 조회 실패 — 목록은 그대로 두고 위에 안내만 얹는다 */
+  progressFailed: boolean;
   onSelect: (missionId: number) => void;
   onHover: (missionId: number | null) => void;
   onClose: () => void;
@@ -24,6 +27,7 @@ export const MissionListPanel = ({
   isPending,
   isError,
   onRetry,
+  progressFailed,
   onSelect,
   onHover,
   onClose,
@@ -36,6 +40,11 @@ export const MissionListPanel = ({
     errorMessage={`${THEME_META[theme].label} 목록을 불러오지 못했어요`}
     emptyMessage={`지금 진행 중인 ${THEME_META[theme].label}가 없어요`}
     onRetry={onRetry}
+    notice={
+      progressFailed ? (
+        <RetryNotice message="진행도를 불러오지 못했어요" onRetry={onRetry} />
+      ) : undefined
+    }
     onClose={onClose}
   >
     <ul className="flex flex-col gap-sm">
