@@ -34,7 +34,7 @@ import {
 import { ThemeChipsBar } from "./ui/ThemeChipsBar";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
 import { ThemeFeedPanel } from "./ui/ThemeFeedPanel";
-import { VideoMiniPanel } from "./ui/VideoMiniPanel";
+import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
 
 // 내 수집 영상 id 전체 — 테마 피드의 mine 판정 키 (MSG-277 AC 4). 영상 id는 셀 접두라 전역 유일
 const MY_VIDEO_IDS = MOCK_COLLECTED_VIDEOS.map((v) => v.videoId);

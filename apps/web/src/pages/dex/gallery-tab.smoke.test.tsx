@@ -1,543 +1,112 @@
-import { useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  MemoryRouter,
-  Outlet,
-  Route,
-  Routes,
-  useNavigate,
-  type NavigateFunction,
-} from "react-router-dom";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Cell, CellVideo } from "@/entities/cell";
-import type { CollectedVideo, DexData } from "@/entities/dex";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
-import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
-import { useCellDetailStore } from "@/widgets/cell-detail/model/cell-detail-store";
-import { DexPanel } from "./DexPanel";
+import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
+import { stubDexFetch } from "./dex-fetch-stub";
+import { renderDexPanel, resetDexStores } from "./dex-test-harness";
 
 /**
- * 갤러리 뷰 스모크 (MSG-122 ② 개정 — AC 7~10 상태 판정 + AC 14·18·19 배선 + 신규
- * AC 20·22·23·24·27, ④ AC 22 라우터 경유 복귀). 갤러리는 탭이 아니라 지도 탭 내부 뷰다(B1) —
- * gallery-region-store의 selectedRegion이 뷰 상태를 겸하므로, 상태 재현이 필요한 케이스는
- * 스토어에 직접 select한다(enterGalleryView — ④ tab 감시 effect가 마운트 시에도 clear하므로
- * 렌더 후 select. UI 진입 경로는 셀·행 클릭뿐 — 그 배선은 AC 14·19 케이스가 별도 판정).
- * mock queryFn이 실패·pending·빈 지역을 브라우저에서 확정적으로 재현하지 못해 vitest로 판정
- * (스펙 검증 방법 컬럼·dex-panel.smoke 선례). QueryClient 캐시에 상태를 주입해 재현한다.
- * 지도 픽셀·Polygon 클릭은 브라우저 검증의 몫 — 여기서는 스토어/핸들러 wiring만 단정한다.
+ * 지역별 갤러리 스모크 (MSG-327 기준 10·12·13·15·25) — 동 행 클릭으로 갤러리에 들어간 뒤의
+ * 계약만 고정한다: 헤더 카운트, 격자별 그룹, 영상 카드 클릭 → 미니 패널 재생, 빈 결과.
+ * 그룹 정렬·라벨 폴백의 값 판정은 gallery-groups 단위 테스트가 이미 촘촘히 덮는다.
  */
 
-const moveToSpy = vi.fn();
-
-/** 브라우저 뒤로가기 재현용 — ShellStub이 effect에서 채운다 (④ AC 22 라우터 경유 케이스) */
-let shellNavigate: NavigateFunction | undefined;
-
-/** MapShell 대역 — Outlet context로 지도 명령 API만 주입하고, 뒤로가기 재현용 navigate를 노출한다 */
-const ShellStub = () => {
-  const navigate = useNavigate();
-  // 렌더 중 외부 변수 대입은 react-hooks/globals 위반 — effect에서 갱신한다
-  useEffect(() => {
-    shellNavigate = navigate;
-  }, [navigate]);
-  return (
-    <Outlet
-      context={{
-        moveTo: moveToSpy,
-        zoomIn: vi.fn(),
-        zoomOut: vi.fn(),
-        locate: vi.fn(),
-      }}
-    />
-  );
-};
-
-// 캐시 주입 상태가 마운트 직후 refetch로 덮이지 않도록 자동 재조회를 끈다
-const createClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        retryOnMount: false,
-        refetchOnMount: false,
-        staleTime: Infinity,
-      },
-    },
-  });
-
-/**
- * 갤러리 뷰 상태 재현 — 렌더 후 select한다. ④ tab 감시 effect가 마운트 시에도 clear하는데
- * (실제 앱에선 언마운트 정리 B4로 마운트 시 항상 null이라 no-op), 렌더 전 select는 그 마운트
- * clear에 지워진다. 렌더 후에는 tab이 "map" 그대로라(deps 불변) effect가 재실행되지 않아
- * 뷰 상태가 유지된다 — 셀·행 클릭 진입과 같은 전제.
- */
-const enterGalleryView = (region: string) =>
-  act(() => {
-    useGalleryRegionStore.getState().select(region);
-  });
-
-// 갤러리는 URL 진입이 없다(② B1) — 항상 지도 탭(/dex)에서 렌더하고 뷰 상태로 분기한다
-const renderPanel = (client: QueryClient, path = "/dex") =>
-  render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route element={<ShellStub />}>
-            <Route path="/dex/:tab?" element={<DexPanel />} />
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
-
-/** 수집 2건(부산진구·수영구) 주입 도감 데이터 — 셀 클릭 → 지역 매핑 배선 확인용 */
-const DEX: DexData = {
-  summary: {
-    nickname: "필맵퍼",
-    totalExploredPct: 0.012,
-    streakDays: 3,
-    totalGridCount: 2,
-    badgeCount: 1,
-  },
-  collectedCells: [
-    {
-      gridId: "A-14",
-      label: "서면 A-14",
-      district: "부산진구",
-      center: { lat: 35.1573, lng: 129.0586 },
-      firstCollectedAt: "2026-07-21T09:00:00.000Z",
-      videoCount: 2,
-    },
-    {
-      gridId: "C-02",
-      label: "광안리 C-02",
-      district: "수영구",
-      center: { lat: 35.1532, lng: 129.1187 },
-      firstCollectedAt: "2026-07-19T09:00:00.000Z",
-      videoCount: 1,
-    },
-  ],
-  // 뱃지 탭 경유 케이스(④ AC 22)가 있어 1건 제공 — badgeCount(1)와 earned 수 정합 유지
-  badges: [{ badgeId: 1, name: "첫 기록", earned: true }],
-  regionExploredPctMap: { 부산진구: 22 },
-};
-
-const cellVideo = (videoId: number, title: string): CellVideo => ({
-  videoId,
-  title,
-  viewCount: 100,
-  recordedAt: "2026-07-20T00:00:00.000Z",
-  durationSec: 24,
-  thumbnailUrl: "data:,thumb",
+const video = (over: Partial<Record<string, unknown>> = {}) => ({
+  videoId: 1,
+  gridId: "39064_112221",
+  thumbnailUrl: null,
+  processingStatus: "READY",
+  durationSec: 84,
+  createdAt: "2026-08-13T09:00:00Z",
+  zoneName: "서면",
+  zoneCell: "A-02",
+  ...over,
 });
 
-/** 탐색과 동일 소스(["cells"]) 주입 격자 — 썸네일 클릭 → 상세 시트 매칭 대상 (AC 23, Q7) */
-const CELLS: Cell[] = [
-  {
-    id: "C-02",
-    label: "광안리 C-02",
-    district: "수영구",
-    center: { lat: 35.1532, lng: 129.1187 },
-    videoCount: 3,
-    createdAt: "2026-07-01T09:00:00.000Z",
-    location: "부산 수영구 광안리",
-    recentUploadedAt: "2026-07-21T09:00:00.000Z",
-    fillRate: 88,
-    viewCount: 24000,
-    videos: [
-      cellVideo(501, "광안리 골목 브이로그"),
-      cellVideo(502, "광안리 카페 투어"),
-      cellVideo(503, "광안리 야경 산책"),
-    ],
-  },
-  {
-    id: "A-14",
-    label: "서면 A-14",
-    district: "부산진구",
-    center: { lat: 35.1573, lng: 129.0586 },
-    videoCount: 1,
-    createdAt: "2026-07-02T09:00:00.000Z",
-    location: "부산 부산진구 서면",
-    recentUploadedAt: "2026-07-21T09:00:00.000Z",
-    fillRate: 73,
-    viewCount: 1400,
-    videos: [cellVideo(101, "서면 거리 공연")],
-  },
-];
-
-/** 도감·격자 소스 공통 주입 — DexPanel은 시트용 격자 소스(useCellsQuery)를 항상 구독한다(②) */
-const seedClient = (client: QueryClient) => {
-  client.setQueryData(["dex"], DEX);
-  client.setQueryData(["cells"], CELLS);
+/** 동 행을 눌러 갤러리로 들어간다 — 실제 사용자 진입 경로 그대로 */
+const enterGallery = async () => {
+  renderDexPanel();
+  fireEvent.click(
+    await screen.findByRole("button", { name: /부전제1동.*영상 4개/ }),
+  );
 };
 
-/** 갤러리 주입 데이터 — 썸네일 제공 2건 + 미제공(placeholder) 1건 (AC 10, videoId는 Cell.videos 체계 B3) */
-const GALLERY_VIDEOS: CollectedVideo[] = [
-  {
-    videoId: 101,
-    gridId: "A-14",
-    cellLabel: "서면 A-14",
-    thumbnailUrl:
-      "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E",
-    createdAt: "2026-07-21T10:00:00.000Z",
-  },
-  {
-    videoId: 102,
-    gridId: "A-14",
-    cellLabel: "서면 A-14",
-    thumbnailUrl:
-      "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E",
-    createdAt: "2026-07-21T09:00:00.000Z",
-  },
-  {
-    videoId: 301,
-    gridId: "B-07",
-    cellLabel: "부전 B-07",
-    thumbnailUrl: null,
-    createdAt: "2026-07-20T09:00:00.000Z",
-  },
-];
-
-/**
- * 수영구 갤러리 주입 데이터 — Cell.videos와 videoId 체계 일치(② B3, 활성 매칭) +
- * 격자 소스에 없는 gridId 1건(Z-99 — AC 23 no-op 방어 판정용)
- */
-const SUYEONG_VIDEOS: CollectedVideo[] = [
-  {
-    videoId: 501,
-    gridId: "C-02",
-    cellLabel: "광안리 C-02",
-    thumbnailUrl: null,
-    createdAt: "2026-07-21T10:00:00.000Z",
-  },
-  {
-    videoId: 502,
-    gridId: "C-02",
-    cellLabel: "광안리 C-02",
-    thumbnailUrl: null,
-    createdAt: "2026-07-21T09:00:00.000Z",
-  },
-  {
-    videoId: 901,
-    gridId: "Z-99",
-    cellLabel: "유령 Z-99",
-    thumbnailUrl: null,
-    createdAt: "2026-07-20T09:00:00.000Z",
-  },
-];
-
-describe("갤러리 뷰 스모크", () => {
+describe("지역별 갤러리 스모크", () => {
   beforeEach(() => {
-    useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
-    useGalleryRegionStore.setState(
-      useGalleryRegionStore.getInitialState(),
-      true,
-    );
-    useCellDetailStore.setState({ selectedCellId: null, activeVideoId: null });
-    moveToSpy.mockClear();
+    resetDexStores();
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
-  it("도감 탭은 지도·뱃지 2개만 렌더된다 — 갤러리 탭 버튼이 존재하지 않는다 (AC 20)", () => {
-    const client = createClient();
-    seedClient(client);
-    renderPanel(client);
+  it("동 행을 누르면 그 동의 갤러리가 열리고 헤더에 격자 수·영상 수가 표시된다 (기준 10)", async () => {
+    stubDexFetch({
+      videos: [video({ videoId: 1 }), video({ videoId: 2, gridId: "9_9" })],
+    });
+    await enterGallery();
 
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
-      "지도",
-      "뱃지",
-    ]);
-    expect(screen.queryByRole("tab", { name: "갤러리" })).toBeNull();
-  });
-
-  it("갤러리 쿼리 pending 중 스켈레톤(그리드 자리 타일)이 렌더된다 (AC 9)", async () => {
-    const client = createClient();
-    seedClient(client);
-    renderPanel(client);
-    // 갤러리 뷰 상태 재현 — 수집 없는 "사상구"라 해소 후엔 빈 상태다 (Q5)
-    enterGalleryView("사상구");
-
-    // queryFn(비동기)이 해소되기 전 첫 렌더는 pending — 스켈레톤이 보인다
     expect(
-      screen.getByRole("status", { name: "갤러리 불러오는 중" }),
+      await screen.findByText("부전제1동 · 격자 2개 · 영상 2개"),
     ).toBeTruthy();
-
-    // 해소 후 상태(사상구 빈 갤러리)로 전환될 때까지 대기 — act 경고 방지
-    await screen.findByText(/사상구에서 수집한 영상이 아직 없어요/);
-    expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("수집 영상이 없는 지역이면 빈 상태 안내가 렌더되고 전체 보기 버튼은 없다 (AC 8 ② — UI 도달 불가한 방어 분기라 스모크 전용 판정, Q5·A4)", async () => {
-    const client = createClient();
-    seedClient(client);
-    renderPanel(client);
-    enterGalleryView("사상구");
+  it("본문이 격자별 그룹으로 나뉘고 그룹 헤더에 격자 라벨과 영상 수가 표시된다 (기준 12)", async () => {
+    stubDexFetch({ videos: [video({ videoId: 1 }), video({ videoId: 2 })] });
+    await enterGallery();
 
     expect(
-      await screen.findByText(/사상구에서 수집한 영상이 아직 없어요/),
+      await screen.findByRole("heading", { name: "서면 A-02" }),
     ).toBeTruthy();
+    expect(screen.getByText("영상 2개")).toBeTruthy();
+  });
+
+  it("영상 카드를 누르면 우측 미니 패널이 그 영상으로 열린다 (기준 25)", async () => {
+    stubDexFetch({ videos: [video({ videoId: 7 })] });
+    await enterGallery();
+
+    fireEvent.click(await screen.findByRole("button", { name: /수집/ }));
+
+    expect(useVideoMiniPanelStore.getState().selected?.video.videoId).toBe(7);
+    // 도감 영상은 전부 내 영상이라 소유 메타가 "내 영상"으로 분기한다
+    expect(useVideoMiniPanelStore.getState().selected?.mine).toBe(true);
+  });
+
+  it("그 동에 영상이 없으면 빈 상태 안내가 표시된다 (기준 15)", async () => {
+    stubDexFetch({ videos: [] });
+    await enterGallery();
+
     expect(
-      screen.queryByRole("button", { name: "갤러리 전체 보기" }),
+      await screen.findByText(/부전제1동에서 수집한 영상이 아직 없어요/),
+    ).toBeTruthy();
+  });
+
+  it("행정동을 판정하지 못한 격자(by-grid data null)면 로딩이 아니라 안내로 끝난다 (기준 11 방어 — codex 리뷰 반영)", async () => {
+    stubDexFetch({ gridStat: null });
+    await enterGallery();
+
+    expect(await screen.findByText(/행정동 정보를 찾지 못해/)).toBeTruthy();
+    expect(
+      screen.queryByRole("status", { name: "갤러리 불러오는 중" }),
     ).toBeNull();
   });
 
-  it("갤러리 조회 실패 시 오류 안내·재시도 버튼이 렌더되고, 재시도 클릭 시 다시 조회한다 (AC 7)", async () => {
-    const client = createClient();
-    seedClient(client);
-    // 오류 상태 주입 — 실패하는 queryFn으로 갤러리 캐시 엔트리를 error로 만든다
-    await client
-      .fetchQuery({
-        queryKey: ["dex", "gallery", "사상구"],
-        queryFn: () => Promise.reject(new Error("network down")),
-        retry: false,
-      })
-      .catch(() => undefined);
-    renderPanel(client);
-    enterGalleryView("사상구");
+  it("갤러리 조회 실패 시 오류 안내와 재시도 버튼이 표시된다 (기준 15)", async () => {
+    stubDexFetch({ failPath: "/api/collections/videos" });
+    await enterGallery();
 
-    expect(screen.getByText("갤러리를 불러오지 못했어요")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
-
-    // refetch는 실제 queryFn(mock — 사상구 빈 배열)을 태우므로 빈 상태 화면으로 복구된다
-    expect(
-      await screen.findByText(/사상구에서 수집한 영상이 아직 없어요/),
-    ).toBeTruthy();
+    expect(await screen.findByText("갤러리를 불러오지 못했어요")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "다시 시도" })).toBeTruthy();
   });
 
-  it("각 썸네일 타일이 격자 라벨 이름을 가진 button이고, thumbnailUrl 없는 항목은 placeholder 타일로 렌더된다 (AC 10 ② button화)", () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "사상구"], GALLERY_VIDEOS);
-    renderPanel(client);
-    enterGalleryView("사상구");
+  it("'전체 보기'를 누르면 동 목록으로 복귀한다 (기준 10, 추정 7)", async () => {
+    stubDexFetch({ videos: [video()] });
+    await enterGallery();
 
-    // 이미지·placeholder 두 경로 모두 접근 가능한 이름을 가진 버튼이다 (AC 10 ②)
-    const tiles = screen.getAllByRole("button", { name: /수집 영상$/ });
-    expect(tiles.length).toBe(GALLERY_VIDEOS.length);
-    for (const tile of tiles) expect(tile.tagName).toBe("BUTTON");
+    fireEvent.click(await screen.findByRole("button", { name: "전체 보기" }));
 
-    const withThumb = screen.getAllByRole("button", {
-      name: "서면 A-14 수집 영상",
-    });
-    expect(withThumb.length).toBe(2);
-    for (const tile of withThumb)
-      expect(tile.querySelector("img")).toBeTruthy();
-
-    // 미제공 항목 — img 없이 placeholder 타일이되 접근 가능한 이름은 유지한다
-    const placeholder = screen.getByRole("button", {
-      name: "부전 B-07 수집 영상",
-    });
-    expect(placeholder.querySelector("img")).toBeNull();
-
-    // 지역명 보조 표시 (A8) — 지역 · 영상 개수
-    expect(screen.getByText("사상구 · 영상 3개")).toBeTruthy();
-  });
-
-  it("갤러리 뷰에서 지도 탭을 누르면 지도 탭 본문(최근 수집 목록)으로 복귀하고 뷰 상태가 해제된다 (AC 22)", () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    renderPanel(client);
-    enterGalleryView("수영구");
-
-    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("tab", { name: "지도" }));
-
-    expect(useGalleryRegionStore.getState().selectedRegion).toBeNull();
     expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
-    expect(screen.queryByText("지역별 갤러리")).toBeNull();
-  });
-
-  it("갤러리 뷰에서 뱃지 탭 → 브라우저 뒤로가기로 지도 탭에 재도달하면 갤러리 뷰가 해제되고 최근 수집 목록으로 복귀한다 (AC 22 ④ — onSelect를 거치지 않는 라우터 경유 복귀)", () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    renderPanel(client);
-
-    // 갤러리 뷰 진입 — 셀 클릭 배선(AC 14)과 동일 경로. tab은 "map" 그대로라 감시 effect 비간섭
-    act(() => {
-      useMapOverlayStore.getState().onCellClick?.("C-02");
-    });
-    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
-
-    // 뱃지 탭 이동 — onSelect는 map이 아니면 clearRegion을 부르지 않는다(뷰 상태 잔존)
-    fireEvent.click(screen.getByRole("tab", { name: "뱃지" }));
-    expect(useGalleryRegionStore.getState().selectedRegion).toBe("수영구");
-
-    // 브라우저 뒤로가기 — 탭 버튼(onSelect)을 거치지 않고 라우터로 지도 탭 재도달
-    act(() => {
-      shellNavigate?.(-1);
-    });
-
-    expect(useGalleryRegionStore.getState().selectedRegion).toBeNull();
-    expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
-    expect(screen.queryByText("지역별 갤러리")).toBeNull();
-  });
-
-  it("오버레이 셀 클릭 시 그 격자 지역의 갤러리 뷰로 전환된다 — 지도 탭 유지(B2), 미수집 id는 no-op (AC 14 ② 배선, AC 4)", async () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    renderPanel(client);
-
-    // 수집 목록에 없는 id — 선택·전환 모두 no-op (AC 4 방어)
-    act(() => {
-      useMapOverlayStore.getState().onCellClick?.("Z-99");
-    });
-    expect(useGalleryRegionStore.getState().selectedRegion).toBeNull();
-    expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
-
-    // 수집 격자(광안리 C-02) 클릭 → 수영구 갤러리 뷰 (AC 14 ② — 탭 전환 아님)
-    act(() => {
-      useMapOverlayStore.getState().onCellClick?.("C-02");
-    });
-    expect(useGalleryRegionStore.getState().selectedRegion).toBe("수영구");
-    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
-    expect(await screen.findByText(/^수영구 · 영상 \d+개$/)).toBeTruthy();
-    // 갤러리는 지도 탭 내부 뷰 — 활성 탭은 지도 유지 (B2)
-    expect(
-      screen.getByRole("tab", { name: "지도" }).getAttribute("aria-selected"),
-    ).toBe("true");
-  });
-
-  it("최근 수집 격자 행 클릭 시 지도가 그 격자로 이동하고(MSG-121 유지) 그 지역의 갤러리 뷰로 전환된다 (AC 19 ② 배선 — URL 무변경)", async () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    renderPanel(client);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /광안리 C-02.*영상 1개/ }),
-    );
-
-    // 기존 지도 이동(MSG-121 AC 16) 유지 — 제거 금지
-    expect(moveToSpy).toHaveBeenCalledWith({ lat: 35.1532, lng: 129.1187 });
-    // 행의 district로 지역 선택 → 갤러리 뷰 (탭 전환 없음 — ② 개정)
-    expect(useGalleryRegionStore.getState().selectedRegion).toBe("수영구");
-    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
-    expect(await screen.findByText(/^수영구 · 영상 \d+개$/)).toBeTruthy();
-  });
-
-  it("갤러리 뷰에서도 셀 클릭 핸들러 등록이 유지된다 (AC 18 배선 — ② map 단일화. 오버레이 게시는 MSG-263 D8로 제거, 표시는 셸 상시 층 소유)", () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    renderPanel(client);
-    enterGalleryView("수영구");
-
-    expect(useMapOverlayStore.getState().cells).toEqual([]);
-    expect(useMapOverlayStore.getState().onCellClick).not.toBeNull();
-  });
-
-  it("썸네일 클릭 시 격자 상세 시트가 우측 컬럼에 열리고 클릭한 영상이 활성 상태다 — 격자 소스에 없는 cellId는 no-op (AC 23)", () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    renderPanel(client);
-    enterGalleryView("수영구");
-
-    // 격자 소스(["cells"])에 없는 cellId — 시트를 열지 않는다 (방어)
-    fireEvent.click(
-      screen.getByRole("button", { name: "유령 Z-99 수집 영상" }),
-    );
-    expect(useCellDetailStore.getState().selectedCellId).toBeNull();
-
-    // 두 번째 타일(videoId 502) 클릭 — 대표 영상(videos[0])이 아닌 "클릭한 영상"이 활성이어야 한다
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "광안리 C-02 수집 영상" })[1],
-    );
-
-    expect(useCellDetailStore.getState().selectedCellId).toBe("C-02");
-    expect(useCellDetailStore.getState().activeVideoId).toBe(502);
-    // 시트가 렌더된다 — 격자명 헤딩 + "이 격자의 영상" 리스트 (탐색 CellDetailSheet 동형, Q7)
-    expect(screen.getByRole("heading", { name: "광안리 C-02" })).toBeTruthy();
-    expect(screen.getByText("이 격자의 영상")).toBeTruthy();
-    // 클릭한 영상 행이 활성(aria-current) 표시 (AC 23)
-    const activeRow = screen.getByRole("button", { current: true });
-    expect(activeRow.textContent).toContain("광안리 카페 투어");
-  });
-
-  it("시트의 닫기 버튼·Escape로 시트만 닫히고 갤러리 뷰는 유지된다 (AC 24)", () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    renderPanel(client);
-    enterGalleryView("수영구");
-
-    const openSheet = () =>
-      fireEvent.click(
-        screen.getAllByRole("button", { name: "광안리 C-02 수집 영상" })[0],
-      );
-
-    // 닫기 버튼
-    openSheet();
-    fireEvent.click(screen.getByRole("button", { name: "상세 닫기" }));
-    expect(useCellDetailStore.getState().selectedCellId).toBeNull();
-    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
-    expect(useGalleryRegionStore.getState().selectedRegion).toBe("수영구");
-
-    // Escape
-    openSheet();
-    expect(useCellDetailStore.getState().selectedCellId).toBe("C-02");
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(useCellDetailStore.getState().selectedCellId).toBeNull();
-    expect(screen.getByText("지역별 갤러리")).toBeTruthy();
-  });
-
-  it("갤러리 뷰 진입·지역 전환 시 이전 시트가 닫힌 상태다 — 탐색 잔존 시트 포함 (AC 27, B4·R10)", async () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    client.setQueryData(["dex", "gallery", "부산진구"], []);
-    // 탐색 탭에서 열어둔 시트가 남은 상황을 재현 (store 공유, Q7)
-    useCellDetailStore.getState().select(CELLS[0]);
-    renderPanel(client);
-
-    // 갤러리 뷰 진입(오버레이 셀 클릭) — 잔존 시트가 닫힌다
-    act(() => {
-      useMapOverlayStore.getState().onCellClick?.("C-02");
-    });
-    expect(useCellDetailStore.getState().selectedCellId).toBeNull();
-
-    // 시트를 열고 다른 지역으로 전환 — 이전 지역 시트가 닫힌다
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "광안리 C-02 수집 영상" })[0],
-    );
-    expect(useCellDetailStore.getState().selectedCellId).toBe("C-02");
-    act(() => {
-      useMapOverlayStore.getState().onCellClick?.("A-14");
-    });
-    expect(useGalleryRegionStore.getState().selectedRegion).toBe("부산진구");
-    expect(useCellDetailStore.getState().selectedCellId).toBeNull();
-    await screen.findByText(/부산진구에서 수집한 영상이 아직 없어요/);
-  });
-
-  it("패널 언마운트 시 갤러리 뷰·시트 상태가 해제된다 — 도감의 시트가 탐색으로 새지 않는다 (AC 27, B4)", () => {
-    const client = createClient();
-    seedClient(client);
-    client.setQueryData(["dex", "gallery", "수영구"], SUYEONG_VIDEOS);
-    const { unmount } = renderPanel(client);
-    enterGalleryView("수영구");
-
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "광안리 C-02 수집 영상" })[0],
-    );
-    expect(useCellDetailStore.getState().selectedCellId).toBe("C-02");
-
-    unmount();
-
-    expect(useGalleryRegionStore.getState().selectedRegion).toBeNull();
-    expect(useCellDetailStore.getState().selectedCellId).toBeNull();
+    expect(useGalleryRegionStore.getState().selected).toBeNull();
   });
 });

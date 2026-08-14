@@ -1,102 +1,109 @@
-import type { LatLng } from "@/entities/cell";
 import type {
   CollectionGridResponseDto,
   CollectionSummaryResponseDto,
   MyBadgeResponseDto,
+  RegionStatResponseDto,
   RegionVideoResponseDto,
 } from "@/shared/api/generated/types.gen";
 
 /*
- * MSG-289: 명세 대응 필드는 생성 타입(shared/api/generated)에서 type-only 파생한다.
- * 2026-08-06 명세 갱신으로 백엔드가 응답 required를 명시했다 — Required 승격은 명세가
- * optional로 회귀해도 화면 계약을 지키는 안전망으로 존치하며, 명세 필드명 변경·제거 시
- * Pick이 typecheck로 잡는다. 명세에 없는 화면 전용 필드는 FE 확장으로 분리해 교차(&)한다.
+ * MSG-289/327: 명세 대응 필드는 생성 타입(shared/api/generated)에서 type-only 파생한다.
+ * MSG-327에서 mock 확장(nickname·avatarSrc·totalExploredPct·district·label·center)을 전부
+ * 걷어냈다 — 프로필 축은 entities/profile(getMe)이, 격자 라벨은 features/region gridCardLabel이,
+ * 좌표는 entities/cell decodeGridCenter가 소유한다. 남은 FE 확장은 "여러 응답을 합쳐야만
+ * 생기는 화면 단위"(RecentRegion·GalleryGridGroup)뿐이다.
  */
 
 /**
- * 개인 도감 요약 — 백엔드가 제공하는 표시값 (MSG-121, 2026-07-22 개정 반영).
- * 지역명은 이 요약에 없다 — 현재 위치 역지오코딩이 소유한다(개정 D2, A5 개정).
- * totalGridCount만 명세(CollectionSummaryResponseDto) 대응 — 나머지는 FE 확장:
- * nickname·avatarSrc는 프로필 축(명세 부재), streakDays는 명세 전체 부재(백엔드 환류 후보),
- * totalExploredPct는 대응 축 없음, badgeCount는 뱃지 목록 length로 유도 가능한 표시값.
+ * 개인 도감 요약 — `GET /api/collections/summary` (MSG-327 기준 2·3).
+ * Required 승격은 명세가 optional로 회귀해도 화면 계약을 지키는 안전망이며,
+ * 명세 필드명 변경·제거는 이 Pick이 typecheck로 잡는다.
  */
 export type DexSummary = Required<
-  Pick<CollectionSummaryResponseDto, "totalGridCount">
-> & {
-  nickname: string;
-  /** 아바타 이미지 URL — 없으면 이니셜 fallback 표시 */
-  avatarSrc?: string;
-  /**
-   * 전체 지도 기준 탐험 진행률(%) — Fog of World식 미소값 (개정 D1, mock 0.012).
-   * 표시 전 0~100 클램프(AC 7) + formatExploredPct 포맷(AC 20)을 거친다.
-   */
-  totalExploredPct: number;
-  /** 연속 기록 일수 — "연속 스트릭" 통계 카드 표시값 (헤더 요약에서는 제거 — D1 dedup) */
-  streakDays: number;
-  /** 획득 뱃지 수 — 통계 카드 표시값 */
-  badgeCount: number;
-};
-
-/**
- * 사용자가 수집한 격자 — 최근 수집 목록·지도 오버레이의 단위 (MSG-121).
- * gridId·firstCollectedAt·videoCount는 명세(CollectionGridResponseDto) 대응 —
- * gridId 값은 mock 체계 "A-14"를 유지한다(명세 "{gridY}_{gridX}" 전환은 후속, MSG-289 질문 5).
- * label·district·center는 FE 확장 (regionName·gridY/gridX에서 파생 가능하나 형태가 달라 유지).
- */
-export type CollectedCell = Required<
-  Pick<CollectionGridResponseDto, "gridId" | "firstCollectedAt" | "videoCount">
-> & {
-  /** 격자 라벨 (예: "서면 A-14") — FE 확장 */
-  label: string;
-  /**
-   * 행정구(區) 이름 (예: "부산진구") — 갤러리 지역 매핑 키 (MSG-122 AC 1·4).
-   * Cell.district와 같은 체계 — FE 확장 (명세 regionName은 행정동 문자열이라 형태가 다름)
-   */
-  district: string;
-  /** 격자 중심 좌표 — 행 클릭 시 지도 이동 목적지 (AC 16). FE 확장 (명세 gridY/gridX 디코드 파생은 후속) */
-  center: LatLng;
-};
-
-/**
- * 사용자가 수집(업로드)한 개별 영상 — 갤러리 탭 썸네일 그리드의 단위 (MSG-122).
- * 한 격자에 영상이 여러 개면 각각 별도 항목이다 (티켓 명시).
- * videoId·gridId·thumbnailUrl·createdAt은 명세(RegionVideoResponseDto) 대응 —
- * videoId는 소속 격자 Cell.videos(CellVideo.videoId)와 같은 체계로, 썸네일 클릭 시
- * 상세 시트의 활성 영상 매칭 키다 (AC 23). cellLabel은 FE 확장.
- */
-export type CollectedVideo = Required<
-  Pick<RegionVideoResponseDto, "videoId" | "gridId" | "createdAt">
-> &
-  Pick<RegionVideoResponseDto, "thumbnailUrl"> & {
-    /** 격자 라벨 denormalize (예: "서면 A-14") — 썸네일 대체 텍스트용 (AC 10). FE 확장 */
-    cellLabel: string;
-  };
-
-/**
- * 뱃지 카탈로그 항목 — 뱃지 진열장의 단위 (MSG-123).
- * 획득 판정은 백엔드 소관(티켓 제외 범위) — 프론트는 earned를 표시만 한다.
- * badgeId·name·earned 전부 명세(MyBadgeResponseDto) 대응 — 화면이 아직 안 쓰는
- * code·description·iconUrl 등은 필요해지는 티켓에서 추가한다.
- */
-export type DexBadge = Required<
-  Pick<MyBadgeResponseDto, "badgeId" | "name" | "earned">
+  Pick<
+    CollectionSummaryResponseDto,
+    | "totalGridCount"
+    | "totalVideoCount"
+    | "visitedRegionCount"
+    | "currentStreak"
+    | "badgeCount"
+  >
 >;
 
-/** 도감 조회 응답 — queryKey ["dex"]의 반환 계약 */
-export interface DexData {
-  summary: DexSummary;
-  collectedCells: CollectedCell[];
-  /**
-   * 뱃지 카탈로그(획득+미획득 전체, 정의 순서 = 표시 순서 A2) — 도감 조회 응답의 일부라
-   * 뱃지 탭이 use-dex-query의 로딩·오류 게이트를 공유한다 (MSG-123 AC 11, 티켓 명시).
-   * 고정 카탈로그 — 획득 0개여도 비지 않는다 (AC 8).
-   */
-  badges: DexBadge[];
-  /**
-   * 지역(구)별 탐험률(%) 맵 (개정 D2) — 값 계산은 백엔드 소관 가정의 mock(A5 개정).
-   * 키는 현재 위치 역지오코딩 결과(구 이름)와 매칭하며, 맵에 없는 지역은 0%로 처리한다(AC 21).
-   * 명세는 `RegionStatResponseDto[]`(배열, regionCode/행정동 키, progressRate)라 구조·키
-   * 체계가 다르다 — 전환은 역지오코딩 매칭 로직과 함께 실연동 후속 티켓 (MSG-289 질문 6 승인).
-   */
-  regionExploredPctMap: Record<string, number>;
+/**
+ * 내가 수집한 격자 — `GET /api/collections/grids` (MSG-327 기준 5).
+ * gridId는 명세 체계 "{gridY}_{gridX}"다 (mock "A-14"는 MSG-327에서 폐기 — 기준 21).
+ * regionName은 격자 중심 행정동이며 무귀속·미판정이면 null이라 동 묶음에서 제외된다 (기준 7).
+ */
+export type CollectedGrid = Required<
+  Pick<
+    CollectionGridResponseDto,
+    "gridId" | "gridY" | "gridX" | "lastUploadedAt" | "videoCount"
+  >
+> &
+  Pick<CollectionGridResponseDto, "regionName" | "zoneName" | "zoneCell">;
+
+/**
+ * 내가 수집한 개별 영상 — `GET /api/collections/videos?regionCode=` (MSG-327 기준 13).
+ * 한 격자에 영상이 여러 개면 각각 별도 항목이다. zoneName·zoneCell은 격자 그룹 라벨 재료로,
+ * 구역 밖이면 둘 다 null이라 상위 행정동 이름으로 폴백한다 (기준 12).
+ */
+export type CollectedVideo = Required<
+  Pick<
+    RegionVideoResponseDto,
+    "videoId" | "gridId" | "durationSec" | "createdAt"
+  >
+> &
+  Pick<RegionVideoResponseDto, "thumbnailUrl" | "zoneName" | "zoneCell">;
+
+/**
+ * 뱃지 카탈로그 항목 — `GET /api/badges` (MSG-327 기준 17~20).
+ * code가 메달 아트 매핑 키이고, iconUrl은 백엔드 에셋 확정 전까지 전부 null이라
+ * 프론트 로컬 에셋이 정본이다 (기준 19의 우선순위 로직 참조).
+ */
+export type DexBadge = Required<
+  Pick<MyBadgeResponseDto, "badgeId" | "code" | "name" | "earned">
+> &
+  Pick<MyBadgeResponseDto, "iconUrl" | "earnedAt" | "featuredRank">;
+
+/**
+ * 행정동 수집률 — `GET /api/regions/stats/by-point`·`by-grid` (MSG-327 기준 4·11).
+ * by-grid는 gridId로 그 격자 중심 행정동의 regionCode를 되돌려주므로,
+ * regionCode가 없는 `collections/grids` 응답과 `collections/videos` 요청 사이를 잇는다.
+ */
+export type RegionStat = Required<
+  Pick<
+    RegionStatResponseDto,
+    | "regionCode"
+    | "regionName"
+    | "collectedCount"
+    | "totalCount"
+    | "progressRate"
+  >
+>;
+
+/**
+ * "최근 수집한 격자" 목록의 한 행 — 수집 격자를 행정동으로 묶은 FE 파생 단위 (기준 5·6).
+ * 명세에 대응 응답이 없다(백엔드는 격자 단위만 준다) — deriveRecentRegions가 만든다.
+ */
+export interface RecentRegion {
+  /** 행정동 이름 — 표시 라벨이자 묶음 키 (regionCode는 응답에 없다 — 기준 11 참조) */
+  regionName: string;
+  /** 그 동에서 수집한 격자 수 */
+  gridCount: number;
+  /** 그 동 격자들의 영상 수 합계 */
+  videoCount: number;
+  /** 그 동에서 가장 최근 업로드 시각 — 목록 정렬 키이자 "N시간 전" 표시 재료 */
+  lastUploadedAt: string;
+  /** 대표 격자 id — 동 클릭 시 by-grid로 regionCode를 얻는 입력 (기준 11) */
+  sampleGridId: string;
+}
+
+/** 갤러리 본문의 격자 그룹 — 그룹 헤더(라벨·영상 수) + 그 격자의 영상 1열 (기준 12·13) */
+export interface GalleryGridGroup {
+  gridId: string;
+  /** 격자 라벨 — zoneName+zoneCell, 구역 밖이면 상위 행정동 이름 폴백 */
+  label: string;
+  /** 그 격자의 영상 — 최신순 */
+  videos: CollectedVideo[];
 }

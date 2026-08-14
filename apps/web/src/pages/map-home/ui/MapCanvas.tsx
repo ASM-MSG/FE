@@ -112,7 +112,9 @@ const NAVER_NCP_KEY_ID = import.meta.env.VITE_NAVER_MAP_NCP_KEY_ID as
   | string
   | undefined;
 
-// geocoder: 도감 역지오코딩(region-lookup)용 — 누락 시 지역명이 항상 디폴트로 폴백된다(R4).
+// geocoder: MSG-327에서 유일 소비처(도감 역지오코딩 region-lookup)가 사라졌다 — 수집률을
+// 서버 by-point가 계산해 주면서 FE 역지오코딩이 불필요해졌기 때문이다. 서브모듈 목록은
+// SDK 프리플라이트 URL에 들어가 지도 인증 경로에 닿으므로, 제거는 지도 티켓에서 따로 다룬다.
 // 실제 fetch되는 프리플라이트 URL에는 이 목록만 쓴다 — Provider 쪽은 재시도 시
 // 캐시 키 마커가 덧붙을 수 있다(NaverMapView의 providerSubmodules 주석 참조)
 const NAVER_SUBMODULES = ["geocoder"];

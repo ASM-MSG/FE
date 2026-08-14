@@ -1,228 +1,130 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, Outlet, Route, Routes } from "react-router-dom";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DexData } from "@/entities/dex";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
-import { useRecentRemovalStore } from "@/features/dex/model/recent-removal-store";
-import { DexPanel } from "./DexPanel";
+import { GRID_SEOMYEON, stubDexFetch } from "./dex-fetch-stub";
+import { renderDexPanel, resetDexStores } from "./dex-test-harness";
 
 /**
- * 도감 패널 스모크 (AC 18·19·25 — mock queryFn이 빈/오류 상태를 만들지 않거나 이벤트 전파·a11y
- * 이름 판정이 필요해 브라우저 대신 vitest로 판정, 스펙 검증 방법 컬럼·업로드 위저드 스모크 선례).
- * QueryClient 캐시에 상태를 주입해 빈 데이터·오류 상태를 재현한다.
- * 오버레이 게시/해제(AC 9·11)·행 클릭→moveTo(AC 16)·X 제거(AC 24·25)의 배선도 스토어/스파이로
- * 확인한다 — 지도 픽셀 렌더는 브라우저 검증의 몫이고 여기서는 wiring만 단정한다.
- * jsdom에는 naver 전역이 없어 현재 지역은 항상 디폴트 "부산진구" 경로다(A13 — region-lookup null 폴백).
+ * 도감 패널 스모크 (MSG-327 기준 1~3·6·8·9·16·22) — 실 API 스텁 위에서 패널의 안정 계약만
+ * 고정한다: 요약 표시, 동 단위 목록, X 감춤, 지도 셀 클릭 배선, 오류·재시도.
+ * 격자 그룹·NEW·미니 패널 재생은 gallery-tab.smoke, 뱃지 아트·정렬은 badge-tab.smoke의 몫이다.
  */
 
 const moveToSpy = vi.fn();
 
-/** MapShell 대역 — Outlet context로 지도 명령 API만 주입한다 */
-const ShellStub = () => (
-  <Outlet
-    context={{
-      moveTo: moveToSpy,
-      zoomIn: vi.fn(),
-      zoomOut: vi.fn(),
-      locate: vi.fn(),
-    }}
-  />
-);
-
-// 캐시 주입 상태가 마운트 직후 refetch로 덮이지 않도록 자동 재조회를 끈다
-const createClient = () => {
-  const client = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        retryOnMount: false,
-        refetchOnMount: false,
-        staleTime: Infinity,
-      },
-    },
-  });
-  // DexPanel이 상세 시트용 격자 소스(useCellsQuery)를 항상 구독한다(MSG-122 ② AC 23) —
-  // 빈 배열을 주입해 mock fetch의 비동기 해소(act 경고)를 차단한다. 시트 판정은 gallery-tab.smoke 몫
-  client.setQueryData(["cells"], []);
-  return client;
-};
-
-const renderPanel = (client: QueryClient, path = "/dex") =>
-  render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route element={<ShellStub />}>
-            <Route path="/dex/:tab?" element={<DexPanel />} />
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
-
-/** 수집 0건(신규 사용자) 주입 데이터 — 2026-07-22 개정 DexData 계약 */
-const EMPTY_DEX: DexData = {
-  summary: {
-    nickname: "새 사용자",
-    totalExploredPct: 0,
-    streakDays: 0,
-    totalGridCount: 0,
-    badgeCount: 0,
-  },
-  collectedCells: [],
-  // 실 카탈로그는 고정이라 비지 않지만(MSG-123 AC 8) 지도 탭 스모크는 뱃지를 렌더하지 않는다
-  badges: [],
-  regionExploredPctMap: { 부산진구: 22 },
-};
-
-/** 수집 2건 주입 데이터 — 오버레이 게시·행 클릭·X 제거 배선 확인용 */
-const DEX_WITH_CELLS: DexData = {
-  summary: { ...EMPTY_DEX.summary, totalGridCount: 2 },
-  collectedCells: [
-    {
-      gridId: "A-14",
-      label: "서면 A-14",
-      district: "부산진구",
-      center: { lat: 35.1573, lng: 129.0586 },
-      firstCollectedAt: "2026-07-21T09:00:00.000Z",
-      videoCount: 2,
-    },
-    {
-      gridId: "B-07",
-      label: "부전 B-07",
-      district: "부산진구",
-      center: { lat: 35.1631, lng: 129.0604 },
-      firstCollectedAt: "2026-07-20T09:00:00.000Z",
-      videoCount: 1,
-    },
-  ],
-  badges: [],
-  regionExploredPctMap: { 부산진구: 22 },
-};
+const renderPanel = (path = "/dex") => renderDexPanel(path, moveToSpy);
 
 describe("도감 패널 스모크", () => {
   beforeEach(() => {
-    useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
-    useRecentRemovalStore.setState(
-      useRecentRemovalStore.getInitialState(),
-      true,
-    );
-    // 행 클릭이 갤러리 지역을 쓰게 되어(MSG-122 AC 19) 케이스 간 격리를 위해 함께 초기화
-    useGalleryRegionStore.setState(
-      useGalleryRegionStore.getInitialState(),
-      true,
-    );
+    resetDexStores();
     moveToSpy.mockClear();
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
-  it("수집 0건이면 통계 카드는 0으로, 목록은 빈 상태 안내로, 오버레이는 미게시로 렌더된다 (AC 18)", () => {
-    const client = createClient();
-    client.setQueryData(["dex"], EMPTY_DEX);
-    renderPanel(client);
+  it("헤더에 실 프로필 닉네임과 탐험 규모 문구가 표시된다 (기준 1·2)", async () => {
+    stubDexFetch();
+    renderPanel();
 
-    // 통계 카드: 수집 격자 0개 · 획득 뱃지 0개 · 연속 스트릭 0일
-    expect(screen.getAllByText("0개").length).toBe(2);
-    expect(screen.getByText("0일")).toBeTruthy();
-    expect(screen.getByText(/아직 수집한 격자가 없어요/)).toBeTruthy();
-    // 지도 오버레이 없음 — 게시 스토어가 빈 상태를 유지한다
-    expect(useMapOverlayStore.getState().cells).toEqual([]);
+    expect(await screen.findByText("필맵퍼")).toBeTruthy();
+    expect(screen.getByText("격자 6개 · 영상 11개 기록")).toBeTruthy();
   });
 
-  it("도감 쿼리 실패 시 오류 안내·재시도 버튼이 렌더되고, 재시도 클릭 시 다시 조회한다 (AC 19)", async () => {
-    const client = createClient();
-    // 오류 상태 주입 — 실패하는 queryFn으로 캐시 엔트리를 error로 만든다
-    await client
-      .fetchQuery({
-        queryKey: ["dex"],
-        queryFn: () => Promise.reject(new Error("network down")),
-        retry: false,
-      })
-      .catch(() => undefined);
-    renderPanel(client);
+  it("통계 카드가 요약 응답값으로 표시된다 (기준 3)", async () => {
+    stubDexFetch();
+    renderPanel();
 
-    expect(screen.getByText("도감을 불러오지 못했어요")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
-
-    // refetch는 실제 queryFn(mock 성공)을 태우므로 데이터 화면으로 복구된다
-    await waitFor(() => expect(screen.getByText("필맵퍼")).toBeTruthy());
+    // 수집 격자 6개 · 획득 뱃지 4개 · 연속 스트릭 12일
+    expect(await screen.findByText("6개")).toBeTruthy();
+    expect(screen.getByText("4개")).toBeTruthy();
+    expect(screen.getByText("12일")).toBeTruthy();
   });
 
-  it("지도 탭 마운트 시 오버레이 게시 없이 셀 클릭 핸들러만 등록하고, 언마운트(섹션 이탈) 시 해제한다 (MSG-263 D8·A7 — 500m 게시 제거, 클릭 타깃은 셸 상시 점령 셀)", () => {
-    const client = createClient();
-    client.setQueryData(["dex"], DEX_WITH_CELLS);
-    const { unmount } = renderPanel(client);
+  it("현재 위치 행정동의 수집률이 진행 바로 표시된다 (기준 4)", async () => {
+    stubDexFetch();
+    renderPanel();
 
-    // 500m 수집 오버레이 게시는 제거됐다 — 지도 표시는 셸 상시 층(MapShell) 소유 (AC 17)
-    expect(useMapOverlayStore.getState().cells).toEqual([]);
-    // 수집 상세 진입 기능은 보존 — 클릭 핸들러 등록 유지 (A7)
-    expect(useMapOverlayStore.getState().onCellClick).not.toBeNull();
+    const bar = await screen.findByRole("progressbar", {
+      name: "부전제1동 탐험률",
+    });
+    expect(bar.getAttribute("aria-valuenow")).toBe("52");
+  });
+
+  it("최근 수집 목록이 동 단위로, 그 동의 영상 수 합계와 함께 표시된다 (기준 5·6)", async () => {
+    stubDexFetch();
+    renderPanel();
+
+    expect(await screen.findByText("부전제1동")).toBeTruthy();
+    expect(screen.getByText("전포동")).toBeTruthy();
+    expect(screen.getByText(/영상 4개/)).toBeTruthy();
+  });
+
+  it("수집 0건이면 빈 상태 안내가 표시된다 (기준 9)", async () => {
+    stubDexFetch({ grids: [] });
+    renderPanel();
+
+    expect(await screen.findByText(/아직 수집한 격자가 없어요/)).toBeTruthy();
+  });
+
+  it("X 버튼은 동별 접근 가능한 이름을 갖고, 클릭 시 그 동만 사라진다 (기준 8)", async () => {
+    stubDexFetch();
+    renderPanel();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "부전제1동 목록에서 제거" }),
+    );
+
+    expect(screen.queryByText("부전제1동")).toBeNull();
+    expect(screen.getByText("전포동")).toBeTruthy();
+    // 통계 카드 불변 — 감춤은 수집 취소가 아니다
+    expect(screen.getByText("6개")).toBeTruthy();
+  });
+
+  it("X로 전부 감춰도 '수집 0건' 빈 상태 안내는 나타나지 않는다 (기준 9와 구분)", async () => {
+    stubDexFetch();
+    renderPanel();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "부전제1동 목록에서 제거" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "전포동 목록에서 제거" }),
+    );
+
+    expect(screen.queryByText(/아직 수집한 격자가 없어요/)).toBeNull();
+    expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
+  });
+
+  it("지도 탭에서 셀 클릭 핸들러를 등록하고, 그 격자가 속한 동의 갤러리로 진입한다 (기준 16)", async () => {
+    stubDexFetch();
+    const { unmount } = renderPanel();
+    await screen.findByText("부전제1동");
+
+    const onCellClick = useMapOverlayStore.getState().onCellClick;
+    expect(onCellClick).not.toBeNull();
+
+    onCellClick?.(GRID_SEOMYEON.gridId);
+
+    await waitFor(() =>
+      expect(useGalleryRegionStore.getState().selected).toEqual({
+        regionName: "부전제1동",
+        gridId: GRID_SEOMYEON.gridId,
+      }),
+    );
 
     unmount();
     expect(useMapOverlayStore.getState().onCellClick).toBeNull();
   });
 
-  it("격자 행 클릭 시 해당 격자 중심 좌표로 지도 이동 명령을 보낸다 (AC 16 배선 — MSG-122 ② AC 19 개정으로 갤러리 뷰 전환이 동반된다, URL 무변경)", async () => {
-    const client = createClient();
-    client.setQueryData(["dex"], DEX_WITH_CELLS);
-    renderPanel(client);
+  it("도감 조회 실패 시 오류 안내와 재시도 버튼이 렌더된다 (기준 22)", async () => {
+    stubDexFetch({ failPath: "/api/collections/grids" });
+    renderPanel();
 
-    // X 제거 버튼("… 목록에서 제거")과 구분 — 이동용 행 버튼은 메타("영상 N개")를 이름에 포함한다
-    fireEvent.click(
-      screen.getByRole("button", { name: /서면 A-14.*영상 2개/ }),
-    );
-
-    expect(moveToSpy).toHaveBeenCalledWith({ lat: 35.1573, lng: 129.0586 });
-    // AC 19 동반 전환(갤러리 뷰)의 쿼리 해소를 기다린다(act 경고 방지) — 전환 자체의 단정은 gallery-tab.smoke 몫
-    expect(await screen.findByText(/^부산진구 · 영상 \d+개$/)).toBeTruthy();
-  });
-
-  it("X 버튼은 행별 접근 가능한 이름을 갖고, 클릭 시 해당 행만 사라지며 지도 이동으로 전파되지 않는다 (AC 24·25, 개정 D4)", () => {
-    const client = createClient();
-    client.setQueryData(["dex"], DEX_WITH_CELLS);
-    renderPanel(client);
-
-    // 행별 접근 가능한 이름 (AC 25)
-    const removeButton = screen.getByRole("button", {
-      name: "서면 A-14 목록에서 제거",
-    });
-    fireEvent.click(removeButton);
-
-    // 해당 행만 제거, 다른 행 유지 (AC 24)
-    expect(screen.queryByText("서면 A-14")).toBeNull();
-    expect(screen.getByText("부전 B-07")).toBeTruthy();
-    // 행 클릭(지도 이동)으로 전파 금지 (AC 25)
-    expect(moveToSpy).not.toHaveBeenCalled();
-    // 통계 카드 불변 — 수집 취소가 아니다 (AC 24. 오버레이 게시 단정은 MSG-263 D8로 제거 —
-    // 상시 점령 표시는 셸 소유라 X 제거의 영향 범위 밖)
-    expect(screen.getByText("2개")).toBeTruthy(); // 수집 격자 카드
-  });
-
-  it("X로 전부 제거해도 '수집 0건' 빈 상태 안내는 나타나지 않는다 (AC 18과 구분)", () => {
-    const client = createClient();
-    client.setQueryData(["dex"], DEX_WITH_CELLS);
-    renderPanel(client);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "서면 A-14 목록에서 제거" }),
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: "부전 B-07 목록에서 제거" }),
-    );
-
-    expect(screen.queryByText(/아직 수집한 격자가 없어요/)).toBeNull();
-    expect(screen.getByText("최근 수집한 격자")).toBeTruthy();
+    expect(await screen.findByText("도감을 불러오지 못했어요")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "다시 시도" })).toBeTruthy();
   });
 });

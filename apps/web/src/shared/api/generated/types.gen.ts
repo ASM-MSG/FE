@@ -1450,6 +1450,40 @@ export type GridVideoResponseDto = {
     createdAt: string;
 };
 
+export type ApiResponseDtoGridHourlyUploadResponseDto = {
+    developCode: number;
+    message: string;
+    data: GridHourlyUploadResponseDto;
+};
+
+/**
+ * 격자 전역 시간대 분포 응답 (KST 24구간)
+ */
+export type GridHourlyUploadResponseDto = {
+    /**
+     * 격자 ID
+     */
+    gridId: string;
+    /**
+     * KST 0시부터 23시까지 24개 구간. 업로드가 없는 구간은 count 0
+     */
+    hours: Array<HourlyUploadCountResponseDto>;
+};
+
+/**
+ * 시간대 구간 하나의 업로드 수
+ */
+export type HourlyUploadCountResponseDto = {
+    /**
+     * KST 기준 시 (0~23)
+     */
+    hour: number;
+    /**
+     * 그 시간대의 전역 공개 영상 수. 업로드가 없으면 0
+     */
+    count: number;
+};
+
 export type ApiResponseDtoGridCoverVideoResponseDto = {
     developCode: number;
     message: string;
@@ -3057,6 +3091,27 @@ export type GetGridVideosResponses = {
 };
 
 export type GetGridVideosResponse = GetGridVideosResponses[keyof GetGridVideosResponses];
+
+export type GetGridHourlyUploadsData = {
+    body?: never;
+    path: {
+        /**
+         * 격자 ID
+         */
+        gridId: string;
+    };
+    query?: never;
+    url: '/api/grids/{gridId}/hourly-uploads';
+};
+
+export type GetGridHourlyUploadsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoGridHourlyUploadResponseDto;
+};
+
+export type GetGridHourlyUploadsResponse = GetGridHourlyUploadsResponses[keyof GetGridHourlyUploadsResponses];
 
 export type GetGridCoverData = {
     body?: never;

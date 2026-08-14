@@ -4,7 +4,7 @@ import {
   videoOwnerLabel,
 } from "@/features/map-home/model/grid-videos";
 import { formatDuration, formatViewCountKo } from "@/shared/format";
-import { VideoOwnerMeta } from "./VideoOwnerMeta";
+import { VideoOwnerMeta } from "@/widgets/video-mini-panel/VideoOwnerMeta";
 
 interface FeedVideoCardProps {
   /** MSG-326: CellVideo → FeedVideo 완화 — 격자 상세 실 API 항목·테마 피드 목 항목 공용 */
