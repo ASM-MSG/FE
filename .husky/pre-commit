@@ -68,7 +68,9 @@ pnpm format:check || {
 # 03_verify_report.md 가 없으면 거부. _workspace 자체가 없으면(하네스 밖 작업) 통과.
 verify_report_gate() {
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return 0
-  ticket=$(printf '%s' "$branch" | grep -oE 'MSG-[0-9]+' | head -1) || true
+  # -i + 대문자 정규화: feat/msg-395-… 처럼 소문자 브랜치로 게이트를 우회하지 못하게.
+  # (`|| true`는 no-op이라 뺀다 — 파이프 종료 코드는 마지막 head -1의 것이라 항상 0이다)
+  ticket=$(printf '%s' "$branch" | grep -oiE 'MSG-[0-9]+' | head -1 | tr '[:lower:]' '[:upper:]')
   [ -n "$ticket" ] || return 0
 
   workspace="_workspace/$ticket"

@@ -1,4 +1,4 @@
-import { decodeGridCorners, type Bounds } from "@/entities/cell";
+import { decodeGridCorners, type Bounds, type LatLng } from "@/entities/cell";
 import { boundsIntersect, missionGridIdsInBounds } from "./mission";
 import type { CourseView, MissionView } from "./mission-view";
 import type {
@@ -111,10 +111,22 @@ export const buildCourseRoutes = (
     color,
   }));
 
+/** 좌표가 뷰포트 안인가 — 이름표 앵커를 화면 안에서 고르기 위한 판정 */
+const pointInBounds = (point: LatLng, bounds: Bounds): boolean =>
+  point.lat >= bounds.sw.lat &&
+  point.lat <= bounds.ne.lat &&
+  point.lng >= bounds.sw.lng &&
+  point.lng <= bounds.ne.lng;
+
 /**
  * 코스명 이름표 — 코스는 목록에서도 항상 이름표를 띄운다. [AC 21]
  * 미션 타일과 달리 라인은 어느 코스인지 모양만으로 구분되지 않고, 뷰포트로 잘린 뒤에는
  * 동시에 뜨는 수도 적어 글자가 지도를 덮지 않는다.
+ *
+ * 앵커는 **화면 안에 든 첫 스팟**이다 (리뷰 반영) — `missionsInBounds`는 코스 전체
+ * 경계만 보므로, 14km짜리 코스의 중간 구간을 보고 있으면 bbox는 겹쳐도 `spots[0]`은
+ * 화면 밖이라 이름표가 안 보이는 자리에 그려진다. `buildMissionLabels`가 격자를
+ * 뷰포트 안에서 다시 고르는 것과 같은 규칙이다.
  */
 export const buildCourseLabels = (
   courses: CourseView[],
@@ -122,12 +134,14 @@ export const buildCourseLabels = (
   bounds: Bounds,
 ): LabelOverlay[] =>
   missionsInBounds(courses, bounds).flatMap((course) => {
-    const first = course.spots[0];
-    if (first === undefined) return [];
+    const anchor = course.spots.find((spot) =>
+      pointInBounds(spot.position, bounds),
+    );
+    if (anchor === undefined) return [];
     return [
       {
         id: String(course.missionId),
-        position: first.position,
+        position: anchor.position,
         text: course.title,
         color,
       },

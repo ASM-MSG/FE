@@ -141,3 +141,28 @@ describe("useHotRegionSummary — 핫구역 조회 실패 (codex 리뷰 반영)"
     expect(result.current.videos).toEqual([]);
   });
 });
+
+describe("useHotRegionSummary — 참조 안정성 (리뷰 반영)", () => {
+  it("데이터가 그대로면 리렌더에도 cells·hotGridIds가 같은 배열이다 — 오버레이 재게시 방지", async () => {
+    stubSummaryApis([hotZone("16858_11420", 9, "부전동")]);
+
+    const { result, rerender } = renderHook(
+      () =>
+        useHotRegionSummary({
+          bounds: VIEWPORT,
+          regionName: "부전동",
+          regionCode: "2635058",
+        }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.cells).toHaveLength(1));
+    const cells = result.current.cells;
+    const hotGridIds = result.current.hotGridIds;
+
+    rerender();
+
+    expect(result.current.cells).toBe(cells);
+    expect(result.current.hotGridIds).toBe(hotGridIds);
+  });
+});

@@ -140,7 +140,11 @@ export const HomeCellDetailPanel = ({
               <ChevronLeft aria-hidden className="size-5" />
             </button>
           )}
-          <h2 className="text-fm-title text-foreground">{detail.label}</h2>
+          {/* 배지·"전체 보기"와 한 줄을 나눠 쓰므로 라벨이 길면 잘려야 한다 —
+              min-w-0 없이는 긴 격자명이 버튼을 화면 밖으로 밀어낸다 (ChipDetailHeader 관례) */}
+          <h2 className="min-w-0 flex-1 truncate text-fm-title text-foreground">
+            {detail.label}
+          </h2>
           {extraBadgeLabel && (
             <span className="rounded-full bg-surface px-xs py-0.5 text-fm-caption text-foreground-muted">
               {extraBadgeLabel}

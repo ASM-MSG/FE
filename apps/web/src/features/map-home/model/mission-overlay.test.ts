@@ -16,6 +16,9 @@ const P1 = { lat: 35.1578, lng: 129.0596 };
 const P2 = { lat: 35.1596, lng: 129.0614 };
 const G1 = encodeGridId(P1);
 const G2 = encodeGridId(P2);
+/** 서울 — 서면 뷰포트 밖 지점 (긴 코스 앵커 케이스용) */
+const P_FAR = { lat: 37.55, lng: 126.95 };
+const G_FAR = encodeGridId(P_FAR);
 
 /** 서면 일대를 넉넉히 덮는 뷰포트 */
 const VIEWPORT: Bounds = {
@@ -220,5 +223,34 @@ describe("buildCourseLabels — 코스명 라벨 (AC 21)", () => {
 
   it("스팟이 없는 코스는 이름표를 놓지 않는다 (경계)", () => {
     expect(buildCourseLabels([course(3, [], [])], COLOR, VIEWPORT)).toEqual([]);
+  });
+});
+
+describe("buildCourseLabels — 긴 코스의 앵커 (리뷰 반영)", () => {
+  /** 서면(화면 안)과 서울(화면 밖)에 걸친 코스 — bbox는 뷰포트와 겹치지만 첫 스팟은 밖 */
+  const LONG_COURSE = course(
+    9,
+    [],
+    [
+      { gridId: G_FAR, lat: P_FAR.lat, lng: P_FAR.lng, order: 1 },
+      { gridId: G1, lat: P1.lat, lng: P1.lng, order: 2 },
+    ],
+  );
+
+  it("첫 스팟이 화면 밖이면 화면 안 스팟을 앵커로 삼는다", () => {
+    const labels = buildCourseLabels([LONG_COURSE], COLOR, VIEWPORT);
+
+    expect(labels).toHaveLength(1);
+    expect(labels[0].position).toEqual(P1);
+  });
+
+  it("경계는 겹치지만 화면 안에 스팟이 하나도 없으면 이름표를 놓지 않는다 (경계)", () => {
+    // 코스 bbox(서울~서면) 한복판 — bbox 교차 판정은 통과하지만 스팟은 없는 자리
+    const MIDWAY: Bounds = {
+      sw: { lat: 36.3, lng: 127.8 },
+      ne: { lat: 36.4, lng: 127.9 },
+    };
+
+    expect(buildCourseLabels([LONG_COURSE], COLOR, MIDWAY)).toEqual([]);
   });
 });

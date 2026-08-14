@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { decodeGridCenter, type Bounds } from "@/entities/cell";
 import { useRegionVideosQuery } from "@/features/dex/model/use-region-videos-query";
 import type { GridFeedItem } from "./grid-videos";
@@ -46,25 +47,40 @@ export const useHotRegionSummary = ({
 }: HotRegionSummaryInput): HotRegionSummaryResult => {
   const hotZones = useHotZones(bounds);
 
-  // 뷰포트 응답을 현재 행정동으로 좁힌다 — 칩은 "이 동의 핫구역"을 보여준다 (AC 8)
-  const regionZones =
-    regionName === null
-      ? []
-      : hotZones.zones.filter((zone) => zone.regionName === regionName);
+  // 뷰포트 응답을 현재 행정동으로 좁힌다 — 칩은 "이 동의 핫구역"을 보여준다 (AC 8).
+  // useMemo 필수 (리뷰 반영): 여기서 나온 배열이 소비처(MapHomePage)의 오버레이 파생
+  // 의존성이라, 매 렌더 새 참조면 미니 패널 토글 같은 무관한 리렌더마다 오버레이가
+  // clear→재게시된다. `useHotZoneCells`가 같은 이유로 이미 메모하고 있다
+  const regionZones = useMemo(
+    () =>
+      regionName === null
+        ? []
+        : hotZones.zones.filter((zone) => zone.regionName === regionName),
+    [hotZones.zones, regionName],
+  );
 
-  const sampleGridIds = hotZoneSampleGridIds(
-    regionZones,
-    HOT_SAMPLE_GRID_LIMIT,
+  const sampleGridIds = useMemo(
+    () => hotZoneSampleGridIds(regionZones, HOT_SAMPLE_GRID_LIMIT),
+    [regionZones],
+  );
+  const hotGridIds = useMemo(
+    () => regionZones.map((zone) => zone.gridId),
+    [regionZones],
+  );
+  const cells = useMemo(
+    () =>
+      regionZones.map((zone) => ({
+        id: zone.gridId,
+        center: decodeGridCenter(zone.gridId),
+      })),
+    [regionZones],
   );
   const sample = useMultiGridVideosQuery(sampleGridIds);
   const myVideos = useRegionVideosQuery(regionCode);
 
   return {
-    hotGridIds: regionZones.map((zone) => zone.gridId),
-    cells: regionZones.map((zone) => ({
-      id: zone.gridId,
-      center: decodeGridCenter(zone.gridId),
-    })),
+    hotGridIds,
+    cells,
     videos: sample.items,
     stats: deriveHotRegionStats({
       videos: sample.items,

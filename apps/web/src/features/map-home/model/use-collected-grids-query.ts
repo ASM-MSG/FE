@@ -26,6 +26,13 @@ export interface CollectedGridsResult {
   collected: CollectedGrid[];
   /** 원본 목록 — 점령 시작일 등 격자별 부가 정보 조회용 */
   grids: CollectionGridResponseDto[];
+  /**
+   * 조회 실패 (리뷰 반영) — 빼먹으면 실패가 "수집 격자 0개"와 구분되지 않아
+   * 모든 미션 진행도가 조용히 `0/N`으로 뜨고 재시도 수단도 없다
+   * (핫구역 훅에서 같은 패턴을 이미 한 번 놓쳤다)
+   */
+  isError: boolean;
+  retry: () => void;
 }
 
 const EMPTY_GRIDS: CollectionGridResponseDto[] = [];
@@ -33,7 +40,7 @@ const EMPTY_GRIDS: CollectionGridResponseDto[] = [];
 export const useCollectedGridsQuery = (): CollectedGridsResult => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const { data } = useQuery({
+  const { data, isError, refetch } = useQuery({
     ...getCollectionGridsOptions(),
     select: unwrapEnvelope,
     enabled: isAuthenticated,
@@ -49,6 +56,8 @@ export const useCollectedGridsQuery = (): CollectedGridsResult => {
         center: decodeGridCenter(grid.gridId),
       })),
       grids,
+      isError,
+      retry: () => void refetch(),
     };
-  }, [data]);
+  }, [data, isError, refetch]);
 };
