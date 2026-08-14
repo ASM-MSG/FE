@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { CollectionGridResponseDto } from "@/shared/api/generated";
 import { formatMonthDay } from "@/shared/format";
 import type { CourseSpot } from "./course";
+import { gridContextLine } from "./grid-context-line";
 import type { HourlyChart } from "./hourly-uploads";
 import type { CourseView } from "./mission-view";
 import type { ThemeId } from "./theme";
@@ -31,6 +32,8 @@ interface HomeGridDetailInput {
   collectedGrids: CollectionGridResponseDto[];
   /** 이 동의 핫구역 격자 수 — `핫구역 안 N칸` 문구의 근거 */
   hotGridCount: number;
+  /** 내 수집 격자 조회 실패 — 방문·점령 여부를 주장하지 않게 한다 (리뷰 반영) */
+  progressFailed: boolean;
 }
 
 export interface HomeGridDetail {
@@ -49,6 +52,7 @@ export const useHomeGridDetail = ({
   selectedCourse,
   collectedGrids,
   hotGridCount,
+  progressFailed,
 }: HomeGridDetailInput): HomeGridDetail => {
   const detail = useGridDetailQuery(selectedGridId, activeTheme);
   const videos = useGridVideosQuery(selectedGridId);
@@ -65,21 +69,27 @@ export const useHomeGridDetail = ({
     [selectedCourse, selectedGridId],
   );
 
-  const contextLine = useMemo(() => {
-    if (selectedSpot)
-      return `${selectedCourse?.title} ${selectedSpot.order}번째 스팟 · ${
-        selectedSpot.visited ? "방문 완료" : "미방문"
-      }`;
-    if (activeTheme !== "hot") return undefined;
-    return [
-      `핫구역 안 ${hotGridCount}칸`,
-      collectedGrid
-        ? `${formatMonthDay(collectedGrid.firstCollectedAt)}부터 내가 점령 중`
-        : null,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-  }, [selectedSpot, selectedCourse, activeTheme, hotGridCount, collectedGrid]);
+  const contextLine = useMemo(
+    () =>
+      gridContextLine({
+        spot: selectedSpot,
+        courseTitle: selectedCourse?.title,
+        isHotChip: activeTheme === "hot",
+        hotGridCount,
+        collectedSinceLabel: collectedGrid
+          ? `${formatMonthDay(collectedGrid.firstCollectedAt)}부터 내가 점령 중`
+          : null,
+        progressFailed,
+      }),
+    [
+      selectedSpot,
+      selectedCourse,
+      activeTheme,
+      hotGridCount,
+      collectedGrid,
+      progressFailed,
+    ],
+  );
 
   return { detail, videos, chart, contextLine, selectedSpot };
 };

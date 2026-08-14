@@ -240,6 +240,7 @@ export const MapHomePage = () => {
     selectedCourse,
     collectedGrids,
     hotGridCount: hotSummary.hotGridIds.length,
+    progressFailed,
   });
 
   const openUploadModal = useUploadModalStore((s) => s.openModal);

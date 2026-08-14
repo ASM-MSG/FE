@@ -14,6 +14,11 @@ interface CourseDetailPanelProps {
   view: CourseView;
   /** 격자 id → 표시명 (use-grid-names-query). 없는 스팟은 이름 없는 경유 지점 */
   spotNames: ReadonlyMap<string, string>;
+  /**
+   * 진행도(내 수집 격자) 조회 실패 — `내 진행`과 스팟 방문 여부를 주장하지 않는다
+   * (리뷰 반영). 실패 시 전 스팟이 미방문으로 폴백해 사실처럼 보인다
+   */
+  progressFailed: boolean;
   /** 포토스팟 클릭 — 그 격자의 상세로 (AC 24) */
   onSpotSelect: (gridId: string) => void;
   onBack: () => void;
@@ -30,6 +35,7 @@ interface CourseDetailPanelProps {
 export const CourseDetailPanel = ({
   view,
   spotNames,
+  progressFailed,
   onSpotSelect,
   onBack,
   onClose,
@@ -72,7 +78,9 @@ export const CourseDetailPanel = ({
             items={[
               {
                 label: "내 진행",
-                value: `${progress.done}/${progress.total}곳`,
+                value: progressFailed
+                  ? "확인 불가"
+                  : `${progress.done}/${progress.total}곳`,
               },
               ...(distance ? [{ label: "거리", value: distance }] : []),
               ...(duration ? [{ label: "소요 시간", value: duration }] : []),
@@ -97,6 +105,7 @@ export const CourseDetailPanel = ({
                     key={spot.gridId}
                     spot={spot}
                     name={spotNames.get(spot.gridId)}
+                    visitedUnknown={progressFailed}
                     onSelect={onSpotSelect}
                   />
                 ))}

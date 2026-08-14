@@ -158,6 +158,7 @@ export const HomePanelSwitch = ({
         view={selectedMission}
         theme={eventChip}
         videos={missionFeed}
+        progressFailed={progressFailed}
         onVideoSelect={onVideoSelect}
         onBack={onBackToList}
         onClose={onCloseTheme}
@@ -169,6 +170,7 @@ export const HomePanelSwitch = ({
       <CourseDetailPanel
         view={selectedCourse}
         spotNames={spotNames}
+        progressFailed={progressFailed}
         onSpotSelect={onSelectSpot}
         onBack={onBackToList}
         onClose={onCloseTheme}

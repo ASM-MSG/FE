@@ -20,6 +20,11 @@ interface MissionDetailPanelProps {
   /** 이 미션 영역의 영상 피드 (표본 격자 합본) */
   videos: MultiGridVideosResult;
   onVideoSelect: (video: FeedVideo, mine: boolean) => void;
+  /**
+   * 진행도(내 수집 격자) 조회 실패 — `내 진행`을 수치로 주장하지 않는다 (리뷰 반영).
+   * 실패 시 분자가 0으로 폴백해 "아직 안 채웠다"로 잘못 읽힌다
+   */
+  progressFailed: boolean;
   /** 뒤로 — 칩은 유지한 채 목록으로 (AC 6) */
   onBack: () => void;
   /** 닫기 — Escape 배선 */
@@ -37,6 +42,7 @@ export const MissionDetailPanel = ({
   view,
   theme,
   videos,
+  progressFailed,
   onVideoSelect,
   onBack,
   onClose,
@@ -94,7 +100,9 @@ export const MissionDetailPanel = ({
             items={[
               {
                 label: "내 진행",
-                value: `${progress.done}/${progress.total}칸`,
+                value: progressFailed
+                  ? "확인 불가"
+                  : `${progress.done}/${progress.total}칸`,
               },
               {
                 label: theme === "popup" ? "운영시간" : "축제 기간",

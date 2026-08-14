@@ -7,6 +7,11 @@ interface CourseSpotRowProps {
   spot: CourseSpot;
   /** 격자 표시명 — 미도착·무귀속이면 undefined라 "이름 없는 경유 지점"으로 적는다 */
   name: string | undefined;
+  /**
+   * 방문 여부를 알 수 없음 (진행도 조회 실패) — 라벨을 생략한다 (리뷰 반영).
+   * `visited`가 전부 false로 폴백하므로 "미방문"을 그리면 없는 사실을 주장하게 된다
+   */
+  visitedUnknown?: boolean;
   onSelect: (gridId: string) => void;
 }
 
@@ -17,7 +22,13 @@ interface CourseSpotRowProps {
  * 이름이 없는 경우가 실제로 있다 — 코스 라인이 지나는 중간 격자는 이름 붙은 장소가
  * 아니어서 서버가 구역명·행정동명을 못 준다. 그때는 격자 코드 대신 무엇인지 설명한다.
  */
-export const CourseSpotRow = ({ spot, name, onSelect }: CourseSpotRowProps) => {
+export const CourseSpotRow = ({
+  spot,
+  name,
+  visitedUnknown = false,
+  onSelect,
+}: CourseSpotRowProps) => {
+  const visited = !visitedUnknown && spot.visited;
   const videoCount = mockGridVideoCount(spot.gridId);
 
   return (
@@ -31,7 +42,7 @@ export const CourseSpotRow = ({ spot, name, onSelect }: CourseSpotRowProps) => {
           aria-hidden
           className={cn(
             "flex size-6 shrink-0 items-center justify-center rounded-full text-fm-caption",
-            spot.visited
+            visited
               ? cn(THEME_FILL_CLASS.route, "text-primary-foreground")
               : "border border-border text-foreground-muted",
           )}
@@ -56,14 +67,16 @@ export const CourseSpotRow = ({ spot, name, onSelect }: CourseSpotRowProps) => {
         <span className="shrink-0 text-fm-caption text-foreground-muted">
           {videoCount > 0 ? `영상 ${videoCount}` : "영상 없음"}
         </span>
-        <span
-          className={cn(
-            "shrink-0 text-fm-caption",
-            spot.visited ? "text-theme-route" : "text-foreground-muted",
-          )}
-        >
-          {spot.visited ? "방문함" : "미방문"}
-        </span>
+        {!visitedUnknown && (
+          <span
+            className={cn(
+              "shrink-0 text-fm-caption",
+              visited ? "text-theme-route" : "text-foreground-muted",
+            )}
+          >
+            {visited ? "방문함" : "미방문"}
+          </span>
+        )}
       </button>
     </li>
   );
