@@ -12,7 +12,7 @@ interface RegionListViewProps {
  * 행정동명 + 격자 수, 로딩·빈 결과·요청 실패(재시도) 상태 3종을 처리한다.
  */
 export const RegionListView = ({ onSelect }: RegionListViewProps) => {
-  const { regions, isPending, isError, retry } = useExploreRegionsQuery(true);
+  const { regions, isPending, isError, retry } = useExploreRegionsQuery();
 
   if (isError) {
     return (

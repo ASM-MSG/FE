@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { entityQueryPolicy } from "@/features/map-home/model/map-query-policy";
+import { gatedQueryStatus } from "./gated-query-status";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { getRegionGridsOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import type { RegionExploreResponseDto } from "@/shared/api/generated/types.gen";
@@ -36,11 +37,5 @@ export const useRegionGridsQuery = (
     ...entityQueryPolicy,
   });
 
-  return {
-    data: query.data,
-    // 비활성(regionCode null) 쿼리는 영원히 pending이라 enabled로 게이트한다
-    isPending: enabled && query.isPending,
-    isError: query.isError,
-    retry: () => void query.refetch(),
-  };
+  return { data: query.data, ...gatedQueryStatus(query, enabled) };
 };

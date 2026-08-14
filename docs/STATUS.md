@@ -44,7 +44,7 @@
 
 - **auth** — model: `auth-store`(팩토리), `kakao-oauth`, `login-modal-store` · api: `use-auth-mutations` · ui: `LoginModal`, `LoginContent`, `KakaoLoginButton`, `DevLoginPanel`
 - **dex** — model: `dex-summary`, `badges`, `gallery`, `dex-tab`, `current-region`(+훅), 스토어 `gallery-region-store`·`recent-removal-store`, 쿼리 `use-dex-query`·`use-gallery-query` · api/·ui/ 없음(UI는 pages/dex)
-- **region** — model: `region-panel-store`(표시 지역+패널 모드+선택 출처 auto/manual), `region-reload`(재검색 버튼 노출 판정 순수 함수), `region-header`(헤더 표시명 선택 — 지도 이동 라이브 동기화, manual 선택 고정), `grid-card`(격자명 조합·격자 중심 좌표), 쿼리 훅 `use-reverse-geocode-query`(중심 좌표 디바운스 500ms)·`use-region-grids-query`(sort=LATEST·limit=20)·`use-explore-regions-query` · ui/ 없음(UI는 pages/map-home)
+- **region** — model: `region-panel-store`(표시 지역+패널 모드+선택 출처 auto/manual), `region-reload`(재검색 버튼 노출 판정 순수 함수), `region-header`(헤더 표시명 선택 — 지도 이동 라이브 동기화, manual 선택 고정), `grid-card`(격자명 조합·격자 중심 좌표), `gated-query-status`(인증 게이트 쿼리 공용 상태 파생), 쿼리 훅 `use-reverse-geocode-query`(중심 좌표 디바운스 500ms)·`use-region-grids-query`(sort=LATEST·limit=20)·`use-explore-regions-query` · ui/ 없음(UI는 pages/map-home)
 - **search** — model: `use-place-search-query`(디바운스 300ms+searchNow), `use-trending-query` · ui/ 없음(UI는 pages/map-home HomeSearchBox)
 - **map-home** (최대 도메인) — 오버레이/기하: `grid-overlay`, `occupied-grid-overlay`(EPSG:5179), `cluster-overlay`, `theme-overlay`, `grid-label`, `map-scale` · 도메인: `theme`, `theme-feed`, `home-cell-detail`, `grid-videos`, `video-playback`, `viewport-query`, `map-query-policy` · 스토어: `viewport-store`(플랫폼 중립), `theme-filter-store`, `home-cell-detail-store`, `video-mini-panel-store` · 쿼리 훅: `use-cells-query`(mock — 소비처 DexPanel뿐, 도감 실 API 티켓에서 정리 예정), `use-occupied-grids-query`·`use-hotzones-query`(비로그인 미발사 — 인증 게이트, MSG-328), `use-grid-detail-query`, `use-grid-videos-query`, `use-video-playback-query`, `use-grid-card-play`(격자 카드 클릭 → 상세 미오픈·지도 이동 없이 첫 영상 미니 패널 재생 + 재생 격자 테두리 강조 수명) · ui/ 없음(UI는 pages/map-home)
 - **profile** — model: `profile-edit`, `profile-format`, `profile-image`(업로드 순수 로직), `upload-profile-image`(오케스트레이션 포트), `use-profile-image-upload`(웹 포트 훅), `use-profile-query` · api: `use-profile-mutations` · ui: `ProfileEditModal`, `DeleteAccountModal`
@@ -69,9 +69,9 @@
 
 전 컴포넌트 스토리 존재. 형제 패키지: `design-tokens`, `tailwind-preset`, `ui-native`.
 
-## 테스트 자산 (apps/web/src — 110개, smoke 19개)
+## 테스트 자산 (apps/web/src — 111개, smoke 19개) + e2e 3스펙(apps/web/e2e — 로그인 시딩 `auth-session-stub`)
 
-레이어별 분포: app 4 · entities 6 · features/auth 6 · features/dex 9 · features/map-home 24 · features/profile 7 · features/region 6 · features/search 1 · features/upload 15 · pages 17 · shared 9 · widgets 6. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인.
+레이어별 분포: app 4 · entities 6 · features/auth 6 · features/dex 9 · features/map-home 24 · features/profile 7 · features/region 7 · features/search 1 · features/upload 15 · pages 17 · shared 9 · widgets 6. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인.
 
 커버리지 공백(테스트 없는 로직 파일): `dex/use-current-region`, `map-home/map-query-policy`, `profile/use-profile-image-upload`, `upload/use-processing-watcher`·`invalidate-grid-queries`·`presign-purpose`·`use-highlight-selection`·`use-upload-wizard`·`use-video-duration`, `map-shell/sidebar-store`·`use-map-shell`, `map-home/use-escape-close`, `shared/error-interceptor`·`http-client`·`navigation`
 

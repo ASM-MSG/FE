@@ -75,3 +75,43 @@ describe("useReverseGeocodeQuery — 지도 중심 행정동 판별 (AC 4·12)",
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("이동 후 실패 시 직전 성공값 잔존 여부 (PR 리뷰 검증 — stale 재검색 버튼)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("새 중심 조회가 실패하면 직전 성공 지역이 현재 지역(region)으로 남지 않는다", async () => {
+    // 최초 중심 조회는 성공, 이동 후 조회는 실패 — keepPreviousData 하에서의 에러 상태 계약
+    let fails = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<(input: Request) => Promise<Response>>(async () =>
+        fails
+          ? new Response(null, { status: 500 })
+          : envelopeResponse({
+              regionCode: "2644056000",
+              regionName: "부전제1동",
+              parentCode: "2644000000",
+            }),
+      ),
+    );
+    const { result, rerender } = renderHook(
+      ({ center }: { center: { lat: number; lng: number } }) =>
+        useReverseGeocodeQuery(center),
+      { wrapper, initialProps: { center: SEOMYEON_CENTER } },
+    );
+    await waitFor(() =>
+      expect(result.current.region?.regionCode).toBe("2644056000"),
+    );
+
+    fails = true;
+    rerender({ center: { lat: 35.2, lng: 129.2 } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true), {
+      timeout: 3000,
+    });
+    // 실패 시 직전 성공값이 남으면 에러 안내와 stale "장소 불러오기" 버튼이 동시 노출된다
+    expect(result.current.region).toBeNull();
+  });
+});
