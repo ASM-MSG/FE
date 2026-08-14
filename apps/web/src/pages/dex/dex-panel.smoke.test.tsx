@@ -31,7 +31,7 @@ describe("도감 패널 스모크", () => {
     renderPanel();
 
     expect(await screen.findByText("필맵퍼")).toBeTruthy();
-    expect(screen.getByText("동네 3곳 · 격자 6개 탐험")).toBeTruthy();
+    expect(screen.getByText("격자 6개 · 영상 11개 기록")).toBeTruthy();
   });
 
   it("통계 카드가 요약 응답값으로 표시된다 (기준 3)", async () => {

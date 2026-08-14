@@ -14,12 +14,14 @@ export const clampPct = (value: number): number =>
   Math.min(100, Math.max(0, value));
 
 /**
- * 프로필 헤더 보조 문구 — "동네 N곳 · 격자 M개 탐험". [기준 2]
- * 명세에 전체 지도 대비 탐험률 축이 없어, 요약이 실제로 주는 두 수치
- * (visitedRegionCount·totalGridCount)로 탐험 규모를 표현한다 (사용자 확정 2026-08-14).
+ * 프로필 헤더 보조 문구 — "격자 N개 · 영상 M개 기록". [기준 2]
+ * 명세에 전체 지도 대비 탐험률 축이 없어, 요약이 실제로 주는 수치로 활동 규모를 표현한다.
+ * "기록"은 뱃지 시스템이 업로드 축(UPLOAD_COUNT = 기록러, "영상 N개를 기록했어요")에 쓰는
+ * 동사라 앱 안의 말이 통일된다. 격자는 수치만으로 의미가 서서 동사를 따로 붙이지 않는다
+ * (사용자 확정 2026-08-14 — 초안의 visitedRegionCount 기반 문구를 대체).
  */
 export const formatExploreSummary = ({
-  visitedRegionCount,
   totalGridCount,
-}: Pick<DexSummary, "visitedRegionCount" | "totalGridCount">): string =>
-  `동네 ${visitedRegionCount}곳 · 격자 ${totalGridCount}개 탐험`;
+  totalVideoCount,
+}: Pick<DexSummary, "totalGridCount" | "totalVideoCount">): string =>
+  `격자 ${totalGridCount}개 · 영상 ${totalVideoCount}개 기록`;

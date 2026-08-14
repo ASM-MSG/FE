@@ -16,15 +16,15 @@ describe("clampPct — 탐험률 0~100 클램프 (기준 4)", () => {
 });
 
 describe("formatExploreSummary — 프로필 헤더 보조 문구 (기준 2)", () => {
-  it("방문 동네 수와 수집 격자 수를 함께 보여준다", () => {
+  it("수집 격자 수와 올린 영상 총합을 함께 보여준다", () => {
     expect(
-      formatExploreSummary({ visitedRegionCount: 3, totalGridCount: 6 }),
-    ).toBe("동네 3곳 · 격자 6개 탐험");
+      formatExploreSummary({ totalGridCount: 101, totalVideoCount: 348 }),
+    ).toBe("격자 101개 · 영상 348개 기록");
   });
 
   it("수집 0건이어도 0으로 표기된다 — 문구가 사라지지 않는다 (경계)", () => {
     expect(
-      formatExploreSummary({ visitedRegionCount: 0, totalGridCount: 0 }),
-    ).toBe("동네 0곳 · 격자 0개 탐험");
+      formatExploreSummary({ totalGridCount: 0, totalVideoCount: 0 }),
+    ).toBe("격자 0개 · 영상 0개 기록");
   });
 });
