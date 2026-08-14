@@ -28,39 +28,41 @@
 
 ## pages/ (4)
 
-- **map-home** — `MapHomePage` + ui/: `MapCanvas`(네이버 지도+오버레이), `MapControls`, `RegionPanel`(기본 분기 — 행정동 헤더+격자 카드 리스트+전체 지역 모드+비로그인 로그인 유도), `RegionGridCard`, `RegionListView`, `RegionReloadButton`("{행정동} 장소 불러오기" 재검색 pill), `HomeSearchBox`(장소 검색+인기 검색어 드롭다운), `RetryNotice`(실패+재시도 행 공용), `CellActionRow`, `HomeCellDetailPanel`, `FeedVideoCard`, `FeedVideoList`(격자 상세·테마 피드 공용), `VideoMiniPanel`(실 재생), `VideoOwnerMeta`, `ThemeChip`/`ThemeChipsBar`/`ThemeFeedPanel`, `naver-sdk-loader.ts`(SDK 격리 경계), `use-escape-close.ts`, `use-home-entry-lifecycle.ts`
-- **dex** — `DexPanel` + ui/: `DexProfileHeader`, `DexStatCards`, `DexTabs`, `RegionProgress`, `RecentCellRow`, `BadgeTabBody`, `GalleryTabBody`, `GalleryThumbnail`
+- **map-home** — `MapHomePage` + ui/: `MapCanvas`(네이버 지도+오버레이), `MapControls`, `RegionPanel`(기본 분기 — 행정동 헤더+격자 카드 리스트+전체 지역 모드+비로그인 로그인 유도), `RegionGridCard`, `RegionListView`, `RegionReloadButton`("{행정동} 장소 불러오기" 재검색 pill), `HomeSearchBox`(장소 검색+인기 검색어 드롭다운), `RetryNotice`(실패+재시도 행 공용), `CellActionRow`, `HomeCellDetailPanel`, `FeedVideoCard`, `FeedVideoList`(격자 상세·테마 피드 공용), `ThemeChip`/`ThemeChipsBar`/`ThemeFeedPanel`, `naver-sdk-loader.ts`(SDK 격리 경계), `use-escape-close.ts`, `use-home-entry-lifecycle.ts`
+- **dex** — `DexPanel` + ui/: `DexProfileHeader`, `DexStatCards`, `DexTabs`, `RegionProgress`, `RecentRegionRow`(동 단위 행), `BadgeTabBody`, `BadgeMedal`(메달 아트), `GalleryTabBody`(격자 그룹+1열), `GalleryVideoCard` · 스모크 공용: `dex-fetch-stub.ts`, `dex-test-harness.tsx`
 - **profile** — `ProfilePanel` + ui/: `ProfileHeader`, `ActivityCard`, `SettingRow`
 - **oauth-callback** — `KakaoCallbackPage` (ui/ 없음)
 
-## widgets/ (4)
+## widgets/ (5)
 
 - **map-shell** — `MapShell`(지도 인스턴스 라우트 전환 유지), `SidebarCollapseHandle`, `use-map-shell.ts`(지도 명령 API, 뷰-레이어 훅), `map-overlay-store.ts`, `sidebar-store.ts`, `grid-click-routing.ts`(순수 함수, RN 재사용 대상)
 - **cell-detail** — `CellDetailSheet`, `CellMoreMenu`(Radix DropdownMenu), `ReportDialog`, `ReportReasonSelect` · model/: `cell-detail`, `cell-detail-store`, `report` (MSG-328에서 구 features/explore로부터 이동 — 소비처가 이 위젯과 pages/dex뿐)
+- **video-mini-panel** — `VideoMiniPanel`(실 재생), `VideoOwnerMeta` (MSG-327에서 pages/map-home으로부터 이동 — 홈·도감 공용, pages→pages import 회피)
 - **section-panel** — `SectionPanel`(네비 섹션 공통 388px 패널)
 - **side-rail-nav** — `SideRailNav`(ui-web `SideRail` 라우터 연결)
 
 ## features/ (7 도메인)
 
 - **auth** — model: `auth-store`(팩토리), `kakao-oauth`, `login-modal-store` · api: `use-auth-mutations` · ui: `LoginModal`, `LoginContent`, `KakaoLoginButton`, `DevLoginPanel`
-- **dex** — model: `dex-summary`, `badges`, `gallery`, `dex-tab`, `current-region`(+훅), 스토어 `gallery-region-store`·`recent-removal-store`, 쿼리 `use-dex-query`·`use-gallery-query` · api/·ui/ 없음(UI는 pages/dex)
+- **dex** — model: `dex-summary`(clampPct·탐험 규모 문구), `recent-regions`(격자→동 묶음), `gallery-groups`(동 영상→격자 그룹), `video-new`(NEW 24h), `badge-showcase`(진열장 정렬), `region-label`(행정동명 축약·수집률 표기), `dex-tab`, 스토어 `gallery-region-store`(동+대표 격자)·`recent-removal-store`, 쿼리 `use-collection-query`(summary·grids·badges)·`use-region-videos-query`·`use-region-stat-query`(by-grid 코드 조인·by-point 수집률) · api/·ui/ 없음(UI는 pages/dex)
 - **region** — model: `region-panel-store`(표시 지역+패널 모드+선택 출처 auto/manual), `region-reload`(재검색 버튼 노출 판정 순수 함수), `region-header`(헤더 표시명 선택 — 지도 이동 라이브 동기화, manual 선택 고정), `grid-card`(격자명 조합·격자 중심 좌표), `gated-query-status`(인증 게이트 쿼리 공용 상태 파생), 쿼리 훅 `use-reverse-geocode-query`(중심 좌표 디바운스 500ms)·`use-region-grids-query`(sort=LATEST·limit=20)·`use-explore-regions-query` · ui/ 없음(UI는 pages/map-home)
 - **search** — model: `use-place-search-query`(디바운스 300ms+searchNow), `use-trending-query` · ui/ 없음(UI는 pages/map-home HomeSearchBox)
-- **map-home** (최대 도메인) — 오버레이/기하: `grid-overlay`, `occupied-grid-overlay`(EPSG:5179), `cluster-overlay`, `theme-overlay`, `grid-label`, `map-scale` · 도메인: `theme`, `theme-feed`, `home-cell-detail`, `grid-videos`, `video-playback`, `viewport-query`, `map-query-policy` · 스토어: `viewport-store`(플랫폼 중립), `theme-filter-store`, `home-cell-detail-store`, `video-mini-panel-store` · 쿼리 훅: `use-cells-query`(mock — 소비처 DexPanel뿐, 도감 실 API 티켓에서 정리 예정), `use-occupied-grids-query`·`use-hotzones-query`(비로그인 미발사 — 인증 게이트, MSG-328), `use-grid-detail-query`, `use-grid-videos-query`, `use-video-playback-query`, `use-grid-card-play`(격자 카드 클릭 → 상세 미오픈·지도 이동 없이 첫 영상 미니 패널 재생 + 재생 격자 테두리 강조 수명) · ui/ 없음(UI는 pages/map-home)
+- **map-home** (최대 도메인) — 오버레이/기하: `grid-overlay`, `occupied-grid-overlay`(EPSG:5179), `cluster-overlay`, `theme-overlay`, `grid-label`, `map-scale` · 도메인: `theme`, `theme-feed`, `home-cell-detail`, `grid-videos`, `video-playback`, `viewport-query`, `map-query-policy` · 스토어: `viewport-store`(플랫폼 중립), `theme-filter-store`, `home-cell-detail-store`, `video-mini-panel-store` · 쿼리 훅: `use-occupied-grids-query`·`use-hotzones-query`(비로그인 미발사 — 인증 게이트, MSG-328), `use-grid-detail-query`, `use-grid-videos-query`, `use-video-playback-query`, `use-grid-card-play`(격자 카드 클릭 → 상세 미오픈·지도 이동 없이 첫 영상 미니 패널 재생 + 재생 격자 테두리 강조 수명) · ui/ 없음(UI는 pages/map-home)
 - **profile** — model: `profile-edit`, `profile-format`, `profile-image`(업로드 순수 로직), `upload-profile-image`(오케스트레이션 포트), `use-profile-image-upload`(웹 포트 훅), `use-profile-query` · api: `use-profile-mutations` · ui: `ProfileEditModal`, `DeleteAccountModal`
 - **upload** — model: `upload-wizard`(스텝 전이), `upload-orchestration`(presign→S3 PUT→확정 상태머신), `upload-validation`, `highlight-selection`(+훅), `video-trim`, `processing-poll`, `processing-store`, `upload-modal-store`, `use-upload-location`, `presign-purpose` · api: `use-upload-mutations`, `s3-upload`, `ffmpeg-trim`(ffmpeg.wasm), `use-processing-watcher`(AppLayout 상주), `invalidate-grid-queries` · ui: `UploadModal`+`use-upload-wizard`, `SelectStep`/`HighlightStep`/`PreviewStep`, `SegmentList`/`SegmentRow`/`SegmentTrimmer`, `UploadDropzone`, `VideoPreview`, `AnalyzingModal`, `BlurConfirmModal`, `BlurNoticeToast`, `UploadProcessingNotices`
 
-## entities/ (4)
+## entities/ (5)
 
 - **cell** — `cell.ts`(LatLng/Bounds/Cell/CellVideo), `grid.ts`(EPSG:5179 100m 격자 인코딩, 서버 정본), `cell-geometry.ts`, `mock-cells.ts`
-- **dex** — `dex.ts`(생성 타입 파생), `mock-dex.ts`
+- **badge** — `badge-art.ts`(code→메달 매핑, iconUrl 우선), `assets/*.svg` 24종(Figma 뱃지 시안 export)
+- **dex** — `dex.ts`(생성 타입 파생 — 요약·수집 격자·수집 영상·뱃지·행정동 통계 + FE 파생 RecentRegion·GalleryGridGroup), `mock-dex.ts`(자체 타입 — map-home mock 스캐폴딩 전용 존치)
 - **profile** — `profile.ts`(`toProfileData`), `avatar-fallback.ts`, `assets/default-profile-image.png`
 - **region** — `boundary-geometry.ts`(pointInPolygon·clipLineToBoundary), `busan-boundary.ts`(BUSAN_BBOX) — mock `regions.ts`는 MSG-328에서 삭제(실 API 대체)
 
 ## shared/
 
 - api: `http-client.ts`(공용 Ky), `client-config.ts`(hey-api 런타임), `auth-pipeline.ts`, `api-error.ts`, `error-interceptor.ts`, `envelope.ts`(봉투 언랩), `generated/**`(hey-api 생성물 — 수정 금지)
-- 어댑터(RN 경계 경유지): `storage.ts`, `navigation.ts`, `geolocation.ts`, `region-lookup.ts` · 유틸: `format.ts`(formatDuration 포함), `use-debounced-value.ts`(flush 지원 디바운스 훅)
+- 어댑터(RN 경계 경유지): `storage.ts`, `navigation.ts`, `geolocation.ts` · 유틸: `format.ts`(formatDuration 포함), `use-debounced-value.ts`(flush 지원 디바운스 훅)
 - 테스트 인프라 `src/test/`: `setup`, `render-with-providers`, `stub-fetch`, `envelope-response`, `occupied-grids`, `playback-fixture`, `instant-load-image`, `auth-session`(signIn/signOutForTest), `query-wrapper`(공용 QueryClient 래퍼)
 
 ## ui-web 인벤토리 (packages/ui-web/src/index.ts — 21 컴포넌트 + cn)
@@ -73,7 +75,7 @@
 
 레이어별 분포: app 4 · entities 6 · features/auth 6 · features/dex 9 · features/map-home 24 · features/profile 7 · features/region 7 · features/search 1 · features/upload 15 · pages 17 · shared 9 · widgets 6. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인.
 
-커버리지 공백(테스트 없는 로직 파일): `dex/use-current-region`, `map-home/map-query-policy`, `profile/use-profile-image-upload`, `upload/use-processing-watcher`·`invalidate-grid-queries`·`presign-purpose`·`use-highlight-selection`·`use-upload-wizard`·`use-video-duration`, `map-shell/sidebar-store`·`use-map-shell`, `map-home/use-escape-close`, `shared/error-interceptor`·`http-client`·`navigation`
+커버리지 공백(테스트 없는 로직 파일): `dex/use-collection-query`, `map-home/map-query-policy`, `profile/use-profile-image-upload`, `upload/use-processing-watcher`·`invalidate-grid-queries`·`presign-purpose`·`use-highlight-selection`·`use-upload-wizard`·`use-video-duration`, `map-shell/sidebar-store`·`use-map-shell`, `map-home/use-escape-close`, `shared/error-interceptor`·`http-client`·`navigation`
 
 ## apps/mobile
 
@@ -84,3 +86,4 @@
 - MSG-380: 하네스 개선 — 이 문서(STATUS.md) 신설, docs/spec·docs/retro 경로 신설 (코드 변경 없음)
 - MSG-386: 린트 툴체인 oxlint 단일화 — eslint 계열 직접 devDep 8종·설정 4파일 제거, 루트 `.oxlintrc.json` + 토큰 규칙 자작 플러그인(`tools/oxlint/no-restricted-classes.mjs`), react-refresh 상당은 oxlint 네이티브 `react/only-export-components`(web 한정) 판정, TS catalog 7.0.2 상향. exhaustive-deps warn 검사 복원(기존 하이브리드에서 미검사 공백이었음). eslint는 react-doctor 전이 의존성으로만 잔존
 - MSG-328: 탐색 페이지 제거 + 홈 좌측 패널 리디자인(Figma 14357-18972) + 지역·검색 API 5종 실연동 — `/explore`·features/explore 삭제(cell-detail·report는 widgets/cell-detail/model로 이동), features/region·search 신설, 비로그인은 쿼리 미발사 + 도감·검색창 즉시 로그인 모달(익명 401 실측, 도감은 RequireAuth 래핑)
+- MSG-327: 개인 도감 mock 제거 + 실 API 6종 연동(users/me·collections/summary·grids·videos·badges·regions/stats by-point·by-grid) — 최근 수집 목록을 동(행정동) 단위로 전환, 갤러리를 격자 그룹+1열 영상 카드로 개정, 뱃지를 Figma 메달 아트 24종(entities/badge)으로 교체. regionCode 명세 갭은 by-grid 조인으로 해소(이름 매칭 기각), 진행 바는 by-point로 프론트 역지오코딩(region-lookup) 폐기, 갤러리 영상 클릭은 미니 패널 재생(widgets/video-mini-panel 이동)

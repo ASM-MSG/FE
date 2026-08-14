@@ -1,121 +1,139 @@
-import { useState } from "react";
 import { Button } from "@fillmap/ui-web";
 import type { CollectedVideo } from "@/entities/dex";
-import {
-  GALLERY_PREVIEW_LIMIT,
-  deriveGalleryPreview,
-} from "@/features/dex/model/gallery";
-import { useGalleryQuery } from "@/features/dex/model/use-gallery-query";
-import { GalleryThumbnail } from "./GalleryThumbnail";
+import { groupVideosByGrid } from "@/features/dex/model/gallery-groups";
+import type { GallerySelection } from "@/features/dex/model/gallery-region-store";
+import { useGridRegionStatQuery } from "@/features/dex/model/use-region-stat-query";
+import { shortRegionName } from "@/features/dex/model/region-label";
+import { useRegionVideosQuery } from "@/features/dex/model/use-region-videos-query";
+import { isNewVideo } from "@/features/dex/model/video-new";
+import { GalleryVideoCard } from "./GalleryVideoCard";
 
 interface GalleryTabBodyProps {
-  /** 표시 지역 — 수집 셀·최근 수집 행 클릭으로 선택된 지역 (gallery-region-store, ② B1) */
-  region: string;
-  /** 썸네일 클릭 — 격자 상세 시트 열기 배선은 부모(DexPanel) 몫 (AC 23) */
-  onVideoClick: (video: CollectedVideo) => void;
+  /** 표시 동 — 수집 격자·최근 수집 행 클릭으로 선택 (gallery-region-store) */
+  selection: GallerySelection;
+  /** "전체 보기" — 동 목록으로 복귀 (기준 10, 추정 7) */
+  onViewAll: () => void;
+  /** 영상 카드 클릭 — 우측 미니 패널 재생 배선은 부모(DexPanel) 몫 (기준 25) */
+  onVideoSelect: (video: CollectedVideo) => void;
 }
 
 /**
- * "지역별 갤러리" 뷰 본문 (MSG-122 AC 7~13·15·16, ② — 탭이 아니라 지도 탭 내부 뷰) —
- * 제목 + 선택 지역명 보조 표시(A8) + 최신 수집순 3열 썸네일 그리드. 기본 프리뷰 9개,
- * ">9개"일 때만 "갤러리 전체 보기"를 표시하고(A4) 클릭 시 인라인 확장 + 버튼 제거(티켓 명시),
- * 확장 목록은 패널 안에서 스크롤된다 (AC 15). 확장 상태는 로컬 state — 부모(DexPanel)가
- * key={region}으로 리마운트해 지역 변경 시 프리뷰로 복귀한다 (A5).
- * 빈 상태는 ② 개정으로 UI 도달 불가지만 방어 분기로 존치한다 (AC 8, Q5).
+ * "지역별 갤러리" 뷰 본문 (MSG-327 기준 10·12~15, Figma node 14599:19418) —
+ * 헤더("{동} · 격자 N개 · 영상 N개" + "전체 보기") + 격자별 그룹 + 그룹당 1열 영상 카드.
+ *
+ * 조회는 2단이다: 선택 동의 대표 격자로 `by-grid`를 물어 regionCode를 얻고(명세에
+ * regionCode가 없는 갭을 메운다), 그 코드로 `collections/videos`를 조회한다.
+ * 그래서 상태 분기도 두 쿼리를 합쳐 본다 — 코드 조회 실패도 갤러리 실패다.
+ * 구 3열 썸네일 그리드·프리뷰 확장(deriveGalleryPreview)은 1열 그룹 구조로 대체돼 폐기됐다.
  */
 export const GalleryTabBody = ({
-  region,
-  onVideoClick,
+  selection,
+  onViewAll,
+  onVideoSelect,
 }: GalleryTabBodyProps) => {
-  const { data, isError, refetch } = useGalleryQuery(region);
-  const [expanded, setExpanded] = useState(false);
+  const stat = useGridRegionStatQuery(selection.gridId);
+  const videos = useRegionVideosQuery(stat.data?.regionCode ?? null);
+
+  const isPending = stat.isPending || videos.isPending;
+  const isError = stat.isError || videos.isError;
+  const retry = stat.isError ? stat.retry : videos.retry;
+  /*
+   * by-grid는 조회 성공이어도 data: null(격자 중심이 행정동 밖·미판정)을 돌려줄 수 있다.
+   * 그러면 regionCode가 없어 영상 쿼리가 비활성이고 pending·error 어느 쪽도 아니라,
+   * 처리하지 않으면 스켈레톤이 영원히 남는다 (codex 리뷰 지적 — 실패를 로딩으로 위장하지 않는다).
+   */
+  const regionUnresolved =
+    !stat.isPending && !stat.isError && stat.data === null;
+
+  // 격자 라벨 폴백(구역 밖 격자)과 헤더는 축약명을 쓴다 — 원문은 388px 패널에서 잘린다
+  const regionLabel = shortRegionName(selection.regionName);
+  const groups = videos.data ? groupVideosByGrid(videos.data, regionLabel) : [];
+  const videoTotal = videos.data?.length ?? 0;
+  // NEW 판정 기준 시각 — 렌더 시점 1회로 고정해 그룹 간 판정이 엇갈리지 않게 한다
+  const now = Date.now();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-sm px-md pb-md">
       <div className="flex flex-col gap-xxs">
-        <h2 className="text-fm-title text-foreground">지역별 갤러리</h2>
-        {/* 선택 지역명 보조 표시 (A8) — 어느 지역의 갤러리인지 항상 드러낸다 */}
-        <p className="text-fm-caption text-foreground-muted">
-          {data ? `${region} · 영상 ${data.length}개` : region}
+        <div className="flex items-center justify-between gap-sm">
+          <h2 className="text-fm-title text-foreground">지역별 갤러리</h2>
+          <button
+            type="button"
+            className="shrink-0 text-fm-body text-primary"
+            onClick={onViewAll}
+          >
+            전체 보기
+          </button>
+        </div>
+        <p className="truncate text-fm-caption text-foreground-muted">
+          {videos.data
+            ? `${regionLabel} · 격자 ${groups.length}개 · 영상 ${videoTotal}개`
+            : regionLabel}
         </p>
       </div>
+
       {isError ? (
-        <GalleryErrorState onRetry={() => refetch()} />
-      ) : !data ? (
-        <GallerySkeleton />
-      ) : data.length === 0 ? (
+        <GalleryErrorState onRetry={retry} />
+      ) : regionUnresolved ? (
         <p className="pt-lg text-center text-fm-body text-foreground-muted">
-          {region}에서 수집한 영상이 아직 없어요. 첫 영상을 올려 갤러리를 채워
-          보세요.
+          행정동 정보를 찾지 못해 이 동의 갤러리를 열 수 없어요.
+        </p>
+      ) : isPending || !videos.data ? (
+        <GallerySkeleton />
+      ) : groups.length === 0 ? (
+        <p className="pt-lg text-center text-fm-body text-foreground-muted">
+          {regionLabel}에서 수집한 영상이 아직 없어요. 첫 영상을 올려 갤러리를
+          채워 보세요.
         </p>
       ) : (
-        <GalleryGrid
-          videos={data}
-          expanded={expanded}
-          onExpand={() => setExpanded(true)}
-          onVideoClick={onVideoClick}
-        />
+        <ul className="flex min-h-0 flex-col gap-md overflow-y-auto scrollbar-gutter-stable">
+          {groups.map((group) => (
+            <li key={group.gridId} className="flex flex-col gap-xs">
+              <div className="flex items-baseline justify-between gap-sm">
+                <h3 className="min-w-0 truncate text-fm-body-strong text-foreground">
+                  {group.label}
+                </h3>
+                <span className="shrink-0 text-fm-caption text-foreground-muted">
+                  영상 {group.videos.length}개
+                </span>
+              </div>
+              <ul className="flex flex-col gap-sm">
+                {group.videos.map((video, index) => (
+                  <li key={video.videoId}>
+                    <GalleryVideoCard
+                      video={video}
+                      seq={group.videos.length - index}
+                      isNew={isNewVideo(video.createdAt, now)}
+                      onSelect={onVideoSelect}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
 };
 
-interface GalleryGridProps {
-  /** 최신 수집순 정렬 완료 목록 (queryFn 계약) */
-  videos: CollectedVideo[];
-  expanded: boolean;
-  onExpand: () => void;
-  onVideoClick: (video: CollectedVideo) => void;
-}
-
-/** 3열 썸네일 그리드 + 전체 보기 버튼 (AC 13·15·16) — 그리드만 스크롤 영역이다 */
-const GalleryGrid = ({
-  videos,
-  expanded,
-  onExpand,
-  onVideoClick,
-}: GalleryGridProps) => {
-  const preview = deriveGalleryPreview(videos);
-  const shown = expanded ? videos : preview.videos;
-
-  return (
-    <>
-      <ul className="grid min-h-0 grid-cols-3 content-start gap-xs overflow-y-auto scrollbar-gutter-stable">
-        {shown.map((video) => (
-          <li key={video.videoId}>
-            <GalleryThumbnail video={video} onClick={onVideoClick} />
-          </li>
-        ))}
-      </ul>
-      {preview.hasMore && !expanded && (
-        <Button
-          text="갤러리 전체 보기"
-          variant="primary"
-          className="w-full shrink-0"
-          onClick={onExpand}
-        />
-      )}
-    </>
-  );
-};
-
-/** 로딩 스켈레톤 — 그리드 자리 타일 9개 (AC 9). 상태 알림은 role="status"가 담당 */
+/** 로딩 스켈레톤 — 1열 카드 자리 3장 (기준 15). 상태 알림은 role="status"가 담당 */
 const GallerySkeleton = () => (
   <div
     role="status"
     aria-label="갤러리 불러오는 중"
-    className="grid grid-cols-3 gap-xs"
+    className="flex flex-col gap-sm"
   >
-    {Array.from({ length: GALLERY_PREVIEW_LIMIT }, (_, i) => (
+    {Array.from({ length: 3 }, (_, i) => (
       <div
         key={i}
-        className="aspect-square animate-pulse rounded-sm bg-surface"
+        className="aspect-[340/196] animate-pulse rounded-md bg-surface"
       />
     ))}
   </div>
 );
 
-/** 오류 상태 + 재시도 (AC 7) — DexErrorState와 동일 패턴(제목+보조 문구+primary sm 버튼) */
+/** 오류 상태 + 재시도 (기준 15) — DexErrorState와 동일 패턴(제목+보조 문구+primary sm 버튼) */
 const GalleryErrorState = ({ onRetry }: { onRetry: () => void }) => (
   <div className="flex flex-1 flex-col items-center justify-center gap-md px-lg text-center">
     <div className="flex flex-col gap-xxs">

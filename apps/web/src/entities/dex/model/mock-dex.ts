@@ -1,11 +1,57 @@
-import { MOCK_CELLS } from "@/entities/cell";
+import { MOCK_CELLS, type LatLng } from "@/entities/cell";
 import type {
   CollectionGridResponseDto,
   CollectionSummaryResponseDto,
   MyBadgeResponseDto,
   RegionVideoResponseDto,
 } from "@/shared/api/generated/types.gen";
-import type { CollectedCell, CollectedVideo, DexBadge, DexData } from "./dex";
+/*
+ * [MSG-327] 이 mock은 더 이상 도감 화면의 소스가 아니다 — 도감은 실 API 6종을 쓴다.
+ * 남은 소비처는 map-home의 mock 스캐폴딩(MapHomePage MY_VIDEO_IDS, theme·theme-overlay·
+ * occupied-grids 테스트 픽스처)뿐이라, 화면 계약 타입(./dex)에서 분리해 여기서 자체 정의한다.
+ * 이렇게 두면 도감의 실 API 타입 변화가 map-home mock을 끌고 다니지 않는다 —
+ * 이 mock의 최종 정리는 map-home 실 API 티켓의 몫이다.
+ */
+
+/** 구 도감 수집 격자 mock 형태 — gridId는 mock 체계 "A-14"(명세 "{y}_{x}" 아님) */
+interface MockCollectedCell {
+  gridId: string;
+  firstCollectedAt: string;
+  videoCount: number;
+  label: string;
+  district: string;
+  center: LatLng;
+}
+
+/** 구 도감 수집 영상 mock 형태 */
+interface MockCollectedVideo {
+  videoId: number;
+  gridId: string;
+  thumbnailUrl: string | null;
+  createdAt: string;
+  cellLabel: string;
+}
+
+/** 구 도감 뱃지 mock 형태 */
+interface MockBadge {
+  badgeId: number;
+  name: string;
+  earned: boolean;
+}
+
+/** 구 도감 조회 응답 mock 형태 */
+interface MockDexData {
+  summary: {
+    totalGridCount: number;
+    nickname: string;
+    totalExploredPct: number;
+    streakDays: number;
+    badgeCount: number;
+  };
+  collectedCells: MockCollectedCell[];
+  badges: MockBadge[];
+  regionExploredPctMap: Record<string, number>;
+}
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -43,7 +89,7 @@ const cellById = (id: string) => {
  * 명세 갱신(2026-08-06)으로 필수가 된 gridX·gridY·lastUploadedAt은 화면 미소비라
  * Pick으로 대응 필드만 한정한다 — 소비하는 티켓에서 도메인 타입과 함께 추가한다.
  */
-const MOCK_COLLECTED_CELLS: CollectedCell[] = COLLECTED_SEEDS.map(
+const MOCK_COLLECTED_CELLS: MockCollectedCell[] = COLLECTED_SEEDS.map(
   ({ gridId, ago, videoCount }) => {
     const { label, center, district } = cellById(gridId);
     return {
@@ -107,12 +153,12 @@ const VIDEO_GAP = 10 * MINUTE;
  * 명세 대응 필드는 satisfies로 RegionVideoResponseDto에 연결한다 (MSG-289 AC 4) — cellLabel만 FE 확장.
  * 명세 갱신(2026-08-06)으로 필수가 된 durationSec·processingStatus는 화면 미소비라 Pick으로 한정.
  */
-export const MOCK_COLLECTED_VIDEOS: CollectedVideo[] =
+export const MOCK_COLLECTED_VIDEOS: MockCollectedVideo[] =
   MOCK_COLLECTED_CELLS.flatMap((cell) => {
     const cellVideos = cellById(cell.gridId).videos;
     return Array.from(
       { length: cell.videoCount },
-      (_, i): CollectedVideo => ({
+      (_, i): MockCollectedVideo => ({
         ...({
           videoId: cellVideos[i].videoId,
           gridId: cell.gridId,
@@ -156,7 +202,7 @@ const MOCK_REGION_EXPLORED_PCT: Record<string, number> = {
  * satisfies로 MyBadgeResponseDto에 연결한다 (MSG-289 AC 4) — 명세 갱신(2026-08-06)으로
  * 필수가 된 code·isNew는 화면 미소비라 Pick으로 대응 필드만 한정.
  */
-export const MOCK_BADGES: DexBadge[] = [
+export const MOCK_BADGES: MockBadge[] = [
   { badgeId: 1, name: "첫 기록", earned: true },
   { badgeId: 2, name: "첫 업로드", earned: true },
   { badgeId: 3, name: "탐험가", earned: true },
@@ -174,7 +220,8 @@ export const MOCK_BADGES: DexBadge[] = [
 /**
  * 개인 도감 mock 데이터 (MSG-121, 2026-07-22 개정 반영).
  * Figma의 닉네임·68%·148개·12개·23일 등은 전부 플레이스홀더(티켓 [참고] 명시) —
- * 여기 값이 화면의 유일한 출처다. 실 API 전환 시 use-dex-query의 queryFn 내부만 교체한다.
+ * MSG-327에서 도감 화면은 실 API로 전환됐다 — 이 값은 더 이상 화면의 출처가 아니고
+ * map-home mock 스캐폴딩(테마·점령 격자 픽스처)만 참조한다.
  * totalExploredPct는 전체 지도 기준 미소값 0.012 (개정 D1, A12 — "전체 지도 0.012% 탐험").
  * totalGridCount는 수집 목록 길이와, badgeCount는 카탈로그 earned 수와 일치시켜
  * mock의 자기모순을 피한다 (MSG-123 AC 5 — badgeCount는 백엔드 표시값 계약 유지, R3:
@@ -184,7 +231,7 @@ export const MOCK_BADGES: DexBadge[] = [
  * 연결한다 (MSG-289 AC 4 — 대응 필드 한정 Pick, 나머지는 FE 확장. 명세 갱신 2026-08-06으로
  * 필수가 된 totalVideoCount·visitedRegionCount는 화면 미소비 — 소비 티켓에서 추가).
  */
-export const MOCK_DEX: DexData = {
+export const MOCK_DEX: MockDexData = {
   summary: {
     ...({
       totalGridCount: MOCK_COLLECTED_CELLS.length,
