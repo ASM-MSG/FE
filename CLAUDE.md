@@ -27,8 +27,8 @@ pnpm 모노레포 — apps/web(React 19 + Vite) + apps/mobile(Expo, 대부분 �
 **변경 이력 (최근 5행 이내 — 전체는 `docs/HARNESS_CHANGELOG.md`, 밀려난 행은 그리로 이관):**
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
+| 2026-08-14 | 위임 불가 환경의 대체 경로 명문화 + 검증 리포트 pre-commit 기계 게이트 신설 | skills/fillmap-page-dev, .husky/pre-commit | MSG-395 사고 — 세션 정책이 Agent 도구를 막자 Phase 3(검증)이 통째로 누락된 채 커밋까지 감. 문서의 "생략 불가"만으로는 못 막아 훅으로 강제 |
 | 2026-08-13 | 검증 풀 게이트에 openapi-ts 드리프트 검사 추가(5종→6종), hey-api는 루트 devDep+TS ~6.0.3 peer로 이전 | skills/page-verification·page-implementation, agents 2종, package.json | MSG-386 CI 실패 환류 — CI에만 있던 드리프트 게이트가 검증 스킬에 없어 hey-api TS 7 비호환을 로컬이 못 잡음 (MSG-298 좌시프트 원칙 누락 보수) |
 | 2026-08-13 | task-retro 산출 경로 변경 — docs/retro/(레포) → ~/fillmaphtml/(레포 밖, 커밋 없음) | skills/task-retro, skills/fillmap-page-dev, CLAUDE.md | 사용자 결정 — 회고는 개인 학습 자산, 레포 스테이징분은 사용자가 되돌림 |
 | 2026-08-13 | 테스트 템플릿 신설 — 유형 선택 매트릭스(로직/스토어/쿼리 훅/스모크/흐름)와 단정 범위, test-first에 템플릿 선택 의무화, 검증 감사에 템플릿 부합 추가 | skills/page-implementation(+references/test-templates.md), skills/page-verification | MSG-380 — 템플릿 없는 TDD가 무의미 테스트를 양산(사용자 보고). Testing Trophy·공식 가이드 리서치 기반 |
 | 2026-08-13 | 린트 강제 주체 서술 현행화 — eslint → oxlint(자작 토큰 플러그인 + 네이티브 규칙), 우회 감사를 lint 비활성 주석 일반형으로 | skills/page-implementation, skills/page-verification | MSG-386 — oxlint 단일화·TS 7.0.2 상향에 따른 문서-코드 동기화 |
-| 2026-08-13 | 티켓 브랜치 생성 전 기존 브랜치(로컬·원격 `*MSG-{번호}*`) 조회 의무화 — 존재 시 사용자 브랜치가 정본, 없을 때만 생성+보고 | skills/fillmap-page-dev, skills/ticket-to-spec | MSG-386 사고 — 사용자 생성 브랜치를 조회 없이 두고 하네스가 임의 브랜치를 파서 갈라짐 |

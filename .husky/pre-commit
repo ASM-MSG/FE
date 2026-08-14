@@ -59,3 +59,36 @@ pnpm format:check || {
   exit 1
 }
 # format gate end
+
+# verify-report gate start — 검증 단계 누락 차단 (MSG-395 사고 환류)
+# 하네스가 "검증 절차는 생략하지 않는다"고 적어두기만 했더니, 에이전트 위임이 막힌
+# 세션에서 Phase 3이 통째로 빠진 채 커밋까지 갔다. 문서 대신 훅이 막는다.
+#
+# 판정: 브랜치명의 MSG-번호로 _workspace/MSG-{번호}/ 를 찾고, 그 디렉토리가 있는데
+# 03_verify_report.md 가 없으면 거부. _workspace 자체가 없으면(하네스 밖 작업) 통과.
+verify_report_gate() {
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return 0
+  ticket=$(printf '%s' "$branch" | grep -oE 'MSG-[0-9]+' | head -1) || true
+  [ -n "$ticket" ] || return 0
+
+  workspace="_workspace/$ticket"
+  [ -d "$workspace" ] || return 0
+
+  # 스펙이 없으면 아직 파이프라인 초입(스펙 승인 전 커밋) — 게이트 대상 아님
+  [ -f "$workspace/01_spec.md" ] || return 0
+
+  if [ ! -f "$workspace/03_verify_report.md" ]; then
+    printf '%s\n' \
+      "검증 리포트 없음: $workspace/03_verify_report.md" \
+      "" \
+      "$ticket 은 스펙까지 진행됐는데 검증 단계(Phase 3) 산출물이 없습니다." \
+      "page-verification 스킬로 검증을 마친 뒤 커밋하세요." \
+      "에이전트 위임이 불가한 환경이면 메인 스레드가 스킬을 직접 로드해 같은 절차를 밟습니다." \
+      "" \
+      "의도적으로 건너뛰려면 --no-verify (사유를 커밋 본문에 남길 것)." >&2
+    return 1
+  fi
+}
+
+verify_report_gate || exit 1
+# verify-report gate end
