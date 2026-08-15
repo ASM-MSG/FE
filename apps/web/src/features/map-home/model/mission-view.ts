@@ -6,13 +6,10 @@ import {
   parseLineString,
   type CourseSpot,
 } from "./course";
+import type { MissionProgressResponseDto } from "@/shared/api/generated";
 import { missionShapeOf, type MissionShape } from "./mission";
 import { decodeHtmlEntities } from "./mission-format";
-import {
-  missionProgress,
-  type CollectedGrid,
-  type MissionProgress,
-} from "./mission-progress";
+import { toMissionProgress, type MissionProgress } from "./mission-progress";
 import { missionStatus, type MissionStatus } from "./mission-status";
 
 /**
@@ -38,11 +35,11 @@ export interface MissionView {
 
 export const toMissionView = (
   dto: MissionResponseDto,
-  collectedGrids: readonly CollectedGrid[],
+  progressDto: MissionProgressResponseDto | undefined,
   now: Date,
 ): MissionView => {
   const shape = missionShapeOf(dto);
-  const progress = missionProgress(shape, collectedGrids, dto.targetCount);
+  const progress = toMissionProgress(progressDto, dto.targetCount);
 
   return {
     dto,
@@ -70,19 +67,23 @@ export interface CourseView extends MissionView {
   loop: boolean;
 }
 
+/**
+ * 코스 표시 모델 — 방문 격자 집합은 **미션 상세의 스팟 통계**에서 온다 (MSG-403 AC 21).
+ * 상세를 열기 전(목록)에는 빈 집합이라 스팟 행 자체가 안 보이므로 표시에 영향이 없다.
+ */
 export const toCourseView = (
   dto: MissionResponseDto,
-  collectedGrids: readonly CollectedGrid[],
+  progressDto: MissionProgressResponseDto | undefined,
+  visitedGridIds: ReadonlySet<string>,
   now: Date,
 ): CourseView => {
-  const view = toMissionView(dto, collectedGrids, now);
+  const view = toMissionView(dto, progressDto, now);
   const path = parseLineString(view.shape.line);
-  const collectedIds = new Set(collectedGrids.map((grid) => grid.gridId));
 
   return {
     ...view,
     path,
-    spots: courseSpots(view.shape.spots, collectedIds),
+    spots: courseSpots(view.shape.spots, visitedGridIds),
     loop: isLoopCourse(path),
   };
 };

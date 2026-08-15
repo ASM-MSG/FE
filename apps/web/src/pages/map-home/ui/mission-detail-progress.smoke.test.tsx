@@ -4,7 +4,7 @@ import type {
   CourseView,
   MissionView,
 } from "@/features/map-home/model/mission-view";
-import type { MultiGridVideosResult } from "@/features/map-home/model/use-multi-grid-videos-query";
+import type { MissionVideosResult } from "@/features/map-home/model/use-mission-videos-query";
 import { CourseDetailPanel } from "./CourseDetailPanel";
 import { MissionDetailPanel } from "./MissionDetailPanel";
 
@@ -59,7 +59,7 @@ const courseView = {
   ],
 } as unknown as CourseView;
 
-const emptyFeed: MultiGridVideosResult = {
+const emptyFeed: MissionVideosResult = {
   items: [],
   isPending: false,
   isError: false,

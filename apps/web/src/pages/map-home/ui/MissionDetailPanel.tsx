@@ -5,7 +5,7 @@ import {
   formatOperationTime,
 } from "@/features/map-home/model/mission-format";
 import type { MissionView } from "@/features/map-home/model/mission-view";
-import type { MultiGridVideosResult } from "@/features/map-home/model/use-multi-grid-videos-query";
+import type { MissionVideosResult } from "@/features/map-home/model/use-mission-videos-query";
 import type { ThemeId } from "@/features/map-home/model/theme";
 import { ChipDetailHeader } from "./ChipDetailHeader";
 import { FeedVideoList } from "./FeedVideoList";
@@ -18,7 +18,7 @@ interface MissionDetailPanelProps {
   view: MissionView;
   theme: Extract<ThemeId, "festival" | "popup">;
   /** 이 미션 영역의 영상 피드 (표본 격자 합본) */
-  videos: MultiGridVideosResult;
+  videos: MissionVideosResult;
   onVideoSelect: (video: FeedVideo, mine: boolean) => void;
   /**
    * 진행도(내 수집 격자) 조회 실패 — `내 진행`을 수치로 주장하지 않는다 (리뷰 반영).

@@ -124,12 +124,14 @@ describe("mergeProfileImage — 캐시 병합 (기준 7)", () => {
     email: "fillmapper@fillmap.app",
     profileImageUrl: null,
     createdAt: "2026-01-12T09:00:00",
+    locationConsent: false,
   };
   const confirmed: UserProfileResponseDto = {
     email: "server-account@kakao.com",
     nickname: "서버닉네임",
     profileImageUrl: "https://cdn.fillmap.kr/profile/42.png",
     createdAt: "2026-08-11T09:00:00",
+    locationConsent: false,
   };
 
   it("profileImageUrl만 확정 응답 값으로 갱신된 새 객체를 만든다", () => {

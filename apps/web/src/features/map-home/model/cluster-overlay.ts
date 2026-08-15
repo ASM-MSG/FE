@@ -56,30 +56,20 @@ export interface ClusterMarker {
 
 /**
  * 채움 셀 줌 게이트 (AC 1·2, A5 — 전 섹션 공유) — 셸 합성 계층에서 병합된 오버레이 셀에 적용한다.
- * zoom < GRID_MIN_ZOOM이면 빈 배열 = MapCanvas에 채움 미전달(기존 동작 불변 계약).
+ * zoom < GRID_MIN_ZOOM이면 점령·무테마 셀을 걷어 클러스터로 넘긴다(기존 계약).
+ *
+ * MSG-403 AC 7: **칩 대상 셀(테마 색 보유)은 저줌에서도 채움으로 남긴다** — 칩은 축척
+ * 500m·1km로 줌아웃한 화면에서 데이터를 보여주는 것이 목적인데, 여기서 걷히면 그 줌에서
+ * 축제 타일·코스 라인 주변 격자가 통째로 사라진다(클러스터 배지로는 영역 모양이 안 읽힌다).
+ * 색 유무가 판별자인 이유: 점령 셀과 강조 전용 셀만 색이 없다(buildHomeOverlayCells 계약).
  */
 export const gateFillCells = (
   cells: StyledCellOverlay[],
   zoom: number,
-): StyledCellOverlay[] => (zoom >= GRID_MIN_ZOOM ? cells : []);
-
-/**
- * 클러스터 집계 소스 (AC 9) — 섹션 게시 셀이 있으면 그것(첫 셀 테마 색 전승), 없으면 상시 점령 셀(primary).
- * 강조 전용 셀(카드 재생 — emphasized·테마 색 없음, MSG-328)은 테마 게시가 아니므로 정본 판정에서
- * 제외한다 — 포함하면 무테마 저줌에서 상시 점령 클러스터가 재생 셀 1개짜리로 대체된다 (리뷰 P2).
- * 테마 셀에 강조가 켜진 경우(색 보유)는 기존대로 테마 정본이다.
- */
-export const selectClusterSource = (
-  sectionCells: StyledCellOverlay[],
-  persistentCells: StyledCellOverlay[],
-): { cells: StyledCellOverlay[]; color?: string } => {
-  const themedCells = sectionCells.filter(
-    (cell) => !(cell.emphasized && cell.color === undefined),
-  );
-  return themedCells.length > 0
-    ? { cells: themedCells, color: themedCells[0].color }
-    : { cells: persistentCells };
-};
+): StyledCellOverlay[] =>
+  zoom >= GRID_MIN_ZOOM
+    ? cells
+    : cells.filter((cell) => cell.color !== undefined);
 
 const clampTo = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));

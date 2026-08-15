@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
@@ -6,6 +6,7 @@ import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
 import { useActivityQuery } from "@/features/profile/model/use-activity-query";
+import { useProfileModalStore } from "@/features/profile/model/profile-modal-store";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
 import { DeleteAccountModal } from "@/features/profile/ui/DeleteAccountModal";
 import { ProfileEditModal } from "@/features/profile/ui/ProfileEditModal";
@@ -29,8 +30,17 @@ export const ProfilePanel = () => {
   // "내 활동" 두 축 (MSG-395) — 프로필 조회와 독립: 활동 조회가 늦거나 실패해도
   // 닉네임·설정은 그대로 뜨고 카드만 `—`로 남는다
   const activity = useActivityQuery();
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  // 모달 열림은 스토어가 소유한다 — 사이드레일 재클릭 초기화가 패널 밖에서 닫아야 한다 (AC 16)
+  const openModal = useProfileModalStore((s) => s.open);
+  const setModal = useProfileModalStore((s) => s.openModal);
+  const closeModal = useProfileModalStore((s) => s.close);
+  const setModalOpen = (modal: "edit" | "delete") => (open: boolean) => {
+    if (open) setModal(modal);
+    else closeModal();
+  };
+  // 패널을 떠나면 모달 상태도 닫는다 — 스토어로 올린 뒤(AC 16) 로컬 state 시절의
+  // "언마운트 = 초기화"가 사라져, 다른 섹션에 다녀오면 모달이 열린 채로 되돌아왔다
+  useEffect(() => closeModal, [closeModal]);
   // 로그아웃·계정 삭제 후 홈으로 — 비로그인 상태로 보호 화면에 남지 않게 하고, 사이드레일
   // 활성 탭도 자연히 '홈'이 된다(getActiveNavKey가 pathname 기반)
   const navigate = useNavigate();
@@ -55,7 +65,7 @@ export const ProfilePanel = () => {
               email={data.email}
               joinedDateLabel={formatJoinedDate(data.joinedAt)}
               avatarSrc={data.profileImageUrl ?? DEFAULT_PROFILE_IMAGE}
-              onEdit={() => setEditOpen(true)}
+              onEdit={() => setModal("edit")}
             />
 
             <ProfileSection title="내 활동">
@@ -78,7 +88,7 @@ export const ProfilePanel = () => {
               <SettingRow
                 label="계정 삭제"
                 tone="danger"
-                onClick={() => setDeleteOpen(true)}
+                onClick={() => setModal("delete")}
               />
             </ProfileSection>
 
@@ -97,15 +107,15 @@ export const ProfilePanel = () => {
 
           {/* 프로필 편집 모달 — 포털 렌더라 패널 DOM 밖(전면 스크림)에 뜬다 */}
           <ProfileEditModal
-            open={editOpen}
-            onOpenChange={setEditOpen}
+            open={openModal === "edit"}
+            onOpenChange={setModalOpen("edit")}
             profile={data}
           />
 
           {/* 계정 삭제 확인 모달 (A10·A11) — 성공 시 홈 이동은 여기(라우터 보유층)서 주입 */}
           <DeleteAccountModal
-            open={deleteOpen}
-            onOpenChange={setDeleteOpen}
+            open={openModal === "delete"}
+            onOpenChange={setModalOpen("delete")}
             onDeleted={() => navigate(ROUTES.home)}
           />
         </>

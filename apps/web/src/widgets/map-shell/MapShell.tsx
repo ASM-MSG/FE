@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/app/routes";
 import type { LatLng } from "@/entities/cell";
 import { buildCellClickHandler } from "./grid-click-routing";
@@ -7,19 +7,23 @@ import { useMapOverlayStore } from "./map-overlay-store";
 import {
   buildClusterMarkers,
   gateFillCells,
-  selectClusterSource,
 } from "@/features/map-home/model/cluster-overlay";
 import {
   buildGridLines,
   excludeSectionCells,
 } from "@/features/map-home/model/grid-overlay";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
+import { visibleOccupiedCells } from "@/features/map-home/model/occupancy-visibility";
 import { toOccupiedOverlays } from "@/features/map-home/model/occupied-grid-overlay";
+import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
+import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
+import { useCommittedRegionBootstrap } from "@/features/region/model/use-committed-region";
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
 import { MapControls } from "@/pages/map-home/ui/MapControls";
+import { ThemeChipsBar } from "@/pages/map-home/ui/ThemeChipsBar";
 import { SEOMYEON_CENTER, getCurrentPosition } from "@/shared/geolocation";
 import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
 import { useSidebarStore } from "./sidebar-store";
@@ -55,12 +59,16 @@ export const MapShell = () => {
     [viewportBounds, viewportZoom],
   );
 
-  // 상시 점령 셀 (MSG-263 D3·D9 → MSG-325 실 API) — 뷰포트 기준 내 점령 격자를 조회해
-  // 그대로 오버레이로 쓴다. 이동 중에는 keepPreviousData가 직전 목록을 유지한다
-  const { grids: occupiedGrids } = useOccupiedGridsQuery(viewportBounds);
+  // 상시 점령 셀 (MSG-263 D3·D9 → MSG-325 실 API → MSG-403 확정 영역) — 조회 bbox는
+  // 뷰포트가 아니라 **확정 영역**이다(AC 12): 뷰포트를 쓰면 지도를 미는 동안 요청이
+  // 계속 나가고 격자가 매번 다시 그려진다
+  const committedBounds = useRegionPanelStore((s) => s.committedBounds);
+  const { grids: occupiedGrids } = useOccupiedGridsQuery(committedBounds);
+  // 칩이 켜져 있으면 점령 층을 통째로 비운다 — 칩 화면에는 그 칩의 대상만 남는다 (AC 1)
+  const activeTheme = useThemeFilterStore((s) => s.activeTheme);
   const persistentOccupiedCells = useMemo(
-    () => toOccupiedOverlays(occupiedGrids),
-    [occupiedGrids],
+    () => visibleOccupiedCells(toOccupiedOverlays(occupiedGrids), activeTheme),
+    [occupiedGrids, activeTheme],
   );
 
   // 상시 점령 셀 + 섹션 게시 셀 병합 — 게시 셀과 id가 겹치는 상시 셀은 제외해
@@ -78,15 +86,12 @@ export const MapShell = () => {
     () => gateFillCells(overlayCells, viewportZoom),
     [overlayCells, viewportZoom],
   );
-  // 클러스터 파생 (MSG-264 AC 4·9): 섹션 게시 셀이 있으면 그 셀(테마 색), 없으면 상시
-  // 점령 셀(primary) 기준으로 집계 — zoom ≥ GRID_MIN_ZOOM이면 빈 배열(게이트 내장)
+  // 클러스터 파생 (MSG-264 AC 4·9 → MSG-403 AC 2·7): **점령 셀 전용**이다.
+  // 칩 대상 셀은 저줌에서도 채움으로 남으므로(gateFillCells) 클러스터로 접으면 같은
+  // 격자가 배지와 타일로 두 번 그려진다. 칩이 켜지면 점령 셀이 비어 클러스터도 없다
   const clusters = useMemo(
-    () =>
-      buildClusterMarkers(
-        selectClusterSource(sectionCells, persistentOccupiedCells).cells,
-        viewportZoom,
-      ),
-    [sectionCells, persistentOccupiedCells, viewportZoom],
+    () => buildClusterMarkers(persistentOccupiedCells, viewportZoom),
+    [persistentOccupiedCells, viewportZoom],
   );
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
@@ -118,6 +123,14 @@ export const MapShell = () => {
       }),
     [occupiedIds, openGridDetail, onOverlayCellClick],
   );
+  // 확정 지역·영역 최초 채택 — 지도 데이터 조회 전체의 bbox 근원 (AC 9)
+  useCommittedRegionBootstrap();
+
+  // 칩 바는 홈에서만 뜨지만 **접힘 래퍼 밖**이다 (AC 14) — 패널을 접어도 칩은 지도 위에
+  // 남아야 한다. 접힘 래퍼(hidden) 안의 MapHomePage가 그리던 것을 셸로 올렸다
+  const { pathname } = useLocation();
+  const isHome = pathname === ROUTES.home;
+
   const mapRef = useRef<MapCanvasHandle>(null);
   const [initialCenter, setInitialCenter] = useState<LatLng>(SEOMYEON_CENTER);
 
@@ -165,6 +178,8 @@ export const MapShell = () => {
       <div className={collapsed ? "hidden" : "contents"}>
         <Outlet context={context} />
       </div>
+
+      {isHome && <ThemeChipsBar />}
 
       <SidebarCollapseHandle />
 

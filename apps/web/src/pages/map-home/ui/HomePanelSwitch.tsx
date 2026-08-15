@@ -9,7 +9,7 @@ import type {
 } from "@/features/map-home/model/mission-view";
 import type { HomePanelKind } from "@/features/map-home/model/panel-branch";
 import type { HotRegionSummaryResult } from "@/features/map-home/model/use-hot-region-summary";
-import type { MultiGridVideosResult } from "@/features/map-home/model/use-multi-grid-videos-query";
+import type { MissionVideosResult } from "@/features/map-home/model/use-mission-videos-query";
 import type { ThemeId } from "@/features/map-home/model/theme";
 import { CourseDetailPanel } from "./CourseDetailPanel";
 import { CourseListPanel } from "./CourseListPanel";
@@ -49,7 +49,7 @@ interface HomePanelSwitchProps {
   courseViews: CourseView[];
   selectedMission: MissionView | null;
   selectedCourse: CourseView | null;
-  missionFeed: MultiGridVideosResult;
+  missionFeed: MissionVideosResult;
   spotNames: ReadonlyMap<string, string>;
   listPending: boolean;
   listFailed: boolean;

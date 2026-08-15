@@ -1,51 +1,69 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { Bounds } from "@/entities/cell";
 import { useRegionPanelStore } from "./region-panel-store";
 
-describe("useRegionPanelStore — 표시 지역·패널 모드 (AC 9·10)", () => {
+const SEOMYEON: Bounds = {
+  sw: { lat: 35.153, lng: 129.053 },
+  ne: { lat: 35.163, lng: 129.065 },
+};
+const JEONPO: Bounds = {
+  sw: { lat: 35.146, lng: 129.06 },
+  ne: { lat: 35.156, lng: 129.072 },
+};
+
+describe("useRegionPanelStore — 확정 지역·확정 영역 (AC 9·13)", () => {
   beforeEach(() => {
     useRegionPanelStore.setState(useRegionPanelStore.getInitialState(), true);
   });
 
-  it("최초 상태는 표시 지역 없음 + 격자 리스트 모드다", () => {
-    expect(useRegionPanelStore.getState().displayedRegion).toBeNull();
-    expect(useRegionPanelStore.getState().mode).toBe("grids");
+  it("최초 상태는 확정 지역·확정 영역 없음 + 격자 리스트 모드다", () => {
+    const state = useRegionPanelStore.getState();
+
+    expect(state.displayedRegion).toBeNull();
+    expect(state.committedBounds).toBeNull();
+    expect(state.mode).toBe("grids");
   });
 
-  it("지역을 표시하면 그 지역이 표시 중 지역이 된다 (AC 9 — 장소 불러오기 갱신)", () => {
-    useRegionPanelStore.getState().showRegion(
-      {
-        regionCode: "2644056000",
-        regionName: "부전제1동",
-      },
-      "auto",
-    );
+  it("확정하면 그 지역과 그 시점의 지도 영역이 함께 기록된다 (AC 9)", () => {
+    useRegionPanelStore
+      .getState()
+      .commit({ regionCode: "2644056000", regionName: "부전제1동" }, SEOMYEON);
 
-    expect(useRegionPanelStore.getState().displayedRegion).toEqual({
+    const state = useRegionPanelStore.getState();
+    expect(state.displayedRegion).toEqual({
       regionCode: "2644056000",
       regionName: "부전제1동",
     });
+    expect(state.committedBounds).toEqual(SEOMYEON);
   });
 
-  it("자동 채택·장소 불러오기는 현재 중심 컨텍스트(auto)로 기록된다 — 헤더 라이브 동기화 대상 (사용자 보완)", () => {
+  it("다시 확정하면 지역과 영역이 함께 갱신된다 — 장소 불러오기 (AC 9)", () => {
     useRegionPanelStore
       .getState()
-      .showRegion(
-        { regionCode: "2644056000", regionName: "부전제1동" },
-        "auto",
-      );
+      .commit({ regionCode: "2644056000", regionName: "부전제1동" }, SEOMYEON);
 
-    expect(useRegionPanelStore.getState().origin).toBe("auto");
+    useRegionPanelStore
+      .getState()
+      .commit({ regionCode: "2644057000", regionName: "부전제2동" }, JEONPO);
+
+    const state = useRegionPanelStore.getState();
+    expect(state.displayedRegion?.regionName).toBe("부전제2동");
+    expect(state.committedBounds).toEqual(JEONPO);
   });
 
-  it("전체 보기의 지역 선택은 명시 선택 컨텍스트(manual)로 기록된다 — 헤더가 선택 지역명에 고정된다 (사용자 보완)", () => {
+  it("전체 보기에서 지역만 고르면 확정 영역은 그대로다 — 지도 데이터가 몰래 갱신되지 않는다 (AC 11, codex 리뷰)", () => {
     useRegionPanelStore
       .getState()
-      .showRegion(
-        { regionCode: "2644057000", regionName: "부전제2동" },
-        "manual",
-      );
+      .commit({ regionCode: "2644056000", regionName: "부전제1동" }, SEOMYEON);
 
-    expect(useRegionPanelStore.getState().origin).toBe("manual");
+    useRegionPanelStore
+      .getState()
+      .selectRegion({ regionCode: "2644057000", regionName: "부전제2동" });
+
+    const state = useRegionPanelStore.getState();
+    expect(state.displayedRegion?.regionName).toBe("부전제2동");
+    expect(state.committedBounds).toEqual(SEOMYEON);
+    expect(state.mode).toBe("grids");
   });
 
   it("전체 보기를 열면 전체 지역 리스트 모드가 된다 (AC 10)", () => {
@@ -54,20 +72,24 @@ describe("useRegionPanelStore — 표시 지역·패널 모드 (AC 9·10)", () =
     expect(useRegionPanelStore.getState().mode).toBe("regions");
   });
 
-  it("지역 리스트에서 지역을 선택하면 그 지역의 격자 리스트 모드로 전환된다 (AC 10)", () => {
+  it("지역 리스트에서 지역을 고르면 격자 리스트 모드로 전환된다 (AC 10)", () => {
     useRegionPanelStore.getState().openRegionList();
 
-    useRegionPanelStore.getState().showRegion(
-      {
-        regionCode: "2644057000",
-        regionName: "부전제2동",
-      },
-      "manual",
-    );
+    useRegionPanelStore
+      .getState()
+      .selectRegion({ regionCode: "2644057000", regionName: "부전제2동" });
 
     expect(useRegionPanelStore.getState().mode).toBe("grids");
     expect(useRegionPanelStore.getState().displayedRegion?.regionName).toBe(
       "부전제2동",
     );
+  });
+
+  it("전체 지역 리스트를 닫으면 격자 리스트 모드로 돌아간다 — 사이드레일 초기화 대상 (AC 16)", () => {
+    useRegionPanelStore.getState().openRegionList();
+
+    useRegionPanelStore.getState().closeRegionList();
+
+    expect(useRegionPanelStore.getState().mode).toBe("grids");
   });
 });

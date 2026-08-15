@@ -1,48 +1,59 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getActiveMissionsOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
+import type { Bounds } from "@/entities/cell";
+import { useAuthStore } from "@/features/auth/model/auth-store";
+import { gatedQueryStatus } from "@/features/region/model/gated-query-status";
+import type { MissionResponseDto } from "@/shared/api/generated";
+import { getActiveMissionsInViewportOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
-import { entityQueryPolicy } from "./map-query-policy";
-import { toMissionBuckets, type MissionBuckets } from "./mission";
+import { mapQueryPolicy } from "./map-query-policy";
+import { missionTypeParam, type MissionChip } from "./mission";
+import { viewportQueryArgs } from "./viewport-query";
 
 /**
- * 활성 미션 조회 (MSG-395 AC 1·26) — `GET /api/missions/active`.
+ * 활성 미션 조회 (MSG-395 AC 1·26 → MSG-403 AC 19) — `GET /api/missions/active`.
  * 지도 SDK를 import하지 않는다(RN 경계).
  *
- * 뷰포트 파라미터가 없는 전역 목록이라 뷰포트 정책(keepPreviousData)이 아니라 단일
- * 엔티티 정책을 쓴다. 인증 게이트를 걸지 않는다 — 축제·팝업·코스는 로그인 없이도
- * 보여야 하는 공개 정보라는 전제다(스펙 AC 28은 핫구역·수집 격자만 게이트 대상으로 둔다).
+ * 명세 개편으로 **칩 종류(type)와 bbox가 필수**가 됐다 — 전역 1회 조회 후 프론트에서
+ * type으로 나누던 방식이 사라지고 칩당 한 번씩 조회한다. bbox는 뷰포트가 아니라
+ * **확정 영역**이다(AC 12): 뷰포트를 쓰면 지도를 미는 동안 요청이 계속 나간다.
+ *
+ * 인증 게이트를 건다 — MSG-395는 "공개 정보"를 전제로 게이트가 없었으나 익명 호출이
+ * 401(developCode 2403)로 실측됐다(2026-08-15). 게이트가 없으면 비로그인 홈에서 칩을
+ * 누를 때마다 401 + auth-pipeline 재발급이 돈다(핫구역·지역 훅과 같은 이유).
  */
 export interface ActiveMissionsResult {
-  buckets: MissionBuckets;
+  missions: MissionResponseDto[];
   isPending: boolean;
   isError: boolean;
   retry: () => void;
 }
 
-const EMPTY_BUCKETS: MissionBuckets = {
-  festival: [],
-  popup: [],
-  route: [],
-};
+const EMPTY_MISSIONS: MissionResponseDto[] = [];
 
-export const useActiveMissionsQuery = (): ActiveMissionsResult => {
+export const useActiveMissionsQuery = (
+  chip: MissionChip | null,
+  bounds: Bounds | null,
+): ActiveMissionsResult => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { query: viewport, enabled: boundsReady } = viewportQueryArgs(bounds);
+  const active = boundsReady && isAuthenticated && chip !== null;
+
   const query = useQuery({
-    ...getActiveMissionsOptions(),
+    ...getActiveMissionsInViewportOptions({
+      query: {
+        // 비활성 쿼리는 발사되지 않지만 옵션 타입이 값을 요구한다 (viewportQueryArgs 관례)
+        type: chip === null ? "EVENT" : missionTypeParam(chip),
+        ...viewport,
+      },
+    }),
     select: unwrapEnvelope,
-    ...entityQueryPolicy,
+    enabled: active,
+    ...mapQueryPolicy,
   });
 
-  // 매 렌더 새 객체면 소비처의 목록 파생(진행도 계산·오버레이 조립) 메모가 통째로 무효화된다
-  const buckets = useMemo(
-    () => (query.data ? toMissionBuckets(query.data) : EMPTY_BUCKETS),
-    [query.data],
-  );
-
   return {
-    buckets,
-    isPending: query.isPending,
-    isError: query.isError,
-    retry: () => void query.refetch(),
+    missions: query.data ?? EMPTY_MISSIONS,
+    // 비활성 쿼리는 영원히 pending이라 게이트로 눌러준다 (region 훅 관례)
+    ...gatedQueryStatus(query, active),
   };
 };

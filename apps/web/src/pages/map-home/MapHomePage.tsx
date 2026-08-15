@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Toast } from "@fillmap/ui-web";
 import { decodeGridCenter } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
-import { MAP_SCALE_500M_ZOOM } from "@/features/map-home/model/map-scale";
 import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import { homePanelKind } from "@/features/map-home/model/panel-branch";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
@@ -12,6 +11,7 @@ import {
   emphasizeCell,
   themeCellGridIds,
 } from "@/features/map-home/model/theme-overlay";
+import { useChipEntry } from "@/features/map-home/model/use-chip-entry";
 import { useGridCardPlay } from "@/features/map-home/model/use-grid-card-play";
 import { useHomeMissions } from "@/features/map-home/model/use-home-missions";
 import { useHomeGridDetail } from "@/features/map-home/model/use-home-grid-detail";
@@ -21,6 +21,7 @@ import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-gr
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
+import { shouldShowReload } from "@/features/region/model/region-reload";
 import { useReverseGeocodeQuery } from "@/features/region/model/use-reverse-geocode-query";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
@@ -29,7 +30,7 @@ import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
 import { HomePanelSwitch } from "./ui/HomePanelSwitch";
 import { HomeSearchBox } from "./ui/HomeSearchBox";
-import { ThemeChipsBar } from "./ui/ThemeChipsBar";
+import { RegionReloadButton } from "./ui/RegionReloadButton";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
 
 /** 카드 재생 안내 토스트 자동 소멸(ms) — ReportDialog TOAST_DURATION_MS 관례와 동일 값 */
@@ -96,13 +97,20 @@ export const MapHomePage = () => {
   // 표시는 셸 상시 층(MSG-263 D9) 소유이고, 홈은 같은 뷰포트 쿼리를 구독만 한다(캐시 공유)
   const viewportBounds = useViewportStore((s) => s.bounds);
   const viewportCenter = useViewportStore((s) => s.center);
-  const { grids: occupiedGrids } = useOccupiedGridsQuery(viewportBounds);
+  const viewportZoom = useViewportStore((s) => s.zoom);
+  // 지도 데이터의 bbox 정본은 **확정 영역**이다 (AC 12) — 지도를 미는 동안에는 갱신되지 않는다
+  const committedRegion = useRegionPanelStore((s) => s.displayedRegion);
+  const committedBounds = useRegionPanelStore((s) => s.committedBounds);
+  const commitRegion = useRegionPanelStore((s) => s.commit);
+  const panelMode = useRegionPanelStore((s) => s.mode);
+  const { grids: occupiedGrids } = useOccupiedGridsQuery(committedBounds);
   const occupiedIds = useMemo(
     () => occupiedGrids.map((g) => g.gridId),
     [occupiedGrids],
   );
 
-  // 현재 행정동 — 핫구역 요약의 범위. RegionPanel과 같은 쿼리 키라 캐시를 공유한다
+  // 현재 지도 중심 행정동 — "장소 불러오기" 버튼의 대상이자 칩 진입 확정 대상.
+  // 화면 표시(헤더·핫구역 요약)는 확정 지역을 쓴다 (AC 13)
   const reverse = useReverseGeocodeQuery(
     isAuthenticated ? viewportCenter : null,
   );
@@ -123,16 +131,16 @@ export const MapHomePage = () => {
     isError: missionListFailed,
     progressFailed,
     retry: retryMissionList,
-  } = useHomeMissions({ activeTheme, selectedMissionId });
+  } = useHomeMissions({ activeTheme, selectedMissionId, committedBounds });
 
   // 핫구역 동 요약 (AC 8~10) — 칩이 핫구역일 때만 의미가 있으나 훅은 항상 호출한다
   // (조건부 훅 금지). 행정동이 null이면 내부에서 빈 요약으로 떨어진다
   const hotSummary = useHotRegionSummary({
-    bounds: activeTheme === "hot" ? viewportBounds : null,
+    bounds: activeTheme === "hot" ? committedBounds : null,
     regionName:
-      activeTheme === "hot" ? (currentRegion?.regionName ?? null) : null,
+      activeTheme === "hot" ? (committedRegion?.regionName ?? null) : null,
     regionCode:
-      activeTheme === "hot" ? (currentRegion?.regionCode ?? null) : null,
+      activeTheme === "hot" ? (committedRegion?.regionCode ?? null) : null,
   });
 
   // 지도 오버레이 파생 — 칩별 소스 분기·뷰포트 클리핑은 훅이 소유한다 (리뷰 반영: 페이지 분할)
@@ -148,7 +156,7 @@ export const MapHomePage = () => {
     selectedCourse,
     focusedMissionId,
     occupiedIds,
-    viewportBounds,
+    viewportBounds: committedBounds,
   });
 
   // 지역 격자 카드 클릭 (MSG-328) — 좌측은 지역 패널 그대로 두고 오른쪽 미니 패널에서
@@ -215,21 +223,15 @@ export const MapHomePage = () => {
     clearOverlays,
   ]);
 
-  // 경로추천 칩을 켜면 축척 500m가 보이는 줌으로 맞춘다 (AC 19) — 코스는 동 하나보다
-  // 넓어 기본 줌(16)에서는 라인이 화면 밖으로 나간다.
-  // **지도 준비를 기다린다** (리뷰 반영): SDK 로드 전에는 `zoomTo`가 옵셔널 체이닝으로
-  // 조용히 no-op이라, 진입 직후 칩을 누르면 그 세션 내내 줌이 안 맞았다. 뷰포트가
-  // 들어오는 시점(=지도 생성 완료)까지 미뤘다가 활성화당 1회만 적용한다
-  const routeZoomAppliedRef = useRef(false);
-  useEffect(() => {
-    if (activeTheme !== "route") {
-      routeZoomAppliedRef.current = false;
-      return;
-    }
-    if (routeZoomAppliedRef.current || viewportBounds === null) return;
-    routeZoomAppliedRef.current = true;
-    zoomTo(MAP_SCALE_500M_ZOOM);
-  }, [activeTheme, viewportBounds, zoomTo]);
+  // 칩 활성화 진입 — 칩에 맞는 줌으로 옮기고 그 화면을 1회 확정한다 (AC 6·9)
+  useChipEntry({
+    activeTheme,
+    bounds: viewportBounds,
+    zoom: viewportZoom,
+    region: currentRegion,
+    zoomTo,
+    commit: commitRegion,
+  });
 
   useHomeEntryLifecycle();
 
@@ -275,6 +277,27 @@ export const MapHomePage = () => {
     selectedGridId: selectedCellId,
   });
 
+  // "장소 불러오기" (AC 10) — 지도 중심 행정동이 확정 행정동과 달라졌을 때만 뜬다.
+  // 칩 4종 화면과 지역 격자 패널이 같은 버튼을 공유하므로 패널이 아니라 페이지가 소유한다.
+  // 상세(격자·미션·코스)에서는 감춘다 — 갱신 대상인 목록이 화면에 없다
+  const isDetailPanel =
+    panel === "grid-detail" ||
+    panel === "mission-detail" ||
+    panel === "course-detail";
+  const reloadTarget =
+    !isDetailPanel &&
+    panelMode === "grids" &&
+    currentRegion !== null &&
+    shouldShowReload(
+      committedRegion?.regionCode ?? null,
+      currentRegion.regionCode,
+    )
+      ? {
+          regionCode: currentRegion.regionCode,
+          regionName: currentRegion.regionName,
+        }
+      : null;
+
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
@@ -294,7 +317,7 @@ export const MapHomePage = () => {
           onBackFromDetail={closeDetail}
           onViewAll={handleViewAll}
           hotSummary={hotSummary}
-          regionName={currentRegion?.regionName ?? null}
+          regionName={committedRegion?.regionName ?? null}
           onHotUpload={handleHotUpload}
           missionViews={missionViews}
           courseViews={courseViews}
@@ -314,12 +337,17 @@ export const MapHomePage = () => {
           onCloseTheme={closeThemeMiniFirst}
           onGridCardSelect={cardPlay.play}
         />
+        {reloadTarget && (
+          <RegionReloadButton
+            regionName={reloadTarget.regionName}
+            onClick={() => commitRegion(reloadTarget, viewportBounds)}
+          />
+        )}
       </aside>
 
       {miniSelection && (
         <VideoMiniPanel selected={miniSelection} onClose={closeMiniPanel} />
       )}
-      <ThemeChipsBar />
       {cardPlay.notice && (
         <div className="pointer-events-none fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-120 px-md">
           <Toast title={CARD_PLAY_NOTICE_MESSAGE[cardPlay.notice]} />
