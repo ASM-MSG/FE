@@ -304,6 +304,7 @@ export const MapHomePage = () => {
     shouldShowReload(
       committedRegion?.regionCode ?? null,
       currentRegion.regionCode,
+      viewportZoom,
     )
       ? {
           regionCode: currentRegion.regionCode,

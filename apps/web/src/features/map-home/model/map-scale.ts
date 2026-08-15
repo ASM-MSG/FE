@@ -34,6 +34,8 @@ export const MAX_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.length - 1;
  */
 export const MAP_SCALE_500M_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("500m");
 export const MAP_SCALE_1KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("1km");
+/** 축척 `2km` 단 — "장소 불러오기"가 동작하는 가장 넓은 줌 (MSG-403 후속) */
+export const MAP_SCALE_2KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("2km");
 
 /**
  * zoom을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.
