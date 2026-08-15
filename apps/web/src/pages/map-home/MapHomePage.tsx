@@ -68,7 +68,7 @@ const withMiniPanelPriority = (close: () => void) => () => {
  * 셸의 MapCanvas가 담당한다 — 지도 SDK를 import하지 않는다(RN 경계).
  */
 export const MapHomePage = () => {
-  const { moveTo, zoomTo } = useMapShell();
+  const { moveTo, zoomTo, fitBounds } = useMapShell();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
@@ -245,6 +245,19 @@ export const MapHomePage = () => {
     progressFailed,
   });
 
+  // 코스를 고르면 그 코스가 다 보이게 지도를 옮긴다 (사용자 요청) — 라인·번호 마커가
+  // 화면 밖에 있으면 순서를 읽을 수 없다. 상세 오버레이는 확정 영역이 아니라 코스 자기
+  // 경계로 그려지므로(use-home-overlays) 이동해도 잘리지 않는다
+  const handleSelectMission = useCallback(
+    (missionId: number) => {
+      selectMission(missionId);
+      const bbox = courseViews.find((c) => c.missionId === missionId)?.shape
+        .bbox;
+      if (bbox) fitBounds(bbox);
+    },
+    [selectMission, courseViews, fitBounds],
+  );
+
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   const handleHotUpload = useCallback(() => {
     const anchor = hotSummary.hotGridIds[0];
@@ -329,7 +342,7 @@ export const MapHomePage = () => {
           listFailed={missionListFailed}
           progressFailed={progressFailed}
           onListRetry={retryMissionList}
-          onSelectMission={selectMission}
+          onSelectMission={handleSelectMission}
           onHoverMission={hoverMission}
           onBackToList={clearMission}
           onSelectSpot={selectCell}

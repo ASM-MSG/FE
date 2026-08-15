@@ -1,9 +1,9 @@
 import type { LatLng } from "@/entities/cell";
 import type { MissionResponseDto } from "@/shared/api/generated";
 import {
+  coursePath,
   courseSpots,
   isLoopCourse,
-  parseLineString,
   type CourseSpot,
 } from "./course";
 import type { MissionProgressResponseDto } from "@/shared/api/generated";
@@ -78,12 +78,14 @@ export const toCourseView = (
   now: Date,
 ): CourseView => {
   const view = toMissionView(dto, progressDto, now);
-  const path = parseLineString(view.shape.line);
+  const spots = courseSpots(view.shape.spots, visitedGridIds);
+  // 라인이 없으면 스팟 번호 순 직선으로 잇는다 (MSG-403 후속)
+  const path = coursePath(view.shape.line, spots);
 
   return {
     ...view,
     path,
-    spots: courseSpots(view.shape.spots, visitedGridIds),
+    spots,
     loop: isLoopCourse(path),
   };
 };

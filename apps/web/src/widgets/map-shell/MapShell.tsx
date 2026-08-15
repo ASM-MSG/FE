@@ -151,6 +151,7 @@ export const MapShell = () => {
       zoomIn: () => mapRef.current?.zoomIn(),
       zoomOut: () => mapRef.current?.zoomOut(),
       zoomTo: (zoom) => mapRef.current?.zoomTo(zoom),
+      fitBounds: (bounds) => mapRef.current?.fitBounds(bounds),
       locate: () => {
         getCurrentPosition().then((coords) => mapRef.current?.moveTo(coords));
       },

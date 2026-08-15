@@ -1,5 +1,5 @@
 import { useOutletContext } from "react-router-dom";
-import type { LatLng } from "@/entities/cell";
+import type { Bounds, LatLng } from "@/entities/cell";
 
 /**
  * 지도 명령 API — 지속 셸(MapShell)이 오버레이(홈/탐색)에 주입한다.
@@ -15,6 +15,8 @@ export interface MapShellContext {
    * 값은 네이버 의미 체계(클수록 확대, 6~21)이고 범위 클램프는 지도 경계가 맡는다.
    */
   zoomTo: (zoom: number) => void;
+  /** 지정 영역이 다 보이게 맞춘다 (MSG-403 후속) */
+  fitBounds: (bounds: Bounds) => void;
   /** 현재 위치(폴백 시 서면)로 재이동 */
   locate: () => void;
 }

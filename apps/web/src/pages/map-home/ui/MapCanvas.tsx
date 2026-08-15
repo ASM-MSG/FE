@@ -45,6 +45,8 @@ export interface MapCanvasHandle {
   zoomOut: () => void;
   /** 지정 줌 단으로 이동 (MSG-395 AC 19) — 유효 범위로 클램프한다 */
   zoomTo: (zoom: number) => void;
+  /** 지정 영역이 다 보이게 맞춘다 (MSG-403 후속) — 코스 선택 시 그 코스로 이동 */
+  fitBounds: (bounds: Bounds) => void;
 }
 
 /**
@@ -434,6 +436,15 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
           mapRef.current?.setZoom(
             Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom)),
             true,
+          );
+        },
+        fitBounds: ({ sw, ne }) => {
+          // 클러스터 클릭 줌 인(zoomToCluster)과 같은 SDK 경로 — 경계는 이 안에서만 다룬다
+          mapRef.current?.fitBounds(
+            new naver.maps.LatLngBounds(
+              new naver.maps.LatLng(sw.lat, sw.lng),
+              new naver.maps.LatLng(ne.lat, ne.lng),
+            ),
           );
         },
       }),
