@@ -17,17 +17,26 @@ export const useCommittedRegionBootstrap = (): void => {
   const center = useViewportStore((s) => s.center);
   const bounds = useViewportStore((s) => s.bounds);
   const displayedRegion = useRegionPanelStore((s) => s.displayedRegion);
+  const committedBounds = useRegionPanelStore((s) => s.committedBounds);
   const commit = useRegionPanelStore((s) => s.commit);
+  const commitBounds = useRegionPanelStore((s) => s.commitBounds);
 
   const reverse = useReverseGeocodeQuery(isAuthenticated ? center : null);
   const region = reverse.region;
 
   useEffect(() => {
-    // 행정동 밖(바다 등)이면 채택하지 않는다 — 격자 조회도 하지 않는다 (MSG-328 AC 12)
-    if (displayedRegion !== null || region === null || bounds === null) return;
-    commit(
-      { regionCode: region.regionCode, regionName: region.regionName },
-      bounds,
-    );
-  }, [displayedRegion, region, bounds, commit]);
+    if (displayedRegion !== null || bounds === null) return;
+    if (region !== null) {
+      // 행정동까지 판별됐으면 지역+영역을 함께 확정한다 — 헤더·격자 리스트가 열린다
+      commit(
+        { regionCode: region.regionCode, regionName: region.regionName },
+        bounds,
+      );
+      return;
+    }
+    // 행정동 미판별(디바운스 중·실패·행정동 밖)이어도 **영역은 먼저 확정한다** (CI e2e
+    // 회귀 보수) — 여기서 기다리면 점령 격자·클러스터 등 지도 데이터 전체가 역지오코딩에
+    // 볼모잡힌다. 격자 리스트는 여전히 행정동 채택 후에만 조회된다 (MSG-328 AC 12)
+    if (committedBounds === null) commitBounds(bounds);
+  }, [displayedRegion, committedBounds, region, bounds, commit, commitBounds]);
 };

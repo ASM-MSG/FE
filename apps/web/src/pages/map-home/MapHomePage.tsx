@@ -1,16 +1,10 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { Toast } from "@fillmap/ui-web";
+import { useCallback, useMemo } from "react";
 import { decodeGridCenter } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
-import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import { homePanelKind } from "@/features/map-home/model/panel-branch";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
-import {
-  emphasizeCell,
-  themeCellGridIds,
-} from "@/features/map-home/model/theme-overlay";
 import { useChipEntry } from "@/features/map-home/model/use-chip-entry";
 import { useGridCardPlay } from "@/features/map-home/model/use-grid-card-play";
 import { useHomeMissions } from "@/features/map-home/model/use-home-missions";
@@ -21,26 +15,17 @@ import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-gr
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
-import { shouldShowReload } from "@/features/region/model/region-reload";
+import { deriveReloadTarget } from "@/features/region/model/region-reload";
 import { useReverseGeocodeQuery } from "@/features/region/model/use-reverse-geocode-query";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
-import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
-import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
+import { CardPlayNotice } from "./ui/CardPlayNotice";
 import { HomePanelSwitch } from "./ui/HomePanelSwitch";
 import { HomeSearchBox } from "./ui/HomeSearchBox";
 import { RegionReloadButton } from "./ui/RegionReloadButton";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
-
-/** 카드 재생 안내 토스트 자동 소멸(ms) — ReportDialog TOAST_DURATION_MS 관례와 동일 값 */
-const CARD_PLAY_TOAST_MS = 3000;
-
-/** 카드 재생 안내 문구 — useGridCardPlay notice 사유별 */
-const CARD_PLAY_NOTICE_MESSAGE = {
-  empty: "이 격자에 재생할 영상이 없어요.",
-  error: "영상 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
-} as const;
+import { useHomeOverlayPublish } from "./ui/use-home-overlay-publish";
 
 /**
  * Escape 우선순위 래핑 (MSG-277 3차 AC 13) — 미니 패널이 열려 있으면 그것만 닫고,
@@ -86,12 +71,6 @@ export const MapHomePage = () => {
   const miniSelection = useVideoMiniPanelStore((s) => s.selected);
   const openMiniPanel = useVideoMiniPanelStore((s) => s.open);
   const closeMiniPanel = useVideoMiniPanelStore((s) => s.close);
-
-  const setCells = useMapOverlayStore((s) => s.setCells);
-  const setRoutes = useMapOverlayStore((s) => s.setRoutes);
-  const setLabels = useMapOverlayStore((s) => s.setLabels);
-  const setOnCellClick = useMapOverlayStore((s) => s.setOnCellClick);
-  const clearOverlays = useMapOverlayStore((s) => s.clear);
 
   // 내 점령 격자 id — 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정용.
   // 표시는 셸 상시 층(MSG-263 D9) 소유이고, 홈은 같은 뷰포트 쿼리를 구독만 한다(캐시 공유)
@@ -160,19 +139,17 @@ export const MapHomePage = () => {
   });
 
   // 지역 격자 카드 클릭 (MSG-328) — 좌측은 지역 패널 그대로 두고 오른쪽 미니 패널에서
-  // 첫 영상만 재생한다. 재생 중 격자는 아래 게시 셀에 테두리 강조로 얹는다
+  // 첫 영상만 재생한다. 재생 중 격자는 게시 셀에 테두리 강조로 얹는다
   const cardPlay = useGridCardPlay();
 
-  useEffect(() => {
-    if (cardPlay.notice === null) return;
-    const timer = setTimeout(cardPlay.dismissNotice, CARD_PLAY_TOAST_MS);
-    return () => clearTimeout(timer);
-  }, [cardPlay.notice, cardPlay.dismissNotice]);
-
-  const publishedCells = useMemo(
-    () => emphasizeCell(overlays.cells, cardPlay.playingGridId, occupiedIds),
-    [overlays.cells, cardPlay.playingGridId, occupiedIds],
-  );
+  // 게시 셀 파생·탭 판정·게시/해제 배선 (리뷰 반영 — 300줄 초과 분할)
+  useHomeOverlayPublish({
+    activeTheme,
+    overlays,
+    hotCells: hotSummary.cells,
+    occupiedIds,
+    playingGridId: cardPlay.playingGridId,
+  });
 
   // 상세 패널의 "전체 보기" — 상세를 닫고 패널 안 전체 지역 리스트를 연다 (MSG-328)
   const openRegionList = useRegionPanelStore((s) => s.openRegionList);
@@ -180,48 +157,6 @@ export const MapHomePage = () => {
     closeDetail();
     openRegionList();
   }, [closeDetail, openRegionList]);
-
-  // 셀 탭 → 상세 오픈/무시 판정 (AC 11) — 판정은 순수 함수, 스토어는 상태만.
-  // 판정 id는 게시 id와 같은 규칙(좌표 유래 서버 gridId)이어야 한다
-  const expandSidebar = useSidebarStore((s) => s.setCollapsed);
-  const clickableGridIds = useMemo(
-    () =>
-      activeTheme === "hot"
-        ? themeCellGridIds(hotSummary.cells)
-        : // 재생 강조 셀(emphasizeCell)은 미션 타일이 아니므로 판정 집합에서 제외한다 —
-          // 게시 목록이 아니라 오버레이 원본을 본다
-          overlays.cells.map((cell) => cell.id),
-    [activeTheme, hotSummary.cells, overlays.cells],
-  );
-  const handleCellTap = useCallback(
-    (cellId: string) => {
-      if (!canOpenDetail(activeTheme, cellId, clickableGridIds, occupiedIds))
-        return;
-      selectCell(cellId);
-      expandSidebar(false);
-    },
-    [activeTheme, clickableGridIds, occupiedIds, selectCell, expandSidebar],
-  );
-
-  // 섹션 오버레이 게시 — 홈 마운트 중 유지, 이탈 시 해제. 격자선·기본 점령 셀은 셸 상시 층
-  // 소유(MSG-263 D9)라 여기서 게시하지 않는다
-  useEffect(() => {
-    setCells(publishedCells);
-    setRoutes(overlays.routes);
-    setLabels(overlays.labels);
-    setOnCellClick(handleCellTap);
-    return () => clearOverlays();
-  }, [
-    publishedCells,
-    overlays.routes,
-    overlays.labels,
-    handleCellTap,
-    setCells,
-    setRoutes,
-    setLabels,
-    setOnCellClick,
-    clearOverlays,
-  ]);
 
   // 칩 활성화 진입 — 칩에 맞는 줌으로 옮기고 그 화면을 1회 확정한다 (AC 6·9)
   useChipEntry({
@@ -290,27 +225,18 @@ export const MapHomePage = () => {
     selectedGridId: selectedCellId,
   });
 
-  // "장소 불러오기" (AC 10) — 지도 중심 행정동이 확정 행정동과 달라졌을 때만 뜬다.
-  // 칩 4종 화면과 지역 격자 패널이 같은 버튼을 공유하므로 패널이 아니라 페이지가 소유한다.
-  // 상세(격자·미션·코스)에서는 감춘다 — 갱신 대상인 목록이 화면에 없다
-  const isDetailPanel =
-    panel === "grid-detail" ||
-    panel === "mission-detail" ||
-    panel === "course-detail";
-  const reloadTarget =
-    !isDetailPanel &&
-    panelMode === "grids" &&
-    currentRegion !== null &&
-    shouldShowReload(
-      committedRegion?.regionCode ?? null,
-      currentRegion.regionCode,
-      viewportZoom,
-    )
-      ? {
-          regionCode: currentRegion.regionCode,
-          regionName: currentRegion.regionName,
-        }
-      : null;
+  // "장소 불러오기" (AC 10) — 칩 4종 화면과 지역 격자 패널이 같은 버튼을 공유하므로
+  // 패널이 아니라 페이지가 소유한다. 판정은 순수 함수(region-reload) 몫
+  const reloadTarget = deriveReloadTarget({
+    isDetailPanel:
+      panel === "grid-detail" ||
+      panel === "mission-detail" ||
+      panel === "course-detail",
+    isGridListMode: panelMode === "grids",
+    committedRegionCode: committedRegion?.regionCode ?? null,
+    currentRegion,
+    zoom: viewportZoom,
+  });
 
   return (
     <>
@@ -362,11 +288,10 @@ export const MapHomePage = () => {
       {miniSelection && (
         <VideoMiniPanel selected={miniSelection} onClose={closeMiniPanel} />
       )}
-      {cardPlay.notice && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-120 px-md">
-          <Toast title={CARD_PLAY_NOTICE_MESSAGE[cardPlay.notice]} />
-        </div>
-      )}
+      <CardPlayNotice
+        notice={cardPlay.notice}
+        onDismiss={cardPlay.dismissNotice}
+      />
     </>
   );
 };

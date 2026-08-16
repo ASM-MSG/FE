@@ -93,3 +93,29 @@ describe("useRegionPanelStore — 확정 지역·확정 영역 (AC 9·13)", () =
     expect(useRegionPanelStore.getState().mode).toBe("grids");
   });
 });
+
+describe("useRegionPanelStore — 행정동 없이 영역만 확정 (e2e 회귀·CI)", () => {
+  beforeEach(() => {
+    useRegionPanelStore.setState(useRegionPanelStore.getInitialState(), true);
+  });
+
+  it("행정동 미판별이어도 영역만 먼저 확정할 수 있다 — 지도 데이터가 역지오코딩에 볼모잡히지 않는다", () => {
+    useRegionPanelStore.getState().commitBounds(SEOMYEON);
+
+    const state = useRegionPanelStore.getState();
+    expect(state.committedBounds).toEqual(SEOMYEON);
+    expect(state.displayedRegion).toBeNull();
+  });
+
+  it("영역만 확정된 뒤 행정동이 판별되면 지역+영역 확정으로 승격된다", () => {
+    useRegionPanelStore.getState().commitBounds(SEOMYEON);
+
+    useRegionPanelStore
+      .getState()
+      .commit({ regionCode: "2644056000", regionName: "부전제1동" }, JEONPO);
+
+    const state = useRegionPanelStore.getState();
+    expect(state.displayedRegion?.regionName).toBe("부전제1동");
+    expect(state.committedBounds).toEqual(JEONPO);
+  });
+});

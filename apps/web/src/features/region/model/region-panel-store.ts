@@ -26,6 +26,12 @@ interface RegionPanelState {
    */
   commit: (region: DisplayedRegion, bounds: Bounds | null) => void;
   /**
+   * 행정동 없이 **영역만** 확정한다 (CI e2e 회귀 보수) — 역지오코딩이 실패했거나 지도
+   * 중심이 행정동 밖(바다 등)이어도 점령 격자·클러스터 같은 지도 데이터는 떠야 한다.
+   * 헤더·격자 리스트는 displayedRegion이 null이라 기존 안내 상태를 유지한다.
+   */
+  commitBounds: (bounds: Bounds) => void;
+  /**
    * 전체 보기에서 지역만 고른다 — **확정 영역은 건드리지 않는다** (codex 리뷰).
    * 이 목록에는 좌표가 없어(`/api/regions/explore` 응답) 지도를 그 지역으로 옮길 수 없다.
    * 그런데 현재 뷰포트를 함께 확정하면, 사용자가 지도를 옮겨둔 상태에서 목록의 다른 동을
@@ -53,6 +59,7 @@ export const useRegionPanelStore = create<RegionPanelState>((set) => ({
   mode: "grids",
   commit: (region, bounds) =>
     set({ displayedRegion: region, committedBounds: bounds, mode: "grids" }),
+  commitBounds: (bounds) => set({ committedBounds: bounds }),
   selectRegion: (region) => set({ displayedRegion: region, mode: "grids" }),
   openRegionList: () => set({ mode: "regions" }),
   closeRegionList: () => set({ mode: "grids" }),

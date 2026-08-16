@@ -27,6 +27,34 @@ export const shouldShowReload = (
   displayedRegionCode !== currentRegionCode &&
   zoom >= MIN_RELOAD_ZOOM;
 
+/**
+ * 재검색 버튼의 대상 지역 파생 (MSG-403 리뷰 반영 — 페이지 300줄 분할).
+ * 상세 화면(격자·미션·코스)이나 전체 지역 리스트에서는 갱신 대상 목록이 화면에 없어
+ * 버튼을 만들지 않는다. 노출 규칙은 `shouldShowReload`와 동일 축(지역 상이 + 줌 상한).
+ */
+export interface ReloadTarget {
+  regionCode: string;
+  regionName: string;
+}
+
+export const deriveReloadTarget = (input: {
+  isDetailPanel: boolean;
+  isGridListMode: boolean;
+  committedRegionCode: string | null;
+  currentRegion: ReloadTarget | null;
+  zoom: number;
+}): ReloadTarget | null =>
+  !input.isDetailPanel &&
+  input.isGridListMode &&
+  input.currentRegion !== null &&
+  shouldShowReload(
+    input.committedRegionCode,
+    input.currentRegion.regionCode,
+    input.zoom,
+  )
+    ? input.currentRegion
+    : null;
+
 /** 버튼 라벨 — "{행정동} 장소 불러오기" (Figma 14357-18972 fab-load-places) */
 export const reloadLabel = (regionName: string): string =>
   `${regionName} 장소 불러오기`;

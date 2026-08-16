@@ -119,6 +119,19 @@ const stubDetail = (
       // MSG-395: 홈이 상시 조회하는 미션·수집 격자 (칩 미선택 분기 단정과는 무관하나,
       // 응답 모양이 없으면 파생이 터져 패널 자체가 렌더되지 않는다)
       if (pathname === "/api/missions/active") return envelopeResponse([]);
+      // MSG-403: 상세·진행도·영상은 미션 단위 API — 선택 id가 남은 시나리오에서도
+      // 응답 모양이 맞아야 파생이 터지지 않는다
+      if (pathname === "/api/missions/progress") return envelopeResponse([]);
+      if (/^\/api\/missions\/\d+\/videos$/.test(pathname)) {
+        return envelopeResponse({
+          videos: [],
+          hasNext: false,
+          nextCursor: null,
+        });
+      }
+      if (/^\/api\/missions\/\d+$/.test(pathname)) {
+        return new Response(null, { status: 404 });
+      }
       if (pathname === "/api/collections/grids") return envelopeResponse([]);
       if (pathname === "/api/collections/videos") return envelopeResponse([]);
       // 단건 재생 조회 — 미니 패널 자동 재생 흐름 (사용자 보완 2)

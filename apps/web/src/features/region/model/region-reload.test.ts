@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MIN_RELOAD_ZOOM,
+  deriveReloadTarget,
   reloadLabel,
   shouldShowReload,
 } from "./region-reload";
@@ -51,5 +52,30 @@ describe("shouldShowReload — 줌 상한 (사용자 요청: 축척 2km까지만
 describe("reloadLabel — 버튼 라벨 조합 (AC 8)", () => {
   it("'{행정동} 장소 불러오기'로 조합한다", () => {
     expect(reloadLabel("부전제1동")).toBe("부전제1동 장소 불러오기");
+  });
+});
+
+describe("deriveReloadTarget — 버튼 대상 파생 (MSG-403 리뷰 반영)", () => {
+  const BASE = {
+    isDetailPanel: false,
+    isGridListMode: true,
+    committedRegionCode: "2644056000",
+    currentRegion: { regionCode: "2644057000", regionName: "부전제2동" },
+    zoom: ZOOMED_IN,
+  };
+
+  it("목록 화면에서 확정 지역과 다른 동에 있으면 그 동이 대상이다", () => {
+    expect(deriveReloadTarget(BASE)?.regionName).toBe("부전제2동");
+  });
+
+  it("상세 화면·전체 지역 리스트에서는 대상이 없다 — 갱신할 목록이 화면에 없다", () => {
+    expect(deriveReloadTarget({ ...BASE, isDetailPanel: true })).toBeNull();
+    expect(deriveReloadTarget({ ...BASE, isGridListMode: false })).toBeNull();
+  });
+
+  it("축척 2km보다 넓게 줌아웃하면 대상이 없다", () => {
+    expect(
+      deriveReloadTarget({ ...BASE, zoom: MIN_RELOAD_ZOOM - 1 }),
+    ).toBeNull();
   });
 });
