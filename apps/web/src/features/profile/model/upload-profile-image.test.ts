@@ -19,6 +19,7 @@ const CONFIRMED: UserProfileResponseDto = {
   nickname: "필맵퍼",
   profileImageUrl: "https://cdn.fillmap.kr/profile/1.png",
   createdAt: "2026-08-11T09:00:00",
+  locationConsent: false,
 };
 
 const makePorts = (

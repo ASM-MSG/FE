@@ -3,6 +3,11 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
+import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
+import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
+import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
+import { useProfileModalStore } from "@/features/profile/model/profile-modal-store";
+import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { SideRailNav } from "./SideRailNav";
 
@@ -90,5 +95,63 @@ describe("SideRail 프로필 분기", () => {
 
     expect(screen.getByTestId("location").textContent).toBe("/dex");
     expect(useLoginModalStore.getState().open).toBe(false);
+  });
+});
+
+/**
+ * 활성 탭 재클릭 2단 동작 (MSG-403 AC 17·18) — 판정 규칙 자체는 rail-action 유닛이 덮고,
+ * 여기서는 "무엇이 초기화되고 언제 접히는가"의 배선만 고정한다.
+ */
+describe("활성 탭 재클릭 — 초기화 → 접기 (AC 17·18)", () => {
+  beforeEach(() => {
+    useAuthStore.setState({ isAuthenticated: true });
+    useSidebarStore.setState({ collapsed: false });
+    useThemeFilterStore.setState({ activeTheme: null });
+    useHomeCellDetailStore.setState({ selectedCellId: null });
+    useProfileModalStore.setState({ open: null });
+    useGalleryRegionStore.setState({ selected: null });
+    useRegionPanelStore.setState(useRegionPanelStore.getInitialState(), true);
+  });
+
+  it("칩이 켜진 홈에서 홈을 누르면 칩·상세만 닫히고 패널은 열려 있다 (AC 17)", () => {
+    useThemeFilterStore.setState({ activeTheme: "hot" });
+    useHomeCellDetailStore.setState({ selectedCellId: "39064_112221" });
+    renderNav("/");
+
+    fireEvent.click(screen.getByRole("button", { name: "홈" }));
+
+    expect(useThemeFilterStore.getState().activeTheme).toBeNull();
+    expect(useHomeCellDetailStore.getState().selectedCellId).toBeNull();
+    expect(useSidebarStore.getState().collapsed).toBe(false);
+  });
+
+  it("초기 상태의 홈에서 홈을 누르면 종전대로 패널이 접힌다 (AC 17)", () => {
+    renderNav("/");
+
+    fireEvent.click(screen.getByRole("button", { name: "홈" }));
+
+    expect(useSidebarStore.getState().collapsed).toBe(true);
+  });
+
+  it("모달이 열린 프로필에서 프로필을 누르면 모달만 닫힌다 (AC 18)", () => {
+    useProfileModalStore.setState({ open: "edit" });
+    renderNav("/profile");
+
+    fireEvent.click(screen.getByRole("button", { name: "프로필" }));
+
+    expect(useProfileModalStore.getState().open).toBeNull();
+    expect(useSidebarStore.getState().collapsed).toBe(false);
+  });
+
+  it("동 갤러리를 연 도감에서 도감을 누르면 갤러리에서 빠져나온다 (AC 18)", () => {
+    useGalleryRegionStore.setState({
+      selected: { regionName: "부전제1동", gridId: "39064_112221" },
+    });
+    renderNav("/dex");
+
+    fireEvent.click(screen.getByRole("button", { name: "도감" }));
+
+    expect(useGalleryRegionStore.getState().selected).toBeNull();
+    expect(useSidebarStore.getState().collapsed).toBe(false);
   });
 });

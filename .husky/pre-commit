@@ -7,6 +7,12 @@
 REACT_DOCTOR_REPO_ROOT="$(pwd)"
 REACT_DOCTOR_PKGS="apps/web apps/mobile packages/ui-web packages/ui-native"
 
+# 링크드 워크트리 보정 (2026-08-16): git commit이 훅에 GIT_DIR(워크트리 git 디렉토리)을
+# 주입하면, 패키지 하위 디렉토리로 cd한 react-doctor가 워크 트리 루트를 cwd로 오인해
+# 루트 설정 파일 전부를 "index-worktree 불일치"로 오탐한다(재현: GIT_DIR만 넣으면 실패).
+# 훅의 git 사용은 전부 정상 탐색으로 충분하므로 주입 변수를 걷어낸다.
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE
+
 react_doctor_run_in() {
   pkg_dir="$1"
   if [ -x "$REACT_DOCTOR_REPO_ROOT/node_modules/.bin/react-doctor" ]; then

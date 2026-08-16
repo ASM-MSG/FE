@@ -23,8 +23,11 @@ import {
  * 남짓한 useMemo인데 의존성이 겹쳐, 페이지 본문에 두면 조립 코드와 파생 코드가 뒤섞여
  * 읽기 어렵다. 파생은 순수하므로 훅으로 떼면 페이지는 배선만 남는다.
  *
- * **모든 파생은 뷰포트로 잘린다** — 전국 미션을 다 그리면 폴리곤이 1만 개를 넘어
- * 줌·이동이 멈춘다(mission-overlay 주석). 뷰포트가 없으면(지도 준비 전) 빈 목록이다.
+ * **목록 파생은 확정 영역으로 잘린다** — 전국 미션을 다 그리면 폴리곤이 1만 개를 넘어
+ * 줌·이동이 멈춘다(mission-overlay 주석). 영역이 없으면(지도 준비 전) 빈 목록이다.
+ * 단 **상세를 연 미션·코스는 자기 경계로 그린다** (MSG-403 후속): 코스를 고르면 지도가
+ * 그 코스로 이동하는데, 확정 영역으로 자르면 이동한 화면에서 라인·마커가 사라진다.
+ * 대상이 하나뿐이라 전개 비용도 그 미션의 격자 수로 묶인다.
  */
 interface HomeOverlaysInput {
   activeTheme: ThemeId | null;
@@ -63,6 +66,11 @@ export const useHomeOverlays = ({
   occupiedIds,
   viewportBounds,
 }: HomeOverlaysInput): HomeOverlays => {
+  // 상세 대상의 경계 — 있으면 클리핑 기준이 된다(자기 자신은 항상 포함).
+  // 경계가 없는 미션(좌표 없는 shape)은 확정 영역으로 떨어진다
+  const detailBounds: Bounds | null =
+    (selectedCourse ?? selectedMission)?.shape.bbox ?? viewportBounds;
+
   const cells = useMemo(() => {
     if (activeTheme === "hot")
       return buildHomeOverlayCells("hot", hotCells, occupiedIds);
@@ -73,7 +81,7 @@ export const useHomeOverlays = ({
         THEME_META.route.color,
         occupiedIds,
         focusedMissionId,
-        viewportBounds,
+        selectedCourse ? (detailBounds ?? viewportBounds) : viewportBounds,
       );
     if (eventChip !== null)
       return buildMissionCells(
@@ -81,10 +89,11 @@ export const useHomeOverlays = ({
         THEME_META[eventChip].color,
         occupiedIds,
         focusedMissionId,
-        viewportBounds,
+        selectedMission ? (detailBounds ?? viewportBounds) : viewportBounds,
       );
     return [];
   }, [
+    detailBounds,
     activeTheme,
     eventChip,
     isRouteChip,
@@ -104,9 +113,9 @@ export const useHomeOverlays = ({
     return buildCourseRoutes(
       selectedCourse ? [selectedCourse] : courseViews,
       THEME_META.route.color,
-      viewportBounds,
+      selectedCourse ? (detailBounds ?? viewportBounds) : viewportBounds,
     );
-  }, [isRouteChip, courseViews, selectedCourse, viewportBounds]);
+  }, [isRouteChip, courseViews, selectedCourse, detailBounds, viewportBounds]);
 
   const labels = useMemo(() => {
     if (viewportBounds === null) return [];
@@ -114,17 +123,18 @@ export const useHomeOverlays = ({
       return buildCourseLabels(
         selectedCourse ? [selectedCourse] : courseViews,
         THEME_META.route.color,
-        viewportBounds,
+        selectedCourse ? (detailBounds ?? viewportBounds) : viewportBounds,
       );
     if (eventChip !== null)
       return buildMissionLabels(
         selectedMission ? [selectedMission] : missionViews,
         THEME_META[eventChip].color,
         selectedMission ? selectedMission.missionId : focusedMissionId,
-        viewportBounds,
+        selectedMission ? (detailBounds ?? viewportBounds) : viewportBounds,
       );
     return [];
   }, [
+    detailBounds,
     eventChip,
     isRouteChip,
     courseViews,

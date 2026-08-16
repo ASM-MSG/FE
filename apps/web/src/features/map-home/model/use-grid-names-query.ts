@@ -13,9 +13,13 @@ import { entityQueryPolicy } from "./map-query-policy";
  * 미션 응답의 `spots`에는 좌표와 격자 id뿐이라 격자별로 이름을 받아온다.
  * 코스 하나의 스팟 수(6~8)만큼만 나가고 **코스 상세를 열었을 때만** 발사한다.
  */
-export const useGridNamesQuery = (
-  gridIds: string[],
-): ReadonlyMap<string, string> => {
+export interface GridNamesResult {
+  names: ReadonlyMap<string, string>;
+  /** 하나라도 도착 전 — 코스 상세가 "이름 없는 경유 지점"을 로딩 중에 거짓말하지 않게 게이트한다 */
+  isPending: boolean;
+}
+
+export const useGridNamesQuery = (gridIds: string[]): GridNamesResult => {
   const queries = useQueries({
     queries: gridIds.map((gridId) => ({
       ...getCellOptions({ path: { gridId } }),
@@ -36,5 +40,5 @@ export const useGridNamesQuery = (
     if (name !== cell.gridId) names.set(cell.gridId, name);
   }
 
-  return names;
+  return { names, isPending: queries.some((query) => query.isPending) };
 };

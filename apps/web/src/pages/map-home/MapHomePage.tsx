@@ -1,17 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { Toast } from "@fillmap/ui-web";
+import { useCallback, useMemo } from "react";
 import { decodeGridCenter } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
-import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
-import { MAP_SCALE_500M_ZOOM } from "@/features/map-home/model/map-scale";
 import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import { homePanelKind } from "@/features/map-home/model/panel-branch";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
-import {
-  emphasizeCell,
-  themeCellGridIds,
-} from "@/features/map-home/model/theme-overlay";
+import { useChipEntry } from "@/features/map-home/model/use-chip-entry";
 import { useGridCardPlay } from "@/features/map-home/model/use-grid-card-play";
 import { useHomeMissions } from "@/features/map-home/model/use-home-missions";
 import { useHomeGridDetail } from "@/features/map-home/model/use-home-grid-detail";
@@ -21,25 +15,17 @@ import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-gr
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
+import { deriveReloadTarget } from "@/features/region/model/region-reload";
 import { useReverseGeocodeQuery } from "@/features/region/model/use-reverse-geocode-query";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
-import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
-import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
+import { CardPlayNotice } from "./ui/CardPlayNotice";
 import { HomePanelSwitch } from "./ui/HomePanelSwitch";
 import { HomeSearchBox } from "./ui/HomeSearchBox";
-import { ThemeChipsBar } from "./ui/ThemeChipsBar";
+import { RegionReloadButton } from "./ui/RegionReloadButton";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
-
-/** 카드 재생 안내 토스트 자동 소멸(ms) — ReportDialog TOAST_DURATION_MS 관례와 동일 값 */
-const CARD_PLAY_TOAST_MS = 3000;
-
-/** 카드 재생 안내 문구 — useGridCardPlay notice 사유별 */
-const CARD_PLAY_NOTICE_MESSAGE = {
-  empty: "이 격자에 재생할 영상이 없어요.",
-  error: "영상 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
-} as const;
+import { useHomeOverlayPublish } from "./ui/use-home-overlay-publish";
 
 /**
  * Escape 우선순위 래핑 (MSG-277 3차 AC 13) — 미니 패널이 열려 있으면 그것만 닫고,
@@ -67,7 +53,7 @@ const withMiniPanelPriority = (close: () => void) => () => {
  * 셸의 MapCanvas가 담당한다 — 지도 SDK를 import하지 않는다(RN 경계).
  */
 export const MapHomePage = () => {
-  const { moveTo, zoomTo } = useMapShell();
+  const { moveTo, zoomTo, fitBounds } = useMapShell();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
@@ -86,23 +72,24 @@ export const MapHomePage = () => {
   const openMiniPanel = useVideoMiniPanelStore((s) => s.open);
   const closeMiniPanel = useVideoMiniPanelStore((s) => s.close);
 
-  const setCells = useMapOverlayStore((s) => s.setCells);
-  const setRoutes = useMapOverlayStore((s) => s.setRoutes);
-  const setLabels = useMapOverlayStore((s) => s.setLabels);
-  const setOnCellClick = useMapOverlayStore((s) => s.setOnCellClick);
-  const clearOverlays = useMapOverlayStore((s) => s.clear);
-
   // 내 점령 격자 id — 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정용.
   // 표시는 셸 상시 층(MSG-263 D9) 소유이고, 홈은 같은 뷰포트 쿼리를 구독만 한다(캐시 공유)
   const viewportBounds = useViewportStore((s) => s.bounds);
   const viewportCenter = useViewportStore((s) => s.center);
-  const { grids: occupiedGrids } = useOccupiedGridsQuery(viewportBounds);
+  const viewportZoom = useViewportStore((s) => s.zoom);
+  // 지도 데이터의 bbox 정본은 **확정 영역**이다 (AC 12) — 지도를 미는 동안에는 갱신되지 않는다
+  const committedRegion = useRegionPanelStore((s) => s.displayedRegion);
+  const committedBounds = useRegionPanelStore((s) => s.committedBounds);
+  const commitRegion = useRegionPanelStore((s) => s.commit);
+  const panelMode = useRegionPanelStore((s) => s.mode);
+  const { grids: occupiedGrids } = useOccupiedGridsQuery(committedBounds);
   const occupiedIds = useMemo(
     () => occupiedGrids.map((g) => g.gridId),
     [occupiedGrids],
   );
 
-  // 현재 행정동 — 핫구역 요약의 범위. RegionPanel과 같은 쿼리 키라 캐시를 공유한다
+  // 현재 지도 중심 행정동 — "장소 불러오기" 버튼의 대상이자 칩 진입 확정 대상.
+  // 화면 표시(헤더·핫구역 요약)는 확정 지역을 쓴다 (AC 13)
   const reverse = useReverseGeocodeQuery(
     isAuthenticated ? viewportCenter : null,
   );
@@ -123,16 +110,16 @@ export const MapHomePage = () => {
     isError: missionListFailed,
     progressFailed,
     retry: retryMissionList,
-  } = useHomeMissions({ activeTheme, selectedMissionId });
+  } = useHomeMissions({ activeTheme, selectedMissionId, committedBounds });
 
   // 핫구역 동 요약 (AC 8~10) — 칩이 핫구역일 때만 의미가 있으나 훅은 항상 호출한다
   // (조건부 훅 금지). 행정동이 null이면 내부에서 빈 요약으로 떨어진다
   const hotSummary = useHotRegionSummary({
-    bounds: activeTheme === "hot" ? viewportBounds : null,
+    bounds: activeTheme === "hot" ? committedBounds : null,
     regionName:
-      activeTheme === "hot" ? (currentRegion?.regionName ?? null) : null,
+      activeTheme === "hot" ? (committedRegion?.regionName ?? null) : null,
     regionCode:
-      activeTheme === "hot" ? (currentRegion?.regionCode ?? null) : null,
+      activeTheme === "hot" ? (committedRegion?.regionCode ?? null) : null,
   });
 
   // 지도 오버레이 파생 — 칩별 소스 분기·뷰포트 클리핑은 훅이 소유한다 (리뷰 반영: 페이지 분할)
@@ -148,23 +135,21 @@ export const MapHomePage = () => {
     selectedCourse,
     focusedMissionId,
     occupiedIds,
-    viewportBounds,
+    viewportBounds: committedBounds,
   });
 
   // 지역 격자 카드 클릭 (MSG-328) — 좌측은 지역 패널 그대로 두고 오른쪽 미니 패널에서
-  // 첫 영상만 재생한다. 재생 중 격자는 아래 게시 셀에 테두리 강조로 얹는다
+  // 첫 영상만 재생한다. 재생 중 격자는 게시 셀에 테두리 강조로 얹는다
   const cardPlay = useGridCardPlay();
 
-  useEffect(() => {
-    if (cardPlay.notice === null) return;
-    const timer = setTimeout(cardPlay.dismissNotice, CARD_PLAY_TOAST_MS);
-    return () => clearTimeout(timer);
-  }, [cardPlay.notice, cardPlay.dismissNotice]);
-
-  const publishedCells = useMemo(
-    () => emphasizeCell(overlays.cells, cardPlay.playingGridId, occupiedIds),
-    [overlays.cells, cardPlay.playingGridId, occupiedIds],
-  );
+  // 게시 셀 파생·탭 판정·게시/해제 배선 (리뷰 반영 — 300줄 초과 분할)
+  useHomeOverlayPublish({
+    activeTheme,
+    overlays,
+    hotCells: hotSummary.cells,
+    occupiedIds,
+    playingGridId: cardPlay.playingGridId,
+  });
 
   // 상세 패널의 "전체 보기" — 상세를 닫고 패널 안 전체 지역 리스트를 연다 (MSG-328)
   const openRegionList = useRegionPanelStore((s) => s.openRegionList);
@@ -173,63 +158,15 @@ export const MapHomePage = () => {
     openRegionList();
   }, [closeDetail, openRegionList]);
 
-  // 셀 탭 → 상세 오픈/무시 판정 (AC 11) — 판정은 순수 함수, 스토어는 상태만.
-  // 판정 id는 게시 id와 같은 규칙(좌표 유래 서버 gridId)이어야 한다
-  const expandSidebar = useSidebarStore((s) => s.setCollapsed);
-  const clickableGridIds = useMemo(
-    () =>
-      activeTheme === "hot"
-        ? themeCellGridIds(hotSummary.cells)
-        : // 재생 강조 셀(emphasizeCell)은 미션 타일이 아니므로 판정 집합에서 제외한다 —
-          // 게시 목록이 아니라 오버레이 원본을 본다
-          overlays.cells.map((cell) => cell.id),
-    [activeTheme, hotSummary.cells, overlays.cells],
-  );
-  const handleCellTap = useCallback(
-    (cellId: string) => {
-      if (!canOpenDetail(activeTheme, cellId, clickableGridIds, occupiedIds))
-        return;
-      selectCell(cellId);
-      expandSidebar(false);
-    },
-    [activeTheme, clickableGridIds, occupiedIds, selectCell, expandSidebar],
-  );
-
-  // 섹션 오버레이 게시 — 홈 마운트 중 유지, 이탈 시 해제. 격자선·기본 점령 셀은 셸 상시 층
-  // 소유(MSG-263 D9)라 여기서 게시하지 않는다
-  useEffect(() => {
-    setCells(publishedCells);
-    setRoutes(overlays.routes);
-    setLabels(overlays.labels);
-    setOnCellClick(handleCellTap);
-    return () => clearOverlays();
-  }, [
-    publishedCells,
-    overlays.routes,
-    overlays.labels,
-    handleCellTap,
-    setCells,
-    setRoutes,
-    setLabels,
-    setOnCellClick,
-    clearOverlays,
-  ]);
-
-  // 경로추천 칩을 켜면 축척 500m가 보이는 줌으로 맞춘다 (AC 19) — 코스는 동 하나보다
-  // 넓어 기본 줌(16)에서는 라인이 화면 밖으로 나간다.
-  // **지도 준비를 기다린다** (리뷰 반영): SDK 로드 전에는 `zoomTo`가 옵셔널 체이닝으로
-  // 조용히 no-op이라, 진입 직후 칩을 누르면 그 세션 내내 줌이 안 맞았다. 뷰포트가
-  // 들어오는 시점(=지도 생성 완료)까지 미뤘다가 활성화당 1회만 적용한다
-  const routeZoomAppliedRef = useRef(false);
-  useEffect(() => {
-    if (activeTheme !== "route") {
-      routeZoomAppliedRef.current = false;
-      return;
-    }
-    if (routeZoomAppliedRef.current || viewportBounds === null) return;
-    routeZoomAppliedRef.current = true;
-    zoomTo(MAP_SCALE_500M_ZOOM);
-  }, [activeTheme, viewportBounds, zoomTo]);
+  // 칩 활성화 진입 — 칩에 맞는 줌으로 옮기고 그 화면을 1회 확정한다 (AC 6·9)
+  useChipEntry({
+    activeTheme,
+    bounds: viewportBounds,
+    zoom: viewportZoom,
+    region: currentRegion,
+    zoomTo,
+    commit: commitRegion,
+  });
 
   useHomeEntryLifecycle();
 
@@ -242,6 +179,19 @@ export const MapHomePage = () => {
     hotGridCount: hotSummary.hotGridIds.length,
     progressFailed,
   });
+
+  // 코스를 고르면 그 코스가 다 보이게 지도를 옮긴다 (사용자 요청) — 라인·번호 마커가
+  // 화면 밖에 있으면 순서를 읽을 수 없다. 상세 오버레이는 확정 영역이 아니라 코스 자기
+  // 경계로 그려지므로(use-home-overlays) 이동해도 잘리지 않는다
+  const handleSelectMission = useCallback(
+    (missionId: number) => {
+      selectMission(missionId);
+      const bbox = courseViews.find((c) => c.missionId === missionId)?.shape
+        .bbox;
+      if (bbox) fitBounds(bbox);
+    },
+    [selectMission, courseViews, fitBounds],
+  );
 
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   const handleHotUpload = useCallback(() => {
@@ -275,6 +225,19 @@ export const MapHomePage = () => {
     selectedGridId: selectedCellId,
   });
 
+  // "장소 불러오기" (AC 10) — 칩 4종 화면과 지역 격자 패널이 같은 버튼을 공유하므로
+  // 패널이 아니라 페이지가 소유한다. 판정은 순수 함수(region-reload) 몫
+  const reloadTarget = deriveReloadTarget({
+    isDetailPanel:
+      panel === "grid-detail" ||
+      panel === "mission-detail" ||
+      panel === "course-detail",
+    isGridListMode: panelMode === "grids",
+    committedRegionCode: committedRegion?.regionCode ?? null,
+    currentRegion,
+    zoom: viewportZoom,
+  });
+
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
@@ -294,7 +257,7 @@ export const MapHomePage = () => {
           onBackFromDetail={closeDetail}
           onViewAll={handleViewAll}
           hotSummary={hotSummary}
-          regionName={currentRegion?.regionName ?? null}
+          regionName={committedRegion?.regionName ?? null}
           onHotUpload={handleHotUpload}
           missionViews={missionViews}
           courseViews={courseViews}
@@ -306,7 +269,7 @@ export const MapHomePage = () => {
           listFailed={missionListFailed}
           progressFailed={progressFailed}
           onListRetry={retryMissionList}
-          onSelectMission={selectMission}
+          onSelectMission={handleSelectMission}
           onHoverMission={hoverMission}
           onBackToList={clearMission}
           onSelectSpot={selectCell}
@@ -314,17 +277,21 @@ export const MapHomePage = () => {
           onCloseTheme={closeThemeMiniFirst}
           onGridCardSelect={cardPlay.play}
         />
+        {reloadTarget && (
+          <RegionReloadButton
+            regionName={reloadTarget.regionName}
+            onClick={() => commitRegion(reloadTarget, viewportBounds)}
+          />
+        )}
       </aside>
 
       {miniSelection && (
         <VideoMiniPanel selected={miniSelection} onClose={closeMiniPanel} />
       )}
-      <ThemeChipsBar />
-      {cardPlay.notice && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-120 px-md">
-          <Toast title={CARD_PLAY_NOTICE_MESSAGE[cardPlay.notice]} />
-        </div>
-      )}
+      <CardPlayNotice
+        notice={cardPlay.notice}
+        onDismiss={cardPlay.dismissNotice}
+      />
     </>
   );
 };

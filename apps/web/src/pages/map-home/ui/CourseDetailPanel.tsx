@@ -1,8 +1,9 @@
-import { cn } from "@fillmap/ui-web";
+import { DotsLoader, cn } from "@fillmap/ui-web";
 import {
   formatCourseDuration,
   formatDistanceKm,
 } from "@/features/map-home/model/mission-format";
+import type { GridNamesResult } from "@/features/map-home/model/use-grid-names-query";
 import type { CourseView } from "@/features/map-home/model/mission-view";
 import { ChipDetailHeader } from "./ChipDetailHeader";
 import { CourseSpotRow } from "./CourseSpotRow";
@@ -13,7 +14,7 @@ import { useEscapeClose } from "./use-escape-close";
 interface CourseDetailPanelProps {
   view: CourseView;
   /** 격자 id → 표시명 (use-grid-names-query). 없는 스팟은 이름 없는 경유 지점 */
-  spotNames: ReadonlyMap<string, string>;
+  spotNames: GridNamesResult;
   /**
    * 진행도(내 수집 격자) 조회 실패 — `내 진행`과 스팟 방문 여부를 주장하지 않는다
    * (리뷰 반영). 실패 시 전 스팟이 미방문으로 폴백해 사실처럼 보인다
@@ -41,6 +42,15 @@ export const CourseDetailPanel = ({
   onClose,
 }: CourseDetailPanelProps) => {
   useEscapeClose(onClose);
+
+  // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지).
+  // 스팟 이름이 도착하기 전의 "이름 없는 경유 지점"은 로딩을 부재로 위장하는 거짓말이다
+  if (spotNames.isPending)
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <DotsLoader label="코스 상세 불러오는 중" />
+      </div>
+    );
 
   const { dto, progress, spots } = view;
   const distance = formatDistanceKm(dto.distanceMeters);
@@ -104,7 +114,7 @@ export const CourseDetailPanel = ({
                   <CourseSpotRow
                     key={spot.gridId}
                     spot={spot}
-                    name={spotNames.get(spot.gridId)}
+                    name={spotNames.names.get(spot.gridId)}
                     visitedUnknown={progressFailed}
                     onSelect={onSpotSelect}
                   />

@@ -83,7 +83,9 @@ describe("뱃지 진열장 스모크", () => {
     stubDexFetch({ holdBadges: true });
     renderBadgeTab();
 
-    expect(await screen.findByText("뱃지를 불러오는 중이에요…")).toBeTruthy();
+    expect(
+      await screen.findByRole("status", { name: "뱃지 불러오는 중" }),
+    ).toBeTruthy();
     // 진열장 제목이 안 뜬다 = 획득 0개로 오독될 빈 그리드가 없다
     expect(screen.queryByText("뱃지 진열장")).toBeNull();
   });

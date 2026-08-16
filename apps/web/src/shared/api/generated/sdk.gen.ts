@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsData, GetActiveMissionsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileImageData, UpdateProfileImageResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMissionDetailData, GetMissionDetailResponses, GetMissionVideosData, GetMissionVideosResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetMyProgressData, GetMyProgressResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponses, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileImageData, UpdateProfileImageResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -89,6 +89,23 @@ export const updateProfileImage = <ThrowOnError extends boolean = false>(options
 export const updateNickname = <ThrowOnError extends boolean = false>(options: Options<UpdateNicknameData, ThrowOnError>): RequestResult<UpdateNicknameResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateNicknameResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/users/me/nickname',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 위치정보 사용 동의 변경
+ *
+ * 위치기반서비스 이용 동의를 켜거나 끄고 변경 후 프로필을 반환한다. 첫 로그인 온보딩의 동의 제출과 프로필 편집의 토글이 이 엔드포인트 하나를 공용으로 쓴다.
+ *
+ * 이미 저장된 값과 같은 값을 다시 보내도 성공하며, 이때 서버가 보관하는 마지막 변경 시각은 갱신되지 않는다(멱등). 동의를 꺼도 서버가 막는 API 는 없다 — 위치 기능 노출 제어는 클라이언트 몫이다.
+ */
+export const updateLocationConsent = <ThrowOnError extends boolean = false>(options: Options<UpdateLocationConsentData, ThrowOnError>): RequestResult<UpdateLocationConsentResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateLocationConsentResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/location-consent',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -269,7 +286,7 @@ export const signup = <ThrowOnError extends boolean = false>(options: Options<Si
 /**
  * 토큰 재발급
  *
- * 리프레시 토큰(웹=쿠키, 앱=body)으로 새 액세스 토큰과 회전된 새 리프레시 토큰을 발급받는다. 직전 리프레시 토큰은 즉시 무효화되며, 회전된 옛 토큰 재사용 시 세션 체인이 폐기된다.
+ * 리프레시 토큰(웹=쿠키, 앱=body)으로 새 액세스 토큰과 회전된 새 리프레시 토큰을 발급받는다. 직전 리프레시 토큰은 즉시 무효화되며, 회전된 옛 토큰 재사용 시 세션 체인이 폐기된다. 쿠키로 리프레시를 보내는 웹은 CSRF 방어를 위해 X-Client-Type 헤더가 필수다(없으면 400). body 로 보내는 앱은 생략할 수 있다.
  */
 export const reissue = <ThrowOnError extends boolean = false>(options?: Options<ReissueData, ThrowOnError>): RequestResult<ReissueResponses, unknown, ThrowOnError> => (options?.client ?? client).post<ReissueResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -477,7 +494,7 @@ export const searchPlaces = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * 행정동 격자 카드 리스트 + 헤더 카운트 조회
  *
- * 그 행정동 격자들 중 전역 공개 콘텐츠(공개·인코딩 완료·타인 영상 포함)가 있는 격자를 카드로 반환한다. 헤더 카운트(gridCount·videoCount)는 limit 무관 전체 기준이라 지도 홈 패널(limit=3)과 전체 보기(limit 생략)가 같은 숫자를 본다. 카드 커버는 격자 대표(cover)와 같은 영상이고 썸네일은 presigned GET URL 이다. 미존재·무콘텐츠 regionCode 는 404 가 아니라 200 + 카운트 0·빈 배열이다.
+ * 그 행정동 격자들 중 전역 공개 콘텐츠(공개·인코딩 완료·타인 영상 포함)가 있는 격자를 카드로 반환한다. 카운트(gridCount·videoCount)는 limit 무관 전체 기준이라 지도 홈 패널(sort=LATEST&limit=20, SRS FR-MAP-10)과 전체 보기(limit 생략)가 같은 값을 받지만, **전역 공개 콘텐츠를 센 값이라 패널 헤더("이 지역 격자 N개 · 영상 M개")에 쓰면 안 된다** — 헤더는 내 도감 집계 응답의 currentRegion(중심 동 전체의 내 것, MSG-374)이 채운다. 카드 커버는 격자 대표(cover)와 같은 영상이고 썸네일은 presigned GET URL 이다. 미존재·무콘텐츠 regionCode 는 404 가 아니라 200 + 카운트 0·빈 배열이다.
  */
 export const getRegionGrids = <ThrowOnError extends boolean = false>(options: Options<GetRegionGridsData, ThrowOnError>): RequestResult<GetRegionGridsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRegionGridsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -552,11 +569,50 @@ export const getPreferences = <ThrowOnError extends boolean = false>(options?: O
 });
 
 /**
- * 활성 미션 목록 조회
+ * 미션 상세 조회
  *
- * 지금 활성인 미션 전부를 유형별 렌더 shape(코스=PATH·구역=REGION·축제=BOX·테마/지속=CELLS)로 반환한다. bbox 없이 전역 목록이며 1h 전역 캐시로 재계산을 흡수한다. 시드 전이거나 활성 미션이 없으면 빈 배열이다(404 아님).
+ * 미션 ID 하나의 상세 — 미션 정보와 렌더 shape(목록과 같은 필드), 내 진행도와 스탬프 보유 여부, 이 미션에 올라온 전체 영상 개수, 코스라면 포토스팟별 방문 여부·영상 개수를 한 번에 반환한다. spotStats 는 shape.spots 와 같은 순서로 오고, 코스가 아니면 null 대신 빈 배열이다.
+ *
+ * 기간 판정은 하지 않는다 — 기간이 끝난 미션도 행이 남아 있으면 조회되고, 영상 개수는 그 미션이 활성일 때 촬영된 것만 센다(미션 영상 목록 GET /api/missions/{missionId}/videos 의 실제 후보 수와 항상 같다). 존재하지 않는 미션 ID 는 404 + developCode 12404(MISSION_NOT_FOUND)다.
  */
-export const getActiveMissions = <ThrowOnError extends boolean = false>(options?: Options<GetActiveMissionsData, ThrowOnError>): RequestResult<GetActiveMissionsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetActiveMissionsResponses, unknown, ThrowOnError>({
+export const getMissionDetail = <ThrowOnError extends boolean = false>(options: Options<GetMissionDetailData, ThrowOnError>): RequestResult<GetMissionDetailResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionDetailResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/missions/{missionId}',
+    ...options
+});
+
+/**
+ * 미션 영상 목록 조회
+ *
+ * 그 미션의 대상 격자에서 미션 기간에 촬영된 공개(PUBLIC)·READY 영상을 촬영 시각(recordedAt) 최신순으로 페이지 조회한다 — 촬영 시각이 같으면 videoId 내림차순으로 갈린다. 기간이 없는 미션(코스·지속형)은 기간 조건 없이 과거 영상까지 담고, 기간이 끝난 미션도 목록은 그대로 조회된다. 비공개·친구 공개·삭제·블라인드·인코딩 미완 영상은 본인 것이라도 제외되며, 응답은 누가 부르든 같다. 첫 요청은 cursor 없이 부르고, hasNext 가 true 면 응답의 nextCursor 를 다음 요청 cursor 로 넘기면 이어진다. 커서는 발급된 그 미션 전용이라 다른 미션 커서는 400(INVALID_CURSOR)이고, 형식이 깨진 커서도 같다. size 는 1~50 밖이면 클램프된다. 조건에 맞는 영상이 없거나 존재하지 않는 missionId 는 빈 페이지다. 썸네일은 presigned GET URL 로 내려준다.
+ */
+export const getMissionVideos = <ThrowOnError extends boolean = false>(options: Options<GetMissionVideosData, ThrowOnError>): RequestResult<GetMissionVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionVideosResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/missions/{missionId}/videos',
+    ...options
+});
+
+/**
+ * 미션별 내 진행도 조회
+ *
+ * 미션 id 여러 개의 내 진행도(채운 칸/목표 칸)와 스탬프 보유 여부를 한 번에 반환한다. 채운 칸은 스탬프 판정과 같은 술어로 센다 — 미션 기간 안에 촬영한 내 영상(삭제 제외)이 있는 격자 수다. 영상을 전부 지우면 진행도는 0으로 돌아가지만 스탬프는 비회수라 completed 는 남는다 — "0/1 인데 완료"가 정상 응답이다.
+ *
+ * missionIds 가 없거나 비면 빈 배열이고(오류 아님), 존재하지 않는 id 는 응답에서 빠진다. 기간이 끝난 미션도 조회된다. 배열 순서는 missionId 오름차순으로 고정된다(요청 순서 미보존). 300개 초과는 400 + developCode 12403 으로 거절한다.
+ */
+export const getMyProgress = <ThrowOnError extends boolean = false>(options?: Options<GetMyProgressData, ThrowOnError>): RequestResult<GetMyProgressResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMyProgressResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/missions/progress',
+    ...options
+});
+
+/**
+ * 뷰포트 내 활성 미션 목록 조회
+ *
+ * 지도 화면 bbox(남서~북동 좌표) 안의, 고른 종류(type)의 활성 미션을 유형별 렌더 shape(코스=PATH·축제/팝업=BOX)로 반환한다. bbox span 상한은 0.5도로 위도·경도 각 변에 따로 적용된다(정확히 0.5도는 허용). 초과 시 잘라서 응답하지 않고 400 + developCode 12401(VIEWPORT_TOO_LARGE)로 거절한다. 클라이언트는 격자 개별 조회(GET /api/grids)를 멈추는 것과 같은 0.5도 지점에서 이 조회도 멈추고 확대 안내를 그린다.
+ *
+ * 보이는 범위에 그 종류 미션이 없으면 실패가 아니라 빈 배열이다(뷰포트가 너무 넓은 12401 과 다른 상태). 한국 밖이지만 WGS84 정의역 안인 bbox 도 오류가 아니라 빈 배열이다. 응답에 사용자별 값은 없다 — 진행도는 GET /api/missions/progress 로 따로 받는다.
+ */
+export const getActiveMissionsInViewport = <ThrowOnError extends boolean = false>(options: Options<GetActiveMissionsInViewportData, ThrowOnError>): RequestResult<GetActiveMissionsInViewportResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetActiveMissionsInViewportResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/missions/active',
     ...options
@@ -792,7 +848,7 @@ export const getSummary = <ThrowOnError extends boolean = false>(options?: Optio
 /**
  * 갤러리 격자 목록 조회
  *
- * 로그인 사용자가 최근 수집한 격자를 first_collected_at 내림차순 최대 30개로 반환한다(무커서). 각 항목은 gridId·gridY/gridX·수집/방문 시각·영상 수·cover 영상 ID·cover 썸네일 URL 을 담는다. 점령 0건 사용자는 에러 없이 빈 배열을 받는다.
+ * 로그인 사용자가 수집한 격자를 카드로 반환한다(무커서). 파라미터를 모두 생략하면 전국을 first_collected_at 내림차순 최대 30개로 준다(기존 계약). regionCode 를 주면 그 행정동에 속한 내 격자만 나가며, 귀속은 격자 축이라 영상 좌표가 옆 동이어도 격자 소속 행정동 기준으로 잡힌다. 각 항목은 gridId·gridY/gridX·수집/방문 시각·영상 수·cover 영상 ID·cover 썸네일 URL·cover 길이(초)를 담는다. 내 격자가 없거나 미존재 regionCode 면 에러 없이 빈 배열을 받는다.
  */
 export const getCollectionGrids = <ThrowOnError extends boolean = false>(options?: Options<GetCollectionGridsData, ThrowOnError>): RequestResult<GetCollectionGridsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetCollectionGridsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

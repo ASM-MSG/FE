@@ -13,6 +13,7 @@ import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-stor
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
+import { useCommittedRegionBootstrap } from "@/features/region/model/use-committed-region";
 import { SEOMYEON_CENTER } from "@/shared/geolocation";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
@@ -68,16 +69,28 @@ const mapShellStub = {
   locate: () => {},
 };
 
-const ShellStub = () => <Outlet context={mapShellStub} />;
+/** 셸이 하는 일 중 홈이 의존하는 것 — 지도 명령 주입 + 확정 지역 최초 채택 (MSG-403 AC 9) */
+const ShellStub = () => {
+  useCommittedRegionBootstrap();
+  return <Outlet context={mapShellStub} />;
+};
 
-const renderHome = () =>
-  renderWithProviders(
+/** 지도 준비 완료 상태 — 확정 영역은 뷰포트가 들어와야 잡힌다 (MSG-403 AC 9) */
+const READY_BOUNDS = {
+  sw: { lat: 35.153, lng: 129.053 },
+  ne: { lat: 35.163, lng: 129.065 },
+};
+
+const renderHome = () => {
+  useViewportStore.setState({ bounds: READY_BOUNDS });
+  return renderWithProviders(
     <Routes>
       <Route element={<ShellStub />}>
         <Route path="/" element={<MapHomePage />} />
       </Route>
     </Routes>,
   );
+};
 
 /** 지역 패널은 비로그인 조회 게이트(익명 401 실측)가 있어 로그인 상태로 검증한다 */
 const authenticate = signInForTest;
@@ -106,6 +119,19 @@ const stubDetail = (
       // MSG-395: 홈이 상시 조회하는 미션·수집 격자 (칩 미선택 분기 단정과는 무관하나,
       // 응답 모양이 없으면 파생이 터져 패널 자체가 렌더되지 않는다)
       if (pathname === "/api/missions/active") return envelopeResponse([]);
+      // MSG-403: 상세·진행도·영상은 미션 단위 API — 선택 id가 남은 시나리오에서도
+      // 응답 모양이 맞아야 파생이 터지지 않는다
+      if (pathname === "/api/missions/progress") return envelopeResponse([]);
+      if (/^\/api\/missions\/\d+\/videos$/.test(pathname)) {
+        return envelopeResponse({
+          videos: [],
+          hasNext: false,
+          nextCursor: null,
+        });
+      }
+      if (/^\/api\/missions\/\d+$/.test(pathname)) {
+        return new Response(null, { status: 404 });
+      }
       if (pathname === "/api/collections/grids") return envelopeResponse([]);
       if (pathname === "/api/collections/videos") return envelopeResponse([]);
       // 단건 재생 조회 — 미니 패널 자동 재생 흐름 (사용자 보완 2)
@@ -171,10 +197,14 @@ describe("홈 좌측 패널 분기", () => {
 
     renderHome();
 
-    expect(await screen.findByText(/격자 정보를 불러오는 중/)).toBeTruthy();
+    expect(
+      await screen.findByRole("status", { name: "격자 정보 불러오는 중" }),
+    ).toBeTruthy();
     // 지역 패널의 어느 상태(정상·로딩·빈)도 이 자리에 나오면 안 된다
     expect(screen.queryByText("부전제1동")).toBeNull();
-    expect(screen.queryByText(/현재 지역을 확인하는 중/)).toBeNull();
+    expect(
+      screen.queryByRole("status", { name: "현재 지역 확인 중" }),
+    ).toBeNull();
   });
 
   it("상세 응답이 도착하면 상세 패널로 전환된다", async () => {
@@ -199,7 +229,9 @@ describe("홈 좌측 패널 분기", () => {
       }),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "다시 시도" })).toBeTruthy();
-    expect(screen.queryByText(/격자 정보를 불러오는 중/)).toBeNull();
+    expect(
+      screen.queryByRole("status", { name: "격자 정보 불러오는 중" }),
+    ).toBeNull();
   });
 
   /** 로그인 상태로 홈을 띄우고 초기 지역 패널(헤더·격자 카드) 도착을 기다린다 — 지역 흐름 공용 셋업 */
@@ -274,7 +306,7 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.getByText("부전제1동")).toBeTruthy();
   });
 
-  it("지도를 이동하면 헤더 행정동이 재검색 버튼 라벨과 함께 즉시 갱신되고 격자 리스트는 유지된다 (사용자 보완 1)", async () => {
+  it("지도를 이동해도 헤더 행정동과 격자 리스트는 확정 지역 그대로이고 재검색 버튼만 뜬다 (MSG-403 AC 11·13)", async () => {
     // 이동 후 중심의 행정동이 부전제2동으로 바뀌는 시나리오 — 가변 스텁
     let reverseRegion = BUJEON_REGION;
     stubDetail("ready", [], () => reverseRegion);
@@ -287,15 +319,41 @@ describe("홈 좌측 패널 분기", () => {
     };
     act(() => useViewportStore.setState({ center: { lat: 35.2, lng: 129.2 } }));
 
-    // 헤더는 라이브 갱신(디바운스 후), 격자 리스트는 표시 지역(부전제1동) 그대로,
-    // 재검색 버튼이 새 행정동 라벨로 노출된다 — 리스트 갱신은 버튼 클릭 시에만
+    // 재검색 버튼이 새 행정동 라벨로 뜬다 — 갱신 수단은 이 버튼뿐이다
     expect(
-      await screen.findByText("부전제2동", undefined, { timeout: 3000 }),
+      await screen.findByRole(
+        "button",
+        { name: /부전제2동 장소 불러오기/ },
+        { timeout: 3000 },
+      ),
     ).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: /부전제2동 장소 불러오기/ }),
-    ).toBeTruthy();
+    // 헤더·격자 리스트는 확정 지역(부전제1동) 그대로 — 지도 이동은 화면을 바꾸지 않는다
+    expect(screen.getByRole("heading", { name: "부전제1동" })).toBeTruthy();
     expect(screen.getByText("서면 A-14")).toBeTruthy();
+  });
+
+  it("장소 불러오기를 누르면 그 행정동으로 확정돼 헤더가 바뀐다 (MSG-403 AC 11)", async () => {
+    let reverseRegion = BUJEON_REGION;
+    stubDetail("ready", [], () => reverseRegion);
+    await renderRegionHome();
+
+    reverseRegion = {
+      regionCode: "2644057000",
+      regionName: "부전제2동",
+      parentCode: "2644000000",
+    };
+    act(() => useViewportStore.setState({ center: { lat: 35.2, lng: 129.2 } }));
+    fireEvent.click(
+      await screen.findByRole(
+        "button",
+        { name: /부전제2동 장소 불러오기/ },
+        { timeout: 3000 },
+      ),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "부전제2동" }),
+    ).toBeTruthy();
   });
 
   /** 격자 영상 1건 스텁으로 홈을 띄우고 서면 카드 클릭까지 진행한다 — 카드 재생 흐름 공용 셋업 */

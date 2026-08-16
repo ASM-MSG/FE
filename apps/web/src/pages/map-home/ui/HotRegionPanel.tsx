@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { cn } from "@fillmap/ui-web";
+import { DotsLoader, cn } from "@fillmap/ui-web";
 import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import type { HotRegionSummaryResult } from "@/features/map-home/model/use-hot-region-summary";
 import { THEME_META } from "@/features/map-home/model/theme";
@@ -44,6 +44,16 @@ export const HotRegionPanel = ({
   useEscapeClose(onClose);
 
   const { stats } = summary;
+
+  // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지).
+  // 헤더 스탯(내 영상 N개…)이 도착 전 0으로 뜨는 것도 함께 가린다. 실패는 게이트하지
+  // 않는다 — 본문의 RetryNotice가 "렌더된 상태"다
+  if (summary.isPending && !summary.isError)
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <DotsLoader label="핫구역 요약 불러오는 중" />
+      </div>
+    );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-md">
@@ -94,10 +104,6 @@ export const HotRegionPanel = ({
               message="핫구역 영상을 불러오지 못했어요"
               onRetry={summary.retry}
             />
-          ) : summary.isPending ? (
-            <p aria-busy className="text-fm-body text-foreground-muted">
-              영상을 불러오는 중이에요…
-            </p>
           ) : summary.videos.length === 0 ? (
             <p className="text-fm-body text-foreground-muted">
               아직 이 지역에 핫구역 영상이 없어요

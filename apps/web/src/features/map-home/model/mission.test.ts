@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { cellCenterAt, cellIndexAt, encodeGridId } from "@/entities/cell";
 import type { MissionResponseDto } from "@/shared/api/generated";
 import {
-  missionChipOf,
+  missionChipOfTheme,
   missionCoversGrid,
   missionGridIdsInBounds,
   missionShapeOf,
-  toMissionBuckets,
+  missionTypeParam,
 } from "./mission";
 
 /** 서면 일대 기준점 — MVP 지역(부산 서면) 규칙 */
@@ -50,48 +50,24 @@ const boundsAround = (
   ne: { lat: lat + half, lng: lng + half },
 });
 
-describe("missionChipOf — 미션 type을 칩 버킷으로 분류한다 (AC 1)", () => {
-  it("EVENT와 THEME는 지역축제 버킷이다 (AC 1)", () => {
-    expect(missionChipOf("EVENT")).toBe("festival");
-    expect(missionChipOf("THEME")).toBe("festival");
+describe("missionChipOfTheme — 활성 칩을 미션 칩으로 좁힌다 (AC 19)", () => {
+  it("축제·팝업·경로추천은 그대로 미션 칩이다 (AC 19)", () => {
+    expect(missionChipOfTheme("festival")).toBe("festival");
+    expect(missionChipOfTheme("popup")).toBe("popup");
+    expect(missionChipOfTheme("route")).toBe("route");
   });
 
-  it("POPUP은 팝업스토어, COURSE는 경로추천 버킷이다 (AC 1)", () => {
-    expect(missionChipOf("POPUP")).toBe("popup");
-    expect(missionChipOf("COURSE")).toBe("route");
-  });
-
-  it("칩에 대응하지 않는 type은 어느 버킷에도 넣지 않는다 (AC 1)", () => {
-    expect(missionChipOf("AREA")).toBeNull();
-    expect(missionChipOf("CONTINUOUS")).toBeNull();
+  it("핫구역과 칩 해제 상태는 미션 조회 대상이 아니다 (AC 19)", () => {
+    expect(missionChipOfTheme("hot")).toBeNull();
+    expect(missionChipOfTheme(null)).toBeNull();
   });
 });
 
-describe("toMissionBuckets — 응답을 칩별 목록으로 가른다 (AC 1)", () => {
-  it("칩별로 갈라 담고 대응 없는 type은 버린다 (AC 1)", () => {
-    const buckets = toMissionBuckets([
-      mission({ missionId: 1, type: "EVENT" }),
-      mission({ missionId: 2, type: "POPUP" }),
-      mission({
-        missionId: 3,
-        type: "COURSE",
-        shape: { line: null, spots: [] },
-      }),
-      mission({ missionId: 4, type: "AREA", shape: { regionCode: "2635058" } }),
-      mission({ missionId: 5, type: "THEME", shape: { cells: [] } }),
-    ]);
-
-    expect(buckets.festival.map((m) => m.missionId)).toEqual([1, 5]);
-    expect(buckets.popup.map((m) => m.missionId)).toEqual([2]);
-    expect(buckets.route.map((m) => m.missionId)).toEqual([3]);
-  });
-
-  it("빈 응답이면 세 버킷 모두 빈 목록이다 (경계)", () => {
-    const buckets = toMissionBuckets([]);
-
-    expect(buckets.festival).toEqual([]);
-    expect(buckets.popup).toEqual([]);
-    expect(buckets.route).toEqual([]);
+describe("missionTypeParam — 칩을 조회 파라미터 이름으로 (AC 19)", () => {
+  it("축제는 EVENT, 팝업은 POPUP, 경로추천은 COURSE로 조회한다 (AC 19)", () => {
+    expect(missionTypeParam("festival")).toBe("EVENT");
+    expect(missionTypeParam("popup")).toBe("POPUP");
+    expect(missionTypeParam("route")).toBe("COURSE");
   });
 });
 

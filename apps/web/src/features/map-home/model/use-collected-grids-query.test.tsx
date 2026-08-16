@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe("useCollectedGridsQuery — 내 수집 격자 (AC 3·28)", () => {
-  it("응답 격자 id를 집합으로 준다 — 미션 진행도 교집합의 입력 (AC 3)", async () => {
+  it("응답 격자 목록을 그대로 준다 (AC 11)", async () => {
     stubFetch(async () =>
       envelopeResponse([
         collectedGrid("16858_11420"),
@@ -40,19 +40,11 @@ describe("useCollectedGridsQuery — 내 수집 격자 (AC 3·28)", () => {
 
     const { result } = renderHook(() => useCollectedGridsQuery(), { wrapper });
 
-    await waitFor(() => expect(result.current.gridIds.size).toBe(2));
-    expect(result.current.gridIds.has("16858_11420")).toBe(true);
-    expect(result.current.gridIds.has("없는격자")).toBe(false);
-  });
-
-  it("진행도 판정을 위해 격자 중심 좌표를 함께 준다 (AC 3)", async () => {
-    stubFetch(async () => envelopeResponse([collectedGrid("16858_11420")]));
-
-    const { result } = renderHook(() => useCollectedGridsQuery(), { wrapper });
-
-    await waitFor(() => expect(result.current.collected).toHaveLength(1));
-    expect(result.current.collected[0].center.lat).toBeGreaterThan(30);
-    expect(result.current.collected[0].center.lng).toBeGreaterThan(120);
+    await waitFor(() => expect(result.current.grids).toHaveLength(2));
+    expect(result.current.grids.map((grid) => grid.gridId)).toEqual([
+      "16858_11420",
+      "16860_11421",
+    ]);
   });
 
   it("격자 상세가 점령 시작일을 읽을 수 있게 원본도 함께 준다 (AC 11)", async () => {
@@ -66,7 +58,7 @@ describe("useCollectedGridsQuery — 내 수집 격자 (AC 3·28)", () => {
     );
   });
 
-  it("비로그인이면 조회하지 않고 빈 집합이다 (AC 28)", async () => {
+  it("비로그인이면 조회하지 않고 빈 목록이다 (AC 28)", async () => {
     const received = stubFetch(async () =>
       envelopeResponse([collectedGrid("16858_11420")]),
     );
@@ -75,7 +67,7 @@ describe("useCollectedGridsQuery — 내 수집 격자 (AC 3·28)", () => {
     const { result } = renderHook(() => useCollectedGridsQuery(), { wrapper });
 
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(result.current.gridIds.size).toBe(0);
+    expect(result.current.grids).toHaveLength(0);
     expect(received).toHaveLength(0);
   });
 });
@@ -100,6 +92,6 @@ describe("useCollectedGridsQuery — 조회 실패 (리뷰 반영)", () => {
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(result.current.gridIds.size).toBe(0);
+    expect(result.current.grids).toHaveLength(0);
   });
 });

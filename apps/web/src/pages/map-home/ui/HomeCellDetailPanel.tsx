@@ -1,5 +1,5 @@
 import { ChevronLeft } from "lucide-react";
-import { Button, cn } from "@fillmap/ui-web";
+import { Button, DotsLoader, cn } from "@fillmap/ui-web";
 import type {
   HomeCellBadge,
   HomeCellDetail,
@@ -57,10 +57,10 @@ export const HomeCellDetailLoading = ({ onClose }: { onClose: () => void }) => {
   useEscapeClose(onClose);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-md" aria-busy>
-      <p className="text-fm-body text-foreground-muted">
-        격자 정보를 불러오는 중이에요…
-      </p>
+    <div className="flex min-h-0 flex-1 flex-col gap-md">
+      <div className="flex flex-1 items-center justify-center">
+        <DotsLoader label="격자 정보 불러오는 중" />
+      </div>
     </div>
   );
 };
@@ -125,6 +125,10 @@ export const HomeCellDetailPanel = ({
   // (위치 태그·확정 좌표가 이 격자를 따른다)
   const openUploadModal = useUploadModalStore((s) => s.openModal);
   const handleUpload = () => openUploadModal(decodeGridCenter(detail.gridId));
+
+  // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지).
+  // 실패는 게이트하지 않는다 — 에러 UI도 "렌더된 상태"다
+  if (videos.isPending) return <HomeCellDetailLoading onClose={onClose} />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-md">
@@ -196,10 +200,6 @@ export const HomeCellDetailPanel = ({
                 onClick={videos.retry}
               />
             </div>
-          ) : videos.isPending ? (
-            <p aria-busy className="text-fm-body text-foreground-muted">
-              영상을 불러오는 중이에요…
-            </p>
           ) : videos.isEmpty ? (
             <p className="text-fm-body text-foreground-muted">
               아직 이 격자에 영상이 없어요

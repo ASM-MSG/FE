@@ -1,11 +1,11 @@
-import { cn } from "@fillmap/ui-web";
+import { DotsLoader, cn } from "@fillmap/ui-web";
 import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import {
   formatMissionPeriod,
   formatOperationTime,
 } from "@/features/map-home/model/mission-format";
 import type { MissionView } from "@/features/map-home/model/mission-view";
-import type { MultiGridVideosResult } from "@/features/map-home/model/use-multi-grid-videos-query";
+import type { MissionVideosResult } from "@/features/map-home/model/use-mission-videos-query";
 import type { ThemeId } from "@/features/map-home/model/theme";
 import { ChipDetailHeader } from "./ChipDetailHeader";
 import { FeedVideoList } from "./FeedVideoList";
@@ -18,7 +18,7 @@ interface MissionDetailPanelProps {
   view: MissionView;
   theme: Extract<ThemeId, "festival" | "popup">;
   /** 이 미션 영역의 영상 피드 (표본 격자 합본) */
-  videos: MultiGridVideosResult;
+  videos: MissionVideosResult;
   onVideoSelect: (video: FeedVideo, mine: boolean) => void;
   /**
    * 진행도(내 수집 격자) 조회 실패 — `내 진행`을 수치로 주장하지 않는다 (리뷰 반영).
@@ -48,6 +48,14 @@ export const MissionDetailPanel = ({
   onClose,
 }: MissionDetailPanelProps) => {
   useEscapeClose(onClose);
+
+  // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지)
+  if (videos.isPending && !videos.isError)
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <DotsLoader label="미션 상세 불러오는 중" />
+      </div>
+    );
 
   const { dto, progress } = view;
   const period =
@@ -125,10 +133,6 @@ export const MissionDetailPanel = ({
                 message="영상 목록을 불러오지 못했어요"
                 onRetry={videos.retry}
               />
-            ) : videos.isPending ? (
-              <p aria-busy className="text-fm-body text-foreground-muted">
-                영상을 불러오는 중이에요…
-              </p>
             ) : videos.items.length === 0 ? (
               <p className="text-fm-body text-foreground-muted">
                 아직 이 미션에 올라온 영상이 없어요

@@ -30,39 +30,29 @@ import type { ThemeId } from "./theme";
 export type MissionChip = Extract<ThemeId, "festival" | "popup" | "route">;
 
 /**
- * 미션 type → 칩 버킷. [AC 1]
- * AREA·CONTINUOUS는 이번 티켓의 칩 3종에 대응이 없어 어느 버킷에도 넣지 않는다
- * (AREA는 경계를 region API로 따로 받아야 해 격자 파생 자체가 불가 — 리스크 기록).
+ * 활성 테마 칩 → 미션 칩. 핫구역에는 미션이 없다. [AC 19]
  */
-export const missionChipOf = (
-  type: MissionResponseDto["type"],
-): MissionChip | null => {
-  switch (type) {
-    case "EVENT":
-    case "THEME":
-      return "festival";
-    case "POPUP":
-      return "popup";
-    case "COURSE":
-      return "route";
-    default:
-      return null;
-  }
-};
+export const missionChipOfTheme = (
+  theme: ThemeId | null,
+): MissionChip | null => (theme === null || theme === "hot" ? null : theme);
 
-/** 칩별 미션 목록 */
-export type MissionBuckets = Record<MissionChip, MissionResponseDto[]>;
-
-/** 활성 미션 응답 → 칩별 목록. 대응 없는 type은 버린다. [AC 1] */
-export const toMissionBuckets = (
-  missions: MissionResponseDto[],
-): MissionBuckets => {
-  const buckets: MissionBuckets = { festival: [], popup: [], route: [] };
-  for (const mission of missions) {
-    const chip = missionChipOf(mission.type);
-    if (chip !== null) buckets[chip].push(mission);
+/**
+ * 미션 칩 → `GET /api/missions/active`의 `type` 파라미터. [AC 19]
+ *
+ * MSG-403: 명세 개편으로 조회가 종류별이 됐고, 파라미터로 받는 이름은 EVENT·POPUP·COURSE
+ * 3종이다(응답 `type` enum은 AREA·THEME·CONTINUOUS까지 6종 그대로). 프론트가 분류하던
+ * 시절 지역축제 버킷에 함께 넣던 THEME는 요청할 이름이 없어, EVENT 응답에 서버가 섞어
+ * 주는지에 달려 있다 — 실측 결과는 작업 로그에 남긴다.
+ */
+export const missionTypeParam = (chip: MissionChip): string => {
+  switch (chip) {
+    case "festival":
+      return "EVENT";
+    case "popup":
+      return "POPUP";
+    case "route":
+      return "COURSE";
   }
-  return buckets;
 };
 
 /** 코스 포토스팟 — `PathShape.spots` 대응 (명세상 seq는 NULL 허용) */

@@ -69,6 +69,7 @@ const successFetchMock = () =>
         nickname: "서버닉네임",
         profileImageUrl: NEW_IMAGE_URL,
         createdAt: "2026-08-11T09:00:00",
+        locationConsent: false,
       });
     }
     throw new Error(`예상 밖 요청: ${pathname}`);
@@ -106,6 +107,7 @@ const renderModal = (profile: ProfileData = PROFILE) => {
       nickname: profile.nickname,
       profileImageUrl: profile.profileImageUrl,
       createdAt: profile.joinedAt,
+      locationConsent: false,
     },
   });
   render(<Harness queryClient={queryClient} profile={profile} />);
@@ -349,6 +351,7 @@ describe("프로필 편집 모달 — 닉네임 저장 배선 (MSG-329 A8)", () 
               nickname: "새닉네임",
               profileImageUrl: null,
               createdAt: PROFILE.joinedAt,
+              locationConsent: false,
             });
           }
         } else {

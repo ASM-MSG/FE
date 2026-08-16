@@ -67,7 +67,7 @@ export type ApiResponseDtoUserProfileResponseDto = {
 };
 
 /**
- * 내 프로필 응답. 조회·닉네임 수정·프로필 이미지 변경이 같은 형태를 반환한다.
+ * 내 프로필 응답. 조회·닉네임 수정·프로필 이미지 변경·위치정보 동의 변경이 같은 형태를 반환한다.
  */
 export type UserProfileResponseDto = {
     /**
@@ -86,6 +86,10 @@ export type UserProfileResponseDto = {
      * 가입 시각 — DB 저장값(UTC) 그대로다. "2026.01.12" 같은 표기는 FE 몫 (MSG-373)
      */
     createdAt: string;
+    /**
+     * 위치기반서비스 이용 동의 여부 — 가입 직후는 false 다. 마지막 변경 시각은 서버에만 두고 응답에 싣지 않는다 (MSG-402 §D-6)
+     */
+    locationConsent: boolean;
 };
 
 /**
@@ -96,6 +100,16 @@ export type NicknameUpdateRequestDto = {
      * 새 닉네임 (2~20자)
      */
     nickname: string;
+};
+
+/**
+ * 위치정보 사용 동의 변경 요청
+ */
+export type LocationConsentUpdateRequestDto = {
+    /**
+     * true 면 동의, false 면 철회
+     */
+    consented: boolean;
 };
 
 /**
@@ -1086,10 +1100,10 @@ export type RegionGridCountResponseDto = {
     gridCount: number;
 };
 
-export type ApiResponseDtoListMissionResponseDto = {
+export type ApiResponseDtoMissionDetailResponseDto = {
     developCode: number;
     message: string;
-    data: Array<MissionResponseDto>;
+    data: MissionDetailResponseDto;
 };
 
 /**
@@ -1124,7 +1138,51 @@ export type LatLng = {
 };
 
 /**
- * 활성 미션 하나 — 공통 필드 + 유형별 렌더 shape
+ * 미션 상세 — 미션 정보 + 내 진행도 + 전체 영상 개수 + 코스 스팟별 통계
+ */
+export type MissionDetailResponseDto = {
+    /**
+     * 미션 정보 — 목록(GET /api/missions/active)과 같은 필드·shape
+     */
+    mission: MissionResponseDto;
+    /**
+     * 내 진행도 — 목록 진행도(GET /api/missions/progress)와 같은 계산 (MSG-398 D8)
+     */
+    progress: MissionProgressResponseDto;
+    /**
+     * 미션 기간 안에 촬영된 전역 공개(ACTIVE·PUBLIC·READY) 영상 수 — 미션 영상 목록(MSG-390)의 실제 후보 수와 같다
+     */
+    videoCount: number;
+    /**
+     * 코스 포토스팟별 방문 여부·영상 개수 — shape.spots 와 같은 순서(seq ASC NULLS LAST, gridId ASC). 코스가 아니면 빈 배열
+     */
+    spotStats: Array<SpotStats>;
+};
+
+/**
+ * 미션 하나에 대한 내 진행도
+ */
+export type MissionProgressResponseDto = {
+    /**
+     * 미션 id (missions.id)
+     */
+    missionId: number;
+    /**
+     * 완료에 필요한 격자 수 (missions.target_count)
+     */
+    targetCount: number;
+    /**
+     * 그 미션 격자 중 기간 안에 촬영한 내 영상이 있는 칸 수. targetCount 를 넘지 않는다
+     */
+    filledCount: number;
+    /**
+     * 내 스탬프 보유 여부 (user_missions)
+     */
+    completed: boolean;
+};
+
+/**
+ * 미션 하나 — 공통 필드 + 유형별 렌더 shape
  */
 export type MissionResponseDto = {
     /**
@@ -1226,6 +1284,90 @@ export type Spot = {
      * 코스 내 순번 — mission_grids.seq 는 NULL 허용 컬럼이라 없을 수 있다
      */
     seq: number | null;
+};
+
+/**
+ * 코스 포토스팟 하나의 방문 여부·영상 개수
+ */
+export type SpotStats = {
+    /**
+     * 포토스팟 격자 id — shape.spots 의 gridId 에 대응
+     */
+    gridId: string;
+    /**
+     * 미션 기간 안에 촬영한 내 영상이 있는지 — 진행도와 같은 술어
+     */
+    visited: boolean;
+    /**
+     * 이 스팟에 올라온 전역 공개 영상 수. 영상이 없으면 0
+     */
+    videoCount: number;
+};
+
+export type ApiResponseDtoGridVideoPageResponseDto = {
+    developCode: number;
+    message: string;
+    data: GridVideoPageResponseDto;
+};
+
+/**
+ * 전역 공개 영상 목록 항목
+ */
+export type GridGlobalVideoResponseDto = {
+    /**
+     * 영상 ID. 항목 탭 → 단건 재생(GET /api/videos/{videoId}) 진입 키
+     */
+    videoId: number;
+    /**
+     * 썸네일 presigned GET URL. 목록은 READY 만 담겨 null 아님이 기대값이다
+     */
+    thumbnailUrl: string;
+    /**
+     * 영상 길이(초, 최대 30)
+     */
+    durationSec: number;
+    /**
+     * 조회수
+     */
+    viewCount: number;
+    /**
+     * 촬영 시각
+     */
+    recordedAt: string;
+    /**
+     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
+     */
+    nickname: string;
+};
+
+/**
+ * 전역 공개 영상 목록 페이지 응답 (keyset 커서 페이지네이션)
+ */
+export type GridVideoPageResponseDto = {
+    /**
+     * 이 페이지의 전역 공개·READY 영상. 없으면 빈 배열
+     */
+    videos: Array<GridGlobalVideoResponseDto>;
+    /**
+     * 다음 페이지 존재 여부 (lookahead 판정)
+     */
+    hasNext: boolean;
+    /**
+     * 다음 페이지 조회용 opaque 커서. 다음 요청 cursor 파라미터에 넣는다. 마지막 페이지면 null.
+     */
+    nextCursor: string | null;
+};
+
+export type ApiResponseDtoListMissionProgressResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<MissionProgressResponseDto>;
+};
+
+export type ApiResponseDtoListMissionResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<MissionResponseDto>;
 };
 
 export type ApiResponseDtoHotZoneListResponseDto = {
@@ -1362,60 +1504,6 @@ export type GridCellResponseDto = {
      * 격자 중심점이 속한 행정동 전체 이름. 아직 아무도 영상을 올리지 않은 격자에도 실린다. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
      */
     regionName: string | null;
-};
-
-export type ApiResponseDtoGridVideoPageResponseDto = {
-    developCode: number;
-    message: string;
-    data: GridVideoPageResponseDto;
-};
-
-/**
- * 격자 전역 영상 목록 항목
- */
-export type GridGlobalVideoResponseDto = {
-    /**
-     * 영상 ID. 항목 탭 → 단건 재생(GET /api/videos/{videoId}) 진입 키
-     */
-    videoId: number;
-    /**
-     * 썸네일 presigned GET URL. 목록은 READY 만 담겨 null 아님이 기대값이다
-     */
-    thumbnailUrl: string;
-    /**
-     * 영상 길이(초, 최대 30)
-     */
-    durationSec: number;
-    /**
-     * 조회수 — 인기순 정렬 근거
-     */
-    viewCount: number;
-    /**
-     * 촬영 시각 (표시용). 정렬 tie-break 키는 createdAt 이다
-     */
-    recordedAt: string;
-    /**
-     * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
-     */
-    nickname: string;
-};
-
-/**
- * 격자 전역 영상 목록 페이지 응답 (keyset 커서 페이지네이션)
- */
-export type GridVideoPageResponseDto = {
-    /**
-     * 이 페이지의 전역 공개·READY 영상 (인기순). 없으면 빈 배열
-     */
-    videos: Array<GridGlobalVideoResponseDto>;
-    /**
-     * 다음 페이지 존재 여부 (lookahead 판정)
-     */
-    hasNext: boolean;
-    /**
-     * 다음 페이지 조회용 opaque 커서. 다음 요청 cursor 파라미터에 넣는다. 마지막 페이지면 null.
-     */
-    nextCursor: string | null;
 };
 
 export type ApiResponseDtoListGridVideoResponseDto = {
@@ -1931,6 +2019,10 @@ export type CollectionGridResponseDto = {
      */
     coverThumbnailUrl: string | null;
     /**
+     * cover 영상 길이(초) — 카드 duration 뱃지 재료. READY 이전에도 실리고 cover 자체가 없을 때만 null
+     */
+    coverDurationSec: number | null;
+    /**
      * 격자 중심점 행정동 이름(무귀속/미판정이면 null)
      */
     regionName: string | null;
@@ -2235,6 +2327,22 @@ export type UpdateNicknameResponses = {
 
 export type UpdateNicknameResponse = UpdateNicknameResponses[keyof UpdateNicknameResponses];
 
+export type UpdateLocationConsentData = {
+    body: LocationConsentUpdateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/location-consent';
+};
+
+export type UpdateLocationConsentResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoUserProfileResponseDto;
+};
+
+export type UpdateLocationConsentResponse = UpdateLocationConsentResponses[keyof UpdateLocationConsentResponses];
+
 export type ReplaceFeaturedData = {
     body: FeaturedBadgeRequestDto;
     path?: never;
@@ -2437,7 +2545,7 @@ export type ReissueData = {
     body?: ReissueRequestDto;
     headers?: {
         /**
-         * 클라이언트 유형 (web|app, 기본 web)
+         * 클라이언트 유형 (web|app). 리프레시를 쿠키로 보내면 필수, body 로 보내면 생략 가능(생략 시 web 취급).
          */
         'X-Client-Type'?: string;
     };
@@ -2782,11 +2890,11 @@ export type GetRegionGridsData = {
     };
     query?: {
         /**
-         * 정렬 — POPULAR(조회수 합)·LATEST(최신 공개 영상). 대문자 전용이며 소문자 포함 무효 값은 400 이다
+         * 정렬 — POPULAR(조회수 합)·LATEST(최신 공개 영상). 대문자 전용이며 소문자 포함 무효 값은 400 이다. 지도 홈 패널은 LATEST (SRS FR-MAP-10, 생략 기본값은 POPULAR 유지)
          */
         sort?: 'POPULAR' | 'LATEST';
         /**
-         * 카드 수 상한 — 지도 홈 패널은 3. 생략하면 전부, 1 미만은 1 로 보정한다
+         * 카드 수 상한 — 지도 홈 패널은 20 (SRS FR-MAP-10). 생략하면 전부, 1 미만은 1 로 보정한다
          */
         limit?: number;
     };
@@ -2930,21 +3038,114 @@ export type GetPreferencesResponses = {
 
 export type GetPreferencesResponse = GetPreferencesResponses[keyof GetPreferencesResponses];
 
-export type GetActiveMissionsData = {
+export type GetMissionDetailData = {
+    body?: never;
+    path: {
+        /**
+         * 미션 ID
+         */
+        missionId: number;
+    };
+    query?: never;
+    url: '/api/missions/{missionId}';
+};
+
+export type GetMissionDetailResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoMissionDetailResponseDto;
+};
+
+export type GetMissionDetailResponse = GetMissionDetailResponses[keyof GetMissionDetailResponses];
+
+export type GetMissionVideosData = {
+    body?: never;
+    path: {
+        /**
+         * 미션 ID
+         */
+        missionId: number;
+    };
+    query?: {
+        /**
+         * 직전 응답의 nextCursor (opaque). 생략하면 첫 페이지
+         */
+        cursor?: string;
+        /**
+         * 페이지 크기 (1~50, 기본 20)
+         */
+        size?: number;
+    };
+    url: '/api/missions/{missionId}/videos';
+};
+
+export type GetMissionVideosResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoGridVideoPageResponseDto;
+};
+
+export type GetMissionVideosResponse = GetMissionVideosResponses[keyof GetMissionVideosResponses];
+
+export type GetMyProgressData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * 미션 id 목록 — 콤마 구분 또는 반복 파라미터. 없거나 비면 빈 배열 응답, 300개 초과는 거절
+         */
+        missionIds?: Array<number>;
+    };
+    url: '/api/missions/progress';
+};
+
+export type GetMyProgressResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListMissionProgressResponseDto;
+};
+
+export type GetMyProgressResponse = GetMyProgressResponses[keyof GetMyProgressResponses];
+
+export type GetActiveMissionsInViewportData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 미션 종류 — EVENT(지역축제), POPUP(팝업스토어), COURSE(경로추천). 대소문자 무관
+         */
+        type: string;
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+    };
     url: '/api/missions/active';
 };
 
-export type GetActiveMissionsResponses = {
+export type GetActiveMissionsInViewportResponses = {
     /**
      * OK
      */
     200: ApiResponseDtoListMissionResponseDto;
 };
 
-export type GetActiveMissionsResponse = GetActiveMissionsResponses[keyof GetActiveMissionsResponses];
+export type GetActiveMissionsInViewportResponse = GetActiveMissionsInViewportResponses[keyof GetActiveMissionsInViewportResponses];
 
 export type GetHotZonesData = {
     body?: never;
@@ -3420,7 +3621,20 @@ export type GetSummaryResponse = GetSummaryResponses[keyof GetSummaryResponses];
 export type GetCollectionGridsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * 행정동 코드 — 생략하면 전국. by-grid 응답의 regionCode 를 그대로 전달
+         */
+        regionCode?: string;
+        /**
+         * 정렬 축 — COLLECTED(수집 시각순, 기본) 또는 UPLOADED(최신 업로드순)
+         */
+        sort?: 'COLLECTED' | 'UPLOADED';
+        /**
+         * 카드 수 상한 — 지도 홈 패널은 20 (SRS FR-MAP-10). 생략하면 regionCode 없을 때 30, regionCode 있을 때 그 동네 전부. 1 미만은 1 로 보정한다
+         */
+        limit?: number;
+    };
     url: '/api/collections/grids';
 };
 

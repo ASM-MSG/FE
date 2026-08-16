@@ -72,6 +72,22 @@ export const courseSpots = (
       visited: collectedGridIds.has(spot.gridId),
     }));
 
+/**
+ * 지도에 그릴 코스 연결선 좌표. [MSG-403 후속 — 사용자 요청]
+ * 서버 라인(`shape.line`)이 있으면 그 경로를 쓰고, **없으면 포토스팟을 번호 순서대로
+ * 직선으로 잇는다** — 실 데이터의 코스는 라인이 비어 있어 번호 마커만 흩어져 보였고,
+ * 어느 순서로 도는 코스인지 지도만 봐서는 읽을 수 없었다.
+ * 점이 하나뿐이면 이을 선이 없으므로 빈 배열이다(렌더 경계도 2점 미만은 그리지 않는다).
+ */
+export const coursePath = (
+  line: string | null,
+  spots: readonly CourseSpot[],
+): LatLng[] => {
+  const parsed = parseLineString(line);
+  if (parsed.length > 0) return parsed;
+  return spots.length > 1 ? spots.map((spot) => spot.position) : [];
+};
+
 /** 순환형 판정 거리(m) — 격자 한 변과 같은 눈금 */
 const LOOP_THRESHOLD_METERS = 100;
 

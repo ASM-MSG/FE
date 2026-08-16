@@ -10,11 +10,11 @@ import {
   buildClusterMarkers,
   clusterWindowSteps,
   gateFillCells,
-  selectClusterSource,
   tierOf,
   type ClusterMarker,
 } from "./cluster-overlay";
 import { GRID_MIN_ZOOM, buildGridLines } from "./grid-overlay";
+import { visibleOccupiedCells } from "./occupancy-visibility";
 import { toOccupiedOverlays } from "./occupied-grid-overlay";
 import type { StyledCellOverlay } from "./theme-overlay";
 import { MOCK_OCCUPIED_GRIDS } from "@/test/occupied-grids";
@@ -52,15 +52,32 @@ const ALL_CELLS = [...PERSISTENT, ...SEOMYEON_SPREAD];
 const sumCount = (markers: ClusterMarker[]): number =>
   markers.reduce((sum, m) => sum + m.count, 0);
 
-describe("gateFillCells — 채움 줌 게이트 (MSG-264 AC 1·2, A5 전 섹션 공유)", () => {
+describe("gateFillCells — 채움 줌 게이트 (MSG-264 AC 1·2 → MSG-403 AC 7)", () => {
+  /** 칩 대상 셀 — 테마 색을 가진 게시 셀(핫구역·미션·코스) */
+  const CHIP_CELLS = [
+    overlayAt("C-1", { lat: 35.156, lng: 129.058 }, "#E8590C"),
+    overlayAt("C-2", { lat: 35.159, lng: 129.061 }, "#E8590C"),
+  ];
+
   it("zoom 16(이상)에서는 채움 셀 목록이 그대로 반환된다 (AC 1)", () => {
     expect(gateFillCells(ALL_CELLS, GRID_MIN_ZOOM)).toEqual(ALL_CELLS);
     expect(gateFillCells(ALL_CELLS, 17)).toEqual(ALL_CELLS);
   });
 
-  it("zoom 15(미만)에서는 채움 셀이 파생되지 않는다 (AC 2, MSG-357 후속 — 축척 250m는 클러스터)", () => {
-    expect(gateFillCells(ALL_CELLS, 15)).toEqual([]);
-    expect(gateFillCells(ALL_CELLS, 10)).toEqual([]);
+  it("zoom 15(미만)에서 점령·무테마 셀은 채움에서 걷힌다 (AC 2 — 클러스터로 전환)", () => {
+    expect(gateFillCells(PERSISTENT, 15)).toEqual([]);
+    expect(gateFillCells(PERSISTENT, 10)).toEqual([]);
+  });
+
+  it("칩 대상 셀(테마 색 보유)은 zoom 15 미만에서도 채움으로 남는다 — 500m·1km 줌에서 칩 데이터가 보여야 한다 (MSG-403 AC 7)", () => {
+    expect(gateFillCells(CHIP_CELLS, 14)).toEqual(CHIP_CELLS);
+    expect(gateFillCells(CHIP_CELLS, 13)).toEqual(CHIP_CELLS);
+  });
+
+  it("점령 셀과 칩 셀이 섞여 있으면 저줌에서 칩 셀만 남는다 (MSG-403 AC 7)", () => {
+    expect(gateFillCells([...PERSISTENT, ...CHIP_CELLS], 13)).toEqual(
+      CHIP_CELLS,
+    );
   });
 });
 
@@ -196,62 +213,19 @@ describe("tierOf — 묶인 수의 3단계 tier 매핑 (MSG-264 AC 5, A2)", () =
   });
 });
 
-describe("selectClusterSource — 집계 소스 선택 (MSG-264 AC 9)", () => {
-  const themedCells = [
-    overlayAt("T-1", { lat: 35.156, lng: 129.058 }, "#E8590C"),
-    overlayAt("T-2", { lat: 35.159, lng: 129.061 }, "#E8590C"),
-  ];
-
-  it("섹션 게시 셀이 있으면 그 셀 기준으로 집계하고 첫 셀의 테마 색을 전승한다", () => {
-    expect(selectClusterSource(themedCells, PERSISTENT)).toEqual({
-      cells: themedCells,
-      color: "#E8590C",
-    });
-  });
-
-  it("게시 셀이 없으면 상시 점령 셀 기준·color 미지정(primary)이다", () => {
-    const source = selectClusterSource([], PERSISTENT);
-    expect(source.cells).toBe(PERSISTENT);
-    expect(source.color).toBeUndefined();
-  });
-
-  it("무테마 카드 재생의 강조 전용 셀은 클러스터 정본을 차지하지 않는다 — 저줌 점령 클러스터 유지 (리뷰 P2)", () => {
-    // emphasizeCell이 덧붙이는 강조 전용 셀 — 테마 색 없음(occupied 여부 무관)
-    const emphasizedOnly: StyledCellOverlay = {
-      ...overlayAt("P-1", { lat: 35.157, lng: 129.059 }),
-      emphasized: true,
-      occupied: true,
-    };
-
-    const source = selectClusterSource([emphasizedOnly], PERSISTENT);
-
-    expect(source.cells).toBe(PERSISTENT);
-    expect(source.color).toBeUndefined();
-  });
-
-  it("테마 셀에 강조가 켜진 경우는 기존대로 테마 셀이 클러스터 정본이다 (회귀 없음)", () => {
-    const emphasizedThemed = [
-      { ...themedCells[0], emphasized: true },
-      themedCells[1],
-    ];
-
-    const source = selectClusterSource(emphasizedThemed, PERSISTENT);
-
-    expect(source.cells).toEqual(emphasizedThemed);
-    expect(source.color).toBe("#E8590C");
-  });
-
-  it("마커 색은 멤버 셀의 테마 색을 전승하고, 점령 셀 소스 마커는 color 미지정(primary)이다", () => {
-    const themedMarkers = buildClusterMarkers(themedCells, 13);
-    expect(themedMarkers.length).toBeGreaterThan(0);
-    for (const marker of themedMarkers) {
-      expect(marker.color).toBe("#E8590C");
-    }
-
+describe("클러스터 집계 소스 (MSG-264 AC 9 → MSG-403 AC 2)", () => {
+  it("점령 셀 소스 마커는 color 미지정(primary)이다", () => {
     const occupiedMarkers = buildClusterMarkers(PERSISTENT, 13);
+
     expect(occupiedMarkers.length).toBeGreaterThan(0);
     for (const marker of occupiedMarkers) {
       expect(marker.color).toBeUndefined();
     }
+  });
+
+  it("칩이 켜져 점령 셀이 비면 클러스터도 만들어지지 않는다 — 칩 화면에 점령 정보가 남지 않는다 (MSG-403 AC 2)", () => {
+    expect(
+      buildClusterMarkers(visibleOccupiedCells(PERSISTENT, "hot"), 13),
+    ).toEqual([]);
   });
 });

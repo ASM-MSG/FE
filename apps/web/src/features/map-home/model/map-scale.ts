@@ -29,10 +29,13 @@ export const MIN_ZOOM = 6;
 export const MAX_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.length - 1;
 
 /**
- * 축척 `500m` 단의 zoom (MSG-395 AC 19) — 경로추천 칩이 맞추는 줌.
- * 표에서 직접 찾아 하드코딩(14)을 피한다: 축척 표가 재보정되면 이 값도 따라 움직인다.
+ * 축척 `500m`·`1km` 단의 zoom (MSG-395 AC 19 → MSG-403 AC 5) — 칩이 맞추는 줌.
+ * 표에서 직접 찾아 하드코딩(14·13)을 피한다: 축척 표가 재보정되면 이 값도 따라 움직인다.
  */
 export const MAP_SCALE_500M_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("500m");
+export const MAP_SCALE_1KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("1km");
+/** 축척 `2km` 단 — "장소 불러오기"가 동작하는 가장 넓은 줌 (MSG-403 후속) */
+export const MAP_SCALE_2KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("2km");
 
 /**
  * zoom을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.
