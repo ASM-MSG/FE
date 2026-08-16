@@ -189,3 +189,25 @@ describe("useChipEntry — 행정동 판별이 늦게 끝나는 경우 (codex �
     expect(commit).toHaveBeenCalledWith(REGION, AREA_A);
   });
 });
+
+describe("useChipEntry — 칩 직접 전환(A→B) (PR 리뷰 반영)", () => {
+  it("줌 대기 중 hot으로 직접 전환하면 이전 칩의 목표 줌에 볼모잡히지 않고 즉시 확정한다", () => {
+    const { commit, rerender } = setup({
+      zoom: MAP_SCALE_500M_ZOOM,
+      bounds: AREA_A,
+    });
+    // route 활성화 — 1km 줌 명령이 나가고 반영 대기 상태가 된다
+    rerender({
+      activeTheme: "route",
+      zoom: MAP_SCALE_500M_ZOOM,
+      bounds: AREA_A,
+    });
+    commit.mockClear();
+
+    // 줌이 도달하기 전에 hot으로 직접 전환 (toggle은 null을 거치지 않는다)
+    rerender({ activeTheme: "hot", zoom: MAP_SCALE_500M_ZOOM, bounds: AREA_A });
+
+    // hot은 줌 조건이 없다 — 이전 칩의 1km 대기가 남아 있으면 이 확정이 밀린다
+    expect(commit).toHaveBeenCalledWith(REGION, AREA_A);
+  });
+});

@@ -17,8 +17,6 @@ import { entityQueryPolicy } from "./map-query-policy";
  * 진행도를 서버가 주면서 좌표 변환이 필요 없어졌다.
  */
 export interface CollectedGridsResult {
-  /** 격자 id 집합 */
-  gridIds: ReadonlySet<string>;
   /** 원본 목록 — 점령 시작일 등 격자별 부가 정보 조회용 */
   grids: CollectionGridResponseDto[];
   /** 조회 실패 — "수집 격자 0개"와 구분해야 재시도 수단을 줄 수 있다 */
@@ -41,7 +39,6 @@ export const useCollectedGridsQuery = (): CollectedGridsResult => {
   return useMemo(() => {
     const grids = data ?? EMPTY_GRIDS;
     return {
-      gridIds: new Set(grids.map((grid) => grid.gridId)),
       grids,
       isError,
       retry: () => void refetch(),

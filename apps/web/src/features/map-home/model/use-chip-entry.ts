@@ -58,9 +58,17 @@ export const useChipEntry = ({
     pendingCommitRef.current = true;
 
     const targetZoom = chipEntryZoom(activeTheme);
+    // **항상 동기화한다** (PR 리뷰 반영) — null도 명시적으로 반영해 이전 칩의 잔여 목표를
+    // 지운다. 조건부 갱신이던 시절, 줌 대기 중 hot으로 직접 전환하면(toggle은 null을 안
+    // 거친다) 이전 칩의 목표 줌이 남아 hot의 확정이 필요 없는 줌 대기에 볼모잡혔다
+    pendingZoomRef.current = targetZoom;
     // 이미 목표 줌이면 기다릴 것이 없다 — 지도가 idle을 쏘지 않아 대기가 영영 남는다
     if (targetZoom === null || targetZoom === zoom) return;
-    pendingZoomRef.current = targetZoom;
+    // 규칙 문서의 억제 조건 "자식이 부모가 구독할 수 없는 외부 구독을 소유"에 해당:
+    // zoomTo는 부모 상태로 데이터를 올리는 콜백이 아니라 지도 SDK(외부 시스템) 명령이고,
+    // 칩 활성화는 이벤트지만 그 결과(줌 반영)는 외부에서 비동기로 도착해 effect가 정위치다
+    // (PR #57 리뷰어도 오탐 동의 — 검증 리포트 기각 사유 참조).
+    // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
     zoomTo(targetZoom);
   }, [activeTheme, bounds, zoom, zoomTo]);
 
