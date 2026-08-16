@@ -1,4 +1,4 @@
-import { Button } from "@fillmap/ui-web";
+import { Button, DotsLoader } from "@fillmap/ui-web";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
@@ -80,9 +80,9 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
               onRetry={reverse.retry}
             />
           ) : !reverse.isResolved ? (
-            <p className="py-sm text-fm-body text-foreground-muted">
-              현재 지역을 확인하는 중이에요…
-            </p>
+            <div className="flex flex-1 items-center justify-center">
+              <DotsLoader label="현재 지역 확인 중" />
+            </div>
           ) : (
             // reverse-geocode data null — 바다·행정동 밖 (AC 12). 격자 조회는 실행되지 않는다
             <p className="py-sm text-fm-body text-foreground-muted">
@@ -120,9 +120,9 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
                 onRetry={grids.retry}
               />
             ) : grids.isPending || grids.data === undefined ? (
-              <p className="py-sm text-fm-body text-foreground-muted">
-                이 지역 격자를 불러오는 중이에요…
-              </p>
+              <div className="flex flex-1 items-center justify-center">
+                <DotsLoader label="지역 격자 불러오는 중" />
+              </div>
             ) : grids.data.grids.length === 0 ? (
               <p className="py-sm text-fm-body text-foreground-muted">
                 이 지역에는 아직 격자가 없어요. 지도를 움직여 다른 지역을

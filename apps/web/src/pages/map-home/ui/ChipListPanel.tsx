@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@fillmap/ui-web";
+import { DotsLoader, cn } from "@fillmap/ui-web";
 import { THEME_META, type ThemeId } from "@/features/map-home/model/theme";
 import { RetryNotice } from "./RetryNotice";
 import { THEME_BADGE_CLASS } from "./theme-classes";
@@ -46,6 +46,15 @@ export const ChipListPanel = ({
 }: ChipListPanelProps) => {
   useEscapeClose(onClose);
 
+  // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지).
+  // 헤더의 "· N개"도 도착 전에는 0으로 거짓말하므로 함께 가린다
+  if (isPending)
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <DotsLoader label="목록 불러오는 중" />
+      </div>
+    );
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-md">
       <header className="flex items-center gap-xs">
@@ -67,10 +76,6 @@ export const ChipListPanel = ({
         {!isError && notice}
         {isError ? (
           <RetryNotice message={errorMessage} onRetry={onRetry} />
-        ) : isPending ? (
-          <p aria-busy className="text-fm-body text-foreground-muted">
-            불러오는 중이에요…
-          </p>
         ) : count === 0 ? (
           <p className="text-fm-body text-foreground-muted">{emptyMessage}</p>
         ) : (

@@ -1,4 +1,4 @@
-import { Button } from "@fillmap/ui-web";
+import { Button, DotsLoader } from "@fillmap/ui-web";
 import type { CollectedVideo } from "@/entities/dex";
 import { groupVideosByGrid } from "@/features/dex/model/gallery-groups";
 import type { GallerySelection } from "@/features/dex/model/gallery-region-store";
@@ -117,19 +117,10 @@ export const GalleryTabBody = ({
   );
 };
 
-/** 로딩 스켈레톤 — 1열 카드 자리 3장 (기준 15). 상태 알림은 role="status"가 담당 */
+/** 로딩 자리 — 공통 도트 로더로 통일 (MSG-403 후속). 상태 알림은 role="status"가 담당 */
 const GallerySkeleton = () => (
-  <div
-    role="status"
-    aria-label="갤러리 불러오는 중"
-    className="flex flex-col gap-sm"
-  >
-    {Array.from({ length: 3 }, (_, i) => (
-      <div
-        key={i}
-        className="aspect-[340/196] animate-pulse rounded-md bg-surface"
-      />
-    ))}
+  <div className="flex flex-1 items-center justify-center py-lg">
+    <DotsLoader label="갤러리 불러오는 중" />
   </div>
 );
 

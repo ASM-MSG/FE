@@ -1,3 +1,4 @@
+import { DotsLoader } from "@fillmap/ui-web";
 import type { DisplayedRegion } from "@/features/region/model/region-panel-store";
 import { useExploreRegionsQuery } from "@/features/region/model/use-explore-regions-query";
 import { RetryNotice } from "./RetryNotice";
@@ -22,9 +23,9 @@ export const RegionListView = ({ onSelect }: RegionListViewProps) => {
 
   if (isPending || regions === undefined) {
     return (
-      <p className="py-sm text-fm-body text-foreground-muted">
-        지역 목록을 불러오는 중이에요…
-      </p>
+      <div className="flex flex-1 items-center justify-center">
+        <DotsLoader label="지역 목록 불러오는 중" />
+      </div>
     );
   }
 

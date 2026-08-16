@@ -184,10 +184,14 @@ describe("홈 좌측 패널 분기", () => {
 
     renderHome();
 
-    expect(await screen.findByText(/격자 정보를 불러오는 중/)).toBeTruthy();
+    expect(
+      await screen.findByRole("status", { name: "격자 정보 불러오는 중" }),
+    ).toBeTruthy();
     // 지역 패널의 어느 상태(정상·로딩·빈)도 이 자리에 나오면 안 된다
     expect(screen.queryByText("부전제1동")).toBeNull();
-    expect(screen.queryByText(/현재 지역을 확인하는 중/)).toBeNull();
+    expect(
+      screen.queryByRole("status", { name: "현재 지역 확인 중" }),
+    ).toBeNull();
   });
 
   it("상세 응답이 도착하면 상세 패널로 전환된다", async () => {
@@ -212,7 +216,9 @@ describe("홈 좌측 패널 분기", () => {
       }),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "다시 시도" })).toBeTruthy();
-    expect(screen.queryByText(/격자 정보를 불러오는 중/)).toBeNull();
+    expect(
+      screen.queryByRole("status", { name: "격자 정보 불러오는 중" }),
+    ).toBeNull();
   });
 
   /** 로그인 상태로 홈을 띄우고 초기 지역 패널(헤더·격자 카드) 도착을 기다린다 — 지역 흐름 공용 셋업 */

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@fillmap/ui-web";
+import { Button, DotsLoader } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
 import type {
   CollectedGrid,
@@ -173,9 +173,9 @@ export const DexPanel = () => {
             }}
           />
         ) : !ready ? (
-          <p className="p-md text-fm-body text-foreground-muted">
-            도감을 불러오는 중이에요…
-          </p>
+          <div className="flex flex-1 items-center justify-center">
+            <DotsLoader label="도감 불러오는 중" />
+          </div>
         ) : (
           <>
             <div className="flex flex-col gap-md p-md">
@@ -230,9 +230,9 @@ export const DexPanel = () => {
               <BadgeErrorState onRetry={() => void badges.refetch()} />
             ) : !badges.data ? (
               // 도착 전을 빈 진열장으로 보여주면 "획득 0개"로 오독된다 (codex 리뷰 지적)
-              <p className="px-md pb-md text-fm-body text-foreground-muted">
-                뱃지를 불러오는 중이에요…
-              </p>
+              <div className="flex flex-1 items-center justify-center py-lg">
+                <DotsLoader label="뱃지 불러오는 중" />
+              </div>
             ) : (
               <BadgeTabBody badges={badges.data} />
             )}

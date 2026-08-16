@@ -10,7 +10,10 @@ import {
 import type { ThemeId } from "./theme";
 import { useActiveMissionsQuery } from "./use-active-missions-query";
 import { useCollectedGridsQuery } from "./use-collected-grids-query";
-import { useGridNamesQuery } from "./use-grid-names-query";
+import {
+  useGridNamesQuery,
+  type GridNamesResult,
+} from "./use-grid-names-query";
 import { useMissionDetailQuery } from "./use-mission-detail-query";
 import { useMissionProgressQuery } from "./use-mission-progress-query";
 import {
@@ -45,8 +48,8 @@ export interface HomeMissions {
   selectedCourse: CourseView | null;
   /** 선택 미션의 영상 피드 */
   missionFeed: MissionVideosResult;
-  /** 선택 코스의 포토스팟 격자 표시명 */
-  spotNames: ReadonlyMap<string, string>;
+  /** 선택 코스의 포토스팟 격자 표시명 (+ 도착 대기) */
+  spotNames: GridNamesResult;
   /** 내 수집 격자 — 격자 상세의 점령 시작일 출처 */
   collectedGrids: ReturnType<typeof useCollectedGridsQuery>["grids"];
   isPending: boolean;

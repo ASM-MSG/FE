@@ -1,4 +1,4 @@
-import { cn } from "@fillmap/ui-web";
+import { DotsLoader, cn } from "@fillmap/ui-web";
 import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import {
   formatMissionPeriod,
@@ -48,6 +48,14 @@ export const MissionDetailPanel = ({
   onClose,
 }: MissionDetailPanelProps) => {
   useEscapeClose(onClose);
+
+  // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지)
+  if (videos.isPending && !videos.isError)
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <DotsLoader label="미션 상세 불러오는 중" />
+      </div>
+    );
 
   const { dto, progress } = view;
   const period =
@@ -125,10 +133,6 @@ export const MissionDetailPanel = ({
                 message="영상 목록을 불러오지 못했어요"
                 onRetry={videos.retry}
               />
-            ) : videos.isPending ? (
-              <p aria-busy className="text-fm-body text-foreground-muted">
-                영상을 불러오는 중이에요…
-              </p>
             ) : videos.items.length === 0 ? (
               <p className="text-fm-body text-foreground-muted">
                 아직 이 미션에 올라온 영상이 없어요

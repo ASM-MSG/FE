@@ -93,6 +93,17 @@ export const preset: Omit<Config, "content"> = {
         Object.entries(radius).map(([k, v]) => [k, px(v)]),
       ),
       boxShadow: { ...shadow },
+      // 도트 로더 (ui-web DotsLoader — Figma FeelMap DotsLoader 14750:3119):
+      // 각 도트 scale 0.6↔1.0, 1.2s ease-in-out 무한 반복. 도트별 지연은 컴포넌트가 준다
+      keyframes: {
+        "dot-pulse": {
+          "0%, 100%": { transform: "scale(0.6)" },
+          "50%": { transform: "scale(1)" },
+        },
+      },
+      animation: {
+        "dot-pulse": "dot-pulse 1.2s ease-in-out infinite",
+      },
     },
   },
 };

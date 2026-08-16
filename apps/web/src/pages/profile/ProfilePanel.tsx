@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@fillmap/ui-web";
+import { Button, DotsLoader } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
 import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
@@ -54,9 +54,9 @@ export const ProfilePanel = () => {
       {isError ? (
         <ProfileErrorState onRetry={() => refetch()} />
       ) : isLoading || !data ? (
-        <p className="p-md text-fm-body text-foreground-muted">
-          프로필을 불러오는 중이에요…
-        </p>
+        <div className="flex flex-1 items-center justify-center">
+          <DotsLoader label="프로필 불러오는 중" />
+        </div>
       ) : (
         <>
           <div className="flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto p-md scrollbar-gutter-stable">

@@ -102,7 +102,10 @@ describe("코스 상세 — 진행도 실패 표기 (리뷰 반영)", () => {
     render(
       <CourseDetailPanel
         view={courseView}
-        spotNames={new Map([["16858_11420", "남포 G-4"]])}
+        spotNames={{
+          names: new Map([["16858_11420", "남포 G-4"]]),
+          isPending: false,
+        }}
         progressFailed={progressFailed}
         onSpotSelect={vi.fn()}
         onBack={vi.fn()}
