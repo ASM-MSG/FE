@@ -60,10 +60,25 @@ jobs:
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git diff:*),Bash(git log:*)"
 
+      # 자기 수정 가드 — 이 PR이 리뷰 워크플로 파일을 건드리면 액션이 변조 방지 검증으로
+      # 리뷰를 스킵한다(default 브랜치와 내용 동일 요구). 그 경우 아래 완주 검증은 항상
+      # 실패하므로 건너뛴다 — 워크플로 수정 PR이 영구 빨간불로 남는 것을 막는다
+      - name: Check if this PR modifies the review workflow
+        id: selfmod
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep -q '^\.github/workflows/claude-review\.yml$'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::이 PR이 리뷰 워크플로를 수정한다 — 액션이 스킵되므로 완주 검증도 건너뛴다 (develop 머지 후부터 검증 활성)"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # 리뷰 완주 검증 — 에이전트 프로세스가 정상 종료해도 요약 코멘트가 없으면 실패시킨다.
       # 2026-08-16 사고: 리뷰가 중간에 끝났는데 체크는 pass로 남아 "All checks have passed"가
       # 미완 리뷰를 가렸다. 이 스텝이 있어야 claude-review 체크 = 리뷰 산출물 존재가 된다
       - name: Verify review summary was posted
+        if: steps.selfmod.outputs.changed == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
