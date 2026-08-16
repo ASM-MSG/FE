@@ -5,6 +5,7 @@ CLAUDE.md에는 최근 5행만 유지하고, 행이 밀려나면 이 파일로 �
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
+| 2026-08-13 | 린트 강제 주체 서술 현행화 — eslint → oxlint(자작 토큰 플러그인 + 네이티브 규칙), 우회 감사를 lint 비활성 주석 일반형으로 | skills/page-implementation, skills/page-verification | MSG-386 — oxlint 단일화·TS 7.0.2 상향에 따른 문서-코드 동기화 |
 | 2026-07-15 | 초기 구성 (에이전트 3 + 스킬 4 + vitest 셋업) | 전체 | - |
 | 2026-07-15 | 티켓 description 템플릿 추가, 스펙 변환 시 템플릿 구조 활용 | docs/TICKET_TEMPLATE.md, skills/ticket-to-spec | 티켓 작성 표준화로 스펙 승인 질문 최소화 |
 | 2026-07-15 | atlassian MCP 연결 — 티켓 번호만으로 지라 본문 조회 | skills/ticket-to-spec, skills/fillmap-page-dev | "MSG-xxx 진행해줘"만으로 파이프라인 시작 가능하게 |
