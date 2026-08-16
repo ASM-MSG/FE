@@ -18,10 +18,18 @@ export const StatTrio = ({ items }: StatTrioProps) => (
     {items.map((item) => (
       <div
         key={item.label}
-        className="flex flex-1 flex-col items-center gap-0.5 rounded-sm border border-border py-xs"
+        // justify-center: 옆 칸이 두 줄로 자라도 한 줄 칸의 내용이 위로 붙지 않는다
+        className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-sm border border-border px-xxs py-xs"
       >
-        <dt className="text-fm-caption text-foreground-muted">{item.label}</dt>
-        <dd className="text-fm-body-strong text-foreground">{item.value}</dd>
+        <dt className="text-center text-fm-caption text-foreground-muted">
+          {item.label}
+        </dt>
+        {/* text-center: 두 줄로 감기면 dd 상자가 칸 폭까지 늘어나 기본 좌측 정렬이
+            드러난다(운영시간 사용자 보고). break-keep: `수-일`·`09:30` 같은 토큰
+            중간에서 끊지 않고 공백에서만 줄바꿈 */}
+        <dd className="break-keep text-center text-fm-body-strong text-foreground">
+          {item.value}
+        </dd>
       </div>
     ))}
   </dl>
