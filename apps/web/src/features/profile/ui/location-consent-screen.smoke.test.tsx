@@ -174,6 +174,20 @@ describe("위치정보 동의 화면 (MSG-407)", () => {
     expect(watchPosition).not.toHaveBeenCalled();
   });
 
+  it("로그아웃(로그인 중단) 진행 중에는 CTA가 비활성이다 — 중단하려는 세션이 동의를 기록하는 창 차단 (PR 리뷰 반영)", async () => {
+    // logout 응답을 영원히 보류 — 진행 중 상태 고정
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    renderScreen();
+    expect(ctaButton().disabled).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "로그아웃" }));
+
+    await waitFor(() => expect(ctaButton().disabled).toBe(true));
+  });
+
   it("로그아웃 클릭 시 logout API로 서버 세션을 무효화하고 로컬 세션 해제 후 onLoggedOut(홈 이동)이 불린다 (기준 11 — codex P1 반영)", async () => {
     // useLogout 관례(로컬 우선 종료): 봉투 없는 200 응답이면 onSettled에서 세션 해제
     const received = stubFetch(() => new Response(null, { status: 200 }));

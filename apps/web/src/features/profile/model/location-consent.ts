@@ -22,3 +22,16 @@ export const shouldShowConsentGate = ({
   locationConsent,
 }: ConsentGateInput): boolean =>
   isAuthenticated && consentKnown && locationConsent === false;
+
+/**
+ * 게이트 popstate 방향 판별 (v4 codex P1 — PR 리뷰로 순수 함수 추출).
+ * createBrowserRouter(@remix-run/router)가 history.state.idx에 심는 단조 증가
+ * 인덱스를 **마지막 관찰값**과 비교한다 — 커질 때만 앞으로가기(true, 게이트 유지).
+ * 어느 쪽이든 미상(undefined)이면 false = 뒤로가기 간주: 이탈 수단 보존이 잠금보다
+ * 안전하고, 라우터 관리 히스토리에선 미상 발생 경로가 없다.
+ * 순수 숫자 비교 — 플랫폼 무의존(history 읽기는 뷰 레이어 몫), RN 경계 위반 없음.
+ */
+export const isForwardNavigation = (
+  idx: number | undefined,
+  last: number | undefined,
+): boolean => typeof idx === "number" && typeof last === "number" && idx > last;

@@ -8,6 +8,7 @@ import {
 import { Button } from "@fillmap/ui-web";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { useUpdateLocationConsent } from "../api/use-profile-mutations";
+import { isForwardNavigation } from "../model/location-consent";
 
 interface LocationConsentScreenProps {
   /** 로그아웃 직후 홈 이동 — 라우터는 조립층(AppLayout)이 보유한다 (RN 경계: 콜백 주입) */
@@ -79,12 +80,9 @@ export const LocationConsentScreen = ({
       const idx = readHistoryIdx();
       const last = lastHistoryIdxRef.current;
       lastHistoryIdxRef.current = idx;
-      // idx가 커지면 앞으로가기 — 로그인 중단 없이 게이트 재렌더 유지 (기준 1·2:
-      // 뒤로가기만 이탈 제스처). idx 미상(라우터 밖 엔트리)은 뒤로가기로 간주 —
-      // 이탈 수단을 보존하는 쪽이 안전하고, 라우터 관리 히스토리에선 발생 경로가 없다
-      if (typeof idx === "number" && typeof last === "number" && idx > last) {
-        return;
-      }
+      // 앞으로가기 — 로그인 중단 없이 게이트 재렌더 유지 (기준 1·2: 뒤로가기만 이탈
+      // 제스처). 판별 정책(미상 = 뒤로가기 간주 포함)은 순수 함수와 그 단위 테스트가 정본
+      if (isForwardNavigation(idx, last)) return;
       requestLogoutOnce(abortLogin);
     };
     window.addEventListener("popstate", abortOnPopState);
@@ -131,11 +129,15 @@ export const LocationConsentScreen = ({
               동의 처리에 실패했어요. 다시 시도해주세요
             </p>
           )}
+          {/* 로그아웃·로그인 중단 진행 중에도 비활성 (PR 리뷰 반영) — 중단하려는 세션이
+              서버에 consented:true를 기록하는 창을 닫는다. aria-busy는 동의 저장 진행만 */}
           <Button
             text="동의하고 시작하기"
             variant="primary"
             className="w-full rounded-full"
-            disabled={!requiredChecked || isPending}
+            disabled={
+              !requiredChecked || isPending || isLoggingOut || isAborting
+            }
             aria-busy={isPending}
             onClick={() => saveConsent(true)}
           />
