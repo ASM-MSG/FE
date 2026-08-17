@@ -4,10 +4,12 @@ import { ROUTES } from "@/app/routes";
 import type { LatLng } from "@/entities/cell";
 import { buildCellClickHandler } from "./grid-click-routing";
 import { useMapOverlayStore } from "./map-overlay-store";
+import { gateFillCells } from "@/features/map-home/model/cluster-overlay";
 import {
-  buildClusterMarkers,
-  gateFillCells,
-} from "@/features/map-home/model/cluster-overlay";
+  mergeOverlappingMarkers,
+  toRegionClusterMarkers,
+} from "@/features/map-home/model/region-cluster-overlay";
+import { useGridAggregationQuery } from "@/features/map-home/model/use-grid-aggregation-query";
 import {
   buildGridLines,
   excludeSectionCells,
@@ -86,12 +88,21 @@ export const MapShell = () => {
     () => gateFillCells(overlayCells, viewportZoom),
     [overlayCells, viewportZoom],
   );
-  // 클러스터 파생 (MSG-264 AC 4·9 → MSG-403 AC 2·7): **점령 셀 전용**이다.
-  // 칩 대상 셀은 저줌에서도 채움으로 남으므로(gateFillCells) 클러스터로 접으면 같은
-  // 격자가 배지와 타일로 두 번 그려진다. 칩이 켜지면 점령 셀이 비어 클러스터도 없다
+  // 저줌 지역 집계 마커 (MSG-410 AC 2·4·5) — FE 로컬 클러스터 산술을 서버 집계로 대체.
+  // 조회 bbox는 **뷰포트**(idle 갱신)다 — MSG-403 확정 영역 정본의 명시적 예외(추정 1,
+  // 사용자 승인): 4km~ 줌에는 "장소 불러오기"가 없어 확정 영역으로는 갱신 수단이 없다.
+  // 게이트(로그인·저줌·칩 없음)는 훅이 판정한다 — 칩 활성 중에는 items가 비어 마커도 없다 (AC 9)
+  const { items: aggregationItems, unit: aggregationUnit } =
+    useGridAggregationQuery(viewportBounds, viewportZoom);
   const clusters = useMemo(
-    () => buildClusterMarkers(persistentOccupiedCells, viewportZoom),
-    [persistentOccupiedCells, viewportZoom],
+    () =>
+      aggregationUnit !== null
+        ? mergeOverlappingMarkers(
+            toRegionClusterMarkers(aggregationItems, aggregationUnit),
+            viewportZoom,
+          )
+        : [],
+    [aggregationItems, aggregationUnit, viewportZoom],
   );
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
