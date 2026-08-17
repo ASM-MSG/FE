@@ -51,7 +51,8 @@ describe("useProfileQuery — GET /api/users/me (A1)", () => {
       email: SERVER_ME.email,
       profileImageUrl: SERVER_ME.profileImageUrl,
       joinedAt: SERVER_ME.createdAt,
-      locationEnabled: true,
+      // locationConsent 실값 매핑 (MSG-407 기준 12 — 구 하드코딩 true 폐기)
+      locationEnabled: false,
     });
   });
 
@@ -79,14 +80,19 @@ describe("useProfileQuery — GET /api/users/me (A1)", () => {
   });
 });
 
-describe("toProfileData — 명세 응답 → 화면 계약 매핑 (A1·A6)", () => {
-  it("locationEnabled는 기존 클라이언트 값(켜짐)을 유지한다 — 서버 반영 없음 (A6)", () => {
+describe("toProfileData — 명세 응답 → 화면 계약 매핑 (A1 → MSG-407 기준 12 개정)", () => {
+  // 구 A6("클라이언트 값 유지, 항상 true")은 MSG-407에서 폐기 — 서버 게이트(MSG-402)로
+  // locationConsent가 명세 실값이 됐다
+  it("locationEnabled는 하드코딩 기본값(true)이 아니라 getMe 응답의 locationConsent 실값으로 매핑된다 (기준 12)", () => {
     expect(toProfileData({ ...SERVER_ME, email: null })).toEqual({
       email: null,
       nickname: SERVER_ME.nickname,
       profileImageUrl: SERVER_ME.profileImageUrl,
       joinedAt: SERVER_ME.createdAt,
-      locationEnabled: true,
+      locationEnabled: false,
     });
+    expect(
+      toProfileData({ ...SERVER_ME, locationConsent: true }).locationEnabled,
+    ).toBe(true);
   });
 });

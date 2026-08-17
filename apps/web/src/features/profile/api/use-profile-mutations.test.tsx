@@ -8,7 +8,12 @@ import { getMeQueryKey } from "@/shared/api/generated/@tanstack/react-query.gen"
 import { deviceIdStorage } from "@/shared/storage";
 import { envelopeResponse } from "@/test/envelope-response";
 import { stubFetch } from "@/test/stub-fetch";
-import { useDeleteAccount, useUpdateNickname } from "./use-profile-mutations";
+import {
+  useDeleteAccount,
+  useRemoveProfileImage,
+  useUpdateLocationConsent,
+  useUpdateNickname,
+} from "./use-profile-mutations";
 
 /**
  * 프로필 mutation 훅 (MSG-329 A8·A9·A11, test-first) — use-auth-mutations 패턴 미러.
@@ -85,6 +90,104 @@ describe("useUpdateNickname (A8·A9)", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     expect(onSaved).not.toHaveBeenCalled();
+  });
+});
+
+describe("useUpdateLocationConsent (MSG-407 기준 8·9·13)", () => {
+  it("PUT /api/users/me/location-consent {consented}를 호출하고, 성공 시 getMe를 invalidate해 캐시 갱신 경유로 게이트·화면이 반영된다 (기준 8·13)", async () => {
+    const received = stubFetch(() =>
+      envelopeResponse({
+        email: null,
+        nickname: "필맵퍼",
+        profileImageUrl: null,
+        createdAt: "2026-05-02T09:00:00",
+        locationConsent: true,
+      }),
+    );
+    const { queryClient, wrapper } = createHarness();
+    queryClient.setQueryData(getMeQueryKey(), {
+      developCode: 0,
+      message: "ok",
+      data: { locationConsent: false },
+    });
+    const onSaved = vi.fn();
+
+    const { result } = renderHook(() => useUpdateLocationConsent({ onSaved }), {
+      wrapper,
+    });
+    act(() => {
+      result.current.mutate(true);
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(pathnameOf(received[0].request)).toBe(
+      "/api/users/me/location-consent",
+    );
+    expect(received[0].request.method).toBe("PUT");
+    expect(received[0].body).toEqual({ consented: true });
+    expect(queryClient.getQueryState(getMeQueryKey())?.isInvalidated).toBe(
+      true,
+    );
+    expect(onSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it("PUT 실패 시 onSaved가 불리지 않고 에러 상태가 된다 — 게이트·모달이 유지되고 재시도 가능 (기준 9)", async () => {
+    stubFetch(() => new Response(null, { status: 500 }));
+    const { wrapper } = createHarness();
+    const onSaved = vi.fn();
+
+    const { result } = renderHook(() => useUpdateLocationConsent({ onSaved }), {
+      wrapper,
+    });
+    act(() => {
+      result.current.mutate(true);
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+});
+
+describe("useRemoveProfileImage (MSG-407 기준 18·20)", () => {
+  it("DELETE /api/users/me/profile-image를 호출하고, 성공 시 getMe를 invalidate해 아바타가 기본 이미지로 갱신된다 (기준 18)", async () => {
+    const received = stubFetch(() =>
+      envelopeResponse({
+        email: null,
+        nickname: "필맵퍼",
+        profileImageUrl: null,
+        createdAt: "2026-05-02T09:00:00",
+        locationConsent: true,
+      }),
+    );
+    const { queryClient, wrapper } = createHarness();
+    queryClient.setQueryData(getMeQueryKey(), {
+      developCode: 0,
+      message: "ok",
+      data: { profileImageUrl: "https://cdn.fillmap.test/profile/me.png" },
+    });
+
+    const { result } = renderHook(() => useRemoveProfileImage(), { wrapper });
+    act(() => {
+      result.current.mutate();
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(pathnameOf(received[0].request)).toBe("/api/users/me/profile-image");
+    expect(received[0].request.method).toBe("DELETE");
+    expect(queryClient.getQueryState(getMeQueryKey())?.isInvalidated).toBe(
+      true,
+    );
+  });
+
+  it("DELETE 실패 시 에러 상태가 된다 — 모달이 유지되고 재시도 가능 (기준 20)", async () => {
+    stubFetch(() => new Response(null, { status: 500 }));
+    const { wrapper } = createHarness();
+
+    const { result } = renderHook(() => useRemoveProfileImage(), { wrapper });
+    act(() => {
+      result.current.mutate();
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 

@@ -15,7 +15,7 @@
 
 | 경로 | 컴포넌트 | 비고 |
 |---|---|---|
-| (root) | `AppLayout` | 사이드레일 + Outlet + UploadModal/LoginModal/UploadProcessingNotices 상주 |
+| (root) | `AppLayout` | 사이드레일 + Outlet + UploadModal/LoginModal/UploadProcessingNotices 상주 + 위치동의 게이트(로그인 && `locationConsent=false`면 셸 대신 `LocationConsentScreen` 전면 렌더 — MSG-407) |
 | (error) | `RouteErrorBoundary` | 렌더·로더 오류 + 404 수렴 (MSG-325) |
 | (layout) | `MapShell` | 전 네비 섹션 공유 지속 지도 셸 |
 | `/` | `MapHomePage` | 지도 홈 (검색·지역 격자 패널 포함 — MSG-328에서 탐색 흡수) |
@@ -48,7 +48,7 @@
 - **region** — model: `region-panel-store`(확정 지역 + **확정 영역(bounds)** + 패널 모드), `region-reload`(재검색 버튼 노출 판정 순수 함수), `use-committed-region`(확정 최초 채택 — 셸이 마운트), `grid-card`(격자명 조합·격자 중심 좌표), `gated-query-status`(인증 게이트 쿼리 공용 상태 파생), 쿼리 훅 `use-reverse-geocode-query`(중심 좌표 디바운스 500ms)·`use-region-grids-query`(sort=LATEST·limit=20)·`use-explore-regions-query` · ui/ 없음(UI는 pages/map-home)
 - **search** — model: `use-place-search-query`(디바운스 300ms+searchNow), `use-trending-query` · ui/ 없음(UI는 pages/map-home HomeSearchBox)
 - **map-home** (최대 도메인) — 오버레이/기하: `grid-overlay`, `occupied-grid-overlay`(EPSG:5179), `cluster-overlay`, `theme-overlay`, `grid-label`, `map-scale` · 도메인: `theme`, `theme-feed`, `home-cell-detail`, `grid-videos`, `video-playback`, `viewport-query`, `map-query-policy` · 스토어: `viewport-store`(플랫폼 중립), `theme-filter-store`, `home-cell-detail-store`, `video-mini-panel-store` · 쿼리 훅: `use-occupied-grids-query`·`use-hotzones-query`(비로그인 미발사 — 인증 게이트, MSG-328), `use-grid-detail-query`, `use-grid-videos-query`, `use-video-playback-query`, `use-grid-card-play`(격자 카드 클릭 → 상세 미오픈·지도 이동 없이 첫 영상 미니 패널 재생 + 재생 격자 테두리 강조 수명) · MSG-403 신설: `chip-zoom`(칩→진입 줌 단)·`occupancy-visibility`(칩 활성 중 점령 층 억제)·`use-chip-entry`(줌 이동+1회 확정)·미션 서버 API 훅 3종(`use-mission-progress-query`·`use-mission-detail-query`·`use-mission-videos-query`) · ui/ 없음(UI는 pages/map-home)
-- **profile** — model: `profile-edit`, `profile-format`, `profile-modal-store`(모달 열림 — 사이드레일 초기화가 읽는다), `profile-image`(업로드 순수 로직), `upload-profile-image`(오케스트레이션 포트), `use-profile-image-upload`(웹 포트 훅), `use-profile-query` · api: `use-profile-mutations` · ui: `ProfileEditModal`, `DeleteAccountModal`
+- **profile** — model: `profile-edit`, `profile-format`, `profile-modal-store`(모달 열림 — 사이드레일 초기화가 읽는다), `profile-image`(업로드 순수 로직), `upload-profile-image`(오케스트레이션 포트), `use-profile-image-upload`(웹 포트 훅), `use-profile-query`, `location-consent`(게이트 판정 순수 — RN 재사용 대상)·`use-location-consent-gate`(MSG-407) · api: `use-profile-mutations`(닉네임·위치동의 PUT·이미지 DELETE) · ui: `ProfileEditModal`, `DeleteAccountModal`, `LocationConsentScreen`(전면 동의 화면 — AppLayout 조건 렌더, MSG-407)
 - **upload** — model: `upload-wizard`(스텝 전이), `upload-orchestration`(presign→S3 PUT→확정 상태머신), `upload-validation`, `highlight-selection`(+훅), `video-trim`, `processing-poll`, `processing-store`, `upload-modal-store`, `use-upload-location`, `presign-purpose` · api: `use-upload-mutations`, `s3-upload`, `ffmpeg-trim`(ffmpeg.wasm), `use-processing-watcher`(AppLayout 상주), `invalidate-grid-queries` · ui: `UploadModal`+`use-upload-wizard`, `SelectStep`/`HighlightStep`/`PreviewStep`, `SegmentList`/`SegmentRow`/`SegmentTrimmer`, `UploadDropzone`, `VideoPreview`, `AnalyzingModal`, `BlurConfirmModal`, `BlurNoticeToast`, `UploadProcessingNotices`
 
 ## entities/ (5)
@@ -71,9 +71,9 @@
 
 전 컴포넌트 스토리 존재. 형제 패키지: `design-tokens`, `tailwind-preset`, `ui-native`.
 
-## 테스트 자산 (apps/web/src — 111개, smoke 19개) + e2e 3스펙(apps/web/e2e — 로그인 시딩 `auth-session-stub`)
+## 테스트 자산 (apps/web/src — 145개, smoke 23개) + e2e 2스펙(apps/web/e2e — 로그인 시딩 `auth-session-stub`, getMe `locationConsent: true` 스텁 포함)
 
-레이어별 분포: app 4 · entities 6 · features/auth 6 · features/dex 9 · features/map-home 24 · features/profile 7 · features/region 7 · features/search 1 · features/upload 15 · pages 17 · shared 9 · widgets 6. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인.
+레이어별 분포: app 5 · entities 7 · features/auth 6 · features/dex 11 · features/map-home 47 · features/profile 12 · features/region 6 · features/search 1 · features/upload 15 · pages 18 · shared 9 · widgets 8. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인 (2026-08-17 MSG-407에서 전수 재계수 — 종전 111·smoke 19·e2e 3스펙은 스테일이었음).
 
 커버리지 공백(테스트 없는 로직 파일): `dex/use-collection-query`, `map-home/map-query-policy`, `profile/use-profile-image-upload`, `upload/use-processing-watcher`·`invalidate-grid-queries`·`presign-purpose`·`use-highlight-selection`·`use-upload-wizard`·`use-video-duration`, `map-shell/sidebar-store`·`use-map-shell`, `map-home/use-escape-close`, `shared/error-interceptor`·`http-client`·`navigation`
 
@@ -89,3 +89,4 @@
 - MSG-327: 개인 도감 mock 제거 + 실 API 6종 연동(users/me·collections/summary·grids·videos·badges·regions/stats by-point·by-grid) — 최근 수집 목록을 동(행정동) 단위로 전환, 갤러리를 격자 그룹+1열 영상 카드로 개정, 뱃지를 Figma 메달 아트 24종(entities/badge)으로 교체. regionCode 명세 갭은 by-grid 조인으로 해소(이름 매칭 기각), 진행 바는 by-point로 프론트 역지오코딩(region-lookup) 폐기, 갤러리 영상 클릭은 미니 패널 재생(widgets/video-mini-panel 이동)
 - MSG-395: 상단 칩 4종 UI 개편 + 미션 API 실연동 — 핫구역은 격자 피드 → 행정동 요약(HotRegionPanel)으로, 지역축제·팝업스토어·경로추천은 `/api/missions/active` 실 데이터로 전환하며 mock 3종(`MOCK_THEME_CELLS`·`MOCK_ROUTE`·`themeCellsOf`)과 `ThemeFeedPanel`·`theme-feed` 폐기. features/map-home에 mission 도메인 12모듈 신설(shape 런타임 판별·진행도·상태 배지·코스 파싱·오버레이), pages/map-home/ui에 칩별 패널 14종 신설, map-overlay-store를 `routes[]`+`labels[]`로 확장하고 `zoomTo` 지도 명령 추가. 미션 격자는 **뷰포트로 클리핑**해 파생(전국 전개가 폴리곤 1만 4천 개를 만들어 지도를 멈추던 것 수정), 진행도는 내 수집 격자를 미션 도형에 넣는 방향으로 계산. 프로필 "내 활동"(스트릭·수집률) 실연동, 파비콘 교체
 - MSG-403: 칩 표시 범위·갱신 시점 정정 + 미션 API 개편 이관 — 칩 활성 중 상시 점령 층을 숨기고(채움·클러스터 모두), 칩 셀은 저줌 게이트 예외로 남겨 축제·팝업 500m·코스 1km 줌에서도 보이게 함. 지도 데이터의 bbox 정본을 뷰포트 → **확정 영역**(region-panel-store `committedBounds`)으로 바꿔 "장소 불러오기"·칩 활성화 때만 갱신하고 헤더도 확정 지역명에 고정(MSG-328 라이브 동기화 폐기, `region-header` 삭제). 칩 바를 셸의 접힘 래퍼 밖으로 올려 패널을 접어도 유지, 사이드레일 활성 탭 재클릭을 "초기화 → 접기" 2단으로 개정. `/api/missions/active`가 type+bbox 필수로 바뀐 것에 맞춰 칩별 조회로 재편하고, 진행도·스팟 통계·미션 영상을 신규 서버 API 3종으로 이관해 FE 교집합 계산(`missionProgress`)과 격자 다중 조회 조합을 폐기. 미션 API에 비로그인 게이트 신설(익명 401 실측). 후속 요구로 코스 카드 클릭 시 `fitBounds`로 코스 전체 이동 + 라인이 없는 코스는 포토스팟 번호 순 직선 연결(`coursePath`), 상세 대상은 확정 영역이 아닌 자기 경계로 렌더. "장소 불러오기"는 축척 2km 단(`MIN_RELOAD_ZOOM`)까지만 노출. 좌측 패널 전부에 로딩 게이트 — 요소가 전부 준비될 때까지 ui-web `DotsLoader`(신규 승격)만 보이고 준비되면 한번에 표시(부분 렌더 금지)
+- MSG-407: 위치정보 동의 온보딩 게이트 + 프로필 위치동의 토글 실연동 + 프로필 이미지 삭제 — 로그인 && `locationConsent=false`면 AppLayout이 `LocationConsentScreen`(Figma 14781:3343) 전면 조건 렌더(라우트 신설 없음), CTA가 `PUT location-consent`로 게이트 해제(getMe invalidate 경유). 마케팅 행은 UI 전용(서버 API 부재)·[보기] 비활성·로그아웃 보조 버튼은 디자인 추가분. 편집 모달 토글을 서버 실값으로 실연동(`toProfileData` 하드코딩 true 폐기), [저장] 체인 이미지→닉네임→동의 확장, [기본 이미지로] 삭제 예약 + `DELETE profile-image`(14783:4715), 패널 "위치정보 동의 관리" 행 활성화. 로그인 시딩 픽스처 3곳 `locationConsent: true` 보수

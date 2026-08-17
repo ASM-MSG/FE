@@ -4,19 +4,23 @@ import { useAuthStore } from "@/features/auth/model/auth-store";
 import {
   deleteMeMutation,
   getMeQueryKey,
+  removeProfileImageMutation,
+  updateLocationConsentMutation,
   updateNicknameMutation,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { deviceIdStorage } from "@/shared/storage";
 
 /**
- * 프로필 mutation 훅 (MSG-329 A8·A9·A11) — use-auth-mutations 패턴 미러
- * (생성 SDK mutation 옵션 기반, 직접 fetch/URL 하드코딩 없음).
+ * 프로필 mutation 훅 (MSG-329 A8·A9·A11 + MSG-407 위치동의·이미지 삭제) —
+ * use-auth-mutations 패턴 미러 (생성 SDK mutation 옵션 기반, 직접 fetch/URL 하드코딩 없음).
  * 콜백은 훅 레벨 옵션으로 받는다 — mutate per-call 콜백은 관찰자 언마운트 시 유실된다(MSG-325 선례).
  */
 
 // 생성 팩토리는 mutationFn을 항상 채운다 — UseMutationOptions 타입만 optional이라 !로 좁힌다
 const updateNicknameFn = updateNicknameMutation().mutationFn!;
 const deleteMeFn = deleteMeMutation().mutationFn!;
+const updateLocationConsentFn = updateLocationConsentMutation().mutationFn!;
+const removeProfileImageFn = removeProfileImageMutation().mutationFn!;
 
 /**
  * 닉네임 수정 (A8·A9) — `PUT /api/users/me/nickname`.
@@ -31,6 +35,43 @@ export const useUpdateNickname = (callbacks?: { onSaved?: () => void }) => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: getMeQueryKey() });
       callbacks?.onSaved?.();
+    },
+  });
+};
+
+/**
+ * 위치정보 동의 변경 (MSG-407 기준 8·13) — `PUT /api/users/me/location-consent`.
+ * 성공 시 getMe invalidate — 캐시 갱신 경유로 온보딩 게이트(useLocationConsentGate)가
+ * 해제되고 프로필 화면 토글 값이 갱신된다. onSaved는 편집 모달 닫기 배선(기준 13).
+ * 실패 시 onSaved가 불리지 않아 게이트·모달이 유지되고 재시도가 가능하다 (기준 9).
+ */
+export const useUpdateLocationConsent = (callbacks?: {
+  onSaved?: () => void;
+}) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (consented: boolean, context) =>
+      updateLocationConsentFn({ body: { consented } }, context),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: getMeQueryKey() });
+      callbacks?.onSaved?.();
+    },
+  });
+};
+
+/**
+ * 프로필 이미지 삭제 (MSG-407 기준 18) — `DELETE /api/users/me/profile-image`.
+ * 성공 시 getMe invalidate로 프로필 화면 아바타가 기본 이미지로 갱신된다.
+ * 후속 배선(다음 저장 단계 진행)은 모달이 mutate per-call onSuccess로 잇는다 —
+ * 모달이 저장 중 마운트를 유지하므로 유실 우려가 없다 (useProfileImageUpload 선례).
+ */
+export const useRemoveProfileImage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (_variables: void, context) =>
+      removeProfileImageFn({}, context),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: getMeQueryKey() });
     },
   });
 };
