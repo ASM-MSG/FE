@@ -3,6 +3,7 @@ import { ROUTES } from "@/app/routes";
 import { LoginModal } from "@/features/auth/ui/LoginModal";
 import { useLocationConsentGate } from "@/features/profile/model/use-location-consent-gate";
 import { LocationConsentScreen } from "@/features/profile/ui/LocationConsentScreen";
+import { PushNoticeHost } from "@/features/notifications/ui/PushNoticeHost";
 import { UploadModal } from "@/features/upload/ui/UploadModal";
 import { UploadProcessingNotices } from "@/features/upload/ui/UploadProcessingNotices";
 import { SideRailNav } from "@/widgets/side-rail-nav/SideRailNav";
@@ -31,6 +32,9 @@ export const AppLayout = () => {
       <UploadProcessingNotices />
       {/* 로그아웃 상태 프로필 클릭 진입 — 업로드 모달과 동일 레벨 1회 마운트 (MSG-46 후속 2 G1) */}
       <LoginModal />
+      {/* 푸시 상주 호스트 (MSG-408) — 자동 토큰 동기화 + 포그라운드 토스트. 셸 분기
+          내부라 위치동의 게이트 표시 중에는 마운트되지 않는다 (AC 3) */}
+      <PushNoticeHost />
     </div>
   );
 };

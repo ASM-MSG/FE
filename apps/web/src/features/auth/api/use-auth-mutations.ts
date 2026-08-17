@@ -10,7 +10,7 @@ import {
 // 응답 **헤더**(X-Device-Id)가 필요해 생성 mutation 옵션 대신 SDK를 직접 호출한다 —
 // 생성 옵션의 mutationFn은 data만 돌려주고 Response를 감춘다 (MSG-325)
 import { login, oauthCodeLogin } from "@/shared/api/generated/sdk.gen";
-import { deviceIdStorage } from "@/shared/storage";
+import { deviceIdStorage, fcmTokenStorage } from "@/shared/storage";
 import type { Options, SignupData } from "@/shared/api/generated";
 import { useAuthStore } from "../model/auth-store";
 
@@ -127,6 +127,10 @@ export const useSignup = () =>
  * 로컬 토큰·인증 상태를 비운다 (로컬 우선 종료). 응답은 봉투 없음(unknown)이라 언랩 비대상.
  * X-Device-Id 미전송 = 서버가 전 디바이스 세션 삭제 (추정 4).
  *
+ * MSG-408 AC 9: 보관된 FCM 토큰이 있으면 body에 동봉한다(서버가 세션과 푸시 토큰을 한 번에
+ * 정리) — 없으면 기존과 동일하게 body 없이 호출한다. 성공·실패 무관(onSettled) 보관을 비운다.
+ * features/notifications를 직접 import하지 않는다 — shared/storage의 fcmTokenStorage 매개.
+ *
  * 쿼리 캐시는 비우지 않는다: 교차 사용자 노출은 로그인 쪽 clear()가 이미 막고(다음
  * 세션은 항상 빈 캐시에서 시작), 비로그인 상태의 /profile 직접 진입은 RequireAuth가 막는다.
  * (MSG-325로 로그아웃이 홈 이동을 동반하게 되어 "패널에 남아 401 오류로 떨어진다"는
@@ -137,8 +141,12 @@ export const useLogout = (callbacks?: { onFinished?: () => void }) => {
   // 콜백은 훅 레벨 옵션으로 받는다 — mutate의 per-call 콜백은 관찰자가 언마운트되면
   // 버려지는데, 로그아웃 후 화면을 떠나는 배선이라 정확히 그 상황에 걸린다 (MSG-325)
   return useMutation({
-    mutationFn: (_variables: void, context) => logoutFn({}, context),
+    mutationFn: (_variables: void, context) => {
+      const fcmToken = fcmTokenStorage.get();
+      return logoutFn(fcmToken !== null ? { body: { fcmToken } } : {}, context);
+    },
     onSettled: () => {
+      fcmTokenStorage.clear();
       clearLocalSession();
       callbacks?.onFinished?.();
     },
