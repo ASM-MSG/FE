@@ -21,22 +21,15 @@ type ProfileSpecFields = Required<
 };
 
 /**
- * FE 확장 필드 — 명세 부재의 화면 전용 필드.
+ * 프로필 화면 데이터 계약 = 명세 대응 필드 전부.
  * [MSG-329 정리] 구 mock 확장(streakDays·collectionRate·appVersion)은 폐기됐다:
  * "내 활동" 카드는 "—" 표시(A4 — MSG-327 도감 유도 판단 대기),
  * 앱 버전은 빌드 주입 값(`__APP_VERSION__`)이라 조회 데이터가 아니다(A5).
- * joinedAt은 서버 createdAt이 생겨(MSG-378) 명세 대응 필드로 승격 — 위 ProfileSpecFields 참조.
+ * [MSG-407 v3 정리] 구 FE 확장 locationEnabled(하드코딩 true → v2에서 locationConsent
+ * 실값 매핑)는 결정 1(토글 접점 제거)로 표시 사용처가 소멸해 계약에서 삭제 — 게이트는
+ * use-location-consent-gate가 getMe 봉투에서 locationConsent를 직접 읽는다.
  */
-interface ProfileExtension {
-  /** 위치정보 사용 여부 — 클라이언트 전용 값 유지 (A6, 서버 반영은 백엔드 환류) */
-  locationEnabled: boolean;
-}
-
-/** 프로필 화면 데이터 계약 = 명세 대응 + FE 확장 */
-export type ProfileData = ProfileSpecFields & ProfileExtension;
-
-/** 위치정보 기본값(켜짐) — 구 mock의 클라이언트 값 승계 (MSG-125 Figma 기본 상태, A6) */
-const DEFAULT_LOCATION_ENABLED = true;
+export type ProfileData = ProfileSpecFields;
 
 /** 명세 응답 → 화면 계약 매핑 (A1) — email null(카카오 가입)은 그대로 보존한다 (A2) */
 export const toProfileData = (dto: UserProfileResponseDto): ProfileData => ({
@@ -44,5 +37,4 @@ export const toProfileData = (dto: UserProfileResponseDto): ProfileData => ({
   nickname: dto.nickname,
   profileImageUrl: dto.profileImageUrl,
   joinedAt: dto.createdAt,
-  locationEnabled: DEFAULT_LOCATION_ENABLED,
 });

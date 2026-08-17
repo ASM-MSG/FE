@@ -26,6 +26,8 @@ const PROFILE = {
   nickname: "필맵퍼",
   profileImageUrl: null,
   createdAt: "2026-05-02T09:00:00",
+  // 로그인 시딩 기본값 — false면 온보딩 동의 게이트 대상 (MSG-407 픽스처 보수)
+  locationConsent: true,
 };
 
 /** 현재 경로 노출 대역 — 클릭이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
@@ -132,7 +134,7 @@ describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
     expect(await screen.findByText(PROFILE.nickname)).toBeTruthy();
   });
 
-  it("비활성 › 행은 5개(준비 중)이고, [계정 삭제]는 활성 행이다 (A10)", async () => {
+  it("비활성 › 행은 5개(준비 중)이고, [계정 삭제]는 활성 행이다 (A10 — MSG-407 v3 결정 1로 '위치정보 동의 관리' 비활성 원복)", async () => {
     stubApi();
     renderPanel();
     await screen.findByText(PROFILE.nickname);

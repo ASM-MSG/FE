@@ -23,4 +23,24 @@ export const seedLoggedInSession = async (page: Page): Promise<void> => {
       }),
     );
   });
+  // 로그인 세션은 AppLayout의 온보딩 동의 게이트(MSG-407)가 getMe를 조회한다 —
+  // locationConsent: true로 응답해 e2e가 동의 화면에 가로막히지 않게 한다
+  // (스텁 없이도 네트워크 실패 = 게이트 미표시지만, 결정적 응답으로 고정)
+  await page.route("**/api/users/me", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        developCode: 0,
+        message: "성공",
+        data: {
+          email: null,
+          nickname: "e2e필맵퍼",
+          profileImageUrl: null,
+          createdAt: "2026-01-12T00:00:00Z",
+          locationConsent: true,
+        },
+      }),
+    }),
+  );
 };

@@ -51,7 +51,6 @@ describe("useProfileQuery — GET /api/users/me (A1)", () => {
       email: SERVER_ME.email,
       profileImageUrl: SERVER_ME.profileImageUrl,
       joinedAt: SERVER_ME.createdAt,
-      locationEnabled: true,
     });
   });
 
@@ -79,14 +78,15 @@ describe("useProfileQuery — GET /api/users/me (A1)", () => {
   });
 });
 
-describe("toProfileData — 명세 응답 → 화면 계약 매핑 (A1·A6)", () => {
-  it("locationEnabled는 기존 클라이언트 값(켜짐)을 유지한다 — 서버 반영 없음 (A6)", () => {
+describe("toProfileData — 명세 응답 → 화면 계약 매핑 (A1 → MSG-407 v3 정리)", () => {
+  // v2의 locationConsent 실값 매핑(구 기준 12)은 v3 결정 1(토글 접점 제거)로 표시
+  // 사용처가 소멸 — 죽은 필드로 남기지 않고 계약에서 제거했다 (스펙 v3 builder 위임)
+  it("화면 계약은 명세 4필드뿐이고 locationEnabled 필드는 없다 (v3 결정 1 정리)", () => {
     expect(toProfileData({ ...SERVER_ME, email: null })).toEqual({
       email: null,
       nickname: SERVER_ME.nickname,
       profileImageUrl: SERVER_ME.profileImageUrl,
       joinedAt: SERVER_ME.createdAt,
-      locationEnabled: true,
     });
   });
 });

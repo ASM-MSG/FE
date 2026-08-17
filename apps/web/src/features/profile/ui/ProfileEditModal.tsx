@@ -1,19 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  Avatar,
-  Chip,
-  DialogShell,
-  Input,
-  ModalCard,
-  Switch,
-} from "@fillmap/ui-web";
+import { Avatar, Chip, DialogShell, Input, ModalCard } from "@fillmap/ui-web";
 import { DEFAULT_PROFILE_IMAGE, type ProfileData } from "@/entities/profile";
-import { useUpdateNickname } from "../api/use-profile-mutations";
 import {
-  canSaveProfile,
-  locationStatusLabel,
-  nicknameError,
-} from "../model/profile-edit";
+  useRemoveProfileImage,
+  useUpdateNickname,
+} from "../api/use-profile-mutations";
+import { canSaveProfile, nicknameError } from "../model/profile-edit";
 import {
   PROFILE_IMAGE_ACCEPT,
   PROFILE_IMAGE_SIZE_MESSAGE,
@@ -34,14 +26,18 @@ interface ProfileEditModalProps {
  * Figma node 13399:2153. DialogShell(스크림·포털·ESC/바깥클릭 닫기·포커스 트랩)로
  * ModalCard를 감싼다 (ReportDialog 패턴).
  *
- * [저장]은 두 API를 조건부로 배선한다 (MSG-329 ↔ MSG-378 병합):
- * - 이미지 선택이 있으면 presign → S3 PUT → 확정 훅, 성공 시 getMe 캐시 병합 (기준 11)
+ * [저장]은 변경분만 순차 배선한다 (MSG-329 ↔ MSG-378 병합 → MSG-407 확장):
+ * - 이미지: 선택이 있으면 presign → S3 PUT → 확정(getMe 캐시 병합, 기준 11),
+ *   [기본 이미지로] 삭제 예약이면 DELETE /api/users/me/profile-image (MSG-407 기준 15)
  * - 닉네임이 바뀌었으면 PUT /api/users/me/nickname — 성공 시 getMe invalidate(훅 소관) (A8)
- * - 둘 다면 이미지 → 닉네임 순차 실행, 모두 성공해야 닫힌다. 어느 한쪽 실패 시 모달
- *   유지 + 오류 표시 + 재시도 가능 (A9·기준 12)
- * - 둘 다 무변경 저장은 기존 동작(닫힘만) — 요청 없음 (기준 14)
+ * - 순서는 이미지(업로드 또는 삭제) → 닉네임. 모두 성공해야 닫히고, 실패 지점만 오류
+ *   표시 + 재시도 가능 (A9·기준 17). 성공분은 재요청되지 않는다 — 이미지는 성공 즉시
+ *   선택·예약을 폐기하고, 닉네임은 getMe invalidate로 profile prop이 저장값으로 갱신돼
+ *   무변경 판정에 걸린다
+ * - 전부 무변경 저장은 기존 동작(닫힘만) — 요청 없음 (기준 16)
  * 닉네임 검증은 2~20자(trim) — 범위 밖이면 [저장] 비활성 + 사유 안내 (A7).
- * 위치정보 토글은 클라이언트 값 유지 — 서버 반영 없음 (A6, 제외 범위).
+ * "위치정보 사용" 토글·상태 문구는 MSG-407 v3 결정 1(위치 동의 접점 전면 제거)로 없다 —
+ * Figma 14783:4715의 토글은 의도된 편차, 동의는 온보딩 게이트 전용 (기준 12).
  *
  * [MSG-378] [변경] 칩 = 이미지 업로드 배선:
  * - 칩 클릭 → 숨김 file input(accept: jpeg·png·webp — heic 제외) 열기 (기준 8)
@@ -55,18 +51,16 @@ export const ProfileEditModal = ({
   profile,
 }: ProfileEditModalProps) => {
   const [nickname, setNickname] = useState(profile.nickname);
-  const [locationEnabled, setLocationEnabled] = useState(
-    profile.locationEnabled,
-  );
   // 선택 파일은 핸들러에서만 읽혀 ref로 둔다(렌더 미사용 — react-doctor 환류).
   // objectURL 미리보기는 렌더 소비라 state (기준 9) — 닫힐 때 revoke·폐기 (기준 15)
   const selectedFileRef = useRef<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // [기본 이미지로] 삭제 예약 (MSG-407 기준 14) — 서버 반영은 [저장] 시점 (추정 3)
+  const [removalReserved, setRemovalReserved] = useState(false);
   // 5MB 사전 검증 안내 (기준 10) — 서버 거부 문구는 upload.error에서 파생 (기준 12)
   const [sizeError, setSizeError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nicknameId = useId();
-  const locationId = useId();
 
   // objectURL 폐기는 이 cleanup이 소유한다 — 재선택(의존 변경)·닫기(선택 해제)·
   // 언마운트(라우트 이탈 등) 세 경로 모두 여기서 revoke된다 (기준 15).
@@ -87,11 +81,20 @@ export const ProfileEditModal = ({
     isError: isNicknameError,
     reset: resetNickname,
   } = useUpdateNickname({ onSaved: () => onOpenChange(false) });
-  const isSaving = upload.isPending || isSavingNickname;
+  // 이미지 삭제 (MSG-407 기준 15) — 다음 단계 진행은 per-call onSuccess로 잇는다
+  // (모달이 저장 중 마운트 유지 — useProfileImageUpload 선례)
+  const {
+    mutate: removeImage,
+    isPending: isRemovingImage,
+    isError: isRemoveError,
+    reset: resetRemove,
+  } = useRemoveProfileImage();
+  const isSaving = upload.isPending || isRemovingImage || isSavingNickname;
 
   const errorMessage =
     sizeError ??
-    (upload.error !== null ? profileImageErrorMessage(upload.error) : null);
+    (upload.error !== null ? profileImageErrorMessage(upload.error) : null) ??
+    (isRemoveError ? "이미지 삭제에 실패했어요. 다시 시도해주세요" : null);
 
   const discardSelection = () => {
     selectedFileRef.current = null;
@@ -99,16 +102,17 @@ export const ProfileEditModal = ({
     setSizeError(null);
   };
 
-  // 닫힐 때 폼·선택 이미지·오류 상태를 초기값으로 되돌려 재오픈 시 변경·실패 흔적이
-  // 남지 않게 한다 (AC 8, 기준 15)
+  // 닫힐 때 폼·선택 이미지·삭제 예약·오류 상태를 초기값으로 되돌려 재오픈 시 변경·실패
+  // 흔적이 남지 않게 한다 (AC 8, 기준 18)
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       if (isSaving) return; // 저장 진행 중에는 닫지 않는다 — 결과 불명 상태 방지
       setNickname(profile.nickname);
-      setLocationEnabled(profile.locationEnabled);
       discardSelection();
+      setRemovalReserved(false);
       upload.reset(); // 이전 실패 문구가 재오픈 시 남지 않게
       resetNickname();
+      resetRemove();
     }
     onOpenChange(next);
   };
@@ -133,30 +137,55 @@ export const ProfileEditModal = ({
     // 언마운트 revoke는 스모크 테스트("언마운트되면 objectURL이 폐기된다")로 고정됨
     // oxlint-disable-next-line react-doctor/no-create-object-url-without-revoke
     setPreviewUrl(URL.createObjectURL(file));
+    // 새 파일 선택은 삭제 예약과 상호 배타 — 예약을 해제한다 (기준 14의 역방향)
+    setRemovalReserved(false);
     setSizeError(null);
     upload.reset();
+    resetRemove();
+  };
+
+  // [기본 이미지로] — 삭제 예약 + 진행 중이던 로컬 파일 선택 폐기 (기준 14).
+  // 요청은 [저장] 시점에만 나간다 (추정 3)
+  const handleReserveRemoval = () => {
+    if (isSaving) return; // 저장 진행 중 재변경 차단 — [변경]과 동일 방어
+    discardSelection();
+    upload.reset();
+    resetRemove();
+    setRemovalReserved(true);
   };
 
   const handleConfirm = () => {
     const trimmed = nickname.trim();
-    // 닉네임 무변경 저장은 요청 없이 마무리 — 이미지·닉네임 둘 다 무변경이면
-    // 기존 동작(닫힘만, 기준 14)
-    const finishWithNickname = () => {
+    // 순차 마지막 단계 — 닉네임 무변경이면 요청 없이 닫는다 (기준 16 계열).
+    // didRequest=true(앞 단계에서 요청이 나간 경로)는 handleOpenChange의 진행 중
+    // 가드를 우회해 prop을 직접 닫고, 전부 무변경 경로는 handleOpenChange로 폼·오류
+    // 상태까지 되돌린다. 위치동의 단계는 v3 결정 1로 체인에 없다 (기준 12)
+    const finishWithNickname = (didRequest: boolean) => {
       if (trimmed !== profile.nickname) saveNickname(trimmed);
+      else if (didRequest) onOpenChange(false);
       else handleOpenChange(false);
     };
-    const selectedFile = selectedFileRef.current;
-    if (selectedFile === null) {
-      finishWithNickname();
+    // 이미지 단계: 삭제 예약(기준 15) 또는 업로드 — 순차 실행에서 실패 지점의 오류만
+    // 표시되고 성공분은 재요청되지 않는다: 성공 즉시 선택·예약을 폐기한다.
+    // 이미 기본 이미지(profileImageUrl=null)의 삭제 예약은 무변경 — 요청 생략 (기준 16)
+    if (removalReserved && profile.profileImageUrl !== null) {
+      removeImage(undefined, {
+        onSuccess: () => {
+          setRemovalReserved(false);
+          finishWithNickname(true);
+        },
+      });
       return;
     }
-    // 이미지 → 닉네임 순차 — 실패 지점의 오류만 표시되고 성공분은 재요청되지 않는다:
-    // 업로드 성공 즉시 선택을 폐기해(확정 응답이 getMe 캐시에 병합돼 아바타는 저장된 URL로
-    // 전환) 닉네임 실패 후 재시도가 이미지를 다시 올리지 않는다
+    const selectedFile = selectedFileRef.current;
+    if (selectedFile === null) {
+      finishWithNickname(false);
+      return;
+    }
     upload.mutate(selectedFile, {
       onSuccess: () => {
         discardSelection();
-        finishWithNickname();
+        finishWithNickname(true);
       },
     });
   };
@@ -178,13 +207,20 @@ export const ProfileEditModal = ({
         onConfirm={handleConfirm}
         onClose={() => handleOpenChange(false)}
       >
-        {/* 아바타 미리보기 + [변경] — 88px는 variant에 없어 size-22 오버라이드.
-            src 우선순위: 로컬 미리보기 → 저장된 이미지 → 기본 이미지 (기준 9·16 —
-            닉네임 첫 글자 fallback은 기본 이미지 에셋으로 대체, fallback 미전달) */}
+        {/* 아바타 미리보기 + [변경]·[기본 이미지로] — 88px는 variant에 없어 size-22 오버라이드.
+            src 우선순위: 삭제 예약(즉시 기본 이미지, MSG-407 기준 14) → 로컬 미리보기 →
+            저장된 이미지 → 기본 이미지 (기준 9·16 — 닉네임 첫 글자 fallback은 기본 이미지
+            에셋으로 대체, fallback 미전달) */}
         <div className="flex flex-col items-center gap-md">
           <Avatar
             size="lg"
-            src={previewUrl ?? profile.profileImageUrl ?? DEFAULT_PROFILE_IMAGE}
+            src={
+              removalReserved
+                ? DEFAULT_PROFILE_IMAGE
+                : (previewUrl ??
+                  profile.profileImageUrl ??
+                  DEFAULT_PROFILE_IMAGE)
+            }
             alt={profile.nickname}
             className="size-22"
           />
@@ -203,13 +239,27 @@ export const ProfileEditModal = ({
               Chip은 aria-pressed={active}를 항상 렌더하지만 {...props}가 뒤에
               스프레드되므로 undefined 전달로 속성을 미노출 (PR #22 리뷰 반영,
               스모크 테스트로 속성 부재 고정) */}
-          <Chip
-            text="변경"
-            aria-pressed={undefined}
-            disabled={isSaving}
-            onClick={() => fileInputRef.current?.click()}
-            className="border border-primary bg-transparent text-primary"
-          />
+          <div className="flex items-center gap-sm">
+            <Chip
+              text="변경"
+              aria-pressed={undefined}
+              disabled={isSaving}
+              onClick={() => fileInputRef.current?.click()}
+              className="border border-primary bg-transparent text-primary"
+            />
+            {/* [기본 이미지로] — 회색 테두리 칩 (MSG-407 기준 13, Figma 14783:4715).
+                기본 이미지 상태에서도 노출 — 무변경 저장은 요청 생략 (기준 16) */}
+            <Chip
+              text="기본 이미지로"
+              aria-pressed={undefined}
+              disabled={isSaving}
+              onClick={handleReserveRemoval}
+              className="border border-border bg-transparent text-foreground-muted"
+            />
+          </div>
+          <p className="text-center text-fm-caption text-foreground-muted">
+            기본 이미지로 되돌리면 올린 사진은 삭제돼요.
+          </p>
           {/* 크기 사전 검증·업로드 실패 인라인 안내 (기준 10·12, 추정 3 — Figma 오류 상태 부재) */}
           {errorMessage !== null && (
             <p role="alert" className="text-center text-fm-caption text-error">
@@ -237,22 +287,6 @@ export const ProfileEditModal = ({
               닉네임 저장에 실패했어요. 다시 시도해주세요
             </p>
           )}
-        </div>
-
-        <div className="flex flex-col gap-xs">
-          <label htmlFor={locationId} className="text-fm-label text-foreground">
-            위치정보 사용
-          </label>
-          <div className="flex items-center gap-xs">
-            <Switch
-              id={locationId}
-              checked={locationEnabled}
-              onCheckedChange={setLocationEnabled}
-            />
-            <span className="text-fm-body text-foreground-muted">
-              {locationStatusLabel(locationEnabled)}
-            </span>
-          </div>
         </div>
       </ModalCard>
     </DialogShell>

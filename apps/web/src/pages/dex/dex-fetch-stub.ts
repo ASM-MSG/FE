@@ -12,6 +12,8 @@ export const ME = {
   nickname: "필맵퍼",
   profileImageUrl: null,
   createdAt: "2026-01-12T00:00:00Z",
+  // 로그인 시딩 기본값 — false면 온보딩 동의 게이트 대상 (MSG-407 픽스처 보수)
+  locationConsent: true,
 };
 
 export const SUMMARY = {

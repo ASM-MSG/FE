@@ -26,6 +26,5 @@ export const nicknameError = (nickname: string): string | null => {
 export const canSaveProfile = (nickname: string): boolean =>
   nicknameError(nickname) === null;
 
-/** 위치정보 토글 상태 문구 — 켜짐 "사용 중" / 꺼짐 "사용 안 함"(A2) (AC 4) */
-export const locationStatusLabel = (enabled: boolean): string =>
-  enabled ? "사용 중" : "사용 안 함";
+// 구 locationStatusLabel(토글 상태 문구, A2·AC 4)은 MSG-407 v3 결정 1(위치 동의 접점
+// 전면 제거)로 유일 사용처(편집 모달 토글)와 함께 삭제됐다

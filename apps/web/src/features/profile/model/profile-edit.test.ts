@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   canSaveProfile,
-  locationStatusLabel,
   NICKNAME_MAX_LENGTH,
   NICKNAME_MIN_LENGTH,
   nicknameError,
@@ -53,12 +52,5 @@ describe("닉네임 검증이 2~20자(trim 기준)다 (A7)", () => {
   });
 });
 
-describe("locationStatusLabel — 토글 상태 문구 (기존 동작 보존, A6)", () => {
-  it("켜짐이면 '사용 중'을 반환한다", () => {
-    expect(locationStatusLabel(true)).toBe("사용 중");
-  });
-
-  it("꺼짐이면 '사용 안 함'을 반환한다", () => {
-    expect(locationStatusLabel(false)).toBe("사용 안 함");
-  });
-});
+// 구 locationStatusLabel(토글 상태 문구, A6) 케이스는 MSG-407 v3 결정 1(토글 접점
+// 제거)로 함수와 함께 삭제 — 사유는 빌드 리포트 v3 절 참조

@@ -74,6 +74,8 @@ export const ProfilePanel = () => {
 
             {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 3행 → 약관 → 처리방침 → [계정 삭제] → [로그아웃] */}
             <ProfileSection title="설정">
+              {/* "위치정보 동의 관리"는 비활성(준비 중) 유지 — MSG-407 v3 결정 1로
+                  인앱 동의 접점 제거, 동의는 온보딩 게이트 전용 (기준 12) */}
               <SettingRow label="위치정보 동의 관리" />
               <SettingRow label="알림 설정" />
               <SettingRow label="신고 관리" />

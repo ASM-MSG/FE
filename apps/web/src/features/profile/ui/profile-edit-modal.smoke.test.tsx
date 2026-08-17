@@ -32,7 +32,6 @@ const PROFILE: ProfileData = {
   nickname: "필맵퍼",
   profileImageUrl: null,
   joinedAt: "2026-05-02T09:00:00",
-  locationEnabled: true,
 };
 
 const PRESIGN_PATH = "/api/users/me/profile-image/presigned-url";
@@ -142,6 +141,26 @@ const saveSelectedPngWith = (fetchMock: typeof fetch) => {
   fireEvent.click(screen.getByRole("button", { name: "저장" }));
   return queryClient;
 };
+
+/** [저장] 클릭 → '프로필 편집' 모달 닫힘 대기 — MSG-407 신설 케이스 공용 진행부 (중복 게이트 환류) */
+const clickSaveAndAwaitClose = async () => {
+  fireEvent.click(screen.getByRole("button", { name: "저장" }));
+  await waitFor(() =>
+    expect(screen.queryAllByRole("dialog", { name: "프로필 편집" })).toEqual(
+      [],
+    ),
+  );
+};
+
+/** 저장 계열 성공 응답 봉투 — UserProfileResponseDto 대역 (MSG-407 목 공용, 중복 게이트 환류) */
+const profileEnvelope = (locationConsent: boolean) =>
+  envelope({
+    email: PROFILE.email,
+    nickname: PROFILE.nickname,
+    profileImageUrl: null,
+    createdAt: PROFILE.joinedAt,
+    locationConsent,
+  });
 
 const createObjectURL = vi.fn(() => "blob:preview-1");
 const revokeObjectURL = vi.fn();
@@ -325,6 +344,157 @@ describe("프로필 편집 모달 — 이미지 업로드", () => {
     // 기존 캐시의 email·nickname은 확정 응답 값으로 덮이지 않는다 (추정 4 — 최소 병합)
     expect(cached.nickname).toBe(PROFILE.nickname);
     expect(cached.email).toBe(PROFILE.email);
+  });
+});
+
+// MSG-407 — [기본 이미지로] 삭제 예약 + [저장] 시 DELETE (기준 16~21)
+describe("프로필 편집 모달 — 프로필 이미지 삭제 (MSG-407 기준 16~21)", () => {
+  const SAVED_IMAGE_URL = "https://cdn.fillmap.test/profile/saved.png";
+  const IMAGE_PROFILE: ProfileData = {
+    ...PROFILE,
+    profileImageUrl: SAVED_IMAGE_URL,
+  };
+
+  /** DELETE /api/users/me/profile-image 성공 fetch 목 — 요청 경로·메서드를 기록한다 */
+  const removeFetchMock = () => {
+    const calls: string[] = [];
+    const mock = vi.fn(async (input: Request) => {
+      const pathname = new URL(input.url).pathname;
+      calls.push(`${input.method} ${pathname}`);
+      if (pathname === CONFIRM_PATH && input.method === "DELETE") {
+        return profileEnvelope(true);
+      }
+      throw new Error(`예상 밖 요청: ${input.method} ${pathname}`);
+    });
+    return { mock, calls };
+  };
+
+  it("아바타 아래 [변경]·[기본 이미지로] 칩이 나란히 있고 삭제 안내 캡션이 표시된다 (기준 16)", () => {
+    renderModal(IMAGE_PROFILE);
+
+    expect(screen.getByRole("button", { name: "변경" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "기본 이미지로" })).toBeTruthy();
+    expect(
+      screen.getByText("기본 이미지로 되돌리면 올린 사진은 삭제돼요."),
+    ).toBeTruthy();
+  });
+
+  it("[기본 이미지로] 클릭 시 미리보기가 즉시 기본 이미지로 바뀌고 로컬 파일 선택은 폐기되며 요청은 발사되지 않는다 (기준 17)", async () => {
+    stubInstantLoadImage();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderModal(IMAGE_PROFILE);
+    selectFile(pngFile());
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "기본 이미지로" }));
+
+    const avatar = (await screen.findByAltText(
+      PROFILE.nickname,
+    )) as HTMLImageElement;
+    expect(avatar.src).toContain("default-profile-image");
+    // 진행 중이던 로컬 선택 폐기 — objectURL revoke
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("삭제 예약 상태에서 [저장]하면 DELETE /api/users/me/profile-image가 발사되고 성공 시 모달이 닫힌다 (기준 18)", async () => {
+    const { mock, calls } = removeFetchMock();
+    vi.stubGlobal("fetch", mock);
+    renderModal(IMAGE_PROFILE);
+
+    fireEvent.click(screen.getByRole("button", { name: "기본 이미지로" }));
+    await clickSaveAndAwaitClose();
+
+    expect(calls).toEqual([`DELETE ${CONFIRM_PATH}`]);
+  });
+
+  it("이미 기본 이미지 상태(profileImageUrl=null)에서 [기본 이미지로]+[저장]은 요청 없이 닫힌다 (기준 19 — 무변경 무요청)", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderModal(); // PROFILE.profileImageUrl = null
+
+    fireEvent.click(screen.getByRole("button", { name: "기본 이미지로" }));
+    await clickSaveAndAwaitClose();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("DELETE 실패 시 모달이 유지되고 오류가 표시되며 [저장] 재시도가 가능하다 (기준 20)", async () => {
+    const failingFetch = vi.fn(async () => new Response(null, { status: 500 }));
+    vi.stubGlobal("fetch", failingFetch);
+    renderModal(IMAGE_PROFILE);
+    fireEvent.click(screen.getByRole("button", { name: "기본 이미지로" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("실패");
+    expect(
+      screen.getAllByRole("dialog", { name: "프로필 편집" }).length,
+    ).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(failingFetch).toHaveBeenCalledTimes(2));
+  });
+
+  it("[취소] 시 삭제 예약이 폐기되어 재오픈하면 원래 이미지가 복원된다 (기준 21)", async () => {
+    stubInstantLoadImage();
+    renderModal(IMAGE_PROFILE);
+
+    fireEvent.click(screen.getByRole("button", { name: "기본 이미지로" }));
+    const reserved = (await screen.findByAltText(
+      PROFILE.nickname,
+    )) as HTMLImageElement;
+    expect(reserved.src).toContain("default-profile-image");
+
+    fireEvent.click(screen.getByRole("button", { name: "취소" }));
+    fireEvent.click(screen.getByRole("button", { name: "모달 열기" }));
+
+    const restored = (await screen.findByAltText(
+      PROFILE.nickname,
+    )) as HTMLImageElement;
+    expect(restored.src).toBe(SAVED_IMAGE_URL);
+  });
+});
+
+// MSG-407 v3 — 위치 동의 접점 제거 (결정 1, 기준 12)
+describe("프로필 편집 모달 — 위치 동의 접점 제거 (MSG-407 v3 기준 12)", () => {
+  it("'위치정보 사용' 토글(Switch)·상태 문구가 없다 (기준 12 — Figma 14783:4715의 토글은 의도된 편차)", () => {
+    renderModal();
+
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByText("위치정보 사용")).toBeNull();
+    expect(screen.queryByText("사용 중")).toBeNull();
+  });
+
+  it("이미지 삭제+닉네임을 함께 저장하면 삭제 → 닉네임 순차뿐이고 location-consent 요청은 발사되지 않는다 (기준 12 — 저장 체인에서 동의 단계 제거)", async () => {
+    const NICKNAME_PATH = "/api/users/me/nickname";
+    const calls: string[] = [];
+    const mock = vi.fn(async (input: Request) => {
+      const pathname = new URL(input.url).pathname;
+      calls.push(`${input.method} ${pathname}`);
+      return envelope({
+        email: PROFILE.email,
+        nickname: "새닉네임",
+        profileImageUrl: null,
+        createdAt: PROFILE.joinedAt,
+        locationConsent: true,
+      });
+    });
+    vi.stubGlobal("fetch", mock);
+    renderModal({
+      ...PROFILE,
+      profileImageUrl: "https://cdn.fillmap.test/p.png",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "기본 이미지로" }));
+    fireEvent.change(screen.getByLabelText("닉네임"), {
+      target: { value: "새닉네임" },
+    });
+    await clickSaveAndAwaitClose();
+
+    expect(calls).toEqual([`DELETE ${CONFIRM_PATH}`, `PUT ${NICKNAME_PATH}`]);
   });
 });
 
