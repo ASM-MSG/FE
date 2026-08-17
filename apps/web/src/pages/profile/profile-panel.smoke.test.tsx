@@ -134,7 +134,7 @@ describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
     expect(await screen.findByText(PROFILE.nickname)).toBeTruthy();
   });
 
-  it("비활성 › 행은 4개(준비 중)이고, [위치정보 동의 관리]·[계정 삭제]는 활성 행이다 (A10 → MSG-407 기준 15 개정)", async () => {
+  it("비활성 › 행은 5개(준비 중)이고, [계정 삭제]는 활성 행이다 (A10 — MSG-407 v3 결정 1로 '위치정보 동의 관리' 비활성 원복)", async () => {
     stubApi();
     renderPanel();
     await screen.findByText(PROFILE.nickname);
@@ -143,33 +143,16 @@ describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
       .getAllByRole("button")
       .filter((b) => b.getAttribute("aria-disabled") === "true");
     expect(disabledRows.map((b) => b.textContent)).toEqual([
+      "위치정보 동의 관리준비 중",
       "알림 설정준비 중",
       "신고 관리준비 중",
       "서비스 이용약관준비 중",
       "개인정보 처리방침준비 중",
     ]);
 
-    const consentRow = screen.getByRole("button", {
-      name: "위치정보 동의 관리",
-    });
-    expect(consentRow.getAttribute("aria-disabled")).toBeNull();
-    expect(consentRow.textContent).not.toContain("준비 중");
-
     const deleteRow = screen.getByRole("button", { name: "계정 삭제" });
     expect(deleteRow.getAttribute("aria-disabled")).toBeNull();
     expect(deleteRow.textContent).not.toContain("준비 중");
-  });
-
-  it("[위치정보 동의 관리] 행 클릭 시 프로필 편집 모달이 열린다 — 토글 접근 경로 (MSG-407 기준 15)", async () => {
-    stubApi();
-    renderPanel();
-    await screen.findByText(PROFILE.nickname);
-
-    fireEvent.click(screen.getByRole("button", { name: "위치정보 동의 관리" }));
-
-    expect(
-      screen.getAllByRole("dialog", { name: "프로필 편집" }).length,
-    ).toBeGreaterThan(0);
   });
 
   it("[계정 삭제] 클릭 시 비가역 삭제 확인 모달(danger)이 뜬다 — URL 불변 (A10)", async () => {

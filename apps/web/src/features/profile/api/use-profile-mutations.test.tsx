@@ -93,8 +93,8 @@ describe("useUpdateNickname (A8·A9)", () => {
   });
 });
 
-describe("useUpdateLocationConsent (MSG-407 기준 8·9·13)", () => {
-  it("PUT /api/users/me/location-consent {consented}를 호출하고, 성공 시 getMe를 invalidate해 캐시 갱신 경유로 게이트·화면이 반영된다 (기준 8·13)", async () => {
+describe("useUpdateLocationConsent — 게이트 CTA 전용 (MSG-407 기준 8·9, v3: 철회 사용처 없음)", () => {
+  it("PUT /api/users/me/location-consent {consented: true}를 호출하고, 성공 시 getMe를 invalidate해 캐시 갱신 경유로 게이트가 해제된다 (기준 8)", async () => {
     const received = stubFetch(() =>
       envelopeResponse({
         email: null,
@@ -110,9 +110,7 @@ describe("useUpdateLocationConsent (MSG-407 기준 8·9·13)", () => {
       message: "ok",
       data: { locationConsent: false },
     });
-    const onSaved = vi.fn();
-
-    const { result } = renderHook(() => useUpdateLocationConsent({ onSaved }), {
+    const { result } = renderHook(() => useUpdateLocationConsent(), {
       wrapper,
     });
     act(() => {
@@ -128,23 +126,19 @@ describe("useUpdateLocationConsent (MSG-407 기준 8·9·13)", () => {
     expect(queryClient.getQueryState(getMeQueryKey())?.isInvalidated).toBe(
       true,
     );
-    expect(onSaved).toHaveBeenCalledTimes(1);
   });
 
-  it("PUT 실패 시 onSaved가 불리지 않고 에러 상태가 된다 — 게이트·모달이 유지되고 재시도 가능 (기준 9)", async () => {
+  it("PUT 실패 시 에러 상태가 된다 — 게이트가 유지되고 재시도 가능 (기준 9)", async () => {
     stubFetch(() => new Response(null, { status: 500 }));
     const { wrapper } = createHarness();
-    const onSaved = vi.fn();
 
-    const { result } = renderHook(() => useUpdateLocationConsent({ onSaved }), {
+    const { result } = renderHook(() => useUpdateLocationConsent(), {
       wrapper,
     });
     act(() => {
       result.current.mutate(true);
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
-
-    expect(onSaved).not.toHaveBeenCalled();
   });
 });
 

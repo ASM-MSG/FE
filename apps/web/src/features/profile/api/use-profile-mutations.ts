@@ -40,21 +40,19 @@ export const useUpdateNickname = (callbacks?: { onSaved?: () => void }) => {
 };
 
 /**
- * 위치정보 동의 변경 (MSG-407 기준 8·13) — `PUT /api/users/me/location-consent`.
- * 성공 시 getMe invalidate — 캐시 갱신 경유로 온보딩 게이트(useLocationConsentGate)가
- * 해제되고 프로필 화면 토글 값이 갱신된다. onSaved는 편집 모달 닫기 배선(기준 13).
- * 실패 시 onSaved가 불리지 않아 게이트·모달이 유지되고 재시도가 가능하다 (기준 9).
+ * 위치정보 동의 변경 (MSG-407 기준 8) — `PUT /api/users/me/location-consent`.
+ * **온보딩 게이트 CTA 전용** — v3 결정 1로 프로필 쪽 동의 접점(토글)이 제거돼
+ * consented:true 방향만 쓰인다(철회 false 사용처 없음 — 인앱 철회는 후속 티켓).
+ * 성공 시 getMe invalidate — 캐시 갱신 경유로 게이트(useLocationConsentGate)가 해제된다.
+ * 실패 시 게이트가 유지되고 재시도가 가능하다 (기준 9).
  */
-export const useUpdateLocationConsent = (callbacks?: {
-  onSaved?: () => void;
-}) => {
+export const useUpdateLocationConsent = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (consented: boolean, context) =>
       updateLocationConsentFn({ body: { consented } }, context),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: getMeQueryKey() });
-      callbacks?.onSaved?.();
     },
   });
 };

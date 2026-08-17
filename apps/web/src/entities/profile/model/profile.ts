@@ -13,14 +13,11 @@ import type { UserProfileResponseDto } from "@/shared/api/generated/types.gen";
  * - profileImageUrl: 프로필 이미지 공개 URL — 미설정이면 null, 기본 이미지 표시는 FE 몫 (MSG-378)
  * - joinedAt: 가입 시각 — 명세 `createdAt` 대응, FE 표기명만 다르다 (MSG-378 확장 — getMe 실 API 전환으로
  *   "명세 부재, 백엔드 환류 후보"에서 현행화). 표시 포맷은 formatJoinedDate가 담당 (AC 3)
- * - locationEnabled: 위치기반서비스 이용 동의 — 명세 `locationConsent` 대응 (MSG-407 기준 12,
- *   구 "클라이언트 전용 값 유지(A6)"는 서버 게이트 배포(MSG-402)로 폐기)
  */
 type ProfileSpecFields = Required<
   Pick<UserProfileResponseDto, "email" | "nickname" | "profileImageUrl">
 > & {
   joinedAt: UserProfileResponseDto["createdAt"];
-  locationEnabled: UserProfileResponseDto["locationConsent"];
 };
 
 /**
@@ -28,8 +25,9 @@ type ProfileSpecFields = Required<
  * [MSG-329 정리] 구 mock 확장(streakDays·collectionRate·appVersion)은 폐기됐다:
  * "내 활동" 카드는 "—" 표시(A4 — MSG-327 도감 유도 판단 대기),
  * 앱 버전은 빌드 주입 값(`__APP_VERSION__`)이라 조회 데이터가 아니다(A5).
- * [MSG-407 정리] FE 확장 절(ProfileExtension)은 마지막 필드 locationEnabled가 명세
- * 대응(locationConsent)으로 승격되며 소멸 — 하드코딩 기본값(DEFAULT_LOCATION_ENABLED) 폐기.
+ * [MSG-407 v3 정리] 구 FE 확장 locationEnabled(하드코딩 true → v2에서 locationConsent
+ * 실값 매핑)는 결정 1(토글 접점 제거)로 표시 사용처가 소멸해 계약에서 삭제 — 게이트는
+ * use-location-consent-gate가 getMe 봉투에서 locationConsent를 직접 읽는다.
  */
 export type ProfileData = ProfileSpecFields;
 
@@ -39,5 +37,4 @@ export const toProfileData = (dto: UserProfileResponseDto): ProfileData => ({
   nickname: dto.nickname,
   profileImageUrl: dto.profileImageUrl,
   joinedAt: dto.createdAt,
-  locationEnabled: dto.locationConsent,
 });

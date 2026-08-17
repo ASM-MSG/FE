@@ -32,7 +32,6 @@ const PROFILE: ProfileData = {
   nickname: "필맵퍼",
   profileImageUrl: null,
   joinedAt: "2026-05-02T09:00:00",
-  locationEnabled: true,
 };
 
 const PRESIGN_PATH = "/api/users/me/profile-image/presigned-url";
@@ -459,52 +458,17 @@ describe("프로필 편집 모달 — 프로필 이미지 삭제 (MSG-407 기준
   });
 });
 
-// MSG-407 — 위치정보 토글 실연동 (기준 13·14)
-describe("프로필 편집 모달 — 위치정보 동의 저장 (MSG-407 기준 13·14)", () => {
-  const CONSENT_PATH = "/api/users/me/location-consent";
-
-  /** PUT location-consent 성공 fetch 목 — 경로·바디를 기록한다 */
-  const consentFetchMock = () => {
-    const calls: string[] = [];
-    const bodies: unknown[] = [];
-    const mock = vi.fn(async (input: Request) => {
-      const pathname = new URL(input.url).pathname;
-      calls.push(`${input.method} ${pathname}`);
-      if (pathname === CONSENT_PATH && input.method === "PUT") {
-        bodies.push(await input.clone().json());
-        return profileEnvelope(false);
-      }
-      throw new Error(`예상 밖 요청: ${input.method} ${pathname}`);
-    });
-    return { mock, calls, bodies };
-  };
-
-  it("토글을 바꾸고 [저장]하면 PUT /api/users/me/location-consent {consented: 토글값}이 발사되고 성공 시 모달이 닫힌다 (기준 13)", async () => {
-    const { mock, calls, bodies } = consentFetchMock();
-    vi.stubGlobal("fetch", mock);
-    renderModal(); // PROFILE.locationEnabled = true
-
-    fireEvent.click(screen.getByRole("switch", { name: "위치정보 사용" }));
-    await clickSaveAndAwaitClose();
-
-    expect(calls).toEqual([`PUT ${CONSENT_PATH}`]);
-    expect(bodies).toEqual([{ consented: false }]);
-  });
-
-  it("토글 무변경 저장은 location-consent 요청을 발사하지 않는다 (기준 14 — 무변경 관례 정합)", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+// MSG-407 v3 — 위치 동의 접점 제거 (결정 1, 기준 12)
+describe("프로필 편집 모달 — 위치 동의 접점 제거 (MSG-407 v3 기준 12)", () => {
+  it("'위치정보 사용' 토글(Switch)·상태 문구가 없다 (기준 12 — Figma 14783:4715의 토글은 의도된 편차)", () => {
     renderModal();
 
-    // 토글을 두 번 눌러 원래 값으로 되돌린 저장 — 최종값 기준 무변경
-    fireEvent.click(screen.getByRole("switch", { name: "위치정보 사용" }));
-    fireEvent.click(screen.getByRole("switch", { name: "위치정보 사용" }));
-    await clickSaveAndAwaitClose();
-
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByText("위치정보 사용")).toBeNull();
+    expect(screen.queryByText("사용 중")).toBeNull();
   });
 
-  it("이미지 삭제+닉네임+토글을 함께 저장하면 삭제 → 닉네임 → 동의 순차로 발사되고 모두 성공해야 닫힌다 (구현 계획 — 순차 플로우 확장)", async () => {
+  it("이미지 삭제+닉네임을 함께 저장하면 삭제 → 닉네임 순차뿐이고 location-consent 요청은 발사되지 않는다 (기준 12 — 저장 체인에서 동의 단계 제거)", async () => {
     const NICKNAME_PATH = "/api/users/me/nickname";
     const calls: string[] = [];
     const mock = vi.fn(async (input: Request) => {
@@ -515,7 +479,7 @@ describe("프로필 편집 모달 — 위치정보 동의 저장 (MSG-407 기준
         nickname: "새닉네임",
         profileImageUrl: null,
         createdAt: PROFILE.joinedAt,
-        locationConsent: false,
+        locationConsent: true,
       });
     });
     vi.stubGlobal("fetch", mock);
@@ -528,14 +492,9 @@ describe("프로필 편집 모달 — 위치정보 동의 저장 (MSG-407 기준
     fireEvent.change(screen.getByLabelText("닉네임"), {
       target: { value: "새닉네임" },
     });
-    fireEvent.click(screen.getByRole("switch", { name: "위치정보 사용" }));
     await clickSaveAndAwaitClose();
 
-    expect(calls).toEqual([
-      `DELETE ${CONFIRM_PATH}`,
-      `PUT ${NICKNAME_PATH}`,
-      `PUT /api/users/me/location-consent`,
-    ]);
+    expect(calls).toEqual([`DELETE ${CONFIRM_PATH}`, `PUT ${NICKNAME_PATH}`]);
   });
 });
 

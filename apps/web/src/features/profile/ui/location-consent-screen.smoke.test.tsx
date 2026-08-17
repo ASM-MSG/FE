@@ -69,7 +69,7 @@ afterEach(() => {
 });
 
 describe("위치정보 동의 화면 (MSG-407)", () => {
-  it("Figma 14781:3343 구성이 렌더된다 — 제목·안내문·동의 행 2개·CTA·철회 캡션 + 로그아웃 보조 버튼 (기준 4·11)", () => {
+  it("Figma 14781:3343 구성이 렌더된다 — 제목·안내문·동의 행 2개·CTA + 로그아웃 보조 버튼, 철회 캡션은 없다 (기준 4·11 — v3 결정 1 편차)", () => {
     renderScreen();
 
     expect(
@@ -82,9 +82,10 @@ describe("위치정보 동의 화면 (MSG-407)", () => {
     expect(requiredCheckbox().checked).toBe(true);
     expect(marketingCheckbox().checked).toBe(false);
     expect(ctaButton().disabled).toBe(false);
+    // 디자인의 철회 안내 캡션은 결정 1(인앱 철회 접점 제거)로 거짓 문구 — 부재가 정답 (기준 4)
     expect(
-      screen.getByText("동의는 프로필 편집에서 언제든지 철회할 수 있어요."),
-    ).toBeTruthy();
+      screen.queryByText("동의는 프로필 편집에서 언제든지 철회할 수 있어요."),
+    ).toBeNull();
     // 디자인(14781:3343)에 없는 구현 추가분 — 게이트 이탈 수단 (확정 4)
     expect(screen.getByRole("button", { name: "로그아웃" })).toBeTruthy();
   });

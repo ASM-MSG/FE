@@ -1,23 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  Avatar,
-  Chip,
-  DialogShell,
-  Input,
-  ModalCard,
-  Switch,
-} from "@fillmap/ui-web";
+import { Avatar, Chip, DialogShell, Input, ModalCard } from "@fillmap/ui-web";
 import { DEFAULT_PROFILE_IMAGE, type ProfileData } from "@/entities/profile";
 import {
   useRemoveProfileImage,
-  useUpdateLocationConsent,
   useUpdateNickname,
 } from "../api/use-profile-mutations";
-import {
-  canSaveProfile,
-  locationStatusLabel,
-  nicknameError,
-} from "../model/profile-edit";
+import { canSaveProfile, nicknameError } from "../model/profile-edit";
 import {
   PROFILE_IMAGE_ACCEPT,
   PROFILE_IMAGE_SIZE_MESSAGE,
@@ -40,16 +28,16 @@ interface ProfileEditModalProps {
  *
  * [저장]은 변경분만 순차 배선한다 (MSG-329 ↔ MSG-378 병합 → MSG-407 확장):
  * - 이미지: 선택이 있으면 presign → S3 PUT → 확정(getMe 캐시 병합, 기준 11),
- *   [기본 이미지로] 삭제 예약이면 DELETE /api/users/me/profile-image (MSG-407 기준 18)
+ *   [기본 이미지로] 삭제 예약이면 DELETE /api/users/me/profile-image (MSG-407 기준 15)
  * - 닉네임이 바뀌었으면 PUT /api/users/me/nickname — 성공 시 getMe invalidate(훅 소관) (A8)
- * - 토글이 바뀌었으면 PUT /api/users/me/location-consent (MSG-407 기준 13)
- * - 순서는 이미지(업로드 또는 삭제) → 닉네임 → 위치동의. 모두 성공해야 닫히고, 실패
- *   지점만 오류 표시 + 재시도 가능 (A9·기준 12·20). 성공분은 재요청되지 않는다 —
- *   이미지는 성공 즉시 선택·예약을 폐기하고, 닉네임·토글은 getMe invalidate로 profile
- *   prop이 저장값으로 갱신돼 무변경 판정에 걸린다
- * - 전부 무변경 저장은 기존 동작(닫힘만) — 요청 없음 (기준 14·19)
+ * - 순서는 이미지(업로드 또는 삭제) → 닉네임. 모두 성공해야 닫히고, 실패 지점만 오류
+ *   표시 + 재시도 가능 (A9·기준 17). 성공분은 재요청되지 않는다 — 이미지는 성공 즉시
+ *   선택·예약을 폐기하고, 닉네임은 getMe invalidate로 profile prop이 저장값으로 갱신돼
+ *   무변경 판정에 걸린다
+ * - 전부 무변경 저장은 기존 동작(닫힘만) — 요청 없음 (기준 16)
  * 닉네임 검증은 2~20자(trim) — 범위 밖이면 [저장] 비활성 + 사유 안내 (A7).
- * 라벨 "위치정보 사용"·상태 문구(locationStatusLabel)는 기존 유지 (MSG-407 추정 6).
+ * "위치정보 사용" 토글·상태 문구는 MSG-407 v3 결정 1(위치 동의 접점 전면 제거)로 없다 —
+ * Figma 14783:4715의 토글은 의도된 편차, 동의는 온보딩 게이트 전용 (기준 12).
  *
  * [MSG-378] [변경] 칩 = 이미지 업로드 배선:
  * - 칩 클릭 → 숨김 file input(accept: jpeg·png·webp — heic 제외) 열기 (기준 8)
@@ -63,20 +51,16 @@ export const ProfileEditModal = ({
   profile,
 }: ProfileEditModalProps) => {
   const [nickname, setNickname] = useState(profile.nickname);
-  const [locationEnabled, setLocationEnabled] = useState(
-    profile.locationEnabled,
-  );
   // 선택 파일은 핸들러에서만 읽혀 ref로 둔다(렌더 미사용 — react-doctor 환류).
   // objectURL 미리보기는 렌더 소비라 state (기준 9) — 닫힐 때 revoke·폐기 (기준 15)
   const selectedFileRef = useRef<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  // [기본 이미지로] 삭제 예약 (MSG-407 기준 17) — 서버 반영은 [저장] 시점 (추정 3)
+  // [기본 이미지로] 삭제 예약 (MSG-407 기준 14) — 서버 반영은 [저장] 시점 (추정 3)
   const [removalReserved, setRemovalReserved] = useState(false);
   // 5MB 사전 검증 안내 (기준 10) — 서버 거부 문구는 upload.error에서 파생 (기준 12)
   const [sizeError, setSizeError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nicknameId = useId();
-  const locationId = useId();
 
   // objectURL 폐기는 이 cleanup이 소유한다 — 재선택(의존 변경)·닫기(선택 해제)·
   // 언마운트(라우트 이탈 등) 세 경로 모두 여기서 revoke된다 (기준 15).
@@ -96,8 +80,8 @@ export const ProfileEditModal = ({
     isPending: isSavingNickname,
     isError: isNicknameError,
     reset: resetNickname,
-  } = useUpdateNickname({ onSaved: () => finishWithConsent(true) });
-  // 이미지 삭제 (MSG-407 기준 18) — 다음 단계 진행은 per-call onSuccess로 잇는다
+  } = useUpdateNickname({ onSaved: () => onOpenChange(false) });
+  // 이미지 삭제 (MSG-407 기준 15) — 다음 단계 진행은 per-call onSuccess로 잇는다
   // (모달이 저장 중 마운트 유지 — useProfileImageUpload 선례)
   const {
     mutate: removeImage,
@@ -105,15 +89,7 @@ export const ProfileEditModal = ({
     isError: isRemoveError,
     reset: resetRemove,
   } = useRemoveProfileImage();
-  // 위치동의 저장 (MSG-407 기준 13) — 순차 마지막 단계라 onSaved가 곧 닫기
-  const {
-    mutate: saveConsent,
-    isPending: isSavingConsent,
-    isError: isConsentError,
-    reset: resetConsent,
-  } = useUpdateLocationConsent({ onSaved: () => onOpenChange(false) });
-  const isSaving =
-    upload.isPending || isRemovingImage || isSavingNickname || isSavingConsent;
+  const isSaving = upload.isPending || isRemovingImage || isSavingNickname;
 
   const errorMessage =
     sizeError ??
@@ -127,18 +103,16 @@ export const ProfileEditModal = ({
   };
 
   // 닫힐 때 폼·선택 이미지·삭제 예약·오류 상태를 초기값으로 되돌려 재오픈 시 변경·실패
-  // 흔적이 남지 않게 한다 (AC 8, 기준 15·21)
+  // 흔적이 남지 않게 한다 (AC 8, 기준 18)
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       if (isSaving) return; // 저장 진행 중에는 닫지 않는다 — 결과 불명 상태 방지
       setNickname(profile.nickname);
-      setLocationEnabled(profile.locationEnabled);
       discardSelection();
       setRemovalReserved(false);
       upload.reset(); // 이전 실패 문구가 재오픈 시 남지 않게
       resetNickname();
       resetRemove();
-      resetConsent();
     }
     onOpenChange(next);
   };
@@ -163,14 +137,14 @@ export const ProfileEditModal = ({
     // 언마운트 revoke는 스모크 테스트("언마운트되면 objectURL이 폐기된다")로 고정됨
     // oxlint-disable-next-line react-doctor/no-create-object-url-without-revoke
     setPreviewUrl(URL.createObjectURL(file));
-    // 새 파일 선택은 삭제 예약과 상호 배타 — 예약을 해제한다 (기준 17의 역방향)
+    // 새 파일 선택은 삭제 예약과 상호 배타 — 예약을 해제한다 (기준 14의 역방향)
     setRemovalReserved(false);
     setSizeError(null);
     upload.reset();
     resetRemove();
   };
 
-  // [기본 이미지로] — 삭제 예약 + 진행 중이던 로컬 파일 선택 폐기 (기준 17).
+  // [기본 이미지로] — 삭제 예약 + 진행 중이던 로컬 파일 선택 폐기 (기준 14).
   // 요청은 [저장] 시점에만 나간다 (추정 3)
   const handleReserveRemoval = () => {
     if (isSaving) return; // 저장 진행 중 재변경 차단 — [변경]과 동일 방어
@@ -180,28 +154,20 @@ export const ProfileEditModal = ({
     setRemovalReserved(true);
   };
 
-  // 순차 마지막 단계 — 토글 무변경이면 요청 없이 닫는다 (기준 14). didRequest=true
-  // (앞 단계에서 요청이 나간 경로)는 handleOpenChange의 진행 중 가드를 우회해 prop을
-  // 직접 닫고, 전부 무변경 경로는 handleOpenChange로 폼·오류 상태까지 되돌린다
-  const finishWithConsent = (didRequest: boolean) => {
-    if (locationEnabled !== profile.locationEnabled) {
-      saveConsent(locationEnabled);
-      return;
-    }
-    if (didRequest) onOpenChange(false);
-    else handleOpenChange(false);
-  };
-
   const handleConfirm = () => {
     const trimmed = nickname.trim();
-    // 닉네임 무변경이면 요청 없이 다음 단계(위치동의)로 (기준 14 계열)
+    // 순차 마지막 단계 — 닉네임 무변경이면 요청 없이 닫는다 (기준 16 계열).
+    // didRequest=true(앞 단계에서 요청이 나간 경로)는 handleOpenChange의 진행 중
+    // 가드를 우회해 prop을 직접 닫고, 전부 무변경 경로는 handleOpenChange로 폼·오류
+    // 상태까지 되돌린다. 위치동의 단계는 v3 결정 1로 체인에 없다 (기준 12)
     const finishWithNickname = (didRequest: boolean) => {
       if (trimmed !== profile.nickname) saveNickname(trimmed);
-      else finishWithConsent(didRequest);
+      else if (didRequest) onOpenChange(false);
+      else handleOpenChange(false);
     };
-    // 이미지 단계: 삭제 예약(기준 18) 또는 업로드 — 순차 실행에서 실패 지점의 오류만
+    // 이미지 단계: 삭제 예약(기준 15) 또는 업로드 — 순차 실행에서 실패 지점의 오류만
     // 표시되고 성공분은 재요청되지 않는다: 성공 즉시 선택·예약을 폐기한다.
-    // 이미 기본 이미지(profileImageUrl=null)의 삭제 예약은 무변경 — 요청 생략 (기준 19)
+    // 이미 기본 이미지(profileImageUrl=null)의 삭제 예약은 무변경 — 요청 생략 (기준 16)
     if (removalReserved && profile.profileImageUrl !== null) {
       removeImage(undefined, {
         onSuccess: () => {
@@ -242,7 +208,7 @@ export const ProfileEditModal = ({
         onClose={() => handleOpenChange(false)}
       >
         {/* 아바타 미리보기 + [변경]·[기본 이미지로] — 88px는 variant에 없어 size-22 오버라이드.
-            src 우선순위: 삭제 예약(즉시 기본 이미지, MSG-407 기준 17) → 로컬 미리보기 →
+            src 우선순위: 삭제 예약(즉시 기본 이미지, MSG-407 기준 14) → 로컬 미리보기 →
             저장된 이미지 → 기본 이미지 (기준 9·16 — 닉네임 첫 글자 fallback은 기본 이미지
             에셋으로 대체, fallback 미전달) */}
         <div className="flex flex-col items-center gap-md">
@@ -281,8 +247,8 @@ export const ProfileEditModal = ({
               onClick={() => fileInputRef.current?.click()}
               className="border border-primary bg-transparent text-primary"
             />
-            {/* [기본 이미지로] — 회색 테두리 칩 (MSG-407 기준 16, Figma 14783:4715).
-                기본 이미지 상태에서도 노출 — 무변경 저장은 요청 생략 (기준 19) */}
+            {/* [기본 이미지로] — 회색 테두리 칩 (MSG-407 기준 13, Figma 14783:4715).
+                기본 이미지 상태에서도 노출 — 무변경 저장은 요청 생략 (기준 16) */}
             <Chip
               text="기본 이미지로"
               aria-pressed={undefined}
@@ -319,28 +285,6 @@ export const ProfileEditModal = ({
           {isNicknameError && (
             <p role="alert" className="text-fm-label text-error">
               닉네임 저장에 실패했어요. 다시 시도해주세요
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-xs">
-          <label htmlFor={locationId} className="text-fm-label text-foreground">
-            위치정보 사용
-          </label>
-          <div className="flex items-center gap-xs">
-            <Switch
-              id={locationId}
-              checked={locationEnabled}
-              onCheckedChange={setLocationEnabled}
-            />
-            <span className="text-fm-body text-foreground-muted">
-              {locationStatusLabel(locationEnabled)}
-            </span>
-          </div>
-          {/* 위치동의 저장 실패 — 모달 유지 + 오류 표시 + [저장] 재시도 가능 (MSG-407 기준 13 실패 경로) */}
-          {isConsentError && (
-            <p role="alert" className="text-fm-label text-error">
-              위치정보 동의 저장에 실패했어요. 다시 시도해주세요
             </p>
           )}
         </div>

@@ -19,8 +19,10 @@ interface LocationConsentScreenProps {
  * - [보기] 링크 2곳은 비활성 placeholder — 약관 문서 연결은 후속 (확정 2)
  * - CTA = PUT /api/users/me/location-consent {consented: true} → getMe invalidate 경유
  *   게이트 해제 (기준 8). 실패 시 오류 안내 + 재시도 (기준 9)
+ * - 디자인의 하단 철회 캡션("프로필 편집에서 철회")은 렌더하지 않는다 — v3 결정 1로
+ *   인앱 철회 접점이 없어 거짓 문구가 됨 (기준 4 의도된 편차)
  * - 브라우저 위치 권한은 요청하지 않는다 — 동의와 권한은 별개 층, 권한은 지도 홈 첫 사용 시 (기준 10)
- * - 로그아웃 보조 버튼은 디자인에 없는 구현 추가분 — 게이트 이탈 수단 (확정 4, 기준 11).
+ * - 로그아웃 보조 버튼은 디자인에 없는 구현 추가분 — 게이트 이탈 수단 (확정 4, 기준 11 — 유일한 게이트 이탈 수단).
  *   기존 useLogout 관례(ProfilePanel과 동일): logout API로 서버 세션(HttpOnly 리프레시
  *   쿠키)까지 무효화하고, 성공·실패 무관하게 로컬 우선 종료 후 홈 이동 (codex P1 반영 —
  *   auth-store.logout 단독은 리프레시 재인증 여지를 남긴다)
@@ -83,9 +85,6 @@ export const LocationConsentScreen = ({
             aria-busy={isPending}
             onClick={() => saveConsent(true)}
           />
-          <p className="text-center text-fm-caption text-foreground-muted">
-            동의는 프로필 편집에서 언제든지 철회할 수 있어요.
-          </p>
           <button
             type="button"
             className="text-fm-label text-foreground-muted underline underline-offset-2 disabled:opacity-50"
