@@ -26,6 +26,8 @@ interface HomeOverlayPublishInput {
   occupiedIds: string[];
   /** 카드 재생 중 격자 — 게시 셀에 테두리 강조로 얹는다 (MSG-328) */
   playingGridId: string | null;
+  /** 격자 검색 선택 격자 — 재생 강조와 병존하는 테두리 강조 (MSG-412 AC 6) */
+  searchGridId: string | null;
 }
 
 export const useHomeOverlayPublish = ({
@@ -34,6 +36,7 @@ export const useHomeOverlayPublish = ({
   hotCells,
   occupiedIds,
   playingGridId,
+  searchGridId,
 }: HomeOverlayPublishInput): void => {
   const selectCell = useHomeCellDetailStore((s) => s.select);
   const expandSidebar = useSidebarStore((s) => s.setCollapsed);
@@ -43,9 +46,17 @@ export const useHomeOverlayPublish = ({
   const setOnCellClick = useMapOverlayStore((s) => s.setOnCellClick);
   const clearOverlays = useMapOverlayStore((s) => s.clear);
 
+  // emphasizeCell 2단 적용 (MSG-412 AC 6) — 재생 강조와 검색 하이라이트가 병존하고,
+  // 같은 격자면 셀 하나에 강조만 켜진다. 탭 판정 집합(clickableGridIds)은 아래에서
+  // overlays.cells 원본을 보므로 강조 전용 셀은 판정에 들어가지 않는다(기존 계약 유지)
   const publishedCells = useMemo(
-    () => emphasizeCell(overlays.cells, playingGridId, occupiedIds),
-    [overlays.cells, playingGridId, occupiedIds],
+    () =>
+      emphasizeCell(
+        emphasizeCell(overlays.cells, playingGridId, occupiedIds),
+        searchGridId,
+        occupiedIds,
+      ),
+    [overlays.cells, playingGridId, searchGridId, occupiedIds],
   );
 
   // 셀 탭 → 상세 오픈/무시 판정 (AC 11) — 판정은 순수 함수, 스토어는 상태만.

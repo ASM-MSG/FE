@@ -1,15 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { SearchBar } from "@fillmap/ui-web";
-import type { LatLng } from "@/entities/cell";
+import type { Bounds, LatLng } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
+import { useGridSearch } from "@/features/search/model/use-grid-search";
 import { usePlaceSearchQuery } from "@/features/search/model/use-place-search-query";
 import { useTrendingQuery } from "@/features/search/model/use-trending-query";
+import type { GridSearchResult } from "@/features/search/model/zone-search";
 import { RetryNotice } from "./RetryNotice";
 
 interface HomeSearchBoxProps {
   /** 검색 결과 선택 — 해당 좌표로 지도 이동 (AC 16) */
   onPlaceSelect: (coords: LatLng) => void;
+  /** 격자 결과 선택 — 그 격자로 이동 + 하이라이트 (MSG-412 AC 5·9) */
+  onGridSelect: (gridId: string) => void;
+  /** 구역 결과 선택 — 구역 사각형 전체가 보이게 fitBounds (MSG-412 AC 7) */
+  onZoneSelect: (bounds: Bounds) => void;
 }
 
 /**
@@ -20,12 +26,20 @@ interface HomeSearchBoxProps {
  * 구 SearchBox(탐색 이동형)를 대체한다 — 최근 방문·최근 검색 mock 기능은 신 디자인에 없어
  * 폐기(스펙 추정 6).
  *
+ * MSG-412: "서면 A-14" 형식 격자 검색 추가 — 서버 검색 API가 없어 zones(구역 사각형)를
+ * 세션 1회 캐시하고 입력을 로컬 역파싱한다. 격자/구역 매치는 장소 결과 위에 별도 섹션으로
+ * 표시하고(로컬 필터 — 디바운스 없이 즉시), 매치 없으면 섹션 자체가 없다 (AC 8).
+ *
  * 비로그인(익명 401 실측)은 입력 진입 자체를 막는다 (MSG-328 사용자 피드백) — 클릭은
  * mousedown preventDefault로 포커스(보더)를 차단하고, 키보드(Tab) 포커스는 즉시 반환한다.
  * 두 경로 모두 도감(RequireAuth)과 동일하게 로그인 모달을 연다 — 무반응 아님(a11y).
  * 드롭다운·검색 쿼리는 로그인 상태에서만 동작한다.
  */
-export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
+export const HomeSearchBox = ({
+  onPlaceSelect,
+  onGridSelect,
+  onZoneSelect,
+}: HomeSearchBoxProps) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openLoginModal = useLoginModalStore((s) => s.openModal);
   const [input, setInput] = useState("");
@@ -35,6 +49,8 @@ export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
   const hasInput = input.trim().length > 0;
   const search = usePlaceSearchQuery(input, isAuthenticated && open);
   const trending = useTrendingQuery(isAuthenticated && open && !hasInput);
+  // zones는 훅 내부에서 로그인 상태의 마운트 시 1회만 조회된다 (MSG-412 AC 4)
+  const gridResults = useGridSearch(input);
 
   // 인증이 풀리면(세션 만료 등) 즉시 게이트와 일치시킨다 (리뷰 P2) — mousedown/focus
   // 가드는 다음 이벤트에서만 동작하므로, 열린 드롭다운(캐시된 인기 검색어·검색 결과)과
@@ -78,6 +94,13 @@ export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
     setOpen(false);
   };
 
+  // 격자/구역 결과 선택 — 지도 명령은 페이지 몫, 여기서는 위임 + 닫기만 (MSG-412 AC 5·7)
+  const selectGridResult = (result: GridSearchResult) => {
+    if (result.kind === "grid") onGridSelect(result.gridId);
+    else onZoneSelect(result.bounds);
+    setOpen(false);
+  };
+
   return (
     <div
       ref={rootRef}
@@ -116,12 +139,20 @@ export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
       {open && (
         <div className="absolute inset-x-0 top-full z-20 mt-xs flex max-h-[70vh] flex-col gap-sm overflow-y-auto rounded-md border border-border bg-background p-md shadow-raised">
           {hasInput ? (
-            <PlaceResultList
-              places={search.places}
-              isError={search.isError}
-              onRetry={search.retry}
-              onSelect={selectPlace}
-            />
+            <>
+              {gridResults.length > 0 && (
+                <GridResultList
+                  results={gridResults}
+                  onSelect={selectGridResult}
+                />
+              )}
+              <PlaceResultList
+                places={search.places}
+                isError={search.isError}
+                onRetry={search.retry}
+                onSelect={selectPlace}
+              />
+            </>
           ) : (
             <TrendingList
               keywords={trending.keywords}
@@ -134,6 +165,37 @@ export const HomeSearchBox = ({ onPlaceSelect }: HomeSearchBoxProps) => {
     </div>
   );
 };
+
+interface GridResultListProps {
+  results: GridSearchResult[];
+  onSelect: (result: GridSearchResult) => void;
+}
+
+/**
+ * 격자 검색 결과 섹션 (MSG-412 AC 8) — 장소 결과 위, 섹션 제목으로 구분.
+ * 매치 없으면 부모가 렌더하지 않는다. 행 스타일은 기존 장소 결과 행 준용(스펙 리스크 —
+ * 전용 Figma 디자인 없음). 라벨은 격자 응답 zoneName·zoneCell 조립과 동일 형식("서면 A-14").
+ */
+const GridResultList = ({ results, onSelect }: GridResultListProps) => (
+  <section className="flex flex-col gap-xs">
+    <h2 className="text-fm-label text-foreground-muted">격자</h2>
+    <ul className="flex flex-col">
+      {results.map((result) => (
+        <li key={`${result.kind}-${result.zoneKey}`}>
+          <button
+            type="button"
+            onClick={() => onSelect(result)}
+            className="flex w-full flex-col gap-xxs py-xs text-left transition-colors active:bg-surface-soft"
+          >
+            <span className="truncate text-fm-body-strong text-foreground">
+              {result.label}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </section>
+);
 
 interface PlaceResultListProps {
   places: ReturnType<typeof usePlaceSearchQuery>["places"];
