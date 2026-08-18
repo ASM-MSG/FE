@@ -234,7 +234,11 @@ export const DexPanel = () => {
                 <DotsLoader label="뱃지 불러오는 중" />
               </div>
             ) : (
-              <BadgeTabBody badges={badges.data} />
+              <BadgeTabBody
+                badges={badges.data}
+                nickname={profile.data.nickname}
+                profileImageUrl={profile.data.profileImageUrl}
+              />
             )}
           </>
         )}
