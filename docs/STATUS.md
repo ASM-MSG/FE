@@ -74,6 +74,12 @@
 
 전 컴포넌트 스토리 존재. 형제 패키지: `design-tokens`, `tailwind-preset`, `ui-native`.
 
+## ui-native 인벤토리 (packages/ui-native/src/index.ts — 25 컴포넌트 + cx)
+
+`Button` · `Chip` · `Input` · `Switch` · `Selector` · `Avatar` · `Toast` · `GridCell` · `MapIconButton` · `AppHeader` · `SearchBar` · `Fab` · `BottomNav`(+`BottomNavItem`) · `BottomSheet` · `ModalCard` · `Dots` · `VideoRow` · `Thumbnail`(+`ThumbnailShape`) · **MSG-420 신설 7종**: `VideoCard`(1열 영상 카드 — 썸네일+중앙 재생+재생시간 배지+메타 2줄 슬롯, 도메인 무관) · `CellBadge`(ui-web 미러) · `Checkbox`(+`CheckboxVariant` — circle/glyph) · `SegmentedProgress`(n분할) · `ProgressBar`(연속형) · `StatTile` · `ActionSheet`(+`ActionSheetItem`·`ActionSheetSectionLabel`·`ActionSheetDivider`) · `cx`
+
+전 컴포넌트 스토리 존재(RN Storybook은 `apps/mobile/.rnstorybook/main.ts` glob 자동 등록 — 파일 추가만으로 등재). `index.ts`는 MSG-420이 독점 소유했으며, 이후 모바일 화면 티켓은 export를 추가하지 않는 것이 합의다.
+
 ## 테스트 자산 (apps/web/src — 174개, smoke 29개) + e2e 3스펙(apps/web/e2e — 로그인 시딩 `auth-session-stub`(getMe `locationConsent: true` 스텁 포함), `consent-gate-popstate.spec.ts`는 실브라우저 히스토리 방향 판별 고정 — MSG-407)
 
 레이어별 분포: app 5 · entities 7 · features/auth 6 · features/dex 13 · features/map-home 50 · features/notifications 12 · features/profile 12 · features/region 6 · features/search 3 · features/upload 17 · features/video-actions 6 · pages 21 · shared 9 · widgets 7. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인 (2026-08-17 MSG-407에서 전수 재계수 — 종전 111·smoke 19·e2e 3스펙은 스테일이었음).
@@ -83,6 +89,8 @@
 ## apps/mobile
 
 존재 (Expo Router + NativeWind). features 대부분 스텁, `shared/format.parity.test.ts`로 웹/네이티브 동등성 검증(MSG-328에서 shared/format.ts로 앵커 재지정). 구 regions·recent-history parity는 웹 원본 삭제로 모바일 단독 테스트로 전환. 웹 티켓에서는 통상 무관 — 크로스 플랫폼 티켓만 소스 확인.
+
+바텀 내비 4탭 = 홈(`/home`) · **친구(`/friends` — 준비 중 스텁, MSG-420에서 탐색 탭 교체)** · 도감(`/dex`) · 프로필(`/profile`), 중앙 카메라 버튼 → `/upload`. 탭 라우트 정본은 `widgets/bottom-nav/app-bottom-nav.tsx`의 `TAB_ROUTES`·`TAB_META`. 실화면 미구현 탭은 `widgets/tab-stub/tab-stub-screen.tsx`(제목 + 선택 `description`) 경유.
 
 - MSG-419: API 기반 이식 — `shared/api/`(웹 생성물 재수출 barrel `sdk`·`query-options`, 모바일 `client-config`(EXPO_PUBLIC_API_BASE_URL 가드)·`http-client`(ky)·`auth-pipeline`(body reissue·X-Client-Type: app·익명 401 무개입)·`envelope`·`api-error` 복제+parity·`error-interceptor`·`query-provider`), `shared/token-storage`(expo-secure-store 포트)·`shared/navigation`, `features/auth/model/{auth-store,configure-auth,auth-session}`·`api/use-dev-login`, `_layout`에 QueryProvider+부트스트랩, dev 스모크 라우트 `/dev/api-smoke`. metro `resolver.resolveRequest`(+vitest 동일 규칙 플러그인)로 생성물의 `../client-config`를 모바일 구현으로 치환.
 
@@ -105,3 +113,4 @@
 - MSG-419: [모바일] API 기반 이식 — 웹 hey-api 생성 SDK를 재생성 없이 공유(barrel 2파일에 크로스 앱 경로 격리 + metro/vitest 이중 치환으로 모바일 Ky 주입), RN Ky 인스턴스·봉투 언랩·에러 정규화(복제+parity 테스트)·앱 규약 인증 파이프라인(body refreshToken 재발급 single-flight 1회 재시도, 회전 토큰 갱신, 저장 refreshToken 없는 익명 401은 무개입), expo-secure-store 토큰 저장소 어댑터 + 비동기 재수화 게이트(`hydrated`), QueryProvider(staleTime 30s·shouldRetryQuery) 루트 마운트, 검증용 dev 스모크 화면 `/dev/api-smoke` 존치. 개별 화면(mock-*) 연동은 범위 밖
 - ADHOC(티켓 없음, 2026-08-18): 프로필·도감 헤더에 대표 뱃지 pill 노출 — `featuredBadgesOf` 파생 + `features/dex/ui/FeaturedBadgePills` 공용 추출(미리보기 카드 포함 3곳 사용), 대표 ≥1개면 헤더 메타 줄(가입일·탐험 규모)을 pill 행이 **대체**하고 0개·로딩·에러는 메타 줄 폴백(헤더 항상 2줄). 프로필 페이지는 기존 `useBadgesQuery` 재사용으로 badges 조회 추가, 뱃지 탭 저장 시 헤더 갱신은 MSG-413 invalidate 키 공유로 자동. 스펙·작업로그는 `docs/spec/ADHOC-featured-badge-header.md`
 - MSG-414: 도감 업로드 잔디 — upload-history API 첫 연동(`useUploadHistoryQuery`), `/dex/history` 기록 탭 신설(24주 잔디 카드: 헤더+"전체 보기 ›"+업로드 일수·최장 연속 메타+범례) + 1년(53주) 모달(DialogShell `maxWidthClassName` 비파괴 확장 960px, "최근 1년"은 캐럿 제거 정적 라벨 — API 기간 파라미터 부재로 셀렉터 시늉 배제). `upload-grass` 순수 파생(주 시작 일요일·KST epoch 일수 정수 산술·미래 셀 렌더 생략·레벨 고정 임계 0/1/2/3/4+·활발 요일 동률은 일요일부터 앞선 쪽), design-tokens `grass-0`~`grass-3` 선등록(lv4=primary 재사용), 업로드 확정·교체·삭제 3지점 upload-history invalidate. 빈 이력은 전부 lv0 격자+0일 메타(별도 빈 화면 없음). 상단 스트릭 카드(현재 연속)와 잔디 메타(최장 연속)는 지표가 다름 — 값 상이가 정상
+- MSG-420: [모바일] ui-native 공통 컴포넌트 보강 + 바텀 내비 친구 탭 교체 — Figma ver 6(14799:25586) 반복 컴포넌트 7종 신설(`VideoCard`·`CellBadge`·`Checkbox`·`SegmentedProgress`·`ProgressBar`·`StatTile`·`ActionSheet`, 각 스토리 동반)으로 ui-native 18→25종. `ActionSheet`는 2026-08-06 합의(두 번째 사용처 = MSG-431 공개 범위 시트) 이행으로 `features/grid-detail/ui/more-menu-sheet.tsx` 승격 — 재구성 후 props·콜백 불변이라 호출부 무수정, safe-area는 `bottomInset` prop 주입(ui-native에 safe-area-context 의존 추가 기각, BottomNav↔AppBottomNav 선례). `ProgressBar`는 티켓 6종 밖 추가 — 후속 12티켓 전수 조회로 연속형 진행바 수요 3곳(MSG-424 분석·MSG-425 탐험률·MSG-430 기록) 확인, `index.ts`를 이 티켓이 독점해 나중에 못 넣기 때문(사용자 승인). 바텀 내비 2번째 탭 탐색(`Compass`·`/explore`)→친구(`UsersRound`·`/friends`) 교체, `app/explore.tsx` 삭제·`app/friends.tsx` 스텁 신설(`_layout.tsx`는 병렬 MSG-419 소유라 무수정). NativeWind가 미생성하던 스케일 2종(`1.25`=5px·`6.5`=26px)을 `tailwind-preset/native.ts`에 추가 — 부수 효과로 기존 `grid-video-card`의 `size-6.5`가 이제 실제 적용(12→26px, 의도 방향이라 존치). VideoCard 재생 원은 Figma(파란 원+흰 삼각)와 의도적으로 다름 — 기존 두 카드의 앱 관례(흰 원+파란 삼각) 우선, 통일은 카드 이관 티켓. 검증 환류로 Checkbox 미체크를 아웃라인형으로 정정(종전 slate-300 채움+흰 체크 = 대비 1.4:1)·`accessibilityLabel` prop·`hitSlop=12`(circle 50px·glyph 44px) 반영
