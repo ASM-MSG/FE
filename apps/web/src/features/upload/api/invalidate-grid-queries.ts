@@ -17,10 +17,15 @@ import {
  * 정확 무효화한다. READY 전이에서 다시 부르는 이유: 확정 시점 재조회는 서버 READY 필터에
  * 걸려 전역 목록에 새 영상이 비어 있고, 블러 완료 후에야 노출되므로 그때 한 번 더
  * 신선 조회가 필요하다.
+ *
+ * gridId를 모르는 호출(MSG-411 영상 삭제 — 미니 패널에서 playback 해소 전 확정,
+ * codex 리뷰 4)은 null을 넘긴다 — gridId 계열 4종도 점령 격자와 같은 부분 키(_id)
+ * 방식으로 전 격자 무효화한다. 확정 차단 대안은 playback 실패 시 삭제 자체가
+ * 영구 불가가 되어 기각.
  */
 export const invalidateGridQueries = (
   queryClient: QueryClient,
-  gridId: string,
+  gridId: string | null,
 ): void => {
   const [occupiedKey] = getOccupiedInViewportQueryKey({
     query: { swLat: 0, swLng: 0, neLat: 0, neLng: 0 },
@@ -35,6 +40,21 @@ export const invalidateGridQueries = (
   void queryClient.invalidateQueries({
     queryKey: [{ _id: aggregationKey._id }],
   });
+
+  if (gridId === null) {
+    // 격자 미상 — gridId 계열 4종을 식별자(_id)만 남긴 부분 키로 광역 무효화
+    const anyGridPath = { path: { gridId: "" } };
+    const broadKeys = [
+      getCellQueryKey(anyGridPath),
+      getGridGlobalVideosQueryKey(anyGridPath),
+      getGridVideosQueryKey(anyGridPath),
+      getStatByGridQueryKey({ query: { gridId: "" } }),
+    ];
+    for (const [key] of broadKeys) {
+      void queryClient.invalidateQueries({ queryKey: [{ _id: key._id }] });
+    }
+    return;
+  }
 
   const gridPath = { path: { gridId } };
   void queryClient.invalidateQueries({ queryKey: getCellQueryKey(gridPath) });

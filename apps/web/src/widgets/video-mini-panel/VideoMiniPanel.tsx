@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
-import { Film, X } from "lucide-react";
+import { Film, MoreHorizontal, X } from "lucide-react";
 import { Button } from "@fillmap/ui-web";
 import { useVideoPlaybackQuery } from "@/features/map-home/model/use-video-playback-query";
 import { playbackUnavailableMessage } from "@/features/map-home/model/video-playback";
 import type { VideoMiniSelection } from "@/features/map-home/model/video-mini-panel-store";
+import { VideoMoreMenu } from "@/features/video-actions/ui/VideoMoreMenu";
 import { formatViewCountKo } from "@/shared/format";
 import { VideoOwnerMeta } from "./VideoOwnerMeta";
 
@@ -58,7 +59,31 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
       aria-label="영상 미니 패널"
       className="pointer-events-auto absolute inset-y-0 left-97 z-10 flex w-97 flex-col gap-sm border-l border-border bg-background p-md shadow-raised"
     >
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-xxs">
+        {/* 헤더 더보기 (MSG-411 AC 9, 승인 결정 1 — 시안 부재, 기존 아이콘 버튼 스타일 준용):
+            내 영상=공개 범위·삭제 / 타인=신고. 목록에 없는 격자·구역 메타는 이 패널이
+            이미 조회한 playback으로 보강. 삭제 성공 시 패널 닫기는 useDeleteVideo가
+            스토어 연동으로 중앙 처리한다 (codex 리뷰 3) */}
+        <VideoMoreMenu
+          target={{
+            videoId: video.videoId,
+            gridId: playback?.gridId ?? null,
+            thumbnailUrl: video.thumbnailUrl ?? playback?.thumbnailUrl ?? null,
+            durationSec: video.durationSec,
+            createdAt: video.recordedAt,
+            zoneName: playback?.zoneName ?? null,
+            zoneCell: playback?.zoneCell ?? null,
+          }}
+          mine={mine}
+        >
+          <button
+            type="button"
+            aria-label="영상 더보기"
+            className="flex size-8 items-center justify-center rounded-sm text-foreground-muted hover:bg-surface"
+          >
+            <MoreHorizontal aria-hidden className="size-5" />
+          </button>
+        </VideoMoreMenu>
         <button
           ref={closeButtonRef}
           type="button"

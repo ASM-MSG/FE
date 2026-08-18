@@ -1,6 +1,6 @@
 import { Select } from "radix-ui";
 import { Check, ChevronDown } from "lucide-react";
-import { REPORT_REASONS } from "./model/report";
+import { REPORT_REASONS } from "../model/report";
 
 interface ReportReasonSelectProps {
   /** 선택된 사유 id. 미선택이면 null */
@@ -9,9 +9,10 @@ interface ReportReasonSelectProps {
 }
 
 /**
- * 신고 사유 선택 필드 — Radix Select 기반 페이지 로컬 구현 (MSG-116 S5·S6).
- * 소비처가 이 화면 1곳뿐이라 ui-web 승격 대신 페이지 로컬로 둔다(스펙 트레이드오프 결정).
- * 옵션 팝업은 Radix 기본 포털로 렌더되어 상세 시트의 overflow 클리핑을 회피한다(R3).
+ * 신고 사유 선택 필드 — Radix Select 기반 로컬 구현 (MSG-116 S5·S6 →
+ * MSG-411에서 widgets/cell-detail로부터 이동, 마크업 무변경).
+ * 소비처가 신고 모달 1곳뿐이라 ui-web 승격 대신 로컬로 둔다(스펙 트레이드오프 결정).
+ * 옵션 팝업은 Radix 기본 포털로 렌더되어 컨테이너의 overflow 클리핑을 회피한다(R3).
  */
 export const ReportReasonSelect = ({
   value,
