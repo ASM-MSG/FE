@@ -36,6 +36,10 @@ export const MAP_SCALE_500M_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("500m");
 export const MAP_SCALE_1KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("1km");
 /** 축척 `2km` 단 — "장소 불러오기"가 동작하는 가장 넓은 줌 (MSG-403 후속) */
 export const MAP_SCALE_2KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("2km");
+/** 축척 `4km` 단 — 시 마커 클릭이 들어가는 구 구간 줌 (MSG-410 추정 3) */
+export const MAP_SCALE_4KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("4km");
+/** 축척 `8km` 단 — 집계 unit SIGUNGU/SIDO 경계 (MSG-410 AC 1: 1km~8km=구, 16km~=시) */
+export const MAP_SCALE_8KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("8km");
 
 /**
  * zoom을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.

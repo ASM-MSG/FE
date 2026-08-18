@@ -19,7 +19,10 @@ import {
 import { semantic } from "@fillmap/design-tokens";
 import { Button } from "@fillmap/ui-web";
 import type { Bounds, CellCorners, LatLng } from "@/entities/cell";
-import { GRID_MIN_ZOOM } from "@/features/map-home/model/grid-overlay";
+import {
+  drillInZoomForUnit,
+  type AggregationUnit,
+} from "@/features/map-home/model/aggregation-unit";
 import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
 import { buildHatchLines } from "@/features/map-home/model/theme-overlay";
 import type { Viewport } from "@/features/map-home/model/viewport-store";
@@ -92,18 +95,18 @@ export interface MapLabelOverlay {
 }
 
 /**
- * 지도에 그릴 클러스터 마커 한 개 — 순수 데이터 (MSG-264). 파생(윈도 묶기·클램프)은 호출부 몫.
- * bounds는 멤버 셀 합집합 — 클릭 줌 인(fitBounds) 대상.
+ * 지도에 그릴 지역 집계 마커 한 개 — 순수 데이터 (MSG-264 → MSG-410 서버 집계 전환).
+ * 파생(items[] 매핑·겹침 병합)은 호출부 몫(region-cluster-overlay).
+ * 클릭 시 마커 좌표 중심 + 단위 안쪽 줌으로 이동한다 (AC 8).
  */
 export interface MapClusterOverlay {
   id: string;
   position: LatLng;
+  /** 지역명 — null이면 개수만 표시(미판정 버킷·병합 마커, AC 4·추정 2) */
+  name: string | null;
   count: number;
-  /** 배지 크기 3단계 (AC 5, A6 — 크기 단계 채택) */
-  tier: 1 | 2 | 3;
-  /** 배지 색 (테마 토큰 hex) — 미지정 시 primary (AC 9) */
-  color?: string;
-  bounds: Bounds;
+  /** 집계 단위 — 마커 크기 3단(동<구<시, Figma 14599:7042~7048)과 클릭 목표 줌의 근거 */
+  unit: AggregationUnit;
 }
 
 interface MapCanvasProps {
@@ -302,30 +305,36 @@ const ROUTE_STROKE_OPACITY = 0.9;
 const routeMarkerContent = (seq: number): string =>
   `<div class="flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-theme-route text-fm-body-strong text-primary-foreground shadow-raised">${seq}</div>`;
 
-// 클러스터 배지 크기 3단계 (MSG-264 AC 5, A6 — 크기 단계 채택). 최대 지름(tier 3, 44px)이
-// 클러스터 윈도 픽셀 등가(약 90px — cluster-overlay CLUSTER_WINDOW_CELL_FACTOR)의 절반
-// 이하라 중앙부 클램프(A1)와 함께 인접 마커가 겹치지 않는다 (AC 7)
-const CLUSTER_TIER_SIZE_CLASS: Record<MapClusterOverlay["tier"], string> = {
-  1: "size-7",
-  2: "size-9",
-  3: "size-11",
+// 지역 집계 마커 크기 3단 — 단위 기준 동<구<시 (MSG-410 AC 4, Figma 14599:7042~7048
+// variant `단위=동/구/시`, 1x 실측 68/80/92px — 흰 링 3px 포함 border-box 전체 지름).
+// count 기준 tier 3단은 폐기됐다 (추정 4). 값 변경 시 병합 임계
+// MARKER_MERGE_PX(region-cluster-overlay)도 함께 갱신할 것
+const CLUSTER_UNIT_SIZE_CLASS: Record<AggregationUnit, string> = {
+  DONG: "size-17",
+  SIGUNGU: "size-20",
+  SIDO: "size-23",
 };
 
-/** 배지 표시 캡 — 고정 크기 원(최대 44px)이라 세 자리부터는 "99+" (카카오·네이버 클러스터러 관례) */
+/** count 서식 — 천 단위 구분 (구 "99+" 캡 폐기: 디자인이 세 자리 수치를 그대로 보여준다) */
 const formatClusterCount = (count: number): string =>
-  count > 99 ? "99+" : String(count);
+  count.toLocaleString("ko-KR");
 
 /**
- * 클러스터 원형 배지 HTML (MSG-264 AC 3·5·9) — routeMarkerContent 선례를 따른 HtmlIcon content.
- * 배지 색은 데이터로 받은 테마 토큰 hex(미지정 시 primary) — Polygon fillColor와 같은 관례라
- * inline style로 지정한다(tailwind 색 임의값 클래스 금지 준수). count는 파생 로직의 숫자 전제.
+ * 지역 집계 원형 마커 HTML (MSG-410 AC 4) — 이름 위·개수 아래, 파랑은 primary 토큰 클래스
+ * (hex 하드코딩 금지). 흰 링은 Figma 정본(14599:7041)의 3px 백색 스트로크 — 지도 타일과
+ * 마커를 분리하는 테두리라 지면색 토큰 border-background로 표현한다.
+ * name은 서버가 준 지역명이라 이스케이프한다. null이면 개수만 표시.
  */
 const clusterMarkerContent = ({
+  name,
   count,
-  tier,
-  color,
+  unit,
 }: MapClusterOverlay): string =>
-  `<div class="flex ${CLUSTER_TIER_SIZE_CLASS[tier]} -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-fm-body-strong text-primary-foreground shadow-raised" style="background-color:${color ?? semantic.primary}">${formatClusterCount(count)}</div>`;
+  `<div class="flex ${CLUSTER_UNIT_SIZE_CLASS[unit]} -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-3 border-background bg-primary text-primary-foreground shadow-raised">${name !== null ? `<span class="max-w-full truncate px-xxs text-fm-caption">${escapeHtml(name)}</span>` : ""}<span class="text-fm-body-strong">${formatClusterCount(count)}</span></div>`;
+
+/** 집계 마커 접근성 이름 — 스크린리더 대체 텍스트이자 e2e 셀렉터 계약 */
+const clusterMarkerTitle = ({ name, count }: MapClusterOverlay): string =>
+  name !== null ? `${name} 점령 격자 ${count}개` : `점령 격자 ${count}개`;
 
 /**
  * HTML 이스케이프 — 이름표 텍스트는 **서버가 준 미션 제목**이라 그대로 innerHTML에 넣으면
@@ -456,25 +465,14 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       if (map) onViewportChange(toViewport(map));
     };
 
-    // 클러스터 클릭 줌 인 (MSG-264 AC 8, A3) — SDK 접근은 이 경계 안에서만.
-    // 멤버 영역(bounds 합집합)으로 fitBounds하되, 단일 셀 클러스터는 100m 셀 과확대
-    // (zoom 21)를 막기 위해 셀 중심으로 GRID_MIN_ZOOM(16) 수준 줌 인한다.
+    // 집계 마커 클릭 (MSG-410 AC 8) — SDK 접근은 이 경계 안에서만.
+    // 마커 좌표를 중심으로 해당 단위 안쪽 줌(시→구 구간, 구→동 구간, 동→개별 격자 줌 —
+    // drillInZoomForUnit, 추정 3)으로 이동한다. 구 멤버 bounds fitBounds는 서버 집계
+    // 전환으로 멤버 목록이 사라져 폐기됐다.
     const zoomToCluster = (cluster: MapClusterOverlay) => {
-      const map = mapRef.current;
-      if (!map) return;
-      const { sw, ne } = cluster.bounds;
-      if (cluster.count === 1) {
-        map.morph(
-          new naver.maps.LatLng((sw.lat + ne.lat) / 2, (sw.lng + ne.lng) / 2),
-          GRID_MIN_ZOOM,
-        );
-        return;
-      }
-      map.fitBounds(
-        new naver.maps.LatLngBounds(
-          new naver.maps.LatLng(sw.lat, sw.lng),
-          new naver.maps.LatLng(ne.lat, ne.lng),
-        ),
+      mapRef.current?.morph(
+        new naver.maps.LatLng(cluster.position.lat, cluster.position.lng),
+        drillInZoomForUnit(cluster.unit),
       );
     };
 
@@ -583,13 +581,13 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                       />
                     )),
                   )}
-                {/* 클러스터 배지 마커 (MSG-264 AC 3·5·8) — zoom < GRID_MIN_ZOOM에서 셸이
-                    채움 대신 게시한다. title은 배지 숫자의 스크린리더 대체 텍스트(a11y) */}
+                {/* 지역 집계 마커 (MSG-410 AC 4·8) — zoom < GRID_MIN_ZOOM에서 셸이
+                    서버 집계를 채움 대신 게시한다. title은 스크린리더 대체 텍스트(a11y) */}
                 {clusters?.map((cluster) => (
                   <Marker
                     key={cluster.id}
                     position={cluster.position}
-                    title={`격자 ${cluster.count}개 클러스터`}
+                    title={clusterMarkerTitle(cluster)}
                     icon={{ content: clusterMarkerContent(cluster) }}
                     onClick={() => zoomToCluster(cluster)}
                   />

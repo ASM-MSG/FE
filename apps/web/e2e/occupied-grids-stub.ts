@@ -31,10 +31,71 @@ const gridOf = (gridId: string) => {
 };
 
 /**
- * `/api/grids`는 서면 일대 점령 격자로, `/api/hotzones`는 빈 목록으로 응답시킨다.
- * 인증이 없어도 200이 오므로 오버레이 파이프라인이 그대로 동작한다.
+ * 줌 구간별 집계 응답 스텁 (MSG-410) — unit 쿼리 파라미터에 맞는 부산 지명 한 항목씩.
+ * 좌표는 서면역 인근(기본 진입 중심)이라 저줌 뷰포트 안에 마커가 렌더된다.
+ * count 총합이 unit 간 서로 달라도 무방하다 — 스펙 총합 보존은 유닛 테스트 몫이고,
+ * 여기는 "unit별 마커 렌더 전환"만 고정한다.
+ */
+const AGGREGATION_ITEMS: Record<
+  string,
+  { regionCode: string; name: string; lat: number; lng: number; count: number }[]
+> = {
+  DONG: [
+    {
+      regionCode: "2623051000",
+      name: "부전2동",
+      lat: 35.1579,
+      lng: 129.0594,
+      count: 9,
+    },
+  ],
+  SIGUNGU: [
+    {
+      regionCode: "26230",
+      name: "부산진구",
+      lat: 35.163,
+      lng: 129.053,
+      count: 24,
+    },
+  ],
+  SIDO: [
+    {
+      regionCode: "26",
+      name: "부산광역시",
+      lat: 35.18,
+      lng: 129.075,
+      count: 131,
+    },
+  ],
+};
+
+/**
+ * `/api/grids`는 서면 일대 점령 격자로, `/api/grids/aggregation`은 unit별 부산 집계로,
+ * `/api/hotzones`는 빈 목록으로 응답시킨다. 인증이 없어도 200이 오므로 오버레이
+ * 파이프라인이 그대로 동작한다.
  */
 export const stubOccupiedGrids = async (page: Page): Promise<void> => {
+  await page.route("**/api/grids/aggregation?*", (route) => {
+    const unit =
+      new URL(route.request().url()).searchParams.get("unit") ?? "DONG";
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        developCode: 0,
+        message: "성공",
+        data: {
+          currentRegion: {
+            regionCode: "2623051000",
+            name: "부전2동",
+            gridCount: 9,
+            videoCount: 12,
+          },
+          items: AGGREGATION_ITEMS[unit] ?? AGGREGATION_ITEMS.DONG,
+        },
+      }),
+    });
+  });
   await page.route("**/api/grids?*", (route) =>
     route.fulfill({
       status: 200,

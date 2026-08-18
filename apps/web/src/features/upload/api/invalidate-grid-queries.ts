@@ -4,6 +4,7 @@ import {
   getCellQueryKey,
   getGridGlobalVideosQueryKey,
   getGridVideosQueryKey,
+  getOccupiedAggregatesInViewportQueryKey,
   getOccupiedInViewportQueryKey,
   getStatByGridQueryKey,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
@@ -25,6 +26,15 @@ export const invalidateGridQueries = (
     query: { swLat: 0, swLng: 0, neLat: 0, neLng: 0 },
   });
   void queryClient.invalidateQueries({ queryKey: [{ _id: occupiedKey._id }] });
+
+  // 저줌 집계 마커 count 재조회 (MSG-410 AC 11) — 캐시 키가 unit·bbox별로 갈라져
+  // 점령 격자와 같은 부분 키(_id) 방식으로 전부 무효화한다
+  const [aggregationKey] = getOccupiedAggregatesInViewportQueryKey({
+    query: { swLat: 0, swLng: 0, neLat: 0, neLng: 0, unit: "DONG" },
+  });
+  void queryClient.invalidateQueries({
+    queryKey: [{ _id: aggregationKey._id }],
+  });
 
   const gridPath = { path: { gridId } };
   void queryClient.invalidateQueries({ queryKey: getCellQueryKey(gridPath) });

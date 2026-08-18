@@ -29,8 +29,9 @@ export const toGridsRequest = (bounds: Bounds): GridsRequest => ({
 
 /**
  * 이 뷰포트로 조회해도 되는가 — 지도 준비 전(null)이거나 명세 span 상한 초과면 false.
- * 줌은 판정에 쓰지 않는다: 채움 줌 게이트(GRID_MIN_ZOOM) 미만에서도 클러스터 마커가
- * 점령 격자를 집계해 표시하므로(MSG-264), 줌으로 막으면 클러스터가 빈다.
+ * 줌은 판정에 쓰지 않는다 — 저줌 표시는 서버 집계(use-grid-aggregation-query)가 따로
+ * 맡고(MSG-410), 이 조회의 bbox 정본은 확정 영역이라(MSG-403) 줌 게이트 없이도
+ * 재조회 소용돌이가 없다.
  */
 export const canQueryGrids = (bounds: Bounds | null): boolean => {
   if (!bounds) return false;
