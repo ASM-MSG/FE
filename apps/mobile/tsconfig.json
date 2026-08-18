@@ -2,6 +2,10 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // app.config.js는 node 26 제약으로 .js여야 한다(파일 상단 주석) — JSDoc 타입을 검사해
+    // ExpoConfig 계약을 계속 지킨다. include에 올린 .js 파일만 대상이다
+    "allowJs": true,
+    "checkJs": true,
     "paths": {
       "@/*": [
         "./src/*"
@@ -14,6 +18,7 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "app.config.js",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"

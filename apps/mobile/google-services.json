@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1009335347123",
+    "project_id": "fillmap-edd7d",
+    "storage_bucket": "fillmap-edd7d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1009335347123:android:ad28e1a793dd1774e24dc6",
+        "android_client_info": {
+          "package_name": "kr.fillmap.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsklMVHMwjge5fBsB-jCHwWpY8xpSCf5E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
