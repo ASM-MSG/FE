@@ -4,6 +4,7 @@ import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { envelopeResponse } from "@/test/envelope-response";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { SEOMYEON_ZONE as ZONE } from "@/test/zone-fixture";
 import { HomeSearchBox } from "./HomeSearchBox";
 
 /**
@@ -14,9 +15,7 @@ import { HomeSearchBox } from "./HomeSearchBox";
  * MSG-412: 격자 검색 섹션(장소 결과 위·매치 없으면 미노출·선택 콜백) 계약 추가 —
  * 기존 계약 불변, props만 확장(onGridSelect·onZoneSelect).
  */
-const renderBox = (
-  over: Partial<Parameters<typeof HomeSearchBox>[0]> = {},
-) =>
+const renderBox = (over: Partial<Parameters<typeof HomeSearchBox>[0]> = {}) =>
   renderWithProviders(
     <HomeSearchBox
       onPlaceSelect={() => {}}
@@ -94,18 +93,6 @@ describe("비로그인 검색창 = 로그인 모달 (포커스 차단)", () => {
   });
 });
 
-// 서면(부산 부산진구) 구역 사각형 픽스처 — 세로 4칸(A~D행)·가로 6칸(1~6열)
-const ZONE = {
-  zoneKey: "seomyeon",
-  name: "서면",
-  regionCode: null,
-  minGridY: 16850,
-  maxGridY: 16853,
-  minGridX: 11419,
-  maxGridX: 11424,
-  priority: 1,
-};
-
 /** 스텁이 경로 계약을 강제한다 — zones·trending·places 외 요청은 실패 응답 */
 const stubSearchApis = () =>
   vi.stubGlobal(
@@ -131,7 +118,9 @@ describe("격자 검색 섹션 (MSG-412 AC 8)", () => {
     act(() => searchInput().focus());
     fireEvent.change(searchInput(), { target: { value: "서면 A-1" } });
 
-    expect(await screen.findByRole("button", { name: "서면 A-1" })).toBeTruthy();
+    expect(
+      await screen.findByRole("button", { name: "서면 A-1" }),
+    ).toBeTruthy();
     expect(screen.getByRole("heading", { name: "격자" })).toBeTruthy();
   });
 

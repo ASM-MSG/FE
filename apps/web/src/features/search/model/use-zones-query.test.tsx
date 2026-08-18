@@ -4,18 +4,8 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { envelopeResponse } from "@/test/envelope-response";
+import { SEOMYEON_ZONE as ZONE } from "@/test/zone-fixture";
 import { useZonesQuery } from "./use-zones-query";
-
-const ZONE = {
-  zoneKey: "seomyeon",
-  name: "서면",
-  regionCode: null,
-  minGridY: 16850,
-  maxGridY: 16853,
-  minGridX: 11419,
-  maxGridX: 11424,
-  priority: 1,
-};
 
 /** 재마운트 간 캐시 계약 검증을 위해 QueryClient를 테스트 안에서 공유한다 */
 const makeWrapper = () => {
