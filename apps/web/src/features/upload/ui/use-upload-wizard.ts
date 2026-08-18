@@ -3,6 +3,7 @@ import { ApiError } from "@/shared/api/api-error";
 import {
   useAnalyzeVideo,
   useConfirmUpload,
+  useReplaceVideo,
 } from "@/features/upload/api/use-upload-mutations";
 import { trimToSegment } from "@/features/upload/api/ffmpeg-trim";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
@@ -32,6 +33,10 @@ import {
   coversWholeVideo,
   MAX_TRIMMED_DURATION_SEC,
 } from "@/features/upload/model/video-trim";
+import {
+  replaceGridLabel,
+  wizardModeCopy,
+} from "@/features/upload/model/wizard-mode";
 import type { TrimState } from "./PreviewStep";
 import { useVideoDuration } from "./use-video-duration";
 
@@ -64,6 +69,9 @@ const developCodeOf = (error: unknown): number | undefined => {
 export const useUploadWizard = () => {
   const open = useUploadModalStore((s) => s.open);
   const closeModal = useUploadModalStore((s) => s.closeModal);
+  // 교체 모드 (MSG-415) — 대상이 있으면 확정만 PUT /api/videos/{videoId}로 간다
+  const replaceTarget = useUploadModalStore((s) => s.replaceTarget);
+  const replaceMode = replaceTarget !== null;
   const [file, setFile] = useState<UploadCandidate | null>(null);
   // 원본 File — duration 캡처·미리보기·선분석 업로드용(플랫폼 경계)
   const [rawFile, setRawFile] = useState<File | null>(null);
@@ -89,9 +97,11 @@ export const useUploadWizard = () => {
     objectUrl,
     error: videoLoadError,
   } = useVideoDuration(rawFile);
-  const location = useUploadLocation(open);
+  // 교체 모드는 좌표 미전송(격자 유지) — 뷰포트 중심 역지오코딩 조회가 불필요하다 (추정 1)
+  const location = useUploadLocation(open && !replaceMode);
   const analyze = useAnalyzeVideo();
   const confirm = useConfirmUpload();
+  const replaceVideo = useReplaceVideo();
 
   // 180초 초과 — FE 1차 검증 사유 표시 + [다음] 비활성 (B1)
   const durationTooLong = duration !== null && !isWithinDurationLimit(duration);
@@ -101,9 +111,11 @@ export const useUploadWizard = () => {
     !videoLoadError &&
     !durationTooLong;
 
+  // 확정 진행 중 — 모드별로 실제 발사되는 뮤테이션은 하나뿐이다 (publish 분기)
+  const submitting = confirm.isPending || replaceVideo.isPending;
+
   // 진행 중 = 닫기·중복 게시 차단 (B12)
-  const busy =
-    analyze.isPending || trim.status === "trimming" || confirm.isPending;
+  const busy = analyze.isPending || trim.status === "trimming" || submitting;
 
   /** 트리밍 산출 objectURL 정리 — 원본 objectURL(useVideoDuration 소관)은 건드리지 않는다 */
   const revokeTrim = () => {
@@ -133,6 +145,9 @@ export const useUploadWizard = () => {
     analyze.resetFlow();
     confirm.reset();
     confirm.resetFlow();
+    replaceVideo.reset();
+    replaceVideo.resetFlow();
+    // closeModal이 replaceTarget도 해제한다 — 다음 일반 업로드의 교체 오발사 차단 (AC 6)
     closeModal();
   };
 
@@ -232,29 +247,47 @@ export const useUploadWizard = () => {
     }
   };
 
-  /** [업로드하기] (B9) — 실패 시 단계 구분 표시, 재클릭 재시도는 성공 단계 스킵 (B11) */
+  /**
+   * [업로드하기]/[교체하기] (B9·MSG-415 AC 3) — 교체 대상이 있으면 확정만
+   * PUT /api/videos/{videoId}(좌표 미전송)로 간다. 실패 시 단계 구분 표시,
+   * 재클릭 재시도는 성공 단계 스킵 (B11 재사용).
+   */
   const publish = async () => {
-    if (trim.status !== "ready" || confirm.isPending) return;
+    if (trim.status !== "ready" || submitting) return;
+    const durationSec = Math.min(
+      MAX_TRIMMED_DURATION_SEC,
+      Math.max(1, Math.round(trim.durationSec)),
+    );
     try {
-      await confirm.mutateAsync({
-        blob: trim.blob,
-        lat: location.center.lat,
-        lng: location.center.lng,
-        durationSec: Math.min(
-          MAX_TRIMMED_DURATION_SEC,
-          Math.max(1, Math.round(trim.durationSec)),
-        ),
-      });
+      if (replaceTarget !== null) {
+        await replaceVideo.mutateAsync({
+          blob: trim.blob,
+          durationSec,
+          videoId: replaceTarget.videoId,
+          gridId: replaceTarget.gridId,
+        });
+      } else {
+        await confirm.mutateAsync({
+          blob: trim.blob,
+          lat: location.center.lat,
+          lng: location.center.lng,
+          durationSec,
+        });
+      }
       setCompleted(true);
     } catch {
-      // 실패 표시는 confirm.error 파생 (submitFailureMessage)
+      // 실패 표시는 활성 뮤테이션 error 파생 (submitFailureMessage)
     }
   };
 
-  const submitFailureMessage = confirm.isError
+  // 모드별 활성 확정 뮤테이션의 실패만 표시한다 — 다른 모드의 잔존 에러 오표시 방지
+  const finalizeError = replaceMode ? replaceVideo.error : confirm.error;
+  const submitFailureMessage = (
+    replaceMode ? replaceVideo.isError : confirm.isError
+  )
     ? STAGE_FAILURE_MESSAGES[
-        confirm.error instanceof UploadFlowError
-          ? confirm.error.stage
+        finalizeError instanceof UploadFlowError
+          ? finalizeError.stage
           : "finalize"
       ]
     : null;
@@ -268,6 +301,9 @@ export const useUploadWizard = () => {
     // presign→PUT을 다시 밟아야 한다. 빠뜨리면 새로 자른 영상이 업로드되지 않은 채
     // 직전 구간의 s3Key로 확정되는 정합성 버그가 된다 (리뷰 반영)
     confirm.resetFlow();
+    // 교체 모드도 동일한 정합성 규칙 — 옛 s3Key로 교체 확정되는 경로 차단 (MSG-415)
+    replaceVideo.reset();
+    replaceVideo.resetFlow();
     setStep("highlight");
   };
 
@@ -288,11 +324,17 @@ export const useUploadWizard = () => {
     duration,
     objectUrl,
     videoLoadError,
-    locationLabel: location.label,
+    // 교체 모드는 대상 영상의 격자 라벨 — 미확보면 null(생략) (추정 1)
+    locationLabel:
+      replaceTarget !== null
+        ? replaceGridLabel(replaceTarget.zoneName, replaceTarget.zoneCell)
+        : location.label,
+    /** 모드별 확정 버튼·완료 모달 문구 (AC 2, 추정 3) */
+    copy: wizardModeCopy(replaceMode),
     durationTooLong,
     canProceed,
     busy,
-    submitting: confirm.isPending,
+    submitting,
     submitFailureMessage,
     wentThroughHighlight,
     close,

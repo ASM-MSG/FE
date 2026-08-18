@@ -7,9 +7,15 @@ import { useProcessingStore } from "@/features/upload/model/processing-store";
 import {
   getCellQueryKey,
   getOccupiedInViewportInfiniteQueryKey,
+  getPlaybackQueryKey,
+  getRegionVideosQueryKey,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { envelopeResponse } from "@/test/envelope-response";
-import { useAnalyzeVideo, useConfirmUpload } from "./use-upload-mutations";
+import {
+  useAnalyzeVideo,
+  useConfirmUpload,
+  useReplaceVideo,
+} from "./use-upload-mutations";
 
 /**
  * 업로드 뮤테이션 훅 (B3·B9·B13) — 선분석·확정 각각 presign → S3 PUT → 확정 순서를
@@ -81,6 +87,12 @@ const routeHappyPath =
       return envelopeResponse({
         highlights: overrides?.highlights ?? [[0, 5]],
       });
+    }
+    // 교체 확정 — PUT /api/videos/{videoId} (MSG-415 AC 3)
+    if (call.url.pathname === "/api/videos/42" && call.method === "PUT") {
+      const override = overrides?.onFinalize?.();
+      if (override) return override;
+      return envelopeResponse({ videoId: 42, processingStatus: "UPLOADED" });
     }
     if (call.url.pathname === "/api/videos") {
       const override = overrides?.onFinalize?.();
@@ -269,5 +281,118 @@ describe("useConfirmUpload — 확정 흐름 (B9·B13)", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     expect(useProcessingStore.getState().pending).toEqual([]);
+  });
+});
+
+describe("useReplaceVideo — 교체 확정 흐름 (MSG-415 AC 3·4·5)", () => {
+  const replaceInput = () => ({
+    blob: new Blob(["trimmed"], { type: "video/mp4" }),
+    durationSec: 8,
+    videoId: 42,
+    gridId: "grid-77",
+  });
+
+  it("presign(purpose 미전송) → S3 PUT → PUT /api/videos/{videoId} 순서로 호출하고 body는 s3Key·durationSec·recordedAt만이다 — lat·lng 미전송 (AC 3)", async () => {
+    const received = stubFetch(routeHappyPath());
+    const { wrapper } = createHarness();
+
+    const { result } = renderHook(() => useReplaceVideo(), { wrapper });
+    act(() => {
+      result.current.mutate(replaceInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(received.map((c) => `${c.method} ${c.url.pathname}`)).toEqual([
+      "POST /api/videos/presigned-url",
+      "PUT /put",
+      "PUT /api/videos/42",
+    ]);
+    // purpose 미전송 = UPLOAD — 확정 업로드와 같은 presign (AC 3)
+    expect(received[0].body).not.toHaveProperty("purpose");
+
+    const replaceBody = received[2].body as Record<string, unknown>;
+    expect(replaceBody).toMatchObject({
+      s3Key: PRESIGN_DATA.s3Key,
+      durationSec: 8,
+    });
+    expect(Number.isNaN(Date.parse(String(replaceBody.recordedAt)))).toBe(
+      false,
+    );
+    // 좌표 생략 = 격자 유지 (추정 1) — 좌표를 보내면 GRID_MISMATCH 거부 위험
+    expect(replaceBody).not.toHaveProperty("lat");
+    expect(replaceBody).not.toHaveProperty("lng");
+  });
+
+  it("교체 성공 시 처리 대기 등록 + playback·도감 동 영상 목록·격자 쿼리가 invalidate된다 (AC 4)", async () => {
+    stubFetch(routeHappyPath());
+    const { queryClient, wrapper } = createHarness();
+    const playbackKey = getPlaybackQueryKey({ path: { videoId: 42 } });
+    const regionKey = getRegionVideosQueryKey({
+      query: { regionCode: "2644056000" },
+    });
+    const cellKey = getCellQueryKey({ path: { gridId: "grid-77" } });
+    queryClient.setQueryData(playbackKey, { cached: true });
+    queryClient.setQueryData(regionKey, { cached: true });
+    queryClient.setQueryData(cellKey, { cached: true });
+
+    const { result } = renderHook(() => useReplaceVideo(), { wrapper });
+    act(() => {
+      result.current.mutate(replaceInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // ① UPLOADED→READY 폴링은 기존 워처 재사용 — 등록만 단정
+    expect(useProcessingStore.getState().pending.map((p) => p.videoId)).toEqual(
+      [42],
+    );
+    // ② 해당 videoId playback (썸네일·상태 최신화)
+    expect(queryClient.getQueryState(playbackKey)?.isInvalidated).toBe(true);
+    // ③ 도감 동 영상 목록(부분 키) + 격자 영상 목록(invalidateGridQueries)
+    expect(queryClient.getQueryState(regionKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(true);
+  });
+
+  it("교체 확정(PUT) 실패 시 track·무효화가 일어나지 않고, 재시도는 성공한 presign·S3 PUT을 건너뛴다 (AC 5)", async () => {
+    let failNext = true;
+    const received = stubFetch((call) => {
+      if (
+        call.url.pathname === "/api/videos/42" &&
+        call.method === "PUT" &&
+        failNext
+      ) {
+        failNext = false;
+        return new Response(
+          JSON.stringify({ developCode: 500, message: "실패" }),
+          { status: 500, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return routeHappyPath()(call);
+    });
+    const { queryClient, wrapper } = createHarness();
+    const playbackKey = getPlaybackQueryKey({ path: { videoId: 42 } });
+    queryClient.setQueryData(playbackKey, { cached: true });
+
+    const { result } = renderHook(() => useReplaceVideo(), { wrapper });
+    act(() => {
+      result.current.mutate(replaceInput());
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+
+    // 실패 시 후속 없음 (AC 5)
+    expect(useProcessingStore.getState().pending).toEqual([]);
+    expect(queryClient.getQueryState(playbackKey)?.isInvalidated).toBe(false);
+
+    act(() => {
+      result.current.mutate(replaceInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // 성공 단계 스킵 (UploadFlowError 상태 보존 재사용)
+    const paths = received.map((c) => c.url.pathname);
+    expect(paths.filter((p) => p === "/api/videos/presigned-url")).toHaveLength(
+      1,
+    );
+    expect(paths.filter((p) => p === "/put")).toHaveLength(1);
+    expect(paths.filter((p) => p === "/api/videos/42")).toHaveLength(2);
   });
 });

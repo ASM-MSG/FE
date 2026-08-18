@@ -8,6 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { envelopeResponse } from "@/test/envelope-response";
 import { type ReceivedRequest, stubFetch } from "@/test/stub-fetch";
 import type { VideoActionTarget } from "../model/video-menu";
@@ -99,6 +100,12 @@ const openDeleteDialog = async () => {
 describe("영상 더보기 메뉴", () => {
   beforeEach(() => {
     vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+    useUploadModalStore.setState({
+      open: false,
+      pendingAfterLogin: false,
+      target: null,
+      replaceTarget: null,
+    });
   });
 
   afterEach(() => {
@@ -132,7 +139,35 @@ describe("영상 더보기 메뉴", () => {
       await screen.findByRole("menuitem", { name: "신고하기" }),
     ).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "영상 삭제" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "영상 교체" })).toBeNull();
     expect(screen.queryByText("공개 범위")).toBeNull();
+  });
+
+  it("내 영상 메뉴에 '영상 교체'가 구분선 아래·'영상 삭제' 위에 노출된다 (MSG-415 AC 1, 추정 2)", async () => {
+    stubMenuFetch();
+    renderMenu(true);
+
+    openMenu();
+
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((i) => i.textContent)).toEqual(["영상 교체", "영상 삭제"]);
+  });
+
+  it("'영상 교체' 선택 시 업로드 위저드가 교체 모드(대상 videoId·격자 라벨)로 열린다 (MSG-415 AC 2)", async () => {
+    stubMenuFetch();
+    renderMenu(true);
+    openMenu();
+
+    fireEvent.click(await screen.findByRole("menuitem", { name: "영상 교체" }));
+
+    const state = useUploadModalStore.getState();
+    expect(state.open).toBe(true);
+    expect(state.replaceTarget).toEqual({
+      videoId: 7,
+      gridId: "39064_112221",
+      zoneName: "서면",
+      zoneCell: "A-02",
+    });
   });
 
   it("메뉴 오픈 시 단건 조회의 visibility로 현재값에 ✓가 표시된다 (AC 2)", async () => {

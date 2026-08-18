@@ -21,9 +21,28 @@ interface UploadModalState {
    * 지목 격자가 조용히 뷰포트 중심으로 바뀌어 다른 위치에 게시되는 경로 봉쇄.
    */
   target: LatLng | null;
+  /**
+   * 교체 대상 영상 (MSG-415) — null이면 일반 업로드 모드. 내 영상 더보기 메뉴의
+   * [영상 교체]가 세팅하고, 위저드 확정이 POST 대신 PUT /api/videos/{videoId}로 간다.
+   * zoneName·zoneCell은 교체 모드 위치 라벨(추정 1 — 좌표 미전송이라 지도 중심 대신
+   * 대상 격자 라벨 표기)용. 영속화하지 않는다 — 교체 진입점은 로그인 후 표면이라
+   * pendingAfterLogin(카카오 리다이렉트 재개) 경로와 무관하다.
+   */
+  replaceTarget: ReplaceTarget | null;
   /** 업로드 진입 — 비로그인이면 위저드 대신 로그인 모달을 연다 (MSG-352 C9). target은 지목 격자 */
   openModal: (target?: LatLng) => void;
+  /** 교체 진입 (MSG-415) — mine 전용 표면이라 로그인 게이트 불요. 지목 격자(target)는 쓰지 않는다 */
+  openReplaceModal: (target: ReplaceTarget) => void;
   closeModal: () => void;
+}
+
+/** 교체 대상 — 진입점(VideoActionTarget)이 가진 값의 부분집합 */
+export interface ReplaceTarget {
+  videoId: number;
+  /** 성공 시 격자 쿼리 무효화 대상 — 미확보면 null(광역 무효화) */
+  gridId: string | null;
+  zoneName: string | null;
+  zoneCell: string | null;
 }
 
 /**
@@ -44,6 +63,7 @@ export const useUploadModalStore = create<UploadModalState>((set) => ({
   pendingAfterLogin: uploadIntentStorage.peek(),
   // C11 hydrate — 영속 의도의 지목 좌표도 함께 복원한다 (리다이렉트 복귀 재개가 격자 고정을 잇는다)
   target: uploadIntentStorage.peekTarget(),
+  replaceTarget: null,
   openModal: (target) => {
     if (!useAuthStore.getState().isAuthenticated) {
       // 로그인 모달을 먼저 연다 — "모달 열림 = 이전 의도 무효" 구독(아래 stale 가드)이
@@ -54,10 +74,13 @@ export const useUploadModalStore = create<UploadModalState>((set) => ({
       uploadIntentStorage.save(target); // C11: 카카오 리다이렉트 생존용 영속화 (지목 좌표 포함)
       return;
     }
-    // 매 진입마다 지목을 명시 세팅한다 — 일반 진입이 직전 지목을 이어받는 경로 차단
-    set({ open: true, target: target ?? null });
+    // 매 진입마다 지목·교체 대상을 명시 세팅한다 — 일반 진입이 직전 교체 모드를 이어받는 경로 차단 (AC 6)
+    set({ open: true, target: target ?? null, replaceTarget: null });
   },
-  closeModal: () => set({ open: false, target: null }),
+  openReplaceModal: (replaceTarget) =>
+    // 지목 격자(target)는 세팅하지 않는다 — 교체는 좌표 미전송(격자 유지, 추정 1)
+    set({ open: true, target: null, replaceTarget }),
+  closeModal: () => set({ open: false, target: null, replaceTarget: null }),
 }));
 
 // C10·C11: 비로그인→로그인 전이 시 보류된 업로드 의도를 재개 — 로그인 모달을 닫고

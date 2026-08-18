@@ -4,9 +4,14 @@ import { unwrapEnvelope } from "@/shared/api/envelope";
 import {
   highlightPreview,
   issuePresignedUrl,
+  replace,
   upload,
 } from "@/shared/api/generated/sdk.gen";
 import type { PresignedUrlRequestDto } from "@/shared/api/generated";
+import {
+  getPlaybackQueryKey,
+  getRegionVideosQueryKey,
+} from "@/shared/api/generated/@tanstack/react-query.gen";
 import { httpClient } from "@/shared/api/http-client";
 import { PRESIGN_PURPOSE } from "../model/presign-purpose";
 import { useProcessingStore } from "../model/processing-store";
@@ -96,6 +101,93 @@ export const useAnalyzeVideo = () => {
     },
   });
   /** 다른 파일 선택 시 초기화 — 이전 파일의 presign·PUT 산출물 재사용 방지 */
+  const resetFlow = () => {
+    flowState.current = createOrchestration();
+  };
+  return { ...mutation, resetFlow };
+};
+
+export interface ReplaceVideoInput {
+  /** 잘린 최종 영상 — 트리밍 생략(전체 구간) 시 원본 File 그대로 */
+  blob: Blob;
+  /** 잘린 영상 실측 길이(초) — 업로드와 동일한 1~30 클램프 (AC 3) */
+  durationSec: number;
+  /** 교체 대상 영상 */
+  videoId: number;
+  /** 격자 쿼리 무효화 대상 — 미확보면 null(광역 무효화) */
+  gridId: string | null;
+}
+
+/**
+ * 영상 교체 확정 (MSG-415 AC 3·4·5) — useConfirmUpload 미러. presign(purpose
+ * 미전송=UPLOAD) → 새 영상 S3 PUT → `PUT /api/videos/{videoId}`(s3Key·durationSec·
+ * recordedAt만 — 좌표 생략=격자 유지, 추정 1). 성공 시 처리 대기 등록(교체 직후
+ * UPLOADED — 기존 블러 폴링 워처가 그대로 소화) + playback(썸네일·상태 최신화)·
+ * 도감 동 영상 목록(부분 키)·격자 쿼리 무효화. 실패 시 진행 상태를 보존해
+ * 재시도가 성공 단계를 건너뛴다(B11 재사용).
+ */
+export const useReplaceVideo = () => {
+  const queryClient = useQueryClient();
+  const track = useProcessingStore((s) => s.track);
+  const flowState = useRef<OrchestrationState | null>(null);
+  const mutation = useMutation({
+    mutationFn: async (input: ReplaceVideoInput) => {
+      try {
+        const { state, result } = await runUploadFlow(
+          (flowState.current ??= createOrchestration()),
+          {
+            presign: presignEffect({
+              extension: extensionFromType(input.blob.type),
+              contentType: input.blob.type || "video/mp4",
+              contentLength: input.blob.size,
+              // purpose 미전송 = UPLOAD — 확정 업로드와 동일 (AC 3)
+            }),
+            putToS3: (presign) => uploadToS3(presign.uploadUrl, input.blob),
+            finalize: async (s3Key) => {
+              const { data } = await replace({
+                path: { videoId: input.videoId },
+                body: {
+                  s3Key,
+                  durationSec: input.durationSec,
+                  // recordedAt = 교체 시각 (업로드 결정 B 준용)
+                  recordedAt: new Date().toISOString(),
+                  // lat·lng 미전송 = 격자 유지 (추정 1 — 좌표 전송은 GRID_MISMATCH 위험)
+                },
+                throwOnError: true,
+              });
+              return unwrapEnvelope(data);
+            },
+          },
+        );
+        flowState.current = state;
+        return result;
+      } catch (error) {
+        if (error instanceof UploadFlowError) flowState.current = error.state;
+        throw error;
+      }
+    },
+    onSuccess: (video, { videoId, gridId }) => {
+      // ① 재인코딩 대기 등록 — UPLOADED→READY 폴링·READY 통지는 기존 워처 재사용 (AC 4)
+      track(video.videoId, Date.now());
+
+      // ② 해당 영상 playback — 썸네일·처리 상태 최신화 (AC 4)
+      void queryClient.invalidateQueries({
+        queryKey: getPlaybackQueryKey({ path: { videoId } }),
+      });
+
+      // ③ 도감 동 영상 목록 — regionCode별로 캐시 키가 갈라져 식별자(_id)만 남긴
+      // 부분 키로 전 파라미터 무효화 (MSG-411 use-video-mutations 관례)
+      const [regionKey] = getRegionVideosQueryKey({
+        query: { regionCode: "" },
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [{ _id: regionKey._id }],
+      });
+
+      // ④ 격자 영상 목록·격자 상세 — gridId 미상이면 광역 무효화 (AC 4)
+      invalidateGridQueries(queryClient, gridId);
+    },
+  });
   const resetFlow = () => {
     flowState.current = createOrchestration();
   };

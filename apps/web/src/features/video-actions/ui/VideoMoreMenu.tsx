@@ -3,6 +3,8 @@ import { DropdownMenu } from "radix-ui";
 import { Check } from "lucide-react";
 import { Toast } from "@fillmap/ui-web";
 import { useVideoPlaybackQuery } from "@/features/map-home/model/use-video-playback-query";
+// 교체 진입 — video-actions→upload 방향은 invalidateGridQueries 선례와 동일 (MSG-415)
+import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useSetVideoVisibility } from "../api/use-video-mutations";
 import { useAutoDismissToast } from "../model/use-auto-dismiss-toast";
 import {
@@ -74,6 +76,16 @@ export const VideoMoreMenu = ({
               <MineMenuItems
                 target={target}
                 onVisibilitySelect={handleVisibilitySelect}
+                onReplaceSelect={() =>
+                  // 업로드 위저드를 교체 모드로 연다 (MSG-415 AC 2) — 격자 라벨은
+                  // 교체 모드 위치 표기용 (추정 1)
+                  useUploadModalStore.getState().openReplaceModal({
+                    videoId: target.videoId,
+                    gridId: target.gridId,
+                    zoneName: target.zoneName,
+                    zoneCell: target.zoneCell,
+                  })
+                }
                 onDeleteSelect={() => setDeleteOpen(true)}
               />
             ) : (
@@ -114,6 +126,8 @@ export const VideoMoreMenu = ({
 interface MineMenuItemsProps {
   target: VideoActionTarget;
   onVisibilitySelect: (next: VideoVisibility, current: string | null) => void;
+  /** [영상 교체] — 업로드 위저드 교체 모드 진입 (MSG-415 AC 1·2) */
+  onReplaceSelect: () => void;
   onDeleteSelect: () => void;
 }
 
@@ -125,6 +139,7 @@ interface MineMenuItemsProps {
 const MineMenuItems = ({
   target,
   onVisibilitySelect,
+  onReplaceSelect,
   onDeleteSelect,
 }: MineMenuItemsProps) => {
   const { playback } = useVideoPlaybackQuery(toPlaybackFeedVideo(target));
@@ -149,6 +164,13 @@ const MineMenuItems = ({
         </DropdownMenu.CheckboxItem>
       ))}
       <DropdownMenu.Separator className="my-xs h-px bg-border" />
+      {/* 구분선 아래·삭제 위 (MSG-415 AC 1, 추정 2) — 기본 foreground 색 */}
+      <DropdownMenu.Item
+        onSelect={onReplaceSelect}
+        className={`${itemClass} text-foreground`}
+      >
+        영상 교체
+      </DropdownMenu.Item>
       <DropdownMenu.Item
         onSelect={onDeleteSelect}
         className={`${itemClass} text-error`}

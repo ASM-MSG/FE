@@ -169,6 +169,59 @@ describe("업로드 모달 스토어 — 카카오 OAuth 리다이렉트 생존 
   });
 });
 
+describe("업로드 모달 스토어 — 교체 모드 진입 (MSG-415)", () => {
+  const REPLACE_TARGET = {
+    videoId: 42,
+    gridId: "grid-77",
+    zoneName: "서면",
+    zoneCell: "A-02",
+  };
+
+  beforeEach(() => {
+    useUploadModalStore.setState({
+      open: false,
+      pendingAfterLogin: false,
+      target: null,
+      replaceTarget: null,
+    });
+    useLoginModalStore.setState({ open: false });
+    // 교체 진입점(내 영상 더보기 메뉴)은 로그인 후 표면 — 게이트 불요
+    useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
+  });
+
+  it("openReplaceModal은 위저드를 열고 교체 대상(videoId·gridId·격자 라벨)을 저장한다 (AC 2)", () => {
+    useUploadModalStore.getState().openReplaceModal(REPLACE_TARGET);
+
+    expect(useUploadModalStore.getState().open).toBe(true);
+    expect(useUploadModalStore.getState().replaceTarget).toEqual(
+      REPLACE_TARGET,
+    );
+  });
+
+  it("closeModal은 교체 대상을 해제한다 — 다음 일반 업로드가 교체로 오발사되지 않는다 (AC 6·7)", () => {
+    useUploadModalStore.getState().openReplaceModal(REPLACE_TARGET);
+
+    useUploadModalStore.getState().closeModal();
+
+    expect(useUploadModalStore.getState().open).toBe(false);
+    expect(useUploadModalStore.getState().replaceTarget).toBeNull();
+  });
+
+  it("일반 openModal 진입은 이전 교체 대상을 잇지 않는다 (AC 6)", () => {
+    useUploadModalStore.getState().openReplaceModal(REPLACE_TARGET);
+
+    useUploadModalStore.getState().openModal();
+
+    expect(useUploadModalStore.getState().replaceTarget).toBeNull();
+  });
+
+  it("openReplaceModal은 지목 격자(target)를 세팅하지 않는다 — 교체 좌표 미전송 원칙 (AC 3)", () => {
+    useUploadModalStore.getState().openReplaceModal(REPLACE_TARGET);
+
+    expect(useUploadModalStore.getState().target).toBeNull();
+  });
+});
+
 describe("업로드 모달 스토어 — 격자 고정 진입 (지목 격자)", () => {
   beforeEach(() => {
     useUploadModalStore.setState({

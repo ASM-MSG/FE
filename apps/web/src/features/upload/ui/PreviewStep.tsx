@@ -23,11 +23,18 @@ interface PreviewStepProps {
   trim: TrimState;
   /** 선택 구간 — 시간·길이 중심 문구용 (B6, 사유 배너는 오탐 방지 2) */
   segment: Segment;
-  /** 위치 라벨 — 뷰포트 중심 행정동 (B2, 셀 조합 표기는 확정 응답부터 — 추정 2) */
-  locationLabel: string;
+  /**
+   * 위치 라벨 — 일반: 뷰포트 중심 행정동 (B2) / 교체: 대상 영상 격자 라벨.
+   * null이면 위치 카드를 생략한다 (MSG-415 추정 1)
+   */
+  locationLabel: string | null;
+  /** 확정 버튼 문구 — "업로드하기"/"교체하기" (MSG-415 추정 3) */
+  confirmLabel: string;
+  /** 확정 진행 중 버튼 문구 — "업로드 중…"/"교체 중…" */
+  submittingLabel: string;
   /** 트리밍 실패 시 재시도 */
   onRetryTrim: () => void;
-  /** [업로드하기] — presign → PUT → POST /api/videos (B9) */
+  /** 확정 — presign → PUT → POST /api/videos 또는 교체 PUT (B9·MSG-415) */
   onPublish: () => void;
   /** 게시 진행 중 — 버튼 비활성(중복 게시 차단, B12) */
   submitting: boolean;
@@ -50,6 +57,8 @@ export const PreviewStep = ({
   trim,
   segment,
   locationLabel,
+  confirmLabel,
+  submittingLabel,
   onRetryTrim,
   onPublish,
   submitting,
@@ -60,7 +69,7 @@ export const PreviewStep = ({
   <ModalCard
     title="업로드 미리보기"
     description="3/3 단계 · 최종 확인"
-    confirmText={submitting ? "업로드 중…" : "업로드하기"}
+    confirmText={submitting ? submittingLabel : confirmLabel}
     confirmVariant="primary"
     confirmDisabled={trim.status !== "ready" || submitting}
     onConfirm={onPublish}
@@ -105,21 +114,23 @@ export const PreviewStep = ({
       </span>
     </div>
 
-    {/* 위치 카드 — 뷰포트 중심 행정동 라벨 (B2) */}
-    <div className="flex w-full items-center gap-xs rounded-md bg-surface-soft px-md py-sm">
-      <MapPin aria-hidden="true" className="size-4 shrink-0 text-primary" />
-      <div className="flex min-w-0 flex-col gap-xxs">
-        <span className="text-fm-label text-foreground-muted">위치</span>
-        <span className="text-fm-body-strong text-foreground">
-          {locationLabel}
-        </span>
+    {/* 위치 카드 — 일반: 뷰포트 중심 행정동 (B2) / 교체: 대상 격자 라벨, 미확보 시 생략 (추정 1) */}
+    {locationLabel !== null && (
+      <div className="flex w-full items-center gap-xs rounded-md bg-surface-soft px-md py-sm">
+        <MapPin aria-hidden="true" className="size-4 shrink-0 text-primary" />
+        <div className="flex min-w-0 flex-col gap-xxs">
+          <span className="text-fm-label text-foreground-muted">위치</span>
+          <span className="text-fm-body-strong text-foreground">
+            {locationLabel}
+          </span>
+        </div>
       </div>
-    </div>
+    )}
 
     {/* 게시 단계별 실패 — 재시도 시 성공 단계는 건너뛴다 (B11) */}
     {submitFailureMessage !== null && (
       <p role="alert" className="text-fm-label text-error">
-        {submitFailureMessage} — [업로드하기]로 다시 시도할 수 있어요
+        {submitFailureMessage} — [{confirmLabel}]로 다시 시도할 수 있어요
       </p>
     )}
 

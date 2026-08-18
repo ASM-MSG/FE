@@ -71,6 +71,8 @@ const UPLOAD_RESULT = {
 /** fetch 목 — hey-api(Request)·S3 PUT(url+init) 두 형태를 pathname 라우팅한다 */
 /** 마지막 확정(POST /api/videos) 요청 body — lat/lng 유한성 단정용 (NaN은 JSON null → 서버 400) */
 let lastConfirmBody: Record<string, unknown> | null = null;
+/** 마지막 교체 확정(PUT /api/videos/42) 요청 body — lat·lng 미전송 단정용 (MSG-415 AC 3) */
+let lastReplaceBody: Record<string, unknown> | null = null;
 
 const stubApi = (overrides?: {
   highlights?: number[][] | null;
@@ -103,6 +105,18 @@ const stubApi = (overrides?: {
         return envelopeResponse({
           highlights: overrides?.highlights ?? [[3, 8]],
         });
+      }
+      // 교체 확정 — PUT /api/videos/{videoId} (MSG-415)
+      if (
+        url.pathname === "/api/videos/42" &&
+        input instanceof Request &&
+        input.method === "PUT"
+      ) {
+        lastReplaceBody = (await input.clone().json()) as Record<
+          string,
+          unknown
+        >;
+        return envelopeResponse({ videoId: 42, processingStatus: "UPLOADED" });
       }
       if (url.pathname === "/api/videos") {
         if (confirmFailures > 0) {
@@ -152,6 +166,28 @@ const nextButton = () =>
 // 스토어 갱신은 React 밖 호출이라 act로 감싸 렌더를 flush한다
 const openModal = () => act(() => useUploadModalStore.getState().openModal());
 
+/** 교체 모드 진입 — 내 영상 더보기 [영상 교체]가 넘기는 대상 (MSG-415) */
+const openReplaceModal = () =>
+  act(() =>
+    useUploadModalStore.getState().openReplaceModal({
+      videoId: 42,
+      gridId: "grid-77",
+      zoneName: "서면",
+      zoneCell: "A-02",
+    }),
+  );
+
+/** 교체 PUT(/api/videos/42) 발사 횟수 — 확정 전 미발사 단정용 (AC 7·8) */
+const countReplacePuts = () =>
+  vi.mocked(fetch).mock.calls.filter((call) => {
+    const input = call[0] as RequestInfo | URL;
+    return (
+      input instanceof Request &&
+      input.method === "PUT" &&
+      new URL(input.url).pathname === "/api/videos/42"
+    );
+  }).length;
+
 const selectValidFile = () => {
   const input = document.querySelector('input[type="file"]');
   if (!input) throw new Error("파일 input이 렌더되지 않음");
@@ -174,9 +210,15 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
     useProcessingStore.setState({ pending: [] });
     // C9 게이트(develop 머지) 도입으로 위저드 열림은 로그인 상태가 전제 — 기존 흐름 단정은 불변.
     // 잔존 의도(C10) 초기화를 로그인 전이보다 앞에 둬 스퓨리어스 재개를 막는다
-    useUploadModalStore.setState({ open: false, pendingAfterLogin: false });
+    useUploadModalStore.setState({
+      open: false,
+      pendingAfterLogin: false,
+      replaceTarget: null,
+    });
     useLoginModalStore.setState({ open: false });
     useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
+    lastConfirmBody = null;
+    lastReplaceBody = null;
     mockMeta.duration = null;
     mockMeta.objectUrl = null;
     mockMeta.error = false;
@@ -355,5 +397,73 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
     expect(screen.getAllByText("영상 업로드").length).toBeGreaterThan(0);
     expect(screen.queryByText("clip.mp4")).toBeNull();
     expect(nextButton().disabled).toBe(true);
+  });
+
+  it("교체 모드: 같은 스텝열 완주 후 [교체하기]로 PUT /api/videos/{videoId}가 발사되고 body에 lat·lng가 없다 — 완료 모달 '교체 완료!' (MSG-415 AC 2·3, 추정 3)", async () => {
+    stubApi({ highlights: [] });
+    mockMeta.objectUrl = "blob:original";
+    mockMeta.duration = 4;
+    openReplaceModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+
+    // 기존 스텝열 그대로 — 미리보기 도달 (AC 2)
+    expect(await screen.findByText("업로드 미리보기")).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "교체하기" }));
+
+    expect(await screen.findByText("교체 완료!")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요",
+      ),
+    ).toBeTruthy();
+    // 확정은 PUT 교체 1회 — 일반 업로드 POST는 발사되지 않는다 (AC 6 모드 격리)
+    expect(countReplacePuts()).toBe(1);
+    expect(lastConfirmBody).toBeNull();
+    expect(lastReplaceBody).toMatchObject({ s3Key: PRESIGN_DATA.s3Key });
+    expect(lastReplaceBody).not.toHaveProperty("lat");
+    expect(lastReplaceBody).not.toHaveProperty("lng");
+    // 처리 대기 등록 — UPLOADED 폴링은 기존 워처 재사용 (AC 4)
+    expect(useProcessingStore.getState().pending.map((p) => p.videoId)).toEqual(
+      [42],
+    );
+  });
+
+  it("교체 모드 위치 라벨은 대상 영상의 격자 라벨('서면 A-02')이다 — 지도 중심 행정동 아님 (MSG-415 추정 1)", async () => {
+    stubApi();
+    mockMeta.duration = 42;
+    openReplaceModal();
+
+    expect(await screen.findByText("서면 A-02")).toBeTruthy();
+    expect(screen.queryByText("부산 부산진구 부전동")).toBeNull();
+  });
+
+  it("교체 모드 위저드를 확정 전에 닫으면 교체 PUT이 발사되지 않고, 이어지는 일반 업로드는 POST /api/videos(lat·lng 포함)로 간다 (MSG-415 AC 6·7)", async () => {
+    stubApi({ highlights: [] });
+    mockMeta.objectUrl = "blob:original";
+    mockMeta.duration = 4;
+    openReplaceModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+    await screen.findByText("업로드 미리보기");
+    await screen.findByRole("button", { name: "교체하기" });
+
+    // 확정 직전 닫기 (✕) — 쓰기(교체 PUT) 미발사 + 교체 대상 해제 (AC 7)
+    fireEvent.click(screen.getByRole("button", { name: "닫기" }));
+    expect(useUploadModalStore.getState().open).toBe(false);
+    expect(useUploadModalStore.getState().replaceTarget).toBeNull();
+    expect(countReplacePuts()).toBe(0);
+
+    // 이어지는 일반 업로드 — 교체로 오발사되지 않는다 (AC 6)
+    openModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+    await screen.findByText("업로드 미리보기");
+    fireEvent.click(await screen.findByRole("button", { name: "업로드하기" }));
+
+    expect(await screen.findByText("업로드 완료!")).toBeTruthy();
+    expect(countReplacePuts()).toBe(0);
+    expect(Number.isFinite(lastConfirmBody?.lat)).toBe(true);
+    expect(Number.isFinite(lastConfirmBody?.lng)).toBe(true);
   });
 });

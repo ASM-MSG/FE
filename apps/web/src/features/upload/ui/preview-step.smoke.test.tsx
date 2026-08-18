@@ -22,6 +22,8 @@ const renderStep = (trimStatus: "trimming" | "ready") =>
       }
       segment={{ start: 3, end: 8 }}
       locationLabel="부산 부산진구 부전동"
+      confirmLabel="업로드하기"
+      submittingLabel="업로드 중…"
       onRetryTrim={() => {}}
       onPublish={() => {}}
       submitting={false}
