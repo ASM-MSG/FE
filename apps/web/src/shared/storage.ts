@@ -107,6 +107,25 @@ export const deviceIdStorage = {
   },
 };
 
+const FCM_TOKEN_KEY = "fillmap.push.fcm-token";
+
+/**
+ * FCM 푸시 토큰 보관소 (MSG-408) — 등록에 성공한 디바이스 토큰의 로컬 정본.
+ * "권한 granted && 보관 토큰 존재"가 알림 토글 표시·자동 동기화 발동의 정본 조건이다.
+ * 기기에 묶이는 값이라 localStorage를 쓴다(deviceIdStorage 전례). features/auth(useLogout)와
+ * features/notifications가 직접 import 없이 이 어댑터로만 매개된다 — 반응형 구독이 필요한
+ * 쪽은 features/notifications의 push-token-store가 이 보관소를 저장 계층으로 감싼다.
+ */
+export const fcmTokenStorage = {
+  get: (): string | null => localStorage.getItem(FCM_TOKEN_KEY),
+  save: (fcmToken: string): void => {
+    localStorage.setItem(FCM_TOKEN_KEY, fcmToken);
+  },
+  clear: (): void => {
+    localStorage.removeItem(FCM_TOKEN_KEY);
+  },
+};
+
 /** 1회성 state 토큰 생성 — 웹 crypto 의존이라 어댑터 층에 둔다 */
 export const createOauthState = (): string => crypto.randomUUID();
 

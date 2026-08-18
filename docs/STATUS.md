@@ -15,7 +15,7 @@
 
 | 경로 | 컴포넌트 | 비고 |
 |---|---|---|
-| (root) | `AppLayout` | 사이드레일 + Outlet + UploadModal/LoginModal/UploadProcessingNotices 상주 + 위치동의 게이트(로그인 && `locationConsent=false`면 셸 대신 `LocationConsentScreen` 전면 렌더 — MSG-407) |
+| (root) | `AppLayout` | 사이드레일 + Outlet + UploadModal/LoginModal/UploadProcessingNotices/PushNoticeHost(MSG-408) 상주 + 위치동의 게이트(로그인 && `locationConsent=false`면 셸 대신 `LocationConsentScreen` 전면 렌더 — MSG-407) |
 | (error) | `RouteErrorBoundary` | 렌더·로더 오류 + 404 수렴 (MSG-325) |
 | (layout) | `MapShell` | 전 네비 섹션 공유 지속 지도 셸 |
 | `/` | `MapHomePage` | 지도 홈 (검색·지역 격자 패널 포함 — MSG-328에서 탐색 흡수) |
@@ -30,7 +30,7 @@
 
 - **map-home** — `MapHomePage` + ui/: `MapCanvas`(네이버 지도+오버레이), `MapControls`, `RegionPanel`(기본 분기 — 행정동 헤더+격자 카드 리스트+전체 지역 모드+비로그인 로그인 유도), `RegionGridCard`, `RegionListView`, `RegionReloadButton`("{행정동} 장소 불러오기" 재검색 pill), `HomeSearchBox`(장소 검색+인기 검색어 드롭다운), `RetryNotice`(실패+재시도 행 공용), `CellActionRow`, `HomeCellDetailPanel`, `FeedVideoCard`, `FeedVideoList`(격자 상세·테마 피드 공용), `ThemeChip`/`ThemeChipsBar`/`ThemeFeedPanel`, `naver-sdk-loader.ts`(SDK 격리 경계), `use-escape-close.ts`, `use-home-entry-lifecycle.ts`
 - **dex** — `DexPanel` + ui/: `DexProfileHeader`, `DexStatCards`, `DexTabs`, `RegionProgress`, `RecentRegionRow`(동 단위 행), `BadgeTabBody`, `BadgeMedal`(메달 아트), `GalleryTabBody`(격자 그룹+1열), `GalleryVideoCard` · 스모크 공용: `dex-fetch-stub.ts`, `dex-test-harness.tsx`
-- **profile** — `ProfilePanel` + ui/: `ProfileHeader`, `ActivityCard`, `SettingRow`
+- **profile** — `ProfilePanel` + ui/: `ProfileHeader`, `ActivityCard`, `SettingRow`, `SettingToggleRow`(ui-web Switch 행 — "알림 받기", MSG-408)
 - **oauth-callback** — `KakaoCallbackPage` (ui/ 없음)
 
 ## widgets/ (5)
@@ -41,13 +41,14 @@
 - **section-panel** — `SectionPanel`(네비 섹션 공통 388px 패널)
 - **side-rail-nav** — `SideRailNav`(ui-web `SideRail` 라우터 연결 + 활성 탭 재클릭 2단), `rail-action`(초기 상태 판정·재클릭 동작 순수 함수)
 
-## features/ (7 도메인)
+## features/ (8 도메인)
 
 - **auth** — model: `auth-store`(팩토리), `kakao-oauth`, `login-modal-store` · api: `use-auth-mutations` · ui: `LoginModal`, `LoginContent`, `KakaoLoginButton`, `DevLoginPanel`
 - **dex** — model: `dex-summary`(clampPct·탐험 규모 문구), `recent-regions`(격자→동 묶음), `gallery-groups`(동 영상→격자 그룹), `video-new`(NEW 24h), `badge-showcase`(진열장 정렬), `region-label`(행정동명 축약·수집률 표기), `dex-tab`, 스토어 `gallery-region-store`(동+대표 격자)·`recent-removal-store`, 쿼리 `use-collection-query`(summary·grids·badges)·`use-region-videos-query`·`use-region-stat-query`(by-grid 코드 조인·by-point 수집률) · api/·ui/ 없음(UI는 pages/dex)
 - **region** — model: `region-panel-store`(확정 지역 + **확정 영역(bounds)** + 패널 모드), `region-reload`(재검색 버튼 노출 판정 순수 함수), `use-committed-region`(확정 최초 채택 — 셸이 마운트), `grid-card`(격자명 조합·격자 중심 좌표), `gated-query-status`(인증 게이트 쿼리 공용 상태 파생), 쿼리 훅 `use-reverse-geocode-query`(중심 좌표 디바운스 500ms)·`use-region-grids-query`(sort=LATEST·limit=20)·`use-explore-regions-query` · ui/ 없음(UI는 pages/map-home)
 - **search** — model: `use-place-search-query`(디바운스 300ms+searchNow), `use-trending-query` · ui/ 없음(UI는 pages/map-home HomeSearchBox)
 - **map-home** (최대 도메인) — 오버레이/기하: `grid-overlay`, `occupied-grid-overlay`(EPSG:5179), `cluster-overlay`, `theme-overlay`, `grid-label`, `map-scale` · 도메인: `theme`, `theme-feed`, `home-cell-detail`, `grid-videos`, `video-playback`, `viewport-query`, `map-query-policy` · 스토어: `viewport-store`(플랫폼 중립), `theme-filter-store`, `home-cell-detail-store`, `video-mini-panel-store` · 쿼리 훅: `use-occupied-grids-query`·`use-hotzones-query`(비로그인 미발사 — 인증 게이트, MSG-328), `use-grid-detail-query`, `use-grid-videos-query`, `use-video-playback-query`, `use-grid-card-play`(격자 카드 클릭 → 상세 미오픈·지도 이동 없이 첫 영상 미니 패널 재생 + 재생 격자 테두리 강조 수명) · MSG-403 신설: `chip-zoom`(칩→진입 줌 단)·`occupancy-visibility`(칩 활성 중 점령 층 억제)·`use-chip-entry`(줌 이동+1회 확정)·미션 서버 API 훅 3종(`use-mission-progress-query`·`use-mission-detail-query`·`use-mission-videos-query`) · ui/ 없음(UI는 pages/map-home)
+- **notifications** (MSG-408 신설) — config: `firebase`(Firebase config·VAPID 공개키 상수 정본 — VITE_ env 예외, 사용자 승인 2026-08-17) · model: `push-support`(지원 판별 순수), `push-sync`(재등록/로테이션 전이 + SW URL 조립 순수), `push-toggle`(토글 표시 파생 순수 — granted && 보관 토큰), `push-token-store`(보관 토큰 반응형, 저장 계층 `shared/storage.fcmTokenStorage`), `push-notice-store`(토글 denied/error 안내 단일 슬롯 — PR #60 리뷰 3) · api: `messaging`(firebase 동적 import 격리 경계 — 테스트 모킹 지점), `use-push-token-sync`(셸 상주 자동 동기화 — 기존 등록자 한정), `use-push-toggle`(프로필 토글 ON/OFF — 신규 등록 유일 진입점), `use-foreground-messages`(onMessage → 통지) · ui: `PushNoticeHost`(AppLayout 셸 분기 상주 — 동기화 배선 + 포그라운드·토글 안내 우하단 단일 스택). SW: `public/firebase-messaging-sw.js`(config는 쿼리스트링 전달, gstatic CDN compat)
 - **profile** — model: `profile-edit`, `profile-format`, `profile-modal-store`(모달 열림 — 사이드레일 초기화가 읽는다), `profile-image`(업로드 순수 로직), `upload-profile-image`(오케스트레이션 포트), `use-profile-image-upload`(웹 포트 훅), `use-profile-query`, `location-consent`(게이트 판정 순수 — RN 재사용 대상)·`use-location-consent-gate`(MSG-407) · api: `use-profile-mutations`(닉네임·위치동의 PUT·이미지 DELETE) · ui: `ProfileEditModal`, `DeleteAccountModal`, `LocationConsentScreen`(전면 동의 화면 — AppLayout 조건 렌더, MSG-407)
 - **upload** — model: `upload-wizard`(스텝 전이), `upload-orchestration`(presign→S3 PUT→확정 상태머신), `upload-validation`, `highlight-selection`(+훅), `video-trim`, `processing-poll`, `processing-store`, `upload-modal-store`, `use-upload-location`, `presign-purpose` · api: `use-upload-mutations`, `s3-upload`, `ffmpeg-trim`(ffmpeg.wasm), `use-processing-watcher`(AppLayout 상주), `invalidate-grid-queries` · ui: `UploadModal`+`use-upload-wizard`, `SelectStep`/`HighlightStep`/`PreviewStep`, `SegmentList`/`SegmentRow`/`SegmentTrimmer`, `UploadDropzone`, `VideoPreview`, `AnalyzingModal`, `BlurConfirmModal`, `BlurNoticeToast`, `UploadProcessingNotices`
 
@@ -62,7 +63,7 @@
 ## shared/
 
 - api: `http-client.ts`(공용 Ky), `client-config.ts`(hey-api 런타임), `auth-pipeline.ts`, `api-error.ts`, `error-interceptor.ts`, `envelope.ts`(봉투 언랩), `generated/**`(hey-api 생성물 — 수정 금지)
-- 어댑터(RN 경계 경유지): `storage.ts`, `navigation.ts`, `geolocation.ts` · 유틸: `format.ts`(formatDuration 포함), `use-debounced-value.ts`(flush 지원 디바운스 훅)
+- 어댑터(RN 경계 경유지): `storage.ts`(webStorage·oauthState·uploadIntent·deviceId·pendingVideo·**fcmToken**(MSG-408 — auth↔notifications 매개)), `navigation.ts`, `geolocation.ts` · 유틸: `format.ts`(formatDuration 포함), `use-debounced-value.ts`(flush 지원 디바운스 훅)
 - 테스트 인프라 `src/test/`: `setup`, `render-with-providers`, `stub-fetch`, `envelope-response`, `occupied-grids`, `playback-fixture`, `instant-load-image`, `auth-session`(signIn/signOutForTest), `query-wrapper`(공용 QueryClient 래퍼)
 
 ## ui-web 인벤토리 (packages/ui-web/src/index.ts — 22 컴포넌트 + cn)
@@ -71,9 +72,9 @@
 
 전 컴포넌트 스토리 존재. 형제 패키지: `design-tokens`, `tailwind-preset`, `ui-native`.
 
-## 테스트 자산 (apps/web/src — 145개, smoke 23개) + e2e 3스펙(apps/web/e2e — 로그인 시딩 `auth-session-stub`(getMe `locationConsent: true` 스텁 포함), `consent-gate-popstate.spec.ts`는 실브라우저 히스토리 방향 판별 고정 — MSG-407)
+## 테스트 자산 (apps/web/src — 153개, smoke 25개) + e2e 3스펙(apps/web/e2e — 로그인 시딩 `auth-session-stub`(getMe `locationConsent: true` 스텁 포함), `consent-gate-popstate.spec.ts`는 실브라우저 히스토리 방향 판별 고정 — MSG-407)
 
-레이어별 분포: app 5 · entities 7 · features/auth 6 · features/dex 11 · features/map-home 47 · features/profile 12 · features/region 6 · features/search 1 · features/upload 15 · pages 18 · shared 9 · widgets 8. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인 (2026-08-17 MSG-407에서 전수 재계수 — 종전 111·smoke 19·e2e 3스펙은 스테일이었음).
+레이어별 분포: app 5 · entities 7 · features/auth 6 · features/dex 11 · features/map-home 47 · features/notifications 7 · features/profile 12 · features/region 6 · features/search 1 · features/upload 15 · pages 19 · shared 9 · widgets 8. 목록은 `**/*.test.*`·`**/*.smoke.test.tsx` glob으로 확인 (2026-08-17 MSG-407에서 전수 재계수 — 종전 111·smoke 19·e2e 3스펙은 스테일이었음).
 
 커버리지 공백(테스트 없는 로직 파일): `dex/use-collection-query`, `map-home/map-query-policy`, `profile/use-profile-image-upload`, `upload/use-processing-watcher`·`invalidate-grid-queries`·`presign-purpose`·`use-highlight-selection`·`use-upload-wizard`·`use-video-duration`, `map-shell/sidebar-store`·`use-map-shell`, `map-home/use-escape-close`, `shared/error-interceptor`·`http-client`·`navigation`
 
@@ -90,3 +91,4 @@
 - MSG-395: 상단 칩 4종 UI 개편 + 미션 API 실연동 — 핫구역은 격자 피드 → 행정동 요약(HotRegionPanel)으로, 지역축제·팝업스토어·경로추천은 `/api/missions/active` 실 데이터로 전환하며 mock 3종(`MOCK_THEME_CELLS`·`MOCK_ROUTE`·`themeCellsOf`)과 `ThemeFeedPanel`·`theme-feed` 폐기. features/map-home에 mission 도메인 12모듈 신설(shape 런타임 판별·진행도·상태 배지·코스 파싱·오버레이), pages/map-home/ui에 칩별 패널 14종 신설, map-overlay-store를 `routes[]`+`labels[]`로 확장하고 `zoomTo` 지도 명령 추가. 미션 격자는 **뷰포트로 클리핑**해 파생(전국 전개가 폴리곤 1만 4천 개를 만들어 지도를 멈추던 것 수정), 진행도는 내 수집 격자를 미션 도형에 넣는 방향으로 계산. 프로필 "내 활동"(스트릭·수집률) 실연동, 파비콘 교체
 - MSG-403: 칩 표시 범위·갱신 시점 정정 + 미션 API 개편 이관 — 칩 활성 중 상시 점령 층을 숨기고(채움·클러스터 모두), 칩 셀은 저줌 게이트 예외로 남겨 축제·팝업 500m·코스 1km 줌에서도 보이게 함. 지도 데이터의 bbox 정본을 뷰포트 → **확정 영역**(region-panel-store `committedBounds`)으로 바꿔 "장소 불러오기"·칩 활성화 때만 갱신하고 헤더도 확정 지역명에 고정(MSG-328 라이브 동기화 폐기, `region-header` 삭제). 칩 바를 셸의 접힘 래퍼 밖으로 올려 패널을 접어도 유지, 사이드레일 활성 탭 재클릭을 "초기화 → 접기" 2단으로 개정. `/api/missions/active`가 type+bbox 필수로 바뀐 것에 맞춰 칩별 조회로 재편하고, 진행도·스팟 통계·미션 영상을 신규 서버 API 3종으로 이관해 FE 교집합 계산(`missionProgress`)과 격자 다중 조회 조합을 폐기. 미션 API에 비로그인 게이트 신설(익명 401 실측). 후속 요구로 코스 카드 클릭 시 `fitBounds`로 코스 전체 이동 + 라인이 없는 코스는 포토스팟 번호 순 직선 연결(`coursePath`), 상세 대상은 확정 영역이 아닌 자기 경계로 렌더. "장소 불러오기"는 축척 2km 단(`MIN_RELOAD_ZOOM`)까지만 노출. 좌측 패널 전부에 로딩 게이트 — 요소가 전부 준비될 때까지 ui-web `DotsLoader`(신규 승격)만 보이고 준비되면 한번에 표시(부분 렌더 금지)
 - MSG-407: 위치정보 동의 온보딩 게이트 + 프로필 이미지 삭제 — 로그인 && `locationConsent=false`면 AppLayout이 `LocationConsentScreen`(Figma 14781:3343) 전면 조건 렌더(라우트 신설 없음, 뒤로가기·URL 직접 변경 포함 전면 차단이 의도된 설계), CTA가 `PUT location-consent`로 게이트 해제(getMe invalidate 경유), 이탈 수단은 2개 — 로그아웃 버튼(`useLogout` 서버 세션 무효화, codex P1 반영)과 **뒤로가기 = 로그인 중단**(popstate 시 로그아웃 후 navigate 없이 팝된 URL을 익명 렌더). 마케팅 행은 UI 전용(서버 API 부재)·[보기] 비활성·철회 캡션은 렌더 안 함. 편집 모달 [기본 이미지로] 삭제 예약 + `DELETE profile-image`(14783:4715), 저장 체인은 이미지→닉네임. 프로필 위치동의 접점(토글·설정 행)은 사용자 결정으로 전면 제거 — 인앱 철회 수단 없음(후속 티켓 후보), `locationEnabled`·`locationStatusLabel` 죽은 코드 정리. 로그인 시딩 픽스처 3곳 `locationConsent: true` 보수
+- MSG-408: FCM 웹 푸시 기반 + 토큰 API 2종 연동 — features/notifications 신설(firebase 12 동적 import, config·VAPID는 코드 상수 정본 — VITE_ env 예외 승인), 프로필 "알림 설정" 준비 중 행을 "알림 받기" 토글(SettingToggleRow)로 대체(신규 등록 유일 진입점 — 자동 권한 프롬프트 없음), 셸 상주 PushNoticeHost(기존 등록자 자동 재등록·로테이션 + 포그라운드 onMessage 토스트), useLogout이 fcmToken body 동봉·보관 정리(shared fcmTokenStorage 매개), `public/firebase-messaging-sw.js`(쿼리스트링 config)

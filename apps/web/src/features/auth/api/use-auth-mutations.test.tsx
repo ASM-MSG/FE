@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { deviceIdStorage, webStorage } from "@/shared/storage";
+import { deviceIdStorage, fcmTokenStorage, webStorage } from "@/shared/storage";
 import { envelopeResponse } from "@/test/envelope-response";
 import { AUTH_STORAGE_KEY, useAuthStore } from "../model/auth-store";
 import {
@@ -52,6 +52,7 @@ beforeEach(() => {
   useAuthStore.setState({ accessToken: null, isAuthenticated: false });
   webStorage.removeItem(AUTH_STORAGE_KEY);
   deviceIdStorage.clear();
+  fcmTokenStorage.clear();
 });
 
 afterEach(() => {
@@ -267,6 +268,55 @@ describe("useLogout (기준 9)", () => {
 
     expect(useAuthStore.getState().accessToken).toBeNull();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+});
+
+/**
+ * MSG-408 AC 9 — 로그아웃 시 FCM 토큰 동봉·정리. features/auth는 features/notifications를
+ * 모른다 — shared/storage의 fcmTokenStorage로만 매개된다 (스펙 구현 계획).
+ */
+describe("useLogout — FCM 토큰 동봉 (MSG-408 AC 9)", () => {
+  it("보관된 fcmToken이 있으면 body에 동봉하고, 성공 후 보관을 비운다 (AC 9)", async () => {
+    useAuthStore.getState().setAccessToken("session-token");
+    fcmTokenStorage.save("tok-stored");
+    const received = stubFetch(() => new Response(null, { status: 200 }));
+
+    const { result } = renderHook(() => useLogout(), {
+      wrapper: createWrapper(),
+    });
+    act(() => result.current.mutate());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(pathnameOf(received[0].request)).toBe("/api/auth/logout");
+    expect(received[0].body).toEqual({ fcmToken: "tok-stored" });
+    expect(fcmTokenStorage.get()).toBeNull();
+  });
+
+  it("보관 토큰이 없으면 기존과 동일하게 body 없이 호출한다 (AC 9)", async () => {
+    useAuthStore.getState().setAccessToken("session-token");
+    const received = stubFetch(() => new Response(null, { status: 200 }));
+
+    const { result } = renderHook(() => useLogout(), {
+      wrapper: createWrapper(),
+    });
+    act(() => result.current.mutate());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(received[0].body).toBeUndefined();
+  });
+
+  it("API가 실패해도 보관 토큰을 비운다 — 로컬 우선 종료와 동일 규약 (AC 9)", async () => {
+    useAuthStore.getState().setAccessToken("session-token");
+    fcmTokenStorage.save("tok-stored");
+    stubFetch(() => new Response(null, { status: 500 }));
+
+    const { result } = renderHook(() => useLogout(), {
+      wrapper: createWrapper(),
+    });
+    act(() => result.current.mutate());
+    await waitFor(() => expect(result.current.isError).toBe(true));
+
+    expect(fcmTokenStorage.get()).toBeNull();
   });
 });
 
