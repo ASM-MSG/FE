@@ -1,5 +1,6 @@
 import { Avatar } from "@fillmap/ui-web";
 import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
+import { FeaturedBadgePills } from "@/features/dex/ui/FeaturedBadgePills";
 
 interface DexProfileHeaderProps {
   /** 닉네임 — `GET /api/users/me` (기준 1) */
@@ -8,6 +9,11 @@ interface DexProfileHeaderProps {
   profileImageUrl: string | null;
   /** 탐험 규모 보조 문구 — formatExploreSummary 결과 (기준 2) */
   exploreSummary: string;
+  /**
+   * 대표 뱃지(랭크 순) — featuredBadgesOf 파생을 패널이 배선한다 (ADHOC AC 3).
+   * ≥1개면 탐험 규모 줄을 pill 행으로 대체, 0개(미설정·로딩·에러 폴백)면 유지 (승인 A1)
+   */
+  featuredBadges: { id: number; name: string }[];
   /** [프로필] 클릭 → 프로필 페이지 이동 (콜백 주입 — 네비게이션은 패널 몫) */
   onProfileClick: () => void;
 }
@@ -25,6 +31,7 @@ export const DexProfileHeader = ({
   nickname,
   profileImageUrl,
   exploreSummary,
+  featuredBadges,
   onProfileClick,
 }: DexProfileHeaderProps) => (
   <div className="flex items-center gap-sm">
@@ -35,9 +42,14 @@ export const DexProfileHeader = ({
     />
     <div className="flex min-w-0 flex-1 flex-col gap-xxs">
       <p className="truncate text-fm-title text-foreground">{nickname}</p>
-      <p className="truncate text-fm-body text-foreground-muted">
-        {exploreSummary}
-      </p>
+      {/* 대표 뱃지 ≥1개면 탐험 규모 줄 자리를 pill이 대체한다 (ADHOC 승인 A1 — Image #3 직역) */}
+      {featuredBadges.length > 0 ? (
+        <FeaturedBadgePills badges={featuredBadges} />
+      ) : (
+        <p className="truncate text-fm-body text-foreground-muted">
+          {exploreSummary}
+        </p>
+      )}
     </div>
     <button
       type="button"

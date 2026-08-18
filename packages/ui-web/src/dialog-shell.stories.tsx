@@ -74,3 +74,38 @@ export const Scrollable: Story = {
   args: { open: false, onOpenChange: () => {}, children: null },
   render: () => <ScrollableDemo />,
 };
+
+/** maxWidthClassName 데모 — 기본 480px을 넘는 넓은 모달 (MSG-414 1년 잔디 960px). */
+const WideDemo = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-surface p-lg">
+      <Button text="넓은 모달 열기" onClick={() => setOpen(true)} />
+      <DialogShell
+        open={open}
+        onOpenChange={setOpen}
+        srTitle="넓은 모달"
+        maxWidthClassName="max-w-240"
+      >
+        <ModalCard
+          title="넓은 모달"
+          description="maxWidthClassName=max-w-240(960px) — 기본값은 max-w-120(480px)으로 불변."
+          confirmText="확인"
+          onConfirm={() => setOpen(false)}
+          onClose={() => setOpen(false)}
+          className="max-w-none"
+        >
+          <div className="flex h-20 w-full items-center justify-center rounded-sm border border-dashed border-hairline-strong text-fm-caption text-foreground-muted">
+            넓은 콘텐츠 영역
+          </div>
+        </ModalCard>
+      </DialogShell>
+    </div>
+  );
+};
+
+/** 폭 확장 — 넓은 콘텐츠(연간 그래프 등) 모달. */
+export const Wide: Story = {
+  args: { open: false, onOpenChange: () => {}, children: null },
+  render: () => <WideDemo />,
+};

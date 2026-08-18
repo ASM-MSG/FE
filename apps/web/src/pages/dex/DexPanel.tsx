@@ -7,6 +7,7 @@ import type {
   CollectedVideo,
   RecentRegion,
 } from "@/entities/dex";
+import { featuredBadgesOf } from "@/features/dex/model/badge-showcase";
 import {
   clampPct,
   formatExploreSummary,
@@ -23,6 +24,7 @@ import {
   useBadgesQuery,
   useCollectionGridsQuery,
   useCollectionSummaryQuery,
+  useUploadHistoryQuery,
 } from "@/features/dex/model/use-collection-query";
 import { useCurrentRegionStatQuery } from "@/features/dex/model/use-region-stat-query";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
@@ -35,12 +37,14 @@ import { DexStatCards } from "./ui/DexStatCards";
 import { DexTabs } from "./ui/DexTabs";
 import { GalleryTabBody } from "./ui/GalleryTabBody";
 import { RecentRegionRow } from "./ui/RecentRegionRow";
+import { RecordTabBody } from "./ui/RecordTabBody";
 import { RegionProgress } from "./ui/RegionProgress";
 
 /**
  * 개인 도감 패널 (MSG-121·122·123 → MSG-327 실 API 전환, Figma node 14599:5081·19418·12529) —
  * 지속 셸(MapShell) 지도 위 388px 좌측 오버레이. 라우트 `/dex/:tab?`로 열리며 탭은
- * 지도·뱃지 2개(URL 정본): /dex→지도, /dex/badges→뱃지 진열장.
+ * 지도·뱃지·기록 3개(URL 정본): /dex→지도, /dex/badges→뱃지 진열장,
+ * /dex/history→업로드 잔디 (MSG-414).
  *
  * MSG-327 전환의 요지:
  * - 데이터 소스가 mock 단일 응답에서 실 API 5종(users/me · collections/summary ·
@@ -63,6 +67,8 @@ export const DexPanel = () => {
   const grids = useCollectionGridsQuery();
   const badges = useBadgesQuery();
   const regionStat = useCurrentRegionStatQuery();
+  // 다른 도감 쿼리와 함께 발사(뱃지 관례) — 게이트만 기록 탭별 (MSG-414 AC 3·10)
+  const uploadHistory = useUploadHistoryQuery();
 
   // 화면 골격 게이트 — 셋 중 하나라도 없으면 패널 본문을 그릴 수 없다
   const isError = profile.isError || summary.isError || grids.isError;
@@ -183,6 +189,8 @@ export const DexPanel = () => {
                 nickname={profile.data.nickname}
                 profileImageUrl={profile.data.profileImageUrl}
                 exploreSummary={formatExploreSummary(summary.data)}
+                // badges는 골격 게이트 밖 — 로딩·에러·0개면 빈 배열 → 탐험 규모 줄 폴백 (ADHOC AC 4)
+                featuredBadges={featuredBadgesOf(badges.data ?? [])}
                 onProfileClick={() => navigate(ROUTES.profile)}
               />
               {/* 수집률은 좌표 1회 측위 → by-point. 미도착이면 표시를 보류한다 —
@@ -226,19 +234,36 @@ export const DexPanel = () => {
                   onRemove={removeRecent}
                 />
               )
-            ) : badges.isError ? (
-              <BadgeErrorState onRetry={() => void badges.refetch()} />
-            ) : !badges.data ? (
-              // 도착 전을 빈 진열장으로 보여주면 "획득 0개"로 오독된다 (codex 리뷰 지적)
+            ) : tab === "badges" ? (
+              badges.isError ? (
+                <DexTabErrorState
+                  message="뱃지를 불러오지 못했어요"
+                  onRetry={() => void badges.refetch()}
+                />
+              ) : !badges.data ? (
+                // 도착 전을 빈 진열장으로 보여주면 "획득 0개"로 오독된다 (codex 리뷰 지적)
+                <div className="flex flex-1 items-center justify-center py-lg">
+                  <DotsLoader label="뱃지 불러오는 중" />
+                </div>
+              ) : (
+                <BadgeTabBody
+                  badges={badges.data}
+                  nickname={profile.data.nickname}
+                  profileImageUrl={profile.data.profileImageUrl}
+                />
+              )
+            ) : // 기록 탭 게이트 — 뱃지 탭 패턴 미러 (MSG-414 AC 10)
+            uploadHistory.isError ? (
+              <DexTabErrorState
+                message="업로드 기록을 불러오지 못했어요"
+                onRetry={() => void uploadHistory.refetch()}
+              />
+            ) : !uploadHistory.data ? (
               <div className="flex flex-1 items-center justify-center py-lg">
-                <DotsLoader label="뱃지 불러오는 중" />
+                <DotsLoader label="업로드 기록 불러오는 중" />
               </div>
             ) : (
-              <BadgeTabBody
-                badges={badges.data}
-                nickname={profile.data.nickname}
-                profileImageUrl={profile.data.profileImageUrl}
-              />
+              <RecordTabBody history={uploadHistory.data} />
             )}
           </>
         )}
@@ -264,12 +289,19 @@ const DexErrorState = ({ onRetry }: { onRetry: () => void }) => (
   </div>
 );
 
-/** 뱃지 조회 실패 — 뱃지 탭만 막는다 (요약·목록은 이미 떠 있다) */
-const BadgeErrorState = ({ onRetry }: { onRetry: () => void }) => (
+/**
+ * 탭 조회 실패 — 그 탭만 막는다 (요약·목록은 이미 떠 있다). 뱃지 탭(MSG-327)과
+ * 기록 탭(MSG-414 AC 10)이 공유 — 두 번째 사용처가 생겨 message만 파라미터화했다.
+ */
+const DexTabErrorState = ({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) => (
   <div className="flex flex-1 flex-col items-center justify-center gap-md px-lg text-center">
-    <p className="text-fm-body text-foreground-muted">
-      뱃지를 불러오지 못했어요
-    </p>
+    <p className="text-fm-body text-foreground-muted">{message}</p>
     <Button text="다시 시도" variant="primary" size="sm" onClick={onRetry} />
   </div>
 );

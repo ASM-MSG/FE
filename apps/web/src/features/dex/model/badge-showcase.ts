@@ -23,6 +23,22 @@ const rankOf = (badge: DexBadge): number => {
  * - 미획득: 카탈로그 정의 순서 유지 (고정 카탈로그라 획득 0개여도 진열장이 비지 않는다)
  * 원본 배열은 변형하지 않는다.
  */
+/**
+ * 헤더 pill용 대표 뱃지 파생 [ADHOC 프로필·도감 헤더 AC 1] —
+ * featuredRank 보유 뱃지만 rank 오름차순 `{id, name}`으로 좁힌다(FeaturedBadgePills props 형).
+ * 대표 0개·빈 카탈로그(로딩·에러 폴백 입력)는 빈 배열 — 헤더는 메타 줄로 폴백한다.
+ */
+export const featuredBadgesOf = (
+  badges: DexBadge[],
+): { id: number; name: string }[] =>
+  badges
+    .filter(
+      (badge) =>
+        badge.featuredRank !== null && badge.featuredRank !== undefined,
+    )
+    .sort((a, b) => (a.featuredRank ?? 0) - (b.featuredRank ?? 0))
+    .map((badge) => ({ id: badge.badgeId, name: badge.name }));
+
 export const orderBadges = (badges: DexBadge[]): DexBadge[] =>
   badges
     .map((badge, index) => ({ badge, index }))
