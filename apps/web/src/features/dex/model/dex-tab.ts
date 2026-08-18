@@ -1,5 +1,7 @@
 /**
  * 도감 탭 경로 해석 (AC 2, 추정 A1 — 탭 전환을 URL에 반영).
+ * MSG-414: 기록 탭(/dex/history — 업로드 잔디) 추가로 3탭. 폴백 규칙은 불변 —
+ * /dex·무효 파라미터는 지도 탭 (MSG-414 AC 1).
  * MSG-122 ② 개정: 탭은 지도·뱃지 2개다 — 갤러리는 탭이 아니라 지도 탭 내부 뷰(B1,
  * gallery-region-store가 소유). "gallery"는 무효 파라미터로 지도 폴백된다(AC 21, Q2 —
  * /dex/gallery 딥링크 전용 처리 없음, /dex/foo와 동일 취급).
@@ -8,7 +10,7 @@
  * (ROUTES 상수는 무변경 — NavKey 타입 보존, 스펙 구현 계획).
  */
 
-export const DEX_TABS = ["map", "badges"] as const;
+export const DEX_TABS = ["map", "badges", "history"] as const;
 
 export type DexTab = (typeof DEX_TABS)[number];
 
@@ -22,7 +24,7 @@ const isDexTab = (value: string): value is DexTab =>
 export const parseDexTab = (param: string | undefined): DexTab =>
   param !== undefined && isDexTab(param) ? param : "map";
 
-/** 탭 → 이동 경로: 지도→/dex, 뱃지→/dex/badges [AC 2] */
+/** 탭 → 이동 경로: 지도→/dex, 뱃지→/dex/badges, 기록→/dex/history [AC 2, MSG-414 AC 1] */
 export const dexTabPath = (tab: DexTab): string =>
   tab === "map" ? DEX_BASE_PATH : `${DEX_BASE_PATH}/${tab}`;
 
@@ -30,4 +32,5 @@ export const dexTabPath = (tab: DexTab): string =>
 export const DEX_TAB_LABELS: Record<DexTab, string> = {
   map: "지도",
   badges: "뱃지",
+  history: "기록",
 };

@@ -12,6 +12,7 @@ import {
   getRegionVideosQueryKey,
   getStatByPointQueryKey,
   getSummaryQueryKey,
+  getUploadHistoryQueryKey,
   reportMutation,
   setVisibilityMutation,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
@@ -75,6 +76,11 @@ export const useDeleteVideo = (callbacks?: {
       void queryClient.invalidateQueries({ queryKey: getSummaryQueryKey() });
       void queryClient.invalidateQueries({
         queryKey: getCollectionGridsQueryKey(),
+      });
+      // 업로드 잔디 이력 — 삭제가 과거 uploadDate 집계를 줄이는지는 서버 의미 미상이나
+      // 재조회는 보장한다 (MSG-414 AC 11, A8 — 스트릭 카드 summary 무효화와 같은 자리)
+      void queryClient.invalidateQueries({
+        queryKey: getUploadHistoryQueryKey(),
       });
       invalidateAllOf(
         queryClient,

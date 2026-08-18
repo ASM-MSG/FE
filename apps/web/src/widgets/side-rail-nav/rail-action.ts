@@ -6,6 +6,7 @@
  * 그 상태가 그대로라 "홈으로 돌아가는" 수단이 없었다 — 초기 상태가 아니면 먼저 초기화하고,
  * 초기 상태에서 다시 누르면 종전대로 접는 2단으로 나눈다.
  */
+import type { DexTab } from "@/features/dex/model/dex-tab";
 
 export interface HomeSnapshot {
   activeTheme: string | null;
@@ -24,7 +25,8 @@ export const isHomeInitial = (s: HomeSnapshot): boolean =>
   s.regionMode === "grids";
 
 export interface DexSnapshot {
-  tab: "map" | "badges";
+  /** 현재 도감 탭 — 정의는 dex-tab(DEX_TABS)이 소유, 여기선 type-only 참조 (MSG-414 기록 탭 추가 대응) */
+  tab: DexTab;
   /** 동 갤러리 진입 여부 — 지도 탭 내부 뷰(gallery-region-store) */
   galleryOpen: boolean;
 }

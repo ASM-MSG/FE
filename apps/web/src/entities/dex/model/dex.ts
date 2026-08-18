@@ -4,6 +4,7 @@ import type {
   MyBadgeResponseDto,
   RegionStatResponseDto,
   RegionVideoResponseDto,
+  UploadHistoryResponseDto,
 } from "@/shared/api/generated/types.gen";
 
 /*
@@ -80,6 +81,15 @@ export type RegionStat = Required<
     | "totalCount"
     | "progressRate"
   >
+>;
+
+/**
+ * 날짜별 업로드 이력 항목 — `GET /api/collections/upload-history` (MSG-414 기준 3·4).
+ * uploadDate는 KST 날짜 라벨("YYYY-MM-DD")이고 **희소 목록**이다 — 업로드가 없는 날은
+ * 항목 자체가 없다(빈 날 0 채움은 buildGrassWeeks 파생 몫). uploadCount는 1 이상.
+ */
+export type UploadHistoryDay = Required<
+  Pick<UploadHistoryResponseDto, "uploadDate" | "uploadCount">
 >;
 
 /**

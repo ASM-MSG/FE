@@ -40,6 +40,14 @@ export const palette = {
   // error(red-500) 유지. Figma 변수 미등록 상태의 선등록(theme-* 선례) — 더보기 메뉴
   // 프레임(14094:4885)은 동일 값으로 동기함.
   "red-600": "#DC2626",
+  // 도감 업로드 잔디 5단계 램프의 lv0~3 (MSG-414 A4) — Figma ver 13 잔디 카드
+  // (14786:3572·14789:3834) 실측값. lv4는 primary(blue-500 #0066CC)와 정확히 일치해
+  // 기존 토큰을 재사용한다. 투명도 근사(primary/25 류)는 실측과 불일치라 기각
+  // (근사 사용 금지 — theme-* 선례). Figma 변수 미등록 상태의 선등록(red-600 선례).
+  "grass-0": "#EDEFF2",
+  "grass-1": "#C7DFF7",
+  "grass-2": "#8CBBEF",
+  "grass-3": "#4A93E0",
 } as const;
 
 /** 시맨틱 토큰 — Figma "FeelMap Color" 컬렉션과 1:1. 컴포넌트에서는 이것을 우선 사용 */

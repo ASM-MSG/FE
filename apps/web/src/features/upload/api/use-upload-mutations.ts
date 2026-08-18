@@ -11,6 +11,7 @@ import type { PresignedUrlRequestDto } from "@/shared/api/generated";
 import {
   getPlaybackQueryKey,
   getRegionVideosQueryKey,
+  getUploadHistoryQueryKey,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { httpClient } from "@/shared/api/http-client";
 import { PRESIGN_PURPOSE } from "../model/presign-purpose";
@@ -186,6 +187,12 @@ export const useReplaceVideo = () => {
 
       // ④ 격자 영상 목록·격자 상세 — gridId 미상이면 광역 무효화 (AC 4)
       invalidateGridQueries(queryClient, gridId);
+
+      // ⑤ 업로드 잔디 이력 — 교체가 uploadDate 집계를 이동시킬 수 있어 재조회를
+      // 보장한다 (MSG-414 AC 11, A8 — 서버가 이력을 보정하지 않으면 잔디도 그대로다)
+      void queryClient.invalidateQueries({
+        queryKey: getUploadHistoryQueryKey(),
+      });
     },
   });
   const resetFlow = () => {
@@ -256,6 +263,12 @@ export const useConfirmUpload = () => {
 
       // B13 — 격자 쿼리 무효화 (invalidate-grid-queries 공용 — READY 전이와 공유)
       invalidateGridQueries(queryClient, video.gridId);
+
+      // 업로드 잔디 이력 — 오늘 셀 카운트가 늘었다, 스트릭 카드(summary)와
+      // 어긋나는 창을 없앤다 (MSG-414 AC 11, A8)
+      void queryClient.invalidateQueries({
+        queryKey: getUploadHistoryQueryKey(),
+      });
     },
   });
   const resetFlow = () => {
