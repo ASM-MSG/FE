@@ -184,7 +184,7 @@ export const useReplaceVideo = () => {
         queryKey: [{ _id: regionKey._id }],
       });
 
-      // ③ 격자 영상 목록·격자 상세 — gridId 미상이면 광역 무효화 (AC 4)
+      // ④ 격자 영상 목록·격자 상세 — gridId 미상이면 광역 무효화 (AC 4)
       invalidateGridQueries(queryClient, gridId);
     },
   });
