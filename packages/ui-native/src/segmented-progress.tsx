@@ -22,14 +22,17 @@ export const SegmentedProgress = ({
   current,
   className,
 }: SegmentedProgressProps) => {
-  const filled = Math.min(Math.max(current, 0), total);
+  // total이 음수면 세그먼트는 0개로 렌더되는데(Array.from이 음수 길이를 0으로 클램프),
+  // 클램프 없이는 accessibilityValue가 max<min·now<0인 진행바로 낭독된다.
+  const safeTotal = Math.max(total, 0);
+  const filled = Math.min(Math.max(current, 0), safeTotal);
   return (
     <View
       accessibilityRole="progressbar"
-      accessibilityValue={{ min: 0, max: total, now: filled }}
+      accessibilityValue={{ min: 0, max: safeTotal, now: filled }}
       className={cx("w-full flex-row gap-xs", className)}
     >
-      {Array.from({ length: total }, (_, index) => (
+      {Array.from({ length: safeTotal }, (_, index) => (
         <View
           key={index}
           className={cx(
