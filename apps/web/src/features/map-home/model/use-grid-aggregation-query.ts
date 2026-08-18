@@ -13,6 +13,9 @@ import {
 import { mapQueryPolicy } from "./map-query-policy";
 import { useThemeFilterStore } from "./theme-filter-store";
 
+/** 게이트 비활성 반환 전용 — 매 렌더 새 배열이면 셸 clusters useMemo가 헛돈다(use-hotzones-query 관례) */
+const EMPTY_ITEMS: RegionAggregateResponseDto[] = [];
+
 /**
  * 저줌 점령 집계 조회 (MSG-410 AC 2·3·9) — `GET /api/grids/aggregation`.
  * 지도 SDK를 import하지 않는다 — 뷰포트는 플랫폼 중립 `Bounds`로 받는다(RN 경계).
@@ -72,7 +75,7 @@ export const useGridAggregationQuery = (
   });
 
   return {
-    items: enabled && data ? unwrapEnvelope(data).items : [],
+    items: enabled && data ? unwrapEnvelope(data).items : EMPTY_ITEMS,
     unit,
   };
 };
