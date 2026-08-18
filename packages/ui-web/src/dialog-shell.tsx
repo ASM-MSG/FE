@@ -13,6 +13,11 @@ interface DialogShellProps {
   srTitle?: string;
   /** true면 뷰포트를 넘는 콘텐츠를 컨테이너 스크롤로 담는다 (스텝형·긴 콘텐츠 모달) */
   scrollable?: boolean;
+  /**
+   * Content 최대 폭 클래스 — 생략 시 기존 max-w-120(480px) 유지(비파괴 기본값).
+   * 넓은 모달(예: MSG-414 1년 잔디 960px = "max-w-240")만 지정한다.
+   */
+  maxWidthClassName?: string;
   children: ReactNode;
 }
 
@@ -37,6 +42,7 @@ export const DialogShell = ({
   onOpenChange,
   srTitle,
   scrollable,
+  maxWidthClassName = "max-w-120",
   children,
 }: DialogShellProps) => (
   <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -45,7 +51,8 @@ export const DialogShell = ({
       <DialogPrimitive.Content
         aria-describedby={undefined}
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-120 -translate-x-1/2 -translate-y-1/2 outline-none",
+          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 outline-none",
+          maxWidthClassName,
           scrollable && "max-h-[calc(100dvh-2rem)] overflow-y-auto",
         )}
       >

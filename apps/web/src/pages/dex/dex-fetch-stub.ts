@@ -67,6 +67,8 @@ interface StubOverrides {
   grids?: unknown[];
   badges?: unknown[];
   videos?: unknown[];
+  /** 업로드 잔디 이력 — 희소 목록, 기본은 빈 이력(전부 lv0 격자 — MSG-414 A7) */
+  uploadHistory?: unknown[];
   /** by-grid 응답 — 명세상 nullable이라 null(행정동 미판정)도 정상 응답이다 */
   gridStat?: unknown;
   /** 뱃지 응답을 영원히 보류 — 다른 응답은 도착한 뒤의 "뱃지만 로딩" 상태 재현용 */
@@ -82,6 +84,7 @@ export const stubDexFetch = ({
   grids = [GRID_SEOMYEON, GRID_JEONPO],
   badges = [],
   videos = [],
+  uploadHistory = [],
   gridStat = POINT_STAT,
   holdBadges = false,
   holdFeaturedPut = false,
@@ -113,6 +116,8 @@ export const stubDexFetch = ({
           return envelopeResponse(gridStat);
         case "/api/collections/videos":
           return envelopeResponse(videos);
+        case "/api/collections/upload-history":
+          return envelopeResponse(uploadHistory);
         default:
           return new Response(null, { status: 404 });
       }

@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CollectedGrid, DexBadge, DexSummary } from "@/entities/dex";
+import type {
+  CollectedGrid,
+  DexBadge,
+  DexSummary,
+  UploadHistoryDay,
+} from "@/entities/dex";
 import { entityQueryPolicy } from "@/features/map-home/model/map-query-policy";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 // 생성 옵션은 barrel 미재수출 — 직접 경로 import (MSG-323 관례)
@@ -7,6 +12,7 @@ import {
   findMyBadgesOptions,
   getCollectionGridsOptions,
   getSummaryOptions,
+  getUploadHistoryOptions,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 
 /**
@@ -37,5 +43,17 @@ export const useBadgesQuery = () =>
   useQuery({
     ...findMyBadgesOptions(),
     select: (envelope): DexBadge[] => unwrapEnvelope(envelope),
+    ...entityQueryPolicy,
+  });
+
+/**
+ * 날짜별 업로드 이력 — `GET /api/collections/upload-history` (MSG-414 AC 3).
+ * 파라미터 없음(기간 지정 불가) — 전체 이력 일괄 응답, 창(24주/53주) 필터는
+ * upload-grass 파생 몫. 이 API의 첫 사용처다(기존 스트릭 카드는 summary.currentStreak).
+ */
+export const useUploadHistoryQuery = () =>
+  useQuery({
+    ...getUploadHistoryOptions(),
+    select: (envelope): UploadHistoryDay[] => unwrapEnvelope(envelope),
     ...entityQueryPolicy,
   });

@@ -12,6 +12,7 @@ import {
   getRegionVideosQueryKey,
   getStatByPointQueryKey,
   getSummaryQueryKey,
+  getUploadHistoryQueryKey,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { reportFailureNotice } from "../model/report";
@@ -174,6 +175,21 @@ describe("useDeleteVideo — 영상 삭제 (AC 4·5)", () => {
       expect(client.getQueryState(key)?.isInvalidated).toBe(true);
     }
     expect(onDeleted).toHaveBeenCalledTimes(1);
+  });
+
+  it("삭제 성공 시 업로드 잔디(upload-history) 쿼리가 무효화된다 (MSG-414 AC 11)", async () => {
+    stubFetch(() => envelopeResponse(null));
+    const { client, wrapper } = createHarness();
+    const historyKey = getUploadHistoryQueryKey();
+    client.setQueryData(historyKey, { seeded: true });
+    const { result } = renderHook(() => useDeleteVideo(), { wrapper });
+
+    act(() => {
+      result.current.mutate({ videoId: 7, gridId: GRID_ID });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(client.getQueryState(historyKey)?.isInvalidated).toBe(true);
   });
 
   it("실패 시 무효화·onDeleted가 실행되지 않고 onError가 불린다 (AC 5)", async () => {

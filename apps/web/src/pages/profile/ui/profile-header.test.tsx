@@ -27,6 +27,8 @@ const renderHeader = ({
       nickname="필맵퍼"
       email={email}
       joinedDateLabel="2026.05.12"
+      // 대표 미설정 — 메타 줄 폴백 경로가 이 파일의 고정 범위 (pill 대체는 패널 스모크 몫, ADHOC)
+      featuredBadges={[]}
       avatarSrc={avatarSrc}
     />,
   );

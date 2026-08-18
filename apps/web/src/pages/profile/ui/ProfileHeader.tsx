@@ -1,4 +1,5 @@
 import { Avatar, Button } from "@fillmap/ui-web";
+import { FeaturedBadgePills } from "@/features/dex/ui/FeaturedBadgePills";
 
 interface ProfileHeaderProps {
   nickname: string;
@@ -6,6 +7,12 @@ interface ProfileHeaderProps {
   email: string | null;
   /** 표시용 가입일 — formatJoinedDate 결과 "YYYY.MM.DD" (AC 3) */
   joinedDateLabel: string;
+  /**
+   * 대표 뱃지(랭크 순) — featuredBadgesOf 파생을 패널이 배선한다 (ADHOC AC 2).
+   * ≥1개면 메타 줄을 pill 행으로 대체하고, 0개(미설정·로딩·에러 폴백)면 메타 줄 유지 —
+   * 헤더는 항상 2줄 (승인 A1)
+   */
+  featuredBadges: { id: number; name: string }[];
   /**
    * 아바타 이미지 URL — profileImageUrl ?? 기본 이미지 에셋을 패널이 배선한다 (MSG-378 기준 16,
    * 구 닉네임 첫 글자 fallback 대체. Figma 그라데이션 원·"필" 이니셜은 구 표현 플레이스홀더)
@@ -25,6 +32,7 @@ export const ProfileHeader = ({
   nickname,
   email,
   joinedDateLabel,
+  featuredBadges,
   avatarSrc,
   onEdit,
 }: ProfileHeaderProps) => {
@@ -39,12 +47,17 @@ export const ProfileHeader = ({
       <Avatar size="lg" src={avatarSrc} alt={nickname} />
       <div className="flex min-w-0 flex-1 flex-col gap-xxs">
         <p className="truncate text-fm-title text-foreground">{nickname}</p>
-        <p
-          className="truncate text-fm-body text-foreground-muted"
-          title={metaLabel}
-        >
-          {metaLabel}
-        </p>
+        {/* 대표 뱃지 ≥1개면 메타 줄 자리를 pill이 대체한다 (ADHOC 승인 A1 — Image #3 직역) */}
+        {featuredBadges.length > 0 ? (
+          <FeaturedBadgePills badges={featuredBadges} />
+        ) : (
+          <p
+            className="truncate text-fm-body text-foreground-muted"
+            title={metaLabel}
+          >
+            {metaLabel}
+          </p>
+        )}
       </div>
       <Button
         text="편집"

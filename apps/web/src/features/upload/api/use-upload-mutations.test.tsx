@@ -9,6 +9,7 @@ import {
   getOccupiedInViewportInfiniteQueryKey,
   getPlaybackQueryKey,
   getRegionVideosQueryKey,
+  getUploadHistoryQueryKey,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { envelopeResponse } from "@/test/envelope-response";
 import {
@@ -266,6 +267,21 @@ describe("useConfirmUpload — 확정 흐름 (B9·B13)", () => {
     expect(pending.map((p) => p.videoId)).toEqual([42]);
   });
 
+  it("확정 성공 시 업로드 잔디(upload-history) 쿼리가 무효화된다 (MSG-414 AC 11)", async () => {
+    stubFetch(routeHappyPath());
+    const { queryClient, wrapper } = createHarness();
+    const historyKey = getUploadHistoryQueryKey();
+    queryClient.setQueryData(historyKey, { cached: true });
+
+    const { result } = renderHook(() => useConfirmUpload(), { wrapper });
+    act(() => {
+      result.current.mutate(confirmInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(queryClient.getQueryState(historyKey)?.isInvalidated).toBe(true);
+  });
+
   it("확정 실패 시 대기 등록·invalidate가 일어나지 않는다", async () => {
     stubFetch(
       routeHappyPath({
@@ -350,6 +366,21 @@ describe("useReplaceVideo — 교체 확정 흐름 (MSG-415 AC 3·4·5)", () => 
     // ③ 도감 동 영상 목록(부분 키) + 격자 영상 목록(invalidateGridQueries)
     expect(queryClient.getQueryState(regionKey)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(true);
+  });
+
+  it("교체 성공 시 업로드 잔디(upload-history) 쿼리가 무효화된다 (MSG-414 AC 11)", async () => {
+    stubFetch(routeHappyPath());
+    const { queryClient, wrapper } = createHarness();
+    const historyKey = getUploadHistoryQueryKey();
+    queryClient.setQueryData(historyKey, { cached: true });
+
+    const { result } = renderHook(() => useReplaceVideo(), { wrapper });
+    act(() => {
+      result.current.mutate(replaceInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(queryClient.getQueryState(historyKey)?.isInvalidated).toBe(true);
   });
 
   it("교체 확정(PUT) 실패 시 track·무효화가 일어나지 않고, 재시도는 성공한 presign·S3 PUT을 건너뛴다 (AC 5)", async () => {

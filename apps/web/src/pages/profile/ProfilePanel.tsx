@@ -4,6 +4,8 @@ import { Button, DotsLoader } from "@fillmap/ui-web";
 import { NOTIFICATION_SETTINGS_PATH, ROUTES } from "@/app/routes";
 import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
+import { featuredBadgesOf } from "@/features/dex/model/badge-showcase";
+import { useBadgesQuery } from "@/features/dex/model/use-collection-query";
 import { usePushToggle } from "@/features/notifications/api/use-push-toggle";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
 import { useActivityQuery } from "@/features/profile/model/use-activity-query";
@@ -32,6 +34,10 @@ export const ProfilePanel = () => {
   // "내 활동" 두 축 (MSG-395) — 프로필 조회와 독립: 활동 조회가 늦거나 실패해도
   // 닉네임·설정은 그대로 뜨고 카드만 `—`로 남는다
   const activity = useActivityQuery();
+  // 헤더 대표 뱃지 pill (ADHOC AC 2·5) — 도감과 같은 useBadgesQuery 재사용(캐시·MSG-413
+  // invalidate 키 공유로 저장 시 자동 갱신). 프로필 골격 게이트 밖 — 로딩·에러·0개면
+  // featuredBadgesOf가 빈 배열이라 헤더는 기존 메타 줄로 폴백한다 (AC 4)
+  const badges = useBadgesQuery();
   // 모달 열림은 스토어가 소유한다 — 사이드레일 재클릭 초기화가 패널 밖에서 닫아야 한다 (AC 16)
   const openModal = useProfileModalStore((s) => s.open);
   const setModal = useProfileModalStore((s) => s.openModal);
@@ -71,6 +77,7 @@ export const ProfilePanel = () => {
               nickname={data.nickname}
               email={data.email}
               joinedDateLabel={formatJoinedDate(data.joinedAt)}
+              featuredBadges={featuredBadgesOf(badges.data ?? [])}
               avatarSrc={data.profileImageUrl ?? DEFAULT_PROFILE_IMAGE}
               onEdit={() => setModal("edit")}
             />
