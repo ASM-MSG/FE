@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fcmTokenStorage } from "@/shared/storage";
 import { queryWrapper } from "@/test/query-wrapper";
 import { stubFetch } from "@/test/stub-fetch";
+import { usePushNoticeStore } from "../model/push-notice-store";
 import { usePushTokenStore } from "../model/push-token-store";
 import { usePushToggle } from "./use-push-toggle";
 import {
@@ -33,6 +34,8 @@ const pathOf = (request: Request) => new URL(request.url).pathname;
 beforeEach(() => {
   fcmTokenStorage.clear();
   usePushTokenStore.setState({ token: null });
+  // 안내 채널은 전역 스토어(PR #60 리뷰 3 — PushNoticeHost 단일 스택) — 테스트 간 리셋
+  usePushNoticeStore.setState({ toggleNotice: null });
 });
 
 afterEach(() => {
@@ -112,14 +115,14 @@ describe("usePushToggle — 토글 ON (AC 5·6·13)", () => {
 
     act(() => result.current.setEnabled(true));
 
-    await waitFor(() => expect(result.current.notice).toBe("denied"));
+    // 안내는 전역 스토어로 push된다 — 사용자 노출·닫기는 PushNoticeHost 스모크가 고정 (PR #60 리뷰 3)
+    await waitFor(() =>
+      expect(usePushNoticeStore.getState().toggleNotice).toBe("denied"),
+    );
     expect(fetchFcmToken).not.toHaveBeenCalled();
     expect(received).toHaveLength(0);
     expect(result.current.checked).toBe(false);
     expect(fcmTokenStorage.get()).toBeNull();
-
-    act(() => result.current.dismissNotice());
-    expect(result.current.notice).toBeNull();
   });
 
   it("등록 POST가 실패하면 토큰을 보관하지 않아 OFF로 남고 오류 안내가 노출된다 (AC 13 + codex 리뷰 3)", async () => {
@@ -135,7 +138,7 @@ describe("usePushToggle — 토글 ON (AC 5·6·13)", () => {
     expect(fcmTokenStorage.get()).toBeNull();
     expect(result.current.checked).toBe(false);
     // 조용한 실패 금지 — denied 안내와 같은 토스트 관례의 오류 안내 (리뷰 3)
-    expect(result.current.notice).toBe("error");
+    expect(usePushNoticeStore.getState().toggleNotice).toBe("error");
   });
 });
 
@@ -174,7 +177,9 @@ describe("usePushToggle — 토글 OFF (AC 7)", () => {
 
     act(() => result.current.setEnabled(false));
 
-    await waitFor(() => expect(result.current.notice).toBe("error"));
+    await waitFor(() =>
+      expect(usePushNoticeStore.getState().toggleNotice).toBe("error"),
+    );
     expect(fcmTokenStorage.get()).toBe("tok-1");
     expect(result.current.checked).toBe(true);
   });

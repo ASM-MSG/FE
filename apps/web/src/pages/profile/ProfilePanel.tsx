@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, DotsLoader, Toast } from "@fillmap/ui-web";
+import { Button, DotsLoader } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
 import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
@@ -50,7 +50,9 @@ export const ProfilePanel = () => {
     onFinished: () => navigate(ROUTES.home),
   });
   // "알림 받기" 토글 (MSG-408 결정 1) — 신규 푸시 등록의 유일한 진입점.
-  // 표시 정본 = 권한 granted && 보관 토큰 존재, 미지원 브라우저는 행 비활성 (AC 4·8)
+  // 표시 정본 = 권한 granted && 보관 토큰 존재, 미지원 브라우저는 행 비활성 (AC 4·8).
+  // denied/error 안내는 훅이 push-notice-store로 push — 렌더는 PushNoticeHost 단일
+  // 스택 몫 (PR #60 리뷰 3: 자체 토스트가 호스트와 같은 fixed 좌표에 겹치던 문제 해소)
   const pushToggle = usePushToggle();
 
   return (
@@ -134,32 +136,6 @@ export const ProfilePanel = () => {
             onOpenChange={setModalOpen("delete")}
             onDeleted={() => navigate(ROUTES.home)}
           />
-
-          {/* 토글 안내 (AC 6 denied · codex 리뷰 1·3 오류) — 우하단 토스트 스택 관례
-              (UploadProcessingNotices 미러). denied와 등록/해제 실패가 채널을 공유한다 */}
-          {pushToggle.notice !== null && (
-            <div className="fixed bottom-md right-md z-50 flex w-90 max-w-[calc(100%-2rem)] flex-col gap-xs">
-              {pushToggle.notice === "denied" ? (
-                <Toast
-                  title="알림 권한이 차단되어 있어요"
-                  description="브라우저 설정에서 알림 권한을 허용해주세요"
-                />
-              ) : (
-                <Toast
-                  title="알림 설정에 실패했어요"
-                  description="잠시 후 다시 시도해주세요"
-                />
-              )}
-              <div className="flex justify-end">
-                <Button
-                  text="닫기"
-                  variant="secondary"
-                  size="sm"
-                  onClick={pushToggle.dismissNotice}
-                />
-              </div>
-            </div>
-          )}
         </>
       )}
     </aside>

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 // 생성 mutation 옵션은 barrel 미재수출 — 직접 경로 import (MSG-323 관례)
 import {
   registerMutation,
   unregisterMutation,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
+import { usePushNoticeStore } from "../model/push-notice-store";
 import { isPushSupported } from "../model/push-support";
 import { derivePushToggleState } from "../model/push-toggle";
 import { usePushTokenStore } from "../model/push-token-store";
@@ -19,9 +20,6 @@ import {
 const registerFn = registerMutation().mutationFn!;
 const unregisterFn = unregisterMutation().mutationFn!;
 
-/** 토글 조작 안내 채널 — denied(브라우저 설정 안내)·error(등록/해제 실패) 공유 (codex 리뷰 1·3) */
-export type PushToggleNotice = "denied" | "error";
-
 /**
  * 프로필 "알림 받기" 토글 훅 (MSG-408 AC 4·5·6·7·8·13) — 신규 푸시 등록의 유일한 진입점
  * (스펙 결정 1). 표시 정본 = 권한 granted && 보관 토큰 존재 (derivePushToggleState).
@@ -32,6 +30,8 @@ export type PushToggleNotice = "denied" | "error";
  *   등록이 남은 채 UI만 OFF가 되고, 자동 동기화(보관 토큰 전제)의 재해제 경로가 소멸)
  * - 등록/해제 실패는 오류 안내를 노출한다 — 조용한 실패 금지 (AC 13 + codex 리뷰 3).
  *   등록 실패 시 보관하지 않아 토글이 실제 결과와 어긋나지 않는다
+ * - 안내(denied/error)는 push-notice-store로 push한다 — 표시·닫기는 PushNoticeHost의
+ *   단일 스택 몫 (PR #60 리뷰 3: ProfilePanel 자체 토스트와 호스트의 겹침 해소)
  */
 export const usePushToggle = () => {
   const token = usePushTokenStore((s) => s.token);
@@ -43,7 +43,8 @@ export const usePushToggle = () => {
     refresh();
   }, [refresh]);
 
-  const [notice, setNotice] = useState<PushToggleNotice | null>(null);
+  const showNotice = usePushNoticeStore((s) => s.showToggleNotice);
+  const dismissNotice = usePushNoticeStore((s) => s.dismissToggleNotice);
 
   const enable = useMutation({
     mutationFn: async (_variables: void, context) => {
@@ -57,13 +58,13 @@ export const usePushToggle = () => {
     onSuccess: (result) => {
       if (result.granted) {
         setToken(result.fcmToken);
-        setNotice(null);
+        dismissNotice();
       } else {
-        setNotice("denied"); // 토글은 OFF 유지 + 브라우저 설정 안내 (AC 6)
+        showNotice("denied"); // 토글은 OFF 유지 + 브라우저 설정 안내 (AC 6)
       }
     },
     // 등록 실패 — 보관하지 않아 OFF 유지(AC 13) + 오류 안내 (codex 리뷰 3)
-    onError: () => setNotice("error"),
+    onError: () => showNotice("error"),
   });
 
   const disable = useMutation({
@@ -73,9 +74,9 @@ export const usePushToggle = () => {
     // 성공 시에만 비운다 — 실패 시 보관·ON 유지로 재시도 경로를 남긴다 (AC 7 정정, codex 리뷰 1)
     onSuccess: () => {
       clearToken();
-      setNotice(null);
+      dismissNotice();
     },
-    onError: () => setNotice("error"),
+    onError: () => showNotice("error"),
   });
 
   const state = derivePushToggleState({
@@ -93,8 +94,6 @@ export const usePushToggle = () => {
     supported: state.supported,
     checked: state.checked,
     isPending: enable.isPending || disable.isPending,
-    notice,
-    dismissNotice: () => setNotice(null),
     setEnabled,
   };
 };

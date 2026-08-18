@@ -35,14 +35,25 @@ export interface ForegroundMessage {
 
 let messagingPromise: Promise<Messaging> | null = null;
 
-/** Firebase 앱·메시징 1회 초기화 공유 — 토큰 취득·포그라운드 구독이 같은 인스턴스를 쓴다 */
+/**
+ * Firebase 앱·메시징 1회 초기화 공유 — 토큰 취득·포그라운드 구독이 같은 인스턴스를 쓴다.
+ * 실패 시 싱글턴 슬롯을 비우고 rethrow한다 (PR #60 리뷰 1) — rejected promise를 보관하면
+ * 일시 장애(네트워크 등) 후에도 새로고침 전까지 모든 호출이 같은 거부로 즉시 재실패한다.
+ * 슬롯을 비워야 다음 fetchFcmToken·subscribeForegroundMessages가 진짜 재시도가 된다
+ * (naver-sdk-loader의 pending 자기 정리와 같은 의도).
+ */
 const getMessagingInstance = (): Promise<Messaging> => {
   messagingPromise ??= (async () => {
-    const [{ initializeApp }, { getMessaging }] = await Promise.all([
-      import("firebase/app"),
-      import("firebase/messaging"),
-    ]);
-    return getMessaging(initializeApp(FIREBASE_CONFIG));
+    try {
+      const [{ initializeApp }, { getMessaging }] = await Promise.all([
+        import("firebase/app"),
+        import("firebase/messaging"),
+      ]);
+      return getMessaging(initializeApp(FIREBASE_CONFIG));
+    } catch (error) {
+      messagingPromise = null;
+      throw error;
+    }
   })();
   return messagingPromise;
 };
@@ -50,12 +61,12 @@ const getMessagingInstance = (): Promise<Messaging> => {
 /**
  * SW 등록 + FCM 토큰 취득 (AC 11·12) — SW는 env를 못 읽어 config를 쿼리스트링으로
  * 전달한다(buildMessagingSwUrl). 같은 URL 재등록은 멱등이다.
+ * SW 등록·SDK 로드·메시징 초기화는 상호 독립이라 병렬로 시작한다 (PR #60 리뷰 2) —
+ * getToken만 세 결과를 모두 필요로 한다.
  */
 export const fetchFcmToken = async (): Promise<string> => {
-  const registration = await navigator.serviceWorker.register(
-    buildMessagingSwUrl(FIREBASE_CONFIG),
-  );
-  const [{ getToken }, messaging] = await Promise.all([
+  const [registration, { getToken }, messaging] = await Promise.all([
+    navigator.serviceWorker.register(buildMessagingSwUrl(FIREBASE_CONFIG)),
     import("firebase/messaging"),
     getMessagingInstance(),
   ]);
