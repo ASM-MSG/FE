@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { DialogShell, ModalCard, Toast } from "@fillmap/ui-web";
 import { useVideoPlaybackQuery } from "@/features/map-home/model/use-video-playback-query";
 import { useDeleteVideo } from "../api/use-video-mutations";
+import { useAutoDismissToast } from "../model/use-auto-dismiss-toast";
 import {
   deleteCardMeta,
   deleteCardTitle,
@@ -19,7 +19,6 @@ interface VideoDeleteConfirmDialogProps {
 const DELETE_GUIDE =
   "삭제하면 되돌릴 수 없어요. 이 영상이 채운 격자 기록과 수집 통계에서도 함께 빠집니다.";
 const ERROR_MESSAGE = "영상을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.";
-const TOAST_DURATION_MS = 3000;
 
 /**
  * 영상 삭제 확인 모달 (MSG-411 AC 3~5, Figma 14792:3610) — 제목·비가역 안내·대상 영상
@@ -34,14 +33,14 @@ export const VideoDeleteConfirmDialog = ({
   target,
   onOpenChange,
 }: VideoDeleteConfirmDialogProps) => {
-  const [failed, setFailed] = useState(false);
+  const [errorMessage, setErrorMessage] = useAutoDismissToast();
   // 목록 응답에 없는 visibility·구역 밖 폴백 라벨·gridId 보강 (스펙 코드 대조)
   const { playback } = useVideoPlaybackQuery(toPlaybackFeedVideo(target));
 
   // 삭제 성공 후속(열려 있는 미니 패널 닫기·playback 캐시 제거)은 훅이 중앙 처리한다
   const deleteVideo = useDeleteVideo({
     onDeleted: () => onOpenChange(false),
-    onError: () => setFailed(true),
+    onError: () => setErrorMessage(ERROR_MESSAGE),
   });
 
   const zoneName = target.zoneName ?? playback?.zoneName ?? null;
@@ -53,13 +52,6 @@ export const VideoDeleteConfirmDialog = ({
   );
   const thumbnailUrl = target.thumbnailUrl ?? playback?.thumbnailUrl ?? null;
   const gridId = target.gridId ?? playback?.gridId ?? null;
-
-  // 에러 토스트 자동 소멸
-  useEffect(() => {
-    if (!failed) return;
-    const timer = setTimeout(() => setFailed(false), TOAST_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [failed]);
 
   return (
     <>
@@ -100,9 +92,9 @@ export const VideoDeleteConfirmDialog = ({
         </ModalCard>
       </DialogShell>
 
-      {failed && (
+      {errorMessage !== null && (
         <div className="fixed inset-x-0 bottom-md z-50 mx-auto w-[calc(100%-2rem)] max-w-120 px-md">
-          <Toast title={ERROR_MESSAGE} />
+          <Toast title={errorMessage} />
         </div>
       )}
     </>

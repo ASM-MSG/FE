@@ -126,6 +126,17 @@ describe("useSetVideoVisibility — 공개 범위 전환 (AC 2·5)", () => {
       1,
     );
   });
+
+  it("가드를 우회하는 mutateAsync는 노출되지 않는다 (PR #62 리뷰 2)", () => {
+    stubFetch(() => envelopeResponse(null));
+    const { wrapper } = createHarness();
+
+    const { result } = renderHook(() => useSetVideoVisibility(), { wrapper });
+
+    expect("mutateAsync" in result.current).toBe(false);
+    // @ts-expect-error 반환 타입에서도 제외 — 컴파일 레벨 오용 차단
+    void result.current.mutateAsync;
+  });
 });
 
 describe("useDeleteVideo — 영상 삭제 (AC 4·5)", () => {

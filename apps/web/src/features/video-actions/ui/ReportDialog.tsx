@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DialogShell, ModalCard, Toast } from "@fillmap/ui-web";
 import { useReportVideo } from "../api/use-video-mutations";
 import { canSubmitReport, reportFailureNotice } from "../model/report";
+import { useAutoDismissToast } from "../model/use-auto-dismiss-toast";
 import { ReportReasonSelect } from "./ReportReasonSelect";
 
 interface ReportDialogProps {
@@ -15,7 +16,6 @@ const REPORT_GUIDE =
   "이 영상을 신고하는 이유를 선택해주세요. 신고는 익명으로 처리됩니다.";
 /** 신고는 즉시 블라인드가 아니다 — 관리자 승인 시 조치 (AC 7) */
 const SUCCESS_MESSAGE = "신고가 접수되었습니다. 검토 후 조치돼요.";
-const TOAST_DURATION_MS = 3000;
 
 /**
  * 영상 신고 모달 (MSG-116 → MSG-411 실연동 이동) — DialogShell(오버레이·포털·포커스
@@ -24,7 +24,7 @@ const TOAST_DURATION_MS = 3000;
  * 제출은 실 API 발사(useReportVideo) — 성공 시 접수 토스트 + 닫기(AC 6·7),
  * 중복 신고(11409/409)는 "이미 신고한 영상" 안내 + 닫기, 그 외 실패는 일반 안내 +
  * 모달 유지로 재시도 가능 (AC 8, reportFailureNotice 분기).
- * 토스트 호스트 인프라가 없어 로컬 setTimeout 자동 소멸로 처리한다(R2).
+ * 토스트 호스트 인프라가 없어 로컬 자동 소멸(useAutoDismissToast)로 처리한다(R2).
  */
 export const ReportDialog = ({
   videoId,
@@ -32,7 +32,7 @@ export const ReportDialog = ({
   onOpenChange,
 }: ReportDialogProps) => {
   const [reasonId, setReasonId] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useAutoDismissToast();
 
   // 닫힐 때 선택 상태를 초기화해 다시 열면 제출 버튼이 비활성으로 돌아온다 (S9)
   const handleOpenChange = (next: boolean) => {
@@ -56,13 +56,6 @@ export const ReportDialog = ({
     if (!canSubmitReport(reasonId) || reportVideo.isPending) return;
     reportVideo.mutate({ videoId, reasonId });
   };
-
-  // 토스트 자동 소멸
-  useEffect(() => {
-    if (toastMessage === null) return;
-    const timer = setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
 
   return (
     <>

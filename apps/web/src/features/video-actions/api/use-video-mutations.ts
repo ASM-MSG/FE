@@ -134,7 +134,11 @@ export const useSetVideoVisibility = (callbacks?: { onError?: () => void }) => {
     mutation.mutate(input);
   };
 
-  return { ...mutation, mutate };
+  // mutateAsync는 노출하지 않는다 — 가드를 우회하는 무가드 발사 경로가 된다 (PR #62 리뷰 2).
+  // "스킵 시 resolve 반환" 대안은 성공한 것처럼 호출부를 속여 기각 — 타입 제외가 정직하다
+  const { mutateAsync, ...guarded } = mutation;
+  void mutateAsync;
+  return { ...guarded, mutate };
 };
 
 export interface ReportVideoInput {

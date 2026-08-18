@@ -1,9 +1,10 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { DropdownMenu } from "radix-ui";
 import { Check } from "lucide-react";
 import { Toast } from "@fillmap/ui-web";
 import { useVideoPlaybackQuery } from "@/features/map-home/model/use-video-playback-query";
 import { useSetVideoVisibility } from "../api/use-video-mutations";
+import { useAutoDismissToast } from "../model/use-auto-dismiss-toast";
 import {
   shouldPatchVisibility,
   toPlaybackFeedVideo,
@@ -24,7 +25,6 @@ interface VideoMoreMenuProps {
 
 const VISIBILITY_ERROR_MESSAGE =
   "공개 범위를 변경하지 못했어요. 잠시 후 다시 시도해 주세요.";
-const TOAST_DURATION_MS = 3000;
 
 const itemClass =
   "flex cursor-pointer items-center justify-between gap-sm rounded-sm px-sm py-2 text-fm-base outline-none data-[highlighted]:bg-surface";
@@ -46,7 +46,7 @@ export const VideoMoreMenu = ({
 }: VideoMoreMenuProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useAutoDismissToast();
 
   const setVisibility = useSetVideoVisibility({
     onError: () => setErrorMessage(VISIBILITY_ERROR_MESSAGE),
@@ -59,13 +59,6 @@ export const VideoMoreMenu = ({
     if (!shouldPatchVisibility(current, next)) return; // 같은 값 — 메뉴만 닫힘
     setVisibility.mutate({ videoId: target.videoId, visibility: next });
   };
-
-  // 에러 토스트 자동 소멸
-  useEffect(() => {
-    if (errorMessage === null) return;
-    const timer = setTimeout(() => setErrorMessage(null), TOAST_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [errorMessage]);
 
   return (
     <>
