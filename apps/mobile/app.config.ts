@@ -27,6 +27,7 @@ export default (_ctx: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: "automatic",
   ios: {
     icon: "./assets/expo.icon",
+    bundleIdentifier: "kr.fillmap.app",
   },
   android: {
     adaptiveIcon: {
@@ -36,7 +37,10 @@ export default (_ctx: ConfigContext): ExpoConfig => ({
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: false,
-    package: "com.anonymous.fillmap",
+    package: "kr.fillmap.app",
+    // FCM 프로젝트 설정(fillmap-edd7d) — 등록 패키지명이 android.package와 일치해야 한다.
+    // prebuild가 android/app/으로 복사한다. 푸시 수신 자체는 MSG-418(expo-notifications) 몫.
+    googleServicesFile: "./google-services.json",
   },
   plugins: [
     "expo-router",
