@@ -55,8 +55,11 @@ interface SelectStepProps {
   selectFailure: string | null;
   /** 메타데이터 로드 실패 — 안내 문구 전환 */
   videoLoadError: boolean;
-  /** 위치 태그 — 뷰포트 중심(또는 지목 격자) 행정동 (B2) */
-  locationLabel: string;
+  /**
+   * 위치 태그 — 일반: 뷰포트 중심(또는 지목 격자) 행정동 (B2) / 교체: 대상 영상
+   * 격자 라벨. null이면 태그를 생략한다 (MSG-415 추정 1)
+   */
+  locationLabel: string | null;
   canProceed: boolean;
   onNext: () => void;
   onClose: () => void;
@@ -102,16 +105,19 @@ export const SelectStep = ({
       </p>
     )}
 
-    {/* 위치 태그 — 뷰포트 중심 행정동 (B2). "변경" UI는 제외 범위 — 미노출 (오탐 방지 5) */}
-    <div className="flex w-full items-center gap-xs">
-      <span className="shrink-0 text-fm-body-strong text-foreground">
-        위치 태그
-      </span>
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-sm py-1.75 text-fm-label text-primary">
-        <MapPin className="size-3" />
-        {locationLabel}
-      </span>
-    </div>
+    {/* 위치 태그 — 뷰포트 중심 행정동 (B2), 교체 모드 미확보 시 생략 (추정 1).
+        "변경" UI는 제외 범위 — 미노출 (오탐 방지 5) */}
+    {locationLabel !== null && (
+      <div className="flex w-full items-center gap-xs">
+        <span className="shrink-0 text-fm-body-strong text-foreground">
+          위치 태그
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-sm py-1.75 text-fm-label text-primary">
+          <MapPin className="size-3" />
+          {locationLabel}
+        </span>
+      </div>
+    )}
 
     {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 */}
     <InfoBox

@@ -24,10 +24,11 @@ export const UploadModal = () => {
       scrollable
     >
       {wizard.completed ? (
-        // 확정 성공 — 완료 모달 (B13). 블러 완료는 폴링 워처가 토스트로 통지한다 (B14·B16)
+        // 확정 성공 — 완료 모달 (B13). 문구는 모드별(업로드/교체 — MSG-415 추정 3),
+        // 블러 완료는 폴링 워처가 토스트로 통지한다 (B14·B16)
         <ModalCard
-          title="업로드 완료!"
-          description="잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요"
+          title={wizard.copy.completedTitle}
+          description={wizard.copy.completedDescription}
           confirmText="확인"
           onConfirm={wizard.close}
           onClose={wizard.close}
@@ -53,6 +54,8 @@ export const UploadModal = () => {
           trim={wizard.trim}
           segment={wizard.segment}
           locationLabel={wizard.locationLabel}
+          confirmLabel={wizard.copy.confirmLabel}
+          submittingLabel={wizard.copy.submittingLabel}
           onRetryTrim={wizard.retryTrim}
           onPublish={() => void wizard.publish()}
           submitting={wizard.submitting}
