@@ -2,7 +2,7 @@ import { isValidElement } from "react";
 import { describe, expect, it } from "vitest";
 import { RequireAuth } from "./RequireAuth";
 import { router } from "./router";
-import { ROUTES } from "./routes";
+import { NOTIFICATION_SETTINGS_PATH, ROUTES } from "./routes";
 
 /**
  * 보호 라우트 구성 테스트 — 어떤 라우트가 RequireAuth로 감싸였는지를 실제 라우터
@@ -44,5 +44,15 @@ describe("보호 라우트 구성 — 비로그인 직접 진입은 RequireAuth�
     );
 
     expect(elementType(profileRoute)).toBe(RequireAuth);
+  });
+
+  it("/profile/notifications 라우트가 등록되고 RequireAuth로 감싸여 있다 (MSG-409 AC 3)", () => {
+    const notificationsRoute = findByPath(
+      router.routes as RouteNode[],
+      NOTIFICATION_SETTINGS_PATH,
+    );
+
+    expect(notificationsRoute).toBeDefined();
+    expect(elementType(notificationsRoute)).toBe(RequireAuth);
   });
 });

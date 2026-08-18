@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, DotsLoader } from "@fillmap/ui-web";
-import { ROUTES } from "@/app/routes";
+import { NOTIFICATION_SETTINGS_PATH, ROUTES } from "@/app/routes";
 import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { usePushToggle } from "@/features/notifications/api/use-push-toggle";
@@ -93,6 +93,13 @@ export const ProfilePanel = () => {
                 disabled={!pushToggle.supported}
                 disabledCaption="미지원 브라우저"
                 busy={pushToggle.isPending}
+              />
+              {/* "알림 설정" 활성 행 (MSG-409 AC 1·결정 2) — 카테고리 수신 설정
+                  상세로 이동. "알림 받기" 토글은 존치 — 푸시 등록 진입점은 이 토글과
+                  상세 화면 배너 CTA 2곳이 된다 (408 결정 1의 완화, 사용자 승인) */}
+              <SettingRow
+                label="알림 설정"
+                onClick={() => navigate(NOTIFICATION_SETTINGS_PATH)}
               />
               <SettingRow label="신고 관리" />
             </ProfileSection>

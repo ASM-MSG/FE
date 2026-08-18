@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { ROUTES, getActiveNavKey, isNavKey } from "./routes";
+import {
+  NOTIFICATION_SETTINGS_PATH,
+  ROUTES,
+  getActiveNavKey,
+  isNavKey,
+} from "./routes";
 
 describe("isNavKey", () => {
   it("ROUTES에 정의된 네비 섹션 키는 true를 반환한다", () => {
@@ -47,5 +52,16 @@ describe("getActiveNavKey", () => {
   it("제거된 /explore 경로는 undefined다 — 라우터 404 폴백을 따른다 (MSG-328 AC 2)", () => {
     expect("explore" in ROUTES).toBe(false);
     expect(getActiveNavKey("/explore")).toBeUndefined();
+  });
+});
+
+describe("알림 설정 상세 경로 (MSG-409 AC 1) — /profile 하위, 네비 섹션 아님", () => {
+  it("경로 상수는 /profile/notifications다 — ROUTES 밖 (KAKAO_CALLBACK_PATH 전례)", () => {
+    expect(NOTIFICATION_SETTINGS_PATH).toBe("/profile/notifications");
+    expect(isNavKey("notifications")).toBe(false);
+  });
+
+  it("알림 설정 경로에서 사이드레일 활성 탭은 프로필이다 — prefix 매칭 보존 단정 (AC 1)", () => {
+    expect(getActiveNavKey(NOTIFICATION_SETTINGS_PATH)).toBe("profile");
   });
 });
