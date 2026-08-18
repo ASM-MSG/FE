@@ -7,6 +7,7 @@ import type {
   CollectedVideo,
   RecentRegion,
 } from "@/entities/dex";
+import { featuredBadgesOf } from "@/features/dex/model/badge-showcase";
 import {
   clampPct,
   formatExploreSummary,
@@ -188,6 +189,8 @@ export const DexPanel = () => {
                 nickname={profile.data.nickname}
                 profileImageUrl={profile.data.profileImageUrl}
                 exploreSummary={formatExploreSummary(summary.data)}
+                // badges는 골격 게이트 밖 — 로딩·에러·0개면 빈 배열 → 탐험 규모 줄 폴백 (ADHOC AC 4)
+                featuredBadges={featuredBadgesOf(badges.data ?? [])}
                 onProfileClick={() => navigate(ROUTES.profile)}
               />
               {/* 수집률은 좌표 1회 측위 → by-point. 미도착이면 표시를 보류한다 —

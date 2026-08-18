@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/features/auth/model/auth-store";
@@ -29,6 +30,37 @@ const PROFILE = {
   // 로그인 시딩 기본값 — false면 온보딩 동의 게이트 대상 (MSG-407 픽스처 보수)
   locationConsent: true,
 };
+
+/** 대표 뱃지 2개 픽스처 — rank 역순 배열로 줘서 rank 정렬이 실제로 일어남을 관찰한다 (ADHOC AC 2) */
+const FEATURED_BADGES = [
+  {
+    badgeId: 5,
+    code: "RECORDER_3",
+    name: "기록러 Ⅲ",
+    earned: true,
+    iconUrl: null,
+    earnedAt: "2026-08-01T00:00:00Z",
+    featuredRank: 2,
+  },
+  {
+    badgeId: 4,
+    code: "RECORDER_1",
+    name: "기록러 Ⅰ",
+    earned: true,
+    iconUrl: null,
+    earnedAt: "2026-07-01T00:00:00Z",
+    featuredRank: 1,
+  },
+  {
+    badgeId: 1,
+    code: "EXPLORER_1",
+    name: "첫 발자국",
+    earned: true,
+    iconUrl: null,
+    earnedAt: "2026-06-01T00:00:00Z",
+    featuredRank: null,
+  },
+];
 
 /** 현재 경로 노출 대역 — 클릭이 라우팅을 일으키지 않음을 단정하기 위한 관찰 지점 */
 const LocationProbe = () => {
@@ -57,8 +89,13 @@ const stubApi = (route?: (request: Request) => Response | null) => {
   const fetchMock = vi.fn(async (input: Request) => {
     const custom = route?.(input);
     if (custom) return custom;
-    if (new URL(input.url).pathname === "/api/users/me") {
+    const { pathname } = new URL(input.url);
+    if (pathname === "/api/users/me") {
       return envelopeResponse(PROFILE);
+    }
+    // 헤더 pill 파생 원천 (ADHOC) — 기본은 대표 미설정: 메타 줄 폴백 경로가 기본이다
+    if (pathname === "/api/badges") {
+      return envelopeResponse([]);
     }
     return new Response(null, { status: 200 });
   });
@@ -88,6 +125,42 @@ describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
     // "내 활동" 카드는 "—" (A4 — mock 값 잔존 금지)
     expect(screen.getAllByText("—")).toHaveLength(2);
     expect(screen.queryByText(/일 연속/)).toBeNull();
+  });
+
+  it("대표 뱃지가 있으면 헤더 메타 줄 자리에 pill이 rank 순으로 표시된다 (ADHOC AC 2 — 승인 A1: 메타 줄 대체)", async () => {
+    stubApi((request) => {
+      if (new URL(request.url).pathname !== "/api/badges") return null;
+      return envelopeResponse(FEATURED_BADGES);
+    });
+    renderPanel();
+    await screen.findByText(PROFILE.nickname);
+
+    const pills = await screen.findByRole("list", { name: "대표 뱃지" });
+
+    // rank 역순 응답이 rank 오름차순 pill로 — 비대표(첫 발자국)는 제외 (AC 1 배선)
+    expect(
+      within(pills)
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["기록러 Ⅰ", "기록러 Ⅲ"]);
+    // 메타 줄은 pill로 대체된다 — 헤더는 항상 2줄 (승인 A1)
+    expect(screen.queryByText(/가입일/)).toBeNull();
+  });
+
+  it("대표 뱃지 0개면 pill 없이 기존 메타 줄이 그대로고, 조회(GET /api/badges)는 발사된다 (ADHOC AC 4·5)", async () => {
+    const fetchMock = stubApi();
+    renderPanel();
+    await screen.findByText(PROFILE.nickname);
+
+    expect(screen.queryByRole("list", { name: "대표 뱃지" })).toBeNull();
+    expect(
+      screen.getByText(`가입일 2026.05.02 · ${PROFILE.email}`),
+    ).toBeTruthy();
+    // 프로필 페이지도 badges를 조회한다 — useBadgesQuery 재사용 배선 (AC 5)
+    const paths = fetchMock.mock.calls.map(
+      ([request]) => new URL(request.url).pathname,
+    );
+    expect(paths).toContain("/api/badges");
   });
 
   it("profileImageUrl null이면 헤더 아바타가 기본 이미지고 닉네임 첫 글자 fallback이 없다 (MSG-378 기준 16)", async () => {

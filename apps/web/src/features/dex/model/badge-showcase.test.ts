@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { DexBadge } from "@/entities/dex";
-import { BADGE_PREVIEW_LIMIT, orderBadges } from "./badge-showcase";
+import {
+  BADGE_PREVIEW_LIMIT,
+  featuredBadgesOf,
+  orderBadges,
+} from "./badge-showcase";
 
 const badge = (over: Partial<DexBadge>): DexBadge => ({
   badgeId: 1,
@@ -72,5 +76,43 @@ describe("orderBadges — 진열장 표시 순서 (기준 17)", () => {
 
   it("진열장 프리뷰는 4열 2행 = 8칸이다", () => {
     expect(BADGE_PREVIEW_LIMIT).toBe(8);
+  });
+});
+
+describe("featuredBadgesOf — 헤더 pill용 대표 뱃지 파생 (ADHOC AC 1)", () => {
+  it("featuredRank가 있는 뱃지만 rank 오름차순 {id, name}으로 반환한다 (AC 1)", () => {
+    const derived = featuredBadgesOf([
+      badge({ badgeId: 1, name: "첫 발자국", earned: true }),
+      badge({
+        badgeId: 2,
+        name: "기록러 Ⅲ",
+        earned: true,
+        featuredRank: 2,
+      }),
+      badge({
+        badgeId: 3,
+        name: "기록러 Ⅰ",
+        earned: true,
+        featuredRank: 1,
+      }),
+    ]);
+
+    expect(derived).toEqual([
+      { id: 3, name: "기록러 Ⅰ" },
+      { id: 2, name: "기록러 Ⅲ" },
+    ]);
+  });
+
+  it("대표 뱃지가 0개면 빈 배열을 반환한다 (AC 1 경계)", () => {
+    const derived = featuredBadgesOf([
+      badge({ badgeId: 1, earned: true }),
+      badge({ badgeId: 2 }),
+    ]);
+
+    expect(derived).toEqual([]);
+  });
+
+  it("빈 카탈로그(로딩·에러 폴백 입력)면 빈 배열을 반환한다 (AC 1·4 경계)", () => {
+    expect(featuredBadgesOf([])).toEqual([]);
   });
 });

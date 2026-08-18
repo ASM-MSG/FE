@@ -60,7 +60,8 @@ describe("뱃지 진열장 스모크", () => {
     stubDexFetch({ badges: BADGES });
     renderBadgeTab();
 
-    expect(await screen.findByText("한 달 개근")).toBeTruthy();
+    // 대표 뱃지 이름은 2곳 — 진열장 + 헤더 pill (ADHOC 헤더 대표 뱃지 노출로 단일 매치 갱신)
+    expect(await screen.findAllByText("한 달 개근")).toHaveLength(2);
     expect(screen.getByText("첫 발자국")).toBeTruthy();
     expect(screen.queryByText("미획득 뱃지 0")).toBeNull();
     expect(screen.getAllByText("미획득").length).toBeGreaterThan(0);
@@ -70,8 +71,8 @@ describe("뱃지 진열장 스모크", () => {
     stubDexFetch({ badges: BADGES });
     renderBadgeTab();
 
-    // 프리뷰 8칸 = 획득 2 + 미획득 6
-    expect(await screen.findByText("한 달 개근")).toBeTruthy();
+    // 프리뷰 8칸 = 획득 2 + 미획득 6 (대표 뱃지 이름은 헤더 pill에도 떠 findAll — ADHOC)
+    expect(await screen.findAllByText("한 달 개근")).toHaveLength(2);
     expect(screen.getAllByText("미획득").length).toBe(6);
 
     fireEvent.click(screen.getByRole("button", { name: "전체 보기" }));
