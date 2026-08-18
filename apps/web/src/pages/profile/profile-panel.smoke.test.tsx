@@ -159,14 +159,30 @@ describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
     renderPanel();
     await screen.findByText(PROFILE.nickname);
 
-    // 구 "알림 설정" 준비 중 행은 대체로 사라졌다 (MSG-408 스펙 — 행 대체)
-    expect(screen.queryByText("알림 설정")).toBeNull();
     const toggle = screen.getByRole("switch", {
       name: "알림 받기",
     }) as HTMLButtonElement;
     expect(toggle.disabled).toBe(true);
     expect(toggle.getAttribute("aria-checked")).toBe("false");
     expect(screen.getByText("미지원 브라우저")).toBeTruthy();
+  });
+
+  // MSG-408의 "알림 설정 행 부재" 단정은 MSG-409 결정 2로 갱신 — 준비 중 행이 아니라
+  // 활성 행으로 부활했다("알림 받기" 토글은 존치). 상세 화면 진입점이다
+  it("'알림 받기' 아래 '알림 설정' 활성 행이 있고, 클릭 시 /profile/notifications로 이동한다 (MSG-409 AC 1)", async () => {
+    stubApi();
+    renderPanel();
+    await screen.findByText(PROFILE.nickname);
+
+    const settingsRow = screen.getByRole("button", { name: "알림 설정" });
+    expect(settingsRow.getAttribute("aria-disabled")).toBeNull();
+    expect(settingsRow.textContent).not.toContain("준비 중");
+
+    fireEvent.click(settingsRow);
+
+    expect(screen.getByTestId("location").textContent).toBe(
+      "/profile/notifications",
+    );
   });
 
   it("[계정 삭제] 클릭 시 비가역 삭제 확인 모달(danger)이 뜬다 — URL 불변 (A10)", async () => {
