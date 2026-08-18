@@ -6,8 +6,8 @@ interface FeaturedProfilePreviewProps {
   nickname: string;
   /** 프로필 이미지 URL — null이면 기본 이미지 (DexProfileHeader와 동일 폴백) */
   profileImageUrl: string | null;
-  /** 선택된 뱃지 이름 — 랭크 순. 빈 배열이면 칩 없이 닉네임만 (기준 5) */
-  badgeNames: string[];
+  /** 선택된 뱃지(id·이름) — 랭크 순. 빈 배열이면 칩 없이 닉네임만 (기준 5) */
+  badges: { id: number; name: string }[];
 }
 
 /**
@@ -20,7 +20,7 @@ interface FeaturedProfilePreviewProps {
 export const FeaturedProfilePreview = ({
   nickname,
   profileImageUrl,
-  badgeNames,
+  badges,
 }: FeaturedProfilePreviewProps) => (
   <div className="flex shrink-0 flex-col gap-xs">
     <h3 className="text-fm-body-strong text-foreground">프로필 미리보기</h3>
@@ -34,11 +34,11 @@ export const FeaturedProfilePreview = ({
         <p className="truncate text-fm-body-strong text-foreground">
           {nickname}
         </p>
-        {badgeNames.length > 0 && (
+        {badges.length > 0 && (
           <ul className="flex flex-wrap gap-1.5">
-            {badgeNames.map((name) => (
+            {badges.map(({ id, name }) => (
               <li
-                key={name}
+                key={id}
                 className="rounded-full border border-primary bg-background px-2 py-0.75 text-fm-caption text-primary"
               >
                 {name}

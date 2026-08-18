@@ -71,6 +71,11 @@ export const BadgeMedal = ({ badge, editing }: BadgeMedalProps) => {
         <button
           type="button"
           aria-pressed={editing.rank !== null}
+          aria-label={
+            editing.rank !== null
+              ? `${badge.name}, 대표 뱃지 ${editing.rank}순위로 선택됨`
+              : badge.name
+          }
           onClick={editing.onToggle}
           className="flex flex-col items-center gap-xxs"
         >

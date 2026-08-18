@@ -59,9 +59,9 @@ export const BadgeTabBody = ({
   };
 
   if (editing) {
-    const selectedNames = selection.flatMap((id) => {
+    const selectedBadges = selection.flatMap((id) => {
       const name = badges.find((badge) => badge.badgeId === id)?.name;
-      return name !== undefined ? [name] : [];
+      return name !== undefined ? [{ id, name }] : [];
     });
 
     return (
@@ -100,7 +100,7 @@ export const BadgeTabBody = ({
         <FeaturedProfilePreview
           nickname={nickname}
           profileImageUrl={profileImageUrl}
-          badgeNames={selectedNames}
+          badges={selectedBadges}
         />
         {save.isError && (
           <p role="alert" className="text-fm-label text-error">
