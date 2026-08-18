@@ -115,7 +115,7 @@ export const mergeOverlappingMarkers = (
   }
   const groups: MergeGroup[] = [];
 
-  const sorted = [...markers].sort(
+  const sorted = markers.toSorted(
     (a, b) => b.count - a.count || a.id.localeCompare(b.id),
   );
   for (const marker of sorted) {
