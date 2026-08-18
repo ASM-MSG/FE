@@ -6,8 +6,8 @@ import { useUploadModalStore } from "@/features/upload/model/upload-modal-store"
 import { formatDuration } from "@/shared/format";
 import { formatRelativeTime, formatViewCount } from "./model/cell-detail";
 import { useCellDetailStore } from "./model/cell-detail-store";
+import { ReportDialog } from "@/features/video-actions/ui/ReportDialog";
 import { CellMoreMenu } from "./CellMoreMenu";
-import { ReportDialog } from "./ReportDialog";
 
 interface CellDetailSheetProps {
   cell: Cell;
@@ -108,7 +108,15 @@ export const CellDetailSheet = ({ cell, className }: CellDetailSheetProps) => {
         </div>
       </div>
 
-      <ReportDialog open={reportOpen} onOpenChange={setReportOpen} />
+      {/* MSG-411: 이동한 ReportDialog가 videoId(실 신고 API 경로 변수)를 요구한다 —
+          이 시트는 미렌더 존치 위젯(승인 결정 3)이라 대표 영상 id로 최소 배선만 유지 */}
+      {activeVideo && (
+        <ReportDialog
+          videoId={activeVideo.videoId}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+        />
+      )}
 
       {/* 이 격자의 영상 (AC 16·17·18) */}
       <div className="flex flex-col gap-sm px-md pb-md">
