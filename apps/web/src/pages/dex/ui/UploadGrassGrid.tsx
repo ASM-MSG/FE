@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { cn } from "@fillmap/ui-web";
 import {
   deriveMonthLabels,
@@ -44,7 +45,7 @@ export const UploadGrassGrid = ({
   srSummary,
 }: UploadGrassGridProps) => {
   const { cell, gap, stride } = SIZE[size];
-  const monthLabels = deriveMonthLabels(weeks);
+  const monthLabels = useMemo(() => deriveMonthLabels(weeks), [weeks]);
 
   return (
     <div className="rounded-md bg-surface-soft p-sm">

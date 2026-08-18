@@ -74,7 +74,9 @@ export const buildGrassWeeks = (
 export const grassLevel = (count: number): 0 | 1 | 2 | 3 | 4 => {
   if (count <= 0) return 0;
   if (count >= 4) return 4;
-  return count as 1 | 2 | 3;
+  if (count >= 3) return 3;
+  if (count >= 2) return 2;
+  return 1;
 };
 
 export interface MonthLabel {

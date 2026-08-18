@@ -91,6 +91,14 @@ describe("grassLevel — 5단계 레벨 매핑 (AC 5, A3)", () => {
     expect(grassLevel(4)).toBe(4);
     expect(grassLevel(9)).toBe(4);
   });
+
+  // API 계약은 1 이상 정수(uploadCount)지만, 계약 밖 값이 와도 단조 매핑을 지킨다
+  // — 타입 단언으로 소수를 그대로 흘리면 레벨 클래스가 조용히 어긋난다 (PR #67 리뷰 2)
+  it("계약 밖 소수 입력도 아래 단계로 단조 매핑한다", () => {
+    expect(grassLevel(0.5)).toBe(1);
+    expect(grassLevel(2.5)).toBe(2);
+    expect(grassLevel(3.9)).toBe(3);
+  });
 });
 
 describe("deriveMonthLabels — 월 라벨 파생 (AC 7 재료)", () => {
