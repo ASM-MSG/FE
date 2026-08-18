@@ -71,6 +71,8 @@ interface StubOverrides {
   gridStat?: unknown;
   /** 뱃지 응답을 영원히 보류 — 다른 응답은 도착한 뒤의 "뱃지만 로딩" 상태 재현용 */
   holdBadges?: boolean;
+  /** 대표 뱃지 PUT을 영원히 보류 — 저장 pending 중 편집모드 UI 상태 재현용 (MSG-413) */
+  holdFeaturedPut?: boolean;
   /** 실패시킬 경로 조각 — 해당 요청만 500을 돌려준다 */
   failPath?: string;
 }
@@ -82,6 +84,7 @@ export const stubDexFetch = ({
   videos = [],
   gridStat = POINT_STAT,
   holdBadges = false,
+  holdFeaturedPut = false,
   failPath,
 }: StubOverrides = {}) => {
   vi.stubGlobal(
@@ -101,6 +104,9 @@ export const stubDexFetch = ({
         case "/api/badges":
           if (holdBadges) return new Promise<Response>(() => {});
           return envelopeResponse(badges);
+        case "/api/badges/featured":
+          if (holdFeaturedPut) return new Promise<Response>(() => {});
+          return envelopeResponse([]);
         case "/api/regions/stats/by-point":
           return envelopeResponse(POINT_STAT);
         case "/api/regions/stats/by-grid":

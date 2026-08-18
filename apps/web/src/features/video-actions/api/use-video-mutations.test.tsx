@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { envelopeResponse } from "@/test/envelope-response";
+import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
 import { stubFetch } from "@/test/stub-fetch";
 import {
   getCollectionGridsQueryKey,
@@ -20,13 +20,6 @@ import {
   useReportVideo,
   useSetVideoVisibility,
 } from "./use-video-mutations";
-
-/** 실패 응답 — 백엔드 공통 에러 봉투 (인터셉터가 ApiError로 정규화한다) */
-const errorEnvelope = (developCode: number, message: string, status: number) =>
-  new Response(JSON.stringify({ developCode, message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
 
 /** 테스트마다 새 QueryClient — 캐시 격리 + 에러 경로 타임아웃 방지(retry:false) */
 const createHarness = () => {

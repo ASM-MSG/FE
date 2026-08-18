@@ -8,7 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { envelopeResponse } from "@/test/envelope-response";
+import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
 import { type ReceivedRequest, stubFetch } from "@/test/stub-fetch";
 import { ReportDialog } from "./ReportDialog";
 
@@ -25,12 +25,6 @@ class ResizeObserverStub {
   unobserve() {}
   disconnect() {}
 }
-
-const errorEnvelope = (developCode: number, message: string, status: number) =>
-  new Response(JSON.stringify({ developCode, message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider

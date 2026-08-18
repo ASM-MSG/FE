@@ -7,3 +7,18 @@ export const envelopeResponse = (data: unknown, status = 200) =>
     status,
     headers: { "Content-Type": "application/json" },
   });
+
+/**
+ * 실패 응답 — 백엔드 공통 에러 봉투 (인터셉터가 ApiError로 정규화한다).
+ * 동일 로컬 헬퍼가 세 파일째 복제되어(report-dialog·use-video-mutations →
+ * use-badge-mutations) 추출했다 (envelopeResponse·stub-fetch 선례 — 중복 게이트 검출).
+ */
+export const errorEnvelope = (
+  developCode: number,
+  message: string,
+  status: number,
+) =>
+  new Response(JSON.stringify({ developCode, message }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });

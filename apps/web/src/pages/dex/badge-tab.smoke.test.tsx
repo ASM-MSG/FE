@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stubDexFetch } from "./dex-fetch-stub";
 import { renderDexPanel, resetDexStores } from "./dex-test-harness";
@@ -88,6 +88,24 @@ describe("뱃지 진열장 스모크", () => {
     ).toBeTruthy();
     // 진열장 제목이 안 뜬다 = 획득 0개로 오독될 빈 그리드가 없다
     expect(screen.queryByText("뱃지 진열장")).toBeNull();
+  });
+
+  it("저장 요청이 진행 중이면 '완료'가 비활성화된다 — 늦은 저장 응답이 새 편집 세션을 닫는 레이스 차단 (기준 9 — codex 리뷰 반영)", async () => {
+    stubDexFetch({ badges: BADGES, holdFeaturedPut: true });
+    renderBadgeTab();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "대표 뱃지 지정" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "대표 뱃지 저장" }));
+
+    // PUT이 in-flight로 남는다 — pending 동안 편집모드 이탈 경로가 전부 닫혀야 한다
+    await waitFor(() => {
+      expect(
+        screen.getByRole<HTMLButtonElement>("button", { name: "완료" })
+          .disabled,
+      ).toBe(true);
+    });
   });
 
   it("뱃지 조회 실패는 뱃지 탭만 막고 재시도를 제공한다 (기준 22)", async () => {
