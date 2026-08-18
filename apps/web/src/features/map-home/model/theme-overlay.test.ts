@@ -288,3 +288,33 @@ describe("emphasizeCell — 재생 중 격자 테두리 강조 (사용자 피드
     expect(result[0].occupied).toBe(true);
   });
 });
+
+describe("emphasizeCell 2단 적용 — 검색 하이라이트와 재생 강조 병존 (MSG-412 AC 6, 보존 단정)", () => {
+  const PLAYING_ID = encodeGridId({ lat: 35.1579, lng: 129.0594 }); // 서면역 인근
+  const SEARCH_ID = encodeGridId({ lat: 35.1568, lng: 129.0637 }); // 전포 방면 — 다른 격자
+
+  it("재생 강조 위에 검색 하이라이트를 얹으면 두 격자가 함께 강조된다 (AC 6)", () => {
+    const result = emphasizeCell(
+      emphasizeCell([], PLAYING_ID, []),
+      SEARCH_ID,
+      [],
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result.map((c) => c.id).sort()).toEqual(
+      [PLAYING_ID, SEARCH_ID].sort(),
+    );
+    expect(result.every((c) => c.emphasized)).toBe(true);
+  });
+
+  it("재생 중 격자를 검색으로 다시 선택해도 셀은 하나다 — 중복 폴리곤 없음 (AC 6)", () => {
+    const result = emphasizeCell(
+      emphasizeCell([], PLAYING_ID, []),
+      PLAYING_ID,
+      [],
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].emphasized).toBe(true);
+  });
+});

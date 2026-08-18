@@ -11,9 +11,20 @@ import { HomeSearchBox } from "./HomeSearchBox";
  * 비로그인 시 검색창은 입력 진입(포커스) 자체가 막히고, 클릭·키보드 접근 즉시
  * 도감과 동일하게 로그인 모달이 열리며, 검색 계열 쿼리는 발사되지 않는다.
  * 로그인 상태의 포커스 → 인기 검색어 드롭다운은 회귀 가드로 함께 고정한다.
+ * MSG-412: 격자 검색 섹션(장소 결과 위·매치 없으면 미노출·선택 콜백) 계약 추가 —
+ * 기존 계약 불변, props만 확장(onGridSelect·onZoneSelect).
  */
-const renderBox = () =>
-  renderWithProviders(<HomeSearchBox onPlaceSelect={() => {}} />);
+const renderBox = (
+  over: Partial<Parameters<typeof HomeSearchBox>[0]> = {},
+) =>
+  renderWithProviders(
+    <HomeSearchBox
+      onPlaceSelect={() => {}}
+      onGridSelect={() => {}}
+      onZoneSelect={() => {}}
+      {...over}
+    />,
+  );
 
 const searchInput = () => screen.getByPlaceholderText("장소, 격자 검색");
 
@@ -80,5 +91,96 @@ describe("비로그인 검색창 = 로그인 모달 (포커스 차단)", () => {
     // 캐시된 인기 검색어/검색 결과가 비로그인에게 계속 보이면 게이트 모순
     expect(screen.queryByText("인기 검색어")).toBeNull();
     expect(document.activeElement).not.toBe(searchInput());
+  });
+});
+
+// 서면(부산 부산진구) 구역 사각형 픽스처 — 세로 4칸(A~D행)·가로 6칸(1~6열)
+const ZONE = {
+  zoneKey: "seomyeon",
+  name: "서면",
+  regionCode: null,
+  minGridY: 16850,
+  maxGridY: 16853,
+  minGridX: 11419,
+  maxGridX: 11424,
+  priority: 1,
+};
+
+/** 스텁이 경로 계약을 강제한다 — zones·trending·places 외 요청은 실패 응답 */
+const stubSearchApis = () =>
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<(input: Request) => Promise<Response>>(async (request) => {
+      const { pathname } = new URL(request.url);
+      if (pathname === "/api/zones") return envelopeResponse([ZONE]);
+      if (pathname === "/api/search/trending") return envelopeResponse([]);
+      if (pathname === "/api/search/places") return envelopeResponse([]);
+      return new Response(null, { status: 500 });
+    }),
+  );
+
+describe("격자 검색 섹션 (MSG-412 AC 8)", () => {
+  const signIn = () =>
+    useAuthStore.setState({ accessToken: "t", isAuthenticated: true });
+
+  it('로그인 상태에서 "서면 A-1"을 입력하면 격자 섹션이 장소 결과와 구분되어 표시된다 (AC 8)', async () => {
+    stubSearchApis();
+    signIn();
+    renderBox();
+
+    act(() => searchInput().focus());
+    fireEvent.change(searchInput(), { target: { value: "서면 A-1" } });
+
+    expect(await screen.findByRole("button", { name: "서면 A-1" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "격자" })).toBeTruthy();
+  });
+
+  it("격자 결과 클릭 시 onGridSelect(gridId)가 호출되고 드롭다운이 닫힌다 (AC 9 배선)", async () => {
+    stubSearchApis();
+    signIn();
+    const onGridSelect = vi.fn();
+    renderBox({ onGridSelect });
+    act(() => searchInput().focus());
+    fireEvent.change(searchInput(), { target: { value: "서면 A-1" } });
+    const row = await screen.findByRole("button", { name: "서면 A-1" });
+
+    fireEvent.click(row);
+
+    // 행 A = 북단(maxGridY), 열 1 = 서단(minGridX) — 서버 명명 역대응 (AC 2)
+    expect(onGridSelect).toHaveBeenCalledWith(
+      `${ZONE.maxGridY}_${ZONE.minGridX}`,
+    );
+    expect(screen.queryByRole("heading", { name: "격자" })).toBeNull();
+  });
+
+  it("구역명만 매치되면 구역 결과가 나오고 선택 시 onZoneSelect(bounds)가 호출된다 (AC 7)", async () => {
+    stubSearchApis();
+    signIn();
+    const onZoneSelect = vi.fn();
+    renderBox({ onZoneSelect });
+    act(() => searchInput().focus());
+    fireEvent.change(searchInput(), { target: { value: "서면" } });
+    const row = await screen.findByRole("button", { name: "서면" });
+
+    fireEvent.click(row);
+
+    expect(onZoneSelect).toHaveBeenCalledTimes(1);
+    const bounds = onZoneSelect.mock.calls[0][0];
+    expect(bounds.sw.lat).toBeLessThan(bounds.ne.lat);
+    expect(bounds.sw.lng).toBeLessThan(bounds.ne.lng);
+    expect(screen.queryByRole("heading", { name: "격자" })).toBeNull();
+  });
+
+  it("매치가 없으면 격자 섹션 자체가 없다 (AC 8)", async () => {
+    stubSearchApis();
+    signIn();
+    renderBox();
+
+    act(() => searchInput().focus());
+    fireEvent.change(searchInput(), { target: { value: "해운대 A-1" } });
+
+    // 장소 검색(디바운스)까지 끝난 시점에도 격자 섹션은 없다
+    expect(await screen.findByText("검색 결과가 없어요.")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "격자" })).toBeNull();
   });
 });

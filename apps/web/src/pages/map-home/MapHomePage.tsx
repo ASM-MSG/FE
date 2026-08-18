@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { decodeGridCenter } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
@@ -17,6 +17,7 @@ import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { deriveReloadTarget } from "@/features/region/model/region-reload";
 import { useReverseGeocodeQuery } from "@/features/region/model/use-reverse-geocode-query";
+import { zoomForGridFocus } from "@/features/search/model/zone-search";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
@@ -142,6 +143,20 @@ export const MapHomePage = () => {
   // 첫 영상만 재생한다. 재생 중 격자는 게시 셀에 테두리 강조로 얹는다
   const cardPlay = useGridCardPlay();
 
+  // 격자 검색 하이라이트 (MSG-412 AC 5·6) — 마지막 선택 1건 유지, 새 선택 시 교체
+  // (승인 — 자동 해제 없음). 페이지 로컬 상태로 충분하다(홈 이탈 시 함께 소멸)
+  const [searchGridId, setSearchGridId] = useState<string | null>(null);
+  const handleGridSelect = useCallback(
+    (gridId: string) => {
+      moveTo(decodeGridCenter(gridId));
+      // 강조 전용 셀은 저줌 게이트에서 걷히므로 격자 최소 줌을 보장한다 (AC 5)
+      const zoom = zoomForGridFocus(viewportZoom);
+      if (zoom !== null) zoomTo(zoom);
+      setSearchGridId(gridId);
+    },
+    [moveTo, zoomTo, viewportZoom],
+  );
+
   // 게시 셀 파생·탭 판정·게시/해제 배선 (리뷰 반영 — 300줄 초과 분할)
   useHomeOverlayPublish({
     activeTheme,
@@ -149,6 +164,7 @@ export const MapHomePage = () => {
     hotCells: hotSummary.cells,
     occupiedIds,
     playingGridId: cardPlay.playingGridId,
+    searchGridId,
   });
 
   // 상세 패널의 "전체 보기" — 상세를 닫고 패널 안 전체 지역 리스트를 연다 (MSG-328)
@@ -241,8 +257,13 @@ export const MapHomePage = () => {
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
-        {/* 검색은 드롭다운으로 그 자리에서 — 결과 선택 시 지도 이동 (MSG-328 AC 16) */}
-        <HomeSearchBox onPlaceSelect={moveTo} />
+        {/* 검색은 드롭다운으로 그 자리에서 — 결과 선택 시 지도 이동 (MSG-328 AC 16).
+            격자 결과는 이동+줌 보장+하이라이트, 구역 결과는 fitBounds (MSG-412 AC 5·7) */}
+        <HomeSearchBox
+          onPlaceSelect={moveTo}
+          onGridSelect={handleGridSelect}
+          onZoneSelect={fitBounds}
+        />
 
         <HomePanelSwitch
           panel={panel}
