@@ -9,18 +9,16 @@ import type { ProfileData } from "./profile";
  * features/dex 레이어라 entities에서 참조하면 FSD 역방향 의존이 된다 — 리터럴로 두고
  * 정합은 mock-profile.parity.test가 고정한다 (스펙 구현 계획 "참조 정합 여부는 빌더 판단").
  *
- * 프로필 조회 API(GET /users/me류)는 OpenAPI 명세 부재(스펙 리스크 2) — mock 유지,
- * 백엔드 환류 후보. API 연동 시 profile-store 시드만 교체한다.
+ * [MSG-426] 닉네임·이메일·가입일·프로필이미지는 `GET /api/users/me`가 정본이 됐다
+ * (결정 E2). 이 mock은 그 조회의 **로딩·실패 폴백**으로만 남는다 — 화면이 조회에 잠기면
+ * 안 되기 때문이다. 스트릭·수집률은 대응 API 연동이 범위 밖이라 여전히 유일한 출처다.
  */
 export const MOCK_PROFILE: ProfileData = {
   nickname: "필맵퍼",
   email: "fillmapper@fillmap.app",
-  // 미설정(null) — 웹 MOCK_PROFILE(MSG-378) 미러, parity 테스트가 고정
+  // 미설정(null) — 웹 MOCK_PROFILE(MSG-378) 미러
   profileImageUrl: null,
   joinedAt: "2026-01-12",
   streakDays: 12,
   collectionRate: { regionLabel: "부산", pct: 34 },
-  appVersion: "1.0.0",
-  // 위치정보 사용 켜짐 — Figma 기본 상태 (AC 11)
-  locationEnabled: true,
 };
