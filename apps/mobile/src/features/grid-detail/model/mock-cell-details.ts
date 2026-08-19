@@ -3,7 +3,7 @@
  * 웹 `apps/web/src/entities/cell/model/mock-cells.ts`의 서면 일대 시드 이식본 —
  * 웹 생성 API 타입(satisfies) 의존은 제거하고 로컬 인터페이스로 둔다 (D1 관례,
  * 스펙 리스크 3: 웹-모바일 mock 드리프트는 parity 대상 아님, 데이터는 화면별 소유).
- * 격자 id는 홈 mock-grid-videos의 격자 id와 정합시킨다 (스펙 구현 계획).
+ * 격자 id는 홈 시트 mock(MSG-423에서 실 API로 대체되며 삭제)의 격자 id 관례를 잇는다.
  * 범천 I-01은 영상 0개 격자 — 빈 상태(AC 10) 시연용.
  */
 
@@ -16,7 +16,7 @@ export interface MockCellVideo {
 }
 
 export interface MockCellDetail {
-  /** 홈 mock-grid-videos와 정합하는 격자 id */
+  /** 격자 id — 서면 일대 mock 라벨 관례(seomyeon-a-14 등) */
   id: string;
   label: string;
   /** "부산 {구} {동}" — 위치 표기 (AC 5) */

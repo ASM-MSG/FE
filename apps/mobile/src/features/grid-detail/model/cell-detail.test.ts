@@ -168,12 +168,7 @@ describe("mock 데이터 감사 (AC 11 — 부산 서면 기준)", () => {
     expect(JSON.stringify(MOCK_CELL_DETAILS)).not.toMatch(/서울|홍대|마포/);
   });
 
-  it("등록 셀 id가 홈 mock-grid-videos 격자 id와 정합한다", async () => {
-    const { MOCK_GRID_VIDEOS } =
-      await import("../../map-home/model/mock-grid-videos");
-    const homeIds = new Set(MOCK_GRID_VIDEOS.map((video) => video.id));
-    for (const cell of MOCK_CELL_DETAILS) {
-      expect(homeIds.has(cell.id)).toBe(true);
-    }
-  });
+  // "등록 셀 id가 홈 mock-grid-videos 격자 id와 정합한다"는 MSG-423에서 삭제했다 —
+  // 지도 홈 시트가 실 API(regions/{code}/grids)로 전환되며 mock-grid-videos가 사라져
+  // 대조 대상이 존재하지 않는다. 격자 상세는 [제외 범위]로 mock 유지다.
 });
