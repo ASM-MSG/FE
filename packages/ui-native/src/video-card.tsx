@@ -19,6 +19,20 @@ interface VideoCardProps {
   title: ReactNode;
   /** 메타 둘째 줄 — 보조 정보(문자열 또는 배지 등 노드 조합) */
   meta?: ReactNode;
+  /**
+   * 썸네일 박스에 덧붙일 클래스 (MSG-421 온보딩 2장 히어로 요구로 추가된 비파괴 확장).
+   * 기본 `h-48 w-full` 뒤에 이어붙지만, NativeWind는 클래스 **문자열 순서가 아니라 CSS
+   * 캐스케이드(생성 스타일시트 순서)** 로 승자를 정한다 — Thumbnail 기본값(`bg-surface` 등)과
+   * 충돌하는 속성을 덮으려면 important 수식자를 쓴다(예: `!bg-foreground`).
+   * 미지정 시 렌더 불변.
+   */
+  thumbnailClassName?: string;
+  /**
+   * 썸네일 위에 겹칠 추가 오버레이 노드 (MSG-421 온보딩 2장 히어로 요구로 추가된 비파괴 확장).
+   * 썸네일 래퍼(relative) 안에 그대로 렌더되므로 절대 위치·정렬은 호출부가 정한다.
+   * 미지정 시 렌더 불변.
+   */
+  overlay?: ReactNode;
   onPress?: () => void;
   className?: string;
 }
@@ -53,6 +67,8 @@ export const VideoCard = ({
   durationLabel,
   title,
   meta,
+  thumbnailClassName,
+  overlay,
   onPress,
   className,
 }: VideoCardProps) => (
@@ -64,7 +80,11 @@ export const VideoCard = ({
     className={cx("w-full gap-xs active:opacity-80", className)}
   >
     <View className="w-full">
-      <Thumbnail src={src} fallback={fallback} className="h-48 w-full" />
+      <Thumbnail
+        src={src}
+        fallback={fallback}
+        className={cx("h-48 w-full", thumbnailClassName)}
+      />
       <View
         pointerEvents="none"
         className="absolute inset-0 items-center justify-center"
@@ -73,6 +93,7 @@ export const VideoCard = ({
           <Play size={16} color={semantic.primary} fill={semantic.primary} />
         </View>
       </View>
+      {overlay}
       {durationLabel && (
         <View className="absolute bottom-xs right-xs rounded-xs bg-foreground/75 px-1.5 py-0.5">
           <Text className="text-fm-caption text-primary-foreground">

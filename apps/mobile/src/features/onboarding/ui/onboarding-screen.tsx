@@ -1,92 +1,100 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
-import { Image } from "expo-image";
-import { cssInterop } from "nativewind";
+import type { ComponentType } from "react";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Dots } from "@fillmap/ui-native";
+import { Button, SegmentedProgress } from "@fillmap/ui-native";
 import { setOnboardingCompleted } from "../model/onboarding-storage";
-import illustrationFill from "../assets/onboarding-fill.png";
-import illustrationRecord from "../assets/onboarding-record.png";
-import illustrationExplore from "../assets/onboarding-explore.png";
-
-// expo-image는 서드파티 컴포넌트라 NativeWind className 해석에 cssInterop 등록이 필요 (v4 문서 관례)
-cssInterop(Image, { className: "style" });
+import {
+  ONBOARDING_STEPS,
+  ctaLabelOf,
+  isSkipVisible,
+  nextActionOf,
+  progressOf,
+  type OnboardingStepId,
+} from "../model/onboarding-steps";
+import { FillHeroCard } from "./fill-hero-card";
+import { RecordHeroCard } from "./record-hero-card";
+import { ExploreHeroCard } from "./explore-hero-card";
 
 /**
- * SOURCE: Figma 온보딩 1~3 (node 14133:521 / 14133:546 / 14133:575).
- * 문구는 티켓 [동작 요구] 정본 — 줄바꿈 위치까지 Figma를 따른다 (기준 2: 제목 2줄·설명 2줄).
+ * SOURCE: Figma 온보딩 v2 · 1~3 (node 14875:430 / 14875:442 / 14875:454).
+ * 골격(진행바 → 건너뛰기 → 헤드라인 → 히어로 → CTA)만 소유하고 장별 연출은 히어로 카드에 위임한다.
+ * 문구·CTA 라벨·건너뛰기 노출·진행바 값은 전부 `model/onboarding-steps`의 파생이라
+ * 화면에는 분기 로직이 없다.
  */
-const SLIDES = [
-  {
-    illustration: illustrationFill,
-    title: "우리 동네를 격자로\n하나씩 채워가요",
-    description: "방문한 곳이 격자 위에 색으로 남아\n나만의 지도가 완성돼요",
-    buttonLabel: "다음",
-  },
-  {
-    illustration: illustrationRecord,
-    title: "짧은 영상으로\n이 순간을 남겨요",
-    description:
-      "머문 장소에서 짧은 영상을 기록하면\n그날의 기억이 오래도록 남아요",
-    buttonLabel: "다음",
-  },
-  {
-    illustration: illustrationExplore,
-    title: "지금 뜨는 동네를\n지도에서 찾아봐요",
-    description: "핫구역과 인기 장소를 살펴보며\n다음 탐험지를 정해보세요",
-    buttonLabel: "시작하기",
-  },
-] as const;
+const HERO_BY_STEP: Record<OnboardingStepId, ComponentType> = {
+  fill: FillHeroCard,
+  record: RecordHeroCard,
+  explore: ExploreHeroCard,
+};
 
 interface OnboardingScreenProps {
   /** 마지막 장 "시작하기" 탭 → 완료 영속 저장 후 호출 (부모가 홈 전환) */
   onDone: () => void;
+  /** 1·2장 "건너뛰기" 탭 → 완료 영속 저장 후 호출 (부모가 로그인 전환, MSG-421 Q1) */
+  onSkip: () => void;
 }
 
 /**
- * 온보딩 3장 인트로 (MSG-292). step은 저장하지 않는다 — 중간 이탈 후 재실행은 1장부터 (기준 6).
+ * 온보딩 3장 인트로 (MSG-292 → MSG-421 리뉴얼).
+ * step은 저장하지 않는다 — 중간 이탈 후 재실행은 1장부터 (스펙 A3).
+ * 장 전환은 상태 교체에 의한 즉시 전환이다 — 애니메이션 없음 (스펙 A4).
  */
-export const OnboardingScreen = ({ onDone }: OnboardingScreenProps) => {
+export const OnboardingScreen = ({ onDone, onSkip }: OnboardingScreenProps) => {
   const [step, setStep] = useState(0);
-  const slide = SLIDES[step];
+  const content = ONBOARDING_STEPS[step];
+  const Hero = HERO_BY_STEP[content.id];
+  const { total, current } = progressOf(step);
 
-  const handlePress = () => {
-    if (step < SLIDES.length - 1) {
-      setStep(step + 1);
+  const handleCta = () => {
+    const next = nextActionOf(step);
+    if (next === "done") {
+      void setOnboardingCompleted().then(onDone);
       return;
     }
-    void setOnboardingCompleted().then(onDone);
+    setStep(next);
+  };
+
+  const handleSkip = () => {
+    void setOnboardingCompleted().then(onSkip);
   };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 items-center justify-center px-lg">
-        {/* 장식 일러스트 — 스크린리더 노출 제외 (기준 8). expo-image: accessible 기본 false지만 장식 의도를 명시 */}
-        <Image
-          source={slide.illustration}
-          accessible={false}
-          contentFit="contain"
-          className="h-full w-full"
-        />
-      </View>
-      <View className="items-center gap-lg px-lg pb-md">
-        <View className="items-center gap-sm">
-          {/* 액센트 바 (구분선) — 토큰에 그라디언트가 없어 primary 단색 (웹 시절 결정 승계) */}
-          <View className="h-1 w-10 rounded-full bg-primary" />
+      <View className="flex-1 px-lg pb-lg pt-xs">
+        <SegmentedProgress total={total} current={current} />
+        {/* 건너뛰기 줄은 3장에서도 높이를 유지한다 — 헤드라인이 위아래로 튀지 않게 (S6) */}
+        <View className="h-6 flex-row items-center justify-end">
+          {isSkipVisible(step) && (
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={12}
+              onPress={handleSkip}
+              className="active:opacity-80"
+            >
+              <Text className="text-fm-label text-foreground-muted">
+                건너뛰기
+              </Text>
+            </Pressable>
+          )}
+        </View>
+        <View className="items-center gap-xs pt-lg">
           <Text
             accessibilityRole="header"
             className="text-center text-fm-display text-foreground"
           >
-            {slide.title}
+            {content.headlineLines.join("\n")}
           </Text>
-          <Text className="text-center text-fm-base text-foreground-body">
-            {slide.description}
+          <Text className="text-center text-fm-base text-foreground-muted">
+            {content.description}
           </Text>
         </View>
-        <Dots count={SLIDES.length} activeIndex={step} activeShape="pill" />
+        <View className="flex-1 justify-center">
+          <Hero />
+        </View>
         <Button
-          text={slide.buttonLabel}
-          onPress={handlePress}
+          text={ctaLabelOf(step)}
+          onPress={handleCta}
           shape="pill"
           className="w-full"
         />
