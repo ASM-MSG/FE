@@ -12,9 +12,9 @@ interface ThemeVideoCardProps {
 
 /**
  * 테마 격자 섹션의 전폭 대표 영상 카드 (MSG-298 AC 13·14·15) — Figma 14103:351.
- * 썸네일+재생+길이 배지 문법은 GridVideoCard와 같지만 하단 메타(업로더·시점·조회수)가
+ * 썸네일+재생+길이 배지 문법은 공용 VideoCard와 같지만 하단 메타(업로더·시점·조회수)가
  * 달라 별도 컴포넌트 (스펙 — 도메인 결합이라 승격 아님). Figma의 재생 버튼은
- * primary 원 + 흰 아이콘 (GridVideoCard의 흰 원 + primary와 반전 — 프레임 실측).
+ * primary 원 + 흰 아이콘 (공용 VideoCard의 흰 원 + primary와 반전 — 프레임 실측).
  * mock은 썸네일 이미지가 없어 Thumbnail 폴백 상태로 표시한다 (Figma 오탐 방지 5).
  */
 export const ThemeVideoCard = ({ video, className }: ThemeVideoCardProps) => (
