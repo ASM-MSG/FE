@@ -25,7 +25,13 @@ export const uploadFileToS3 = async (
   fileUri: string,
   contentType: string,
 ): Promise<void> => {
-  const bytes = await (await fetch(fileUri)).arrayBuffer();
+  // 로컬 파일 읽기도 fetch라 4xx/5xx에 reject하지 않는다 — ok를 보지 않으면 에러 응답
+  // 본문(또는 0바이트)을 그대로 S3에 올리고 서버에는 정상 업로드로 기록된다.
+  const file = await fetch(fileUri);
+  if (!file.ok) {
+    throw new Error(`영상 파일을 읽을 수 없어요 (HTTP ${file.status})`);
+  }
+  const bytes = await file.arrayBuffer();
   const response = await fetch(uploadUrl, {
     method: "PUT",
     body: bytes,

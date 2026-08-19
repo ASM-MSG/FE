@@ -26,7 +26,7 @@ interface FetchCall {
 }
 
 /** file uri 읽기 응답, 그 외(S3 PUT)는 지정 응답으로 답하는 전역 fetch 스텁 */
-const stubFetch = (putResponse: Response) => {
+const stubFetch = (putResponse: Response, fileResponse?: Response) => {
   const calls: FetchCall[] = [];
   vi.stubGlobal(
     "fetch",
@@ -35,7 +35,9 @@ const stubFetch = (putResponse: Response) => {
       if (init?.method === "PUT") return putResponse;
       // 로컬 파일 읽기 응답에는 content-type이 없다 — 실기 관측과 동일(그래서
       // .blob()의 type이 빈 문자열이 되고, Blob body일 때 서명 타입이 지워졌다)
-      return new Response(new Blob(["video-bytes"]), { status: 200 });
+      return (
+        fileResponse ?? new Response(new Blob(["video-bytes"]), { status: 200 })
+      );
     }),
   );
   return calls;
@@ -125,5 +127,27 @@ describe("uploadFileToS3 — 전역 fetch PUT (기준 24)", () => {
         "video/mp4",
       ),
     ).rejects.toThrow(/403.*SignatureDoesNotMatch/s);
+  });
+
+  /**
+   * 리뷰 반영: 로컬 파일 읽기도 fetch라 4xx/5xx에 reject하지 않는다.
+   * ok를 보지 않으면 에러 응답 본문(또는 0바이트)이 그대로 S3에 올라가고 서버에는
+   * 정상 업로드로 기록된다 — 사용자는 깨진 영상을 받는다.
+   */
+  it("파일 uri를 읽지 못하면 S3로 PUT하지 않고 던진다 — 에러 본문을 업로드하지 않는다", async () => {
+    const calls = stubFetch(
+      new Response(null, { status: 200 }),
+      new Response("File not found", { status: 404 }),
+    );
+
+    await expect(
+      uploadFileToS3(
+        "https://bucket.s3.example.com/key",
+        "file:///missing.mp4",
+        "video/mp4",
+      ),
+    ).rejects.toThrow(/404/);
+
+    expect(calls.some((call) => call.init?.method === "PUT")).toBe(false);
   });
 });
