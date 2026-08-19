@@ -1,6 +1,8 @@
 import "../global.css";
 import { Stack } from "expo-router";
 import { bootstrapAuth } from "../features/auth/model/auth-session";
+import { useConsentGate } from "../features/auth/model/use-consent-gate";
+import { SignupConsentScreen } from "../features/auth/ui/signup-consent-screen";
 import { QueryProvider } from "../shared/api/query-provider";
 
 // API 부트스트랩 (MSG-419) — 에러 정규화 인터셉터 등록 + 인증 파이프라인 배선 +
@@ -14,10 +16,23 @@ if (process.env.EXPO_PUBLIC_STORYBOOK !== "1") {
   bootstrapAuth();
 }
 
+/**
+ * 회원가입 약관 동의 게이트 (MSG-422) — 로그인 + `locationConsent=false`면 앱 화면 대신
+ * 전면 동의 화면을 렌더한다. 라우트를 새로 만들지 않고 `Stack` 자체를 대체하므로
+ * 딥링크·`router.push`·탭 이동 어느 경로로도 우회되지 않는다 (AC 5, 웹 AppLayout 미러).
+ * 로딩 중·조회 실패에는 게이트가 뜨지 않아 앱이 통째로 잠기지 않는다 (AC 2).
+ * QueryProvider 하위여야 게이트 훅이 useQuery를 쓸 수 있어 별도 컴포넌트로 뺐다.
+ */
+const AppShell = () => {
+  const showConsentGate = useConsentGate();
+  if (showConsentGate) return <SignupConsentScreen />;
+  return <Stack screenOptions={{ headerShown: false }} />;
+};
+
 export default function RootLayout() {
   return (
     <QueryProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <AppShell />
     </QueryProvider>
   );
 }
