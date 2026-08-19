@@ -27,6 +27,10 @@ import { buildHatchSegments } from "../model/hatch-pattern";
 import { buildVisibleCells, type VisibleCell } from "../model/visible-grid";
 import type { Viewport } from "../model/viewport";
 import type { RouteWaypoint } from "../model/mock-theme-data";
+import { drillInZoomForUnit } from "../model/aggregation-unit";
+import { gateOccupiedFill, isBelowGridZoom } from "../model/cluster-overlay";
+import type { RegionClusterMarker } from "../model/region-cluster-overlay";
+import { CLUSTER_MARKER_PX, ClusterMarker } from "./cluster-marker";
 
 /**
  * 지도 SDK 격리 경계 — @mj-studio/react-native-naver-map 참조는 이 파일 안에서만 한다
@@ -74,6 +78,14 @@ interface GridMapProps {
   showCellGrid?: boolean;
   /** SDK 기본 줌 컨트롤(+/−) 표시 여부 (기본 true — 홈 불변). 상세 지도는 Figma에 없어 숨긴다 (MSG-296 검증 재작업 2, 핀치 줌은 유지) */
   showZoomControls?: boolean;
+  /**
+   * 카메라 줌 하한 (MSG-428 S6) — 핀치 아웃·SDK 줌 컨트롤 어느 쪽으로도 이보다 넓게
+   * 나가지 못한다. **기본은 하한 없음**(SDK 기본): 하한은 집계 마커 사다리를 가진 지도
+   * 홈만의 정책이라 여기 하드코딩하면 이 컴포넌트를 쓰는 다른 화면(격자 상세)까지
+   * 따라간다. 주의: 같은 이름의 오버레이 prop(BaseOverlayProps.minZoom)은 오버레이 표시
+   * 줌 범위지 카메라 제약이 아니다 — 하한은 반드시 NaverMapView에 건다.
+   */
+  minZoom?: number;
   /** 격자 셀 탭 (MSG-296 AC 1) — 탭 좌표 → cellIndexAt → 인코딩 셀 id */
   onCellTap?: (cellId: string, index: GridCellIndex) => void;
   /**
@@ -98,6 +110,12 @@ interface GridMapProps {
    * 남은 버스트 억제는 역지오코딩 훅의 디바운스가 백업으로 맡는다.
    */
   onViewportChange?: (viewport: Viewport) => void;
+  /**
+   * 저줌 지역 집계 마커 (MSG-428) — 격자 층과 상호 배타다(zoom < GRID_MIN_ZOOM에서만
+   * 비지 않는다). 파생·병합은 순수 모델(region-cluster-overlay)이 하고 여기는 렌더와
+   * 탭 시 카메라 이동만 맡는다.
+   */
+  clusters?: RegionClusterMarker[];
 }
 
 /** 셀 bounds → 폴리곤 꼭짓점 4점 (sw → se → ne → nw) */
@@ -152,6 +170,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     initialZoom = DEFAULT_ZOOM,
     showCellGrid = true,
     showZoomControls = true,
+    minZoom,
     onCellTap,
     highlightCell,
     occupiedCells,
@@ -160,11 +179,22 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     hatchCells,
     route,
     onViewportChange,
+    clusters,
   },
   ref,
 ) {
   const mapRef = useRef<NaverMapViewRef>(null);
   const [cells, setCells] = useState<VisibleCell[]>([]);
+  /**
+   * 채움 게이트 **판정 결과**만 상태로 든다 — 연속값 zoom을 들면 `onCameraChanged`가
+   * 프레임마다 발화하는 제스처 내내 상태가 매번 달라져 리렌더가 60fps로 돈다
+   * (MSG-423이 같은 이유로 부모 setState 디바운스를 기각한 함정). 불리언이면 임계를
+   * 실제로 넘는 프레임에서만 값이 바뀌고 나머지는 `Object.is` 동일성으로 걸러진다.
+   * 판정은 격자선 파생과 **같은 카메라 이벤트의 zoom**으로 하므로 두 층이 어긋나지 않는다.
+   */
+  const [belowGridZoom, setBelowGridZoom] = useState(() =>
+    isBelowGridZoom(initialZoom),
+  );
   /**
    * 최초 뷰포트 씨딩 여부 — `onCameraIdle`은 "카메라가 **움직인 뒤** 멈출 때" 발화라
    * 사용자가 지도를 건드리지 않으면 영영 오지 않는다. 진입 직후에도 조회가 나가야 하므로
@@ -182,13 +212,18 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     };
   }, [highlightCell]);
 
+  /**
+   * 점령 채움 — 저줌(zoom < GRID_MIN_ZOOM)에서는 게이트가 걷어 집계 마커에 화면을 넘긴다
+   * (S1 — 웹 `gateFillCells` 대응). 배경 격자선과 **같은 카메라 이벤트의 zoom**으로 판정해
+   * 두 채움 층이 한 프레임도 어긋나지 않게 한다. 테마 층은 게이트 대상이 아니다.
+   */
   const occupiedPolygons = useMemo(
     () =>
-      (occupiedCells ?? []).map((cell) => ({
+      gateOccupiedFill(occupiedCells, belowGridZoom).map((cell) => ({
         key: cellKey(cell),
         coords: rectCoords(cellBoundsAt(cell)),
       })),
-    [occupiedCells],
+    [occupiedCells, belowGridZoom],
   );
 
   const themePolygons = useMemo(
@@ -212,6 +247,20 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     [hatchCells],
   );
 
+  /**
+   * 마커 탭 → 다음 세부 단위가 보이는 줌으로 카메라 이동 (MSG-428 S4).
+   * 화면이 아니라 여기서 처리한다 — 지도 명령(animateCameraTo)은 SDK 경계 안에 두고
+   * 화면은 카메라를 몰라도 되게 한다 (웹 MapCanvas `zoomToCluster` 미러).
+   */
+  const zoomToCluster = (cluster: RegionClusterMarker) => {
+    mapRef.current?.animateCameraTo({
+      latitude: cluster.position.lat,
+      longitude: cluster.position.lng,
+      zoom: drillInZoomForUnit(cluster.unit),
+      duration: 500,
+    });
+  };
+
   useImperativeHandle(ref, () => ({
     moveTo: (center) => {
       mapRef.current?.animateCameraTo({
@@ -233,7 +282,9 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         zoom: initialZoom,
       }}
       isShowZoomControls={showZoomControls}
+      minZoom={minZoom}
       onCameraChanged={(camera) => {
+        setBelowGridZoom(isBelowGridZoom(camera.zoom ?? initialZoom));
         if (showCellGrid) {
           setCells(
             buildVisibleCells(
@@ -356,6 +407,21 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             </View>
           </NaverMapMarkerOverlay>
         ))}
+      {/* 지역 집계 마커 (MSG-428 S2·S3·S4) — 저줌에서만 채워져 들어온다.
+          key는 regionCode 기반 안정 키라 재조회에도 같은 지역이면 마커가 유지된다 */}
+      {clusters?.map((cluster) => (
+        <NaverMapMarkerOverlay
+          key={`cluster:${cluster.id}`}
+          latitude={cluster.position.lat}
+          longitude={cluster.position.lng}
+          width={CLUSTER_MARKER_PX[cluster.unit]}
+          height={CLUSTER_MARKER_PX[cluster.unit]}
+          anchor={{ x: 0.5, y: 0.5 }}
+          onTap={() => zoomToCluster(cluster)}
+        >
+          <ClusterMarker marker={cluster} />
+        </NaverMapMarkerOverlay>
+      ))}
       {highlight && (
         <>
           <NaverMapPolygonOverlay

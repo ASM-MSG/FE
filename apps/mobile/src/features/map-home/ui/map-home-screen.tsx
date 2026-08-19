@@ -6,9 +6,11 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Avatar, MapIconButton, SearchBar } from "@fillmap/ui-native";
 import { SEOMYEON_CENTER, resolveMapCenter } from "../../../shared/geolocation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
+import { useGridAggregationQuery } from "../api/use-grid-aggregation-query";
 import { useOccupiedGridsQuery } from "../api/use-occupied-grids-query";
 import { useRegionGridsQuery } from "../api/use-region-grids-query";
 import { useReverseGeocodeQuery } from "../api/use-reverse-geocode-query";
+import { MAP_MIN_ZOOM } from "../model/aggregation-unit";
 import { deriveSheetState } from "../model/home-sheet-state";
 import { locateBottomOffset } from "../model/locate-offset";
 import { toOccupiedCells } from "../model/occupied-grids";
@@ -31,6 +33,7 @@ import { GridMap } from "./grid-map";
 import type { GridMapRef } from "./grid-map";
 import { HomeSheet } from "./home-sheet";
 import type { HomeSheetRef } from "./home-sheet";
+import { ClusterErrorNotice } from "./cluster-error-notice";
 import { DefaultSheetContent } from "./default-sheet-content";
 import { ThemeChipsBar } from "./theme-chips-bar";
 import { ThemeSheetContent } from "./theme-sheet-content";
@@ -87,6 +90,8 @@ export const MapHomeScreen = () => {
   const occupied = useOccupiedGridsQuery(viewport?.bounds ?? null);
   const geocode = useReverseGeocodeQuery(viewport?.center ?? null);
   const regionGrids = useRegionGridsQuery(geocode.region?.regionCode ?? null);
+  /** 확장점 ③ — 저줌 지역 집계 마커 (MSG-428). 게이트·파생은 전부 훅 안 */
+  const aggregation = useGridAggregationQuery(viewport);
 
   /** 상시 점령 층 — 서버 5179 격자를 모바일 격자 인덱스로 정규화 (승인 Q2 A안) */
   const occupiedCells = useMemo(
@@ -200,6 +205,7 @@ export const MapHomeScreen = () => {
           <GridMap
             ref={mapRef}
             initialCenter={SEOMYEON_CENTER}
+            minZoom={MAP_MIN_ZOOM}
             onCellTap={(cellId) => {
               if (hasCellVideos(cellId)) router.push(`/grid/${cellId}`);
             }}
@@ -208,6 +214,7 @@ export const MapHomeScreen = () => {
             themeColor={themeId ? THEME_META[themeId].color : undefined}
             hatchCells={classification?.both}
             route={route}
+            clusters={aggregation.clusters}
             onViewportChange={setViewport}
           />
         </View>
@@ -248,6 +255,9 @@ export const MapHomeScreen = () => {
             <ThemeChipsBar selected={themeId} onToggle={handleToggleTheme} />
           )}
         </View>
+        {aggregation.isError && (
+          <ClusterErrorNotice onRetry={aggregation.retry} />
+        )}
 
         {/* 내 위치 — 시트 단계에 따라 함께 올라가 가려지지 않는다 (요구 8).
             FAB(기록하기)는 바텀 내비 카메라와 기능 중복으로 제거 (MSG-317 AC 16) */}
