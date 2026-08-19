@@ -1,14 +1,14 @@
+import { MAX_DURATION_SEC } from "./upload-validation";
+
 /**
- * 업로드 플로우 표시 문구 상수 (MSG-302·305) — 위치 mock은 부산 서면 기준.
- * "서면 A-14"는 셀 체계(cell-{col}-{row})에서 파생되지 않는 표시 전용 mock —
- * 실제 현재 위치 격자 연동은 범위 밖 (302 리스크 2).
+ * 업로드 선택 화면 표시 문구 (MSG-302 → MSG-424 정정).
+ * 위치 mock 상수 2종(`LOCATION_TAG_TEXT`·`LOCATION_FULL_TEXT`)은 삭제됐다 —
+ * 위치는 이제 역지오코딩 실데이터다(api/use-upload-location, 기준 20).
  */
 
-/** 파일 제약 안내 (302 AC 2) — 제약 검증 자체는 제외 범위 */
-export const FILE_CONSTRAINT_TEXT = "최대 30초 · MP4, MOV · 500MB 이하";
-
-/** 302 위치 태그 칩 문구 (AC 4) */
-export const LOCATION_TAG_TEXT = "서면 A-14 (현재 위치)";
-
-/** 305 위치 카드 문구 (AC 5) — 302와 단일 출처 */
-export const LOCATION_FULL_TEXT = "부산 부산진구 서면 · 서면 A-14";
+/**
+ * 파일 제약 안내 — 실 계약에 맞춘 값이다(D1 파생).
+ * 구 문구 "최대 30초"는 원본 상한을 잘못 안내했다: 30초는 `POST /api/videos`의
+ * `durationSec`(=선택 구간 길이) 상한이고, 원본 파일 상한은 180초다.
+ */
+export const FILE_CONSTRAINT_TEXT = `최대 ${MAX_DURATION_SEC}초 · MP4, MOV · 500MB 이하`;
