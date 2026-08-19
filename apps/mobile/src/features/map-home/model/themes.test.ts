@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { palette } from "@fillmap/design-tokens";
-import { THEME_IDS, THEME_META, deriveHomeTopBar } from "./themes";
+import { palette, spacing } from "@fillmap/design-tokens";
+import {
+  HOME_TOP_BAR_HEIGHT,
+  THEME_IDS,
+  THEME_META,
+  deriveHomeTopBar,
+} from "./themes";
 
 /**
  * MSG-423 요구 4로 개정: 칩 선택 시 칩 행을 숨기고 테마 검색어 바로 바꾸던
@@ -32,5 +37,21 @@ describe("홈 상단 상태 파생 (themes)", () => {
     for (const id of THEME_IDS) {
       expect(deriveHomeTopBar(id)).toEqual({ showChips: true });
     }
+  });
+
+  /**
+   * PR #76 리뷰 반영 — 상단 바를 피해 오버레이를 놓는 오프셋이 매직 넘버로 굳는 것을 막는다.
+   * 토큰에서 온 값(`spacing.sm`)이 바뀌면 상수가 따라 움직여야 하므로 산술로 대조한다.
+   *
+   * 한계(정직하게 기록): SearchBar `h-12`(48)·ThemeChip `h-9.5`(38)는 NativeWind
+   * className 스케일에서 오는 값이라 import할 수 없다. 두 컴포넌트의 높이 클래스가
+   * 바뀌면 이 테스트는 잡지 못하고, 상수 주석에 적힌 출처 className을 따라가야 한다.
+   */
+  it("상단 바 높이 상수는 spacing.sm 토큰에서 합성된다 — 토큰 드리프트 감지", () => {
+    const SEARCH_BAR_HEIGHT = 48; // ui-native SearchBar `h-12`
+    const CHIP_HEIGHT = 38; // ThemeChip `h-9.5`
+    expect(HOME_TOP_BAR_HEIGHT).toBe(
+      spacing.sm * 2 + SEARCH_BAR_HEIGHT + CHIP_HEIGHT,
+    );
   });
 });
