@@ -2781,89 +2781,6 @@
       ]
     },
     {
-      "id": "4d986184e47d8840",
-      "note": "consolidate `text` — 7 copies",
-      "members": [
-        {
-          "id": "c30d9b667d5a51cb",
-          "source_digest": "fnv1a64:391309ae2646a5f8",
-          "file": "apps/mobile/src/features/dex/ui/region-gallery-view.tsx",
-          "lang": "typescript",
-          "start_line": 89,
-          "end_line": 92,
-          "kind": "Block",
-          "name": "text",
-          "is_fragment": false
-        },
-        {
-          "id": "fcb77f402a5d5861",
-          "source_digest": "fnv1a64:60a4c067039deec7",
-          "file": "apps/mobile/src/features/dex/ui/dex-header-summary.tsx",
-          "lang": "typescript",
-          "start_line": 40,
-          "end_line": 42,
-          "kind": "Block",
-          "name": "text",
-          "is_fragment": false
-        },
-        {
-          "id": "ec31b4830697e0ea",
-          "source_digest": "fnv1a64:a63590c93125d057",
-          "file": "apps/mobile/src/features/dex/ui/dex-tab-placeholder.tsx",
-          "lang": "typescript",
-          "start_line": 16,
-          "end_line": 18,
-          "kind": "Block",
-          "name": "text",
-          "is_fragment": false
-        },
-        {
-          "id": "3673ae39a186cf90",
-          "source_digest": "fnv1a64:5b34b1b1d845b429",
-          "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
-          "lang": "typescript",
-          "start_line": 53,
-          "end_line": 55,
-          "kind": "Block",
-          "name": "text",
-          "is_fragment": false
-        },
-        {
-          "id": "c150402d82975723",
-          "source_digest": "fnv1a64:70050e71e6dd12cd",
-          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
-          "lang": "typescript",
-          "start_line": 162,
-          "end_line": 164,
-          "kind": "Block",
-          "name": "text",
-          "is_fragment": false
-        },
-        {
-          "id": "1863ade6eddf6c14",
-          "source_digest": "fnv1a64:69421c78a2afb05f",
-          "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
-          "lang": "typescript",
-          "start_line": 65,
-          "end_line": 67,
-          "kind": "Block",
-          "name": "text",
-          "is_fragment": false
-        },
-        {
-          "id": "efb547b7cf3a6b57",
-          "source_digest": "fnv1a64:8e786968c10fa068",
-          "file": "packages/ui-native/src/progress-bar.stories.tsx",
-          "lang": "typescript",
-          "start_line": 24,
-          "end_line": 26,
-          "kind": "Block",
-          "name": "text",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "4db2e532e9dd29cf",
       "note": "local duplication — extract a helper",
       "members": [
@@ -8688,6 +8605,89 @@
           "start_line": 80,
           "end_line": 82,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "fc41eebdac6512a0",
+      "note": "consolidate `text` — 7 copies",
+      "members": [
+        {
+          "id": "c30d9b667d5a51cb",
+          "source_digest": "fnv1a64:391309ae2646a5f8",
+          "file": "apps/mobile/src/features/dex/ui/region-gallery-view.tsx",
+          "lang": "typescript",
+          "start_line": 89,
+          "end_line": 92,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "9091ecadf0e813c1",
+          "source_digest": "fnv1a64:62336ff2fbe41afd",
+          "file": "apps/mobile/src/features/dex/ui/dex-header-summary.tsx",
+          "lang": "typescript",
+          "start_line": 50,
+          "end_line": 52,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "ec31b4830697e0ea",
+          "source_digest": "fnv1a64:a63590c93125d057",
+          "file": "apps/mobile/src/features/dex/ui/dex-tab-placeholder.tsx",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 18,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "3673ae39a186cf90",
+          "source_digest": "fnv1a64:5b34b1b1d845b429",
+          "file": "apps/mobile/src/features/map-home/ui/theme-video-card.tsx",
+          "lang": "typescript",
+          "start_line": 53,
+          "end_line": 55,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "c150402d82975723",
+          "source_digest": "fnv1a64:70050e71e6dd12cd",
+          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
+          "lang": "typescript",
+          "start_line": 162,
+          "end_line": 164,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "1863ade6eddf6c14",
+          "source_digest": "fnv1a64:69421c78a2afb05f",
+          "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
+          "lang": "typescript",
+          "start_line": 65,
+          "end_line": 67,
+          "kind": "Block",
+          "name": "text",
+          "is_fragment": false
+        },
+        {
+          "id": "efb547b7cf3a6b57",
+          "source_digest": "fnv1a64:8e786968c10fa068",
+          "file": "packages/ui-native/src/progress-bar.stories.tsx",
+          "lang": "typescript",
+          "start_line": 24,
+          "end_line": 26,
+          "kind": "Block",
+          "name": "text",
           "is_fragment": false
         }
       ]

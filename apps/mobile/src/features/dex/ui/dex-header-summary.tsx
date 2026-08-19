@@ -27,25 +27,35 @@ export const DexHeaderSummary = ({
   regionStat,
   summary,
 }: DexHeaderSummaryProps) => {
-  const pct = regionStat ? clampPct(regionStat.progressRate) : null;
+  /*
+   * 라벨과 퍼센트를 한 객체로 묶어 null 검사를 한 번만 둔다 — 종전의
+   * `regionStat && pct !== null`은 pct가 regionStat에서만 파생되므로 뒤 절이 중복이었다
+   * (PR #73 리뷰). pct를 따로 두면 TS가 좁혀주지 않아 검사를 지울 수도 없다.
+   */
+  const progress = regionStat
+    ? {
+        label: shortRegionName(regionStat.regionName),
+        pct: clampPct(regionStat.progressRate),
+      }
+    : null;
 
   return (
     <View className="gap-sm">
       <Text className="text-fm-display text-foreground">내 도감</Text>
 
       {/* 탐험률 — 미도착이면 자리를 비워둔다(잘못된 0%를 스치듯 보여주지 않는다) */}
-      {regionStat && pct !== null && (
+      {progress && (
         <View className="gap-sm">
           <View className="flex-row items-center justify-between">
             <Text className="text-fm-body-strong text-foreground">
-              {shortRegionName(regionStat.regionName)} 탐험률
+              {progress.label} 탐험률
             </Text>
             <Text className="text-fm-body-strong text-primary">
-              {formatProgressRate(pct)}
+              {formatProgressRate(progress.pct)}
             </Text>
           </View>
           {/* Figma 트랙 높이 8px — ProgressBar 기본 h-1.5(6px) 위에 덮는다 */}
-          <ProgressBar value={pct / 100} className="!h-2" />
+          <ProgressBar value={progress.pct / 100} className="!h-2" />
         </View>
       )}
 

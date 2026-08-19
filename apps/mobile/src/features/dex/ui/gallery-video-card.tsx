@@ -22,6 +22,16 @@ interface GalleryVideoCardProps {
  * `VideoCard`의 이미 열려 있는 `overlay` prop(MSG-421 비파괴 확장)에 ⋯ 버튼을 얹고
  * `ActionSheet`(MSG-420 승격분)를 열면 된다. `ui-native`·셸·갤러리 뷰는 무수정이다.
  *
+ * **탭(재생) 미배선은 의도된 범위 밖이다 — 누락이 아니다.** 웹 `GalleryVideoCard`는
+ * `onSelect`로 `widgets/video-mini-panel`을 열지만, 모바일에는 **그 위젯도 재생 화면도
+ * 라우트도 없다**(`app/`에 플레이어 없음). 티켓 [동작 요구] 10개에 재생이 없고 [제외 범위]가
+ * 넘긴 MSG-431도 공개 범위·삭제(⋯ 메뉴)라 재생 목적지를 만들지 않는다. 목적지 없이
+ * `onPress`를 붙이면 `VideoCard`가 `accessibilityRole="button"`을 켜(`video-card.tsx`의
+ * `onPress ? "button" : undefined`) 아무 일도 안 하는 **가짜 버튼**이 스크린리더에 노출된다 —
+ * MSG-421 실기 검증이 잡았고 MSG-423이 같은 이유로 시트 카드의 `onPress`를 기각한 지점이다.
+ * 현재처럼 `onPress` 미지정이면 role이 붙지 않아 정적 콘텐츠로 낭독되는 것이 옳다.
+ * **재생 화면을 만드는 티켓이 생기면 그때 `onPress`를 여기에 배선한다.**
+ *
  * 재생 원은 `VideoCard` 기본값(흰 원 + 파란 삼각)을 유지한다 — Figma는 파란 원 + 흰
  * 삼각이지만 앱 카드 관례를 우선한다(승인 Q2, 오탐 방지 11). 통일은 카드 3종을 함께
  * 이관하는 별도 티켓 몫이다.
