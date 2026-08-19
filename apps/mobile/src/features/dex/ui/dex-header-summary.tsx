@@ -43,8 +43,15 @@ export const DexHeaderSummary = ({
     <View className="gap-sm">
       <Text className="text-fm-display text-foreground">내 도감</Text>
 
-      {/* 탐험률 — 미도착이면 자리를 비워둔다(잘못된 0%를 스치듯 보여주지 않는다) */}
-      {progress && (
+      {/*
+       * 탐험률 — 미도착이면 자리를 비워둔다(잘못된 0%를 스치듯 보여주지 않는다).
+       * `&&`가 아니라 삼항인 이유: react-doctor `rn-no-falsy-and-render`가 JSX 앞
+       * 마지막 피연산자를 타입 없이 보고 전부 잡는다. `progress`는 객체 아니면 null이라
+       * 0이 샐 수 없지만(규칙이 경고하는 RN 크래시는 성립하지 않는다), 규칙을 끄거나
+       * 억제하느니 규칙이 권하는 형태를 쓰는 편이 낫다 — 나중에 숫자 조건이 들어와도
+       * 같은 자리에서 안전하다.
+       */}
+      {progress ? (
         <View className="gap-sm">
           <View className="flex-row items-center justify-between">
             <Text className="text-fm-body-strong text-foreground">
@@ -57,7 +64,7 @@ export const DexHeaderSummary = ({
           {/* Figma 트랙 높이 8px — ProgressBar 기본 h-1.5(6px) 위에 덮는다 */}
           <ProgressBar value={progress.pct / 100} className="!h-2" />
         </View>
-      )}
+      ) : null}
 
       <View className="flex-row gap-xs">
         <StatTile
