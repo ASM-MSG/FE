@@ -3,6 +3,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { Redirect } from "expo-router";
 import { getOnboardingCompleted } from "../features/onboarding/model/onboarding-storage";
 import { OnboardingScreen } from "../features/onboarding/ui/onboarding-screen";
+import { goToLogin } from "../shared/navigation";
 import StorybookUI from "../../.rnstorybook";
 
 /** EXPO_PUBLIC_STORYBOOK=1 이면 Storybook UI로 진입 (metro withStorybook과 동일 조건, 스펙 A4) */
@@ -31,6 +32,7 @@ export default function Index() {
   return completed ? (
     <Redirect href="/home" />
   ) : (
-    <OnboardingScreen onDone={() => setCompleted(true)} />
+    // 건너뛰기도 완료로 저장하고 로그인으로 replace — 뒤로가기로 온보딩에 돌아오지 않는다 (MSG-421 Q1)
+    <OnboardingScreen onDone={() => setCompleted(true)} onSkip={goToLogin} />
   );
 }

@@ -42,6 +42,24 @@ export const WithMetaNode: Story = {
   },
 };
 
+/** 썸네일 배경 오버라이드 + 썸네일 위 오버레이 슬롯 (MSG-421 온보딩 2장 히어로) */
+export const DarkThumbnailWithOverlay: Story = {
+  args: {
+    title: "서면 A-14",
+    meta: "방금 업로드",
+    fallback: undefined,
+    // 캐스케이드 승자가 클래스 순서가 아니므로 기본 bg-surface는 important로 덮는다
+    thumbnailClassName: "!bg-foreground",
+    overlay: (
+      <View className="absolute bottom-xs left-xs flex-row items-center gap-xxs rounded-full border border-background/40 bg-background/20 px-2.5 py-1">
+        <Text className="text-fm-caption text-primary-foreground">
+          ✦ AI 추천 0:03 – 0:08
+        </Text>
+      </View>
+    ),
+  },
+};
+
 /** 1열 목록 배치 — 도감 갤러리·격자 상세 공용 문법 */
 export const List: Story = {
   render: () => (

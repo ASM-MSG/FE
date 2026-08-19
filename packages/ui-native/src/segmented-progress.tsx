@@ -28,6 +28,10 @@ export const SegmentedProgress = ({
   const filled = Math.min(Math.max(current, 0), safeTotal);
   return (
     <View
+      // Android(RN 0.86.2 Fabric)는 accessible 없이는 role만으로 접근성 노드를 만들지 않아
+      // 진행바가 아예 낭독되지 않았다 — MSG-421 실기 검증(uiautomator dump)에서 확인한 결함 수정.
+      // 값 추가라 기존 소비처의 시각 렌더는 불변이다.
+      accessible
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: safeTotal, now: filled }}
       className={cx("w-full flex-row gap-xs", className)}
