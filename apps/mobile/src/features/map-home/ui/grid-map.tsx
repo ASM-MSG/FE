@@ -25,6 +25,7 @@ import { cellIdFor } from "../../../entities/cell/model/cell-id";
 import { buildDashedRectOutline } from "../model/dashed-outline";
 import { buildHatchSegments } from "../model/hatch-pattern";
 import { buildVisibleCells, type VisibleCell } from "../model/visible-grid";
+import type { Viewport } from "../model/viewport";
 import type { RouteWaypoint } from "../model/mock-theme-data";
 
 /**
@@ -90,6 +91,13 @@ interface GridMapProps {
   hatchCells?: GridCellIndex[];
   /** 추천 경로 — 폴리라인 좌표 + 번호 웨이포인트 (MSG-298 AC 10, 경로추천 테마 전용) */
   route?: { path: LatLng[]; waypoints: RouteWaypoint[] };
+  /**
+   * 카메라 **이동 종료** 시 현재 뷰포트 통지 (MSG-423 요구 5) — 조회 재발사 트리거다.
+   * SDK의 `onCameraIdle`에 물린다: 제스처가 완전히 끝나야 발화하므로 드래그·줌 중에는
+   * 매 프레임 나가지 않는다(스펙의 500ms 디바운스 대안 — 라이브러리 idle 이벤트 우선).
+   * 남은 버스트 억제는 역지오코딩 훅의 디바운스가 백업으로 맡는다.
+   */
+  onViewportChange?: (viewport: Viewport) => void;
 }
 
 /** 셀 bounds → 폴리곤 꼭짓점 4점 (sw → se → ne → nw) */
@@ -101,6 +109,35 @@ const rectCoords = (bounds: Bounds) => [
 ];
 
 const cellKey = ({ col, row }: GridCellIndex) => `${col}:${row}`;
+
+/** SDK Region(남서 꼭짓점 + delta) → 플랫폼 중립 Bounds */
+const boundsOf = (region: {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}): Bounds => ({
+  sw: { lat: region.latitude, lng: region.longitude },
+  ne: {
+    lat: region.latitude + region.latitudeDelta,
+    lng: region.longitude + region.longitudeDelta,
+  },
+});
+
+/** SDK 카메라 이벤트 → 화면이 소유하는 뷰포트 (MSG-423 요구 5) */
+const toViewport = (
+  camera: {
+    latitude: number;
+    longitude: number;
+    zoom?: number;
+    region: Parameters<typeof boundsOf>[0];
+  },
+  fallbackZoom: number,
+): Viewport => ({
+  center: { lat: camera.latitude, lng: camera.longitude },
+  zoom: camera.zoom ?? fallbackZoom,
+  bounds: boundsOf(camera.region),
+});
 
 /**
  * 네이버 실지도 + 100m 격자 오버레이 (AC 6·8·13).
@@ -122,11 +159,19 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     themeColor,
     hatchCells,
     route,
+    onViewportChange,
   },
   ref,
 ) {
   const mapRef = useRef<NaverMapViewRef>(null);
   const [cells, setCells] = useState<VisibleCell[]>([]);
+  /**
+   * 최초 뷰포트 씨딩 여부 — `onCameraIdle`은 "카메라가 **움직인 뒤** 멈출 때" 발화라
+   * 사용자가 지도를 건드리지 않으면 영영 오지 않는다. 진입 직후에도 조회가 나가야 하므로
+   * 첫 `onCameraChanged` 한 번만 뷰포트를 올리고, 이후 갱신은 전부 idle이 맡는다
+   * (드래그 중 매 프레임 발사 방지 — 요구 5).
+   */
+  const viewportSeededRef = useRef(false);
 
   const highlight = useMemo(() => {
     if (!highlightCell) return null;
@@ -188,21 +233,25 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         zoom: initialZoom,
       }}
       isShowZoomControls={showZoomControls}
-      onCameraChanged={({ zoom, region }) => {
-        if (!showCellGrid) return;
-        setCells(
-          buildVisibleCells(
-            {
-              sw: { lat: region.latitude, lng: region.longitude },
-              ne: {
-                lat: region.latitude + region.latitudeDelta,
-                lng: region.longitude + region.longitudeDelta,
-              },
-            },
-            zoom ?? initialZoom,
-          ),
-        );
+      onCameraChanged={(camera) => {
+        if (showCellGrid) {
+          setCells(
+            buildVisibleCells(
+              boundsOf(camera.region),
+              camera.zoom ?? initialZoom,
+            ),
+          );
+        }
+        if (onViewportChange && !viewportSeededRef.current) {
+          viewportSeededRef.current = true;
+          onViewportChange(toViewport(camera, initialZoom));
+        }
       }}
+      onCameraIdle={
+        onViewportChange
+          ? (camera) => onViewportChange(toViewport(camera, initialZoom))
+          : undefined
+      }
       onTapMap={
         onCellTap
           ? ({ latitude, longitude }) => {
