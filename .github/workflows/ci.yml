@@ -124,13 +124,27 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # azure.archive.ubuntu.com이 이 러너에서 불통이라, apt가 저장소 4개마다 재시도를
+      # 반복한 뒤에야 archive.ubuntu.com으로 폴백한다 — 그 재시도 구간이 20분 넘게 걸려
+      # e2e가 멈춘 것처럼 보인다(2026-08-19 PR #74에서 2회 실측: 21분·14분+).
+      # 미러리스트를 정본 아카이브로 고정해 재시도 구간 자체를 없앤다.
+      # `playwright install --with-deps`도 같은 apt 경로를 타므로 명령을 바꿔서는 해결되지 않는다.
+      - name: Pin apt mirror
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+
+      # timeout-minutes: apt가 그래도 물리면 25분 잡아먹지 말고 빨리 실패하게 한다
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 8
         run: pnpm --filter web exec playwright install --with-deps chromium
 
       # cache hit 시: 브라우저 바이너리만 캐시되고 apt 의존성은 캐시 경로 밖이라 매번 재설치 필요
       - name: Install Playwright OS dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 8
         run: pnpm --filter web exec playwright install-deps chromium
 
       # NOTE: pull_request 이벤트는 포크에서 열린 PR에 리포지토리 Secret을 노출하지 않는 게

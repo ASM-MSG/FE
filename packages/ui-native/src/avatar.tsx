@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Image, Text, View } from "react-native";
 import type { AvatarBaseProps, AvatarSize } from "@fillmap/design-tokens";
 import { cx } from "./lib/cx";
@@ -15,6 +15,13 @@ interface AvatarProps extends AvatarBaseProps {
   alt?: string;
   /** 이미지 로드 실패/미지정 시 보여줄 짧은 텍스트 (예: 이니셜) */
   fallback?: string;
+  /**
+   * 텍스트 대신 아이콘·일러스트로 폴백할 때 (예: 사람 실루엣 기본 프로필 이미지).
+   * 지정하면 `fallback` 텍스트 대신 이것이 렌더된다 — **미지정 시 렌더는 완전히 종전과 같다**.
+   * RN Image는 번들 에셋을 `require()` 소스로만 받아 URI 문자열인 `src`로는 넘길 수 없어
+   * 열어 둔 확장점이다 (MSG-426).
+   */
+  fallbackIcon?: ReactNode;
   className?: string;
 }
 
@@ -24,12 +31,14 @@ interface AvatarProps extends AvatarBaseProps {
  * @example
  * <Avatar src={user.profileUrl} alt={user.name} fallback="김" />
  * <Avatar size="sm" fallback="김" />
+ * <Avatar fallbackIcon={<User size={28} color={semantic.muted} />} />
  */
 export const Avatar = ({
   size = "lg",
   src,
   alt,
   fallback,
+  fallbackIcon,
   className,
 }: AvatarProps) => {
   const [errored, setErrored] = useState(false);
@@ -57,7 +66,11 @@ export const Avatar = ({
           onError={() => setErrored(true)}
         />
       ) : (
-        <Text className="text-fm-label text-foreground-muted">{fallback}</Text>
+        (fallbackIcon ?? (
+          <Text className="text-fm-label text-foreground-muted">
+            {fallback}
+          </Text>
+        ))
       )}
     </View>
   );

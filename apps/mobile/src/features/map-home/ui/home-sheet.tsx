@@ -61,6 +61,14 @@ export interface HomeSheetContentContext {
 interface HomeSheetProps {
   /** 컨테이너 하단 오프셋 — 바텀 내비 바 높이 + safe area (내비는 전 단계 상시 노출, AC 16) */
   bottomOffset: number;
+  /**
+   * 현재 단계 통지 (MSG-423 요구 8) — 내 위치 버튼이 시트에 가리지 않도록 부모가
+   * 오프셋을 다시 계산한다. 컨테이너 높이를 함께 넘기는 이유: 시트 상단 y는
+   * `sheetStagePositions(containerHeight)[stage]`라 단계만으로는 위치를 알 수 없고,
+   * 이 컨테이너를 실제로 측정하는 것은 시트뿐이기 때문이다(부모의 중복 측정 방지).
+   * 최초 onLayout에도 한 번 발화한다.
+   */
+  onStageChange?: (stage: SheetStage, containerHeight: number) => void;
   /** 콘텐츠 렌더 슬롯 — 쉘은 콘텐츠를 모른다 (MSG-298 구현 계획, 후속 셀 선택 콘텐츠 수용) */
   children: (context: HomeSheetContentContext) => ReactNode;
 }
@@ -75,7 +83,7 @@ interface HomeSheetProps {
  * grid-map moveTo와 동일한 명령형 핸들 패턴).
  */
 export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
-  function HomeSheet({ bottomOffset, children }, ref) {
+  function HomeSheet({ bottomOffset, onStageChange, children }, ref) {
     const [containerH, setContainerH] = useState(0);
     const positions = useMemo(
       () => sheetStagePositions(containerH),
@@ -94,6 +102,7 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
     /** 단계 전환 단일 경로 — 스냅 애니메이션 + 상태 갱신 (드래그·부모 명령 공용) */
     const goToStage = (next: SheetStage) => {
       setStage(next);
+      onStageChange?.(next, containerH);
       // 측정 전(마운트 직후 focus 리셋)이면 상태만 — 위치는 최초 onLayout이 잡는다
       if (containerH === 0) return;
       translateY.value = withSpring(positions[next], SPRING);
@@ -111,6 +120,7 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
       // 최초 측정: 애니메이션 없이 현 단계 위치로 즉시 배치 (진입 플래시 방지)
       translateY.value = sheetStagePositions(h)[stage];
       setContainerH(h);
+      onStageChange?.(stage, h);
     };
 
     /** 릴리즈 → 최근접 단계 스냅 (AC 11·18) */

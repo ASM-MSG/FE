@@ -11,8 +11,13 @@ import { authStore } from "../model/auth-session";
  * (웹 useLogout 선례. 서버 호출이 실패했다고 사용자를 미동의 로그인 상태에 묶어 두면
  * 게이트에서 빠져나갈 방법이 사라진다). 로컬 토큰이 비면 isAuthenticated가 false가 되어
  * 게이트 조건이 풀리고 비로그인 앱 화면이 렌더된다.
+ *
+ * 정산 후 후속(라우팅 등)은 **훅 레벨 옵션**으로 받는다 — `mutate(undefined, { onSettled })`
+ * 같은 per-call 콜백은 관찰자가 언마운트되면 실행되지 않아, 세션만 끊기고 이동은 누락되는
+ * 상태가 남는다(웹 MSG-325 선례. MSG-426 리뷰에서 로그아웃 배선만 이 원칙 밖에 있던 것을 정정).
+ * 라우팅 자체는 주입받는다 — RN 경계.
  */
-export const useLogout = () => {
+export const useLogout = (callbacks?: { onSettled?: () => void }) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => logout({ throwOnError: true }),
@@ -24,6 +29,7 @@ export const useLogout = () => {
       const cleared = authStore.logout();
       queryClient.clear();
       await cleared;
+      callbacks?.onSettled?.();
     },
   });
 };

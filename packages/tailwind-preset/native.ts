@@ -14,10 +14,11 @@ import { preset } from "./index";
  * 1.75(테마 배지 패딩 7px)·50(대표 영상 썸네일 200px)는 MSG-298 테마 시트 보충.
  * 1.25(CellBadge 세로 패딩 5px — ui-web 미러)·6.5(Checkbox 원형 26px)는 MSG-420 ui-native 보충.
  * 13(온보딩 3장 테마 격자 52px)은 MSG-421 온보딩 보충.
+ * 9.5(지도 홈 테마 칩 높이 38px — 웹 ThemeChip h-9.5 미러)는 MSG-423 보충.
  */
 const nativeSpacingSteps = [
-  0.75, 1.25, 1.75, 4.5, 5.5, 6.5, 7.5, 13, 15, 15.5, 19.5, 21, 22, 26, 35, 50,
-  52.5, 120,
+  0.75, 1.25, 1.75, 4.5, 5.5, 6.5, 7.5, 9.5, 13, 15, 15.5, 19.5, 21, 22, 26, 35,
+  50, 52.5, 120,
 ] as const;
 
 export const nativePreset: Omit<Config, "content"> = {

@@ -1,39 +1,126 @@
-import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { useEffect, useEffectEvent, useState } from "react";
+import { BackHandler, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { AppHeader, Avatar, Button, Input, Switch } from "@fillmap/ui-native";
-import { avatarFallback } from "../../../entities/profile/model/avatar-fallback";
-import { canSaveProfile, locationStatusLabel } from "../model/profile-edit";
-import { profileStore, useProfile } from "../model/profile-store";
+import { User } from "lucide-react-native";
+import { semantic } from "@fillmap/design-tokens";
+import { AppHeader, Avatar, Button, Input } from "@fillmap/ui-native";
+import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
+import { useProfileQuery } from "../api/use-profile-query";
+import { useRemoveProfileImage } from "../api/use-remove-profile-image";
+import { useUpdateNickname } from "../api/use-update-nickname";
+import {
+  canSaveProfile,
+  nicknameError,
+  resolveNicknameSave,
+  shouldRemoveProfileImage,
+} from "../model/profile-edit";
+import { profileImageErrorMessage } from "../model/profile-image";
 
 /**
- * SOURCE: Figma "프로필 편집" (node 14094:4561) — MSG-306.
- * 뒤로가기 헤더 + 아바타·[변경] + 닉네임 입력 + 위치정보 토글 + [취소]/[저장].
- * 본문의 "프로필 편집" 중복 제목은 생략 — 헤더 타이틀만 유지 (승인 추정 2).
- * 드래프트(닉네임·토글)는 화면 로컬 상태 — [저장]에서만 profile-store에 반영하고
- * (AC 13), [취소]·뒤로가기는 반영 없이 복귀한다 (AC 14). 복귀는 router.back().
- * [변경]은 표시만(탭 무동작 — 업로드는 제외 범위, AC 10). 아바타 88px는 웹
- * ProfileEditModal의 size-22 오버라이드 선례를 미러한다.
+ * SOURCE: Figma "프로필 편집" (node 14799:26233) — MSG-306 → MSG-426 개편.
+ * 뒤로가기 헤더 + 아바타 + [변경]/[기본 이미지로] + 안내 캡션 + 닉네임 입력 + [취소]/[저장].
+ * 본문의 "프로필 편집" 중복 제목은 생략 — 헤더 타이틀만 유지 (MSG-306 승인 추정 2 승계,
+ * 결정 Q5). Figma 대조 시 오탐하지 않도록 스펙 R4-1에 기재돼 있다.
+ *
+ * [MSG-426] 바뀐 것: ① `위치정보 사용` 섹션·토글 제거 — 동의 관리는 설정 행으로 일원화
+ * (기준 16) ② [기본 이미지로] + 안내 캡션 추가(기준 14) ③ **삭제 예약** 패턴 — 탭하면
+ * 아바타만 즉시 기본 이미지로 바뀌고 요청은 [저장] 시점에 나간다. [취소]·뒤로가기면
+ * 화면 로컬 상태와 함께 폐기된다(기준 15, 웹 MSG-407 미러) ④ 닉네임 2~20자 검증 사유
+ * 표시(기준 17) ⑤ 저장이 `PUT /api/users/me/nickname` 실연동(결정 E2-b).
+ *
+ * [변경](업로드)은 여전히 표시만이다 — 티켓 동작 요구가 "두 버튼이 보인다"까지고
+ * 이미지 업로드는 후속 티켓이다.
  */
 export const ProfileEditScreen = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const profile = useProfile();
-  // 진입 시 현재 프로필 값 프리필 (AC 11)
-  const [nickname, setNickname] = useState(profile.nickname);
-  const [locationEnabled, setLocationEnabled] = useState(
-    profile.locationEnabled,
-  );
+  const { data: profile } = useProfileQuery();
+  // 조회 전·실패 시 mock 폴백 — 편집 화면도 조회에 잠기지 않는다 (결정 E2)
+  const identity = profile ?? MOCK_PROFILE;
+
+  const [nickname, setNickname] = useState(identity.nickname);
+  // 조회가 마운트 이후 도착하면 프리필을 서버값으로 다시 맞춘다 — 렌더 중 상태 조정
+  // (ui-native Avatar의 prevSrc 선례). 단 **사용자가 아직 손대지 않았을 때만** 덮어쓴다 —
+  // mock 폴백으로 먼저 뜬 화면에 입력을 시작한 뒤 getMe가 도착하면 그 입력이 사라진다
+  // (codex 리뷰). `nickname === prefilled`가 곧 "직전 프리필 이후 편집 없음"이다.
+  const [prefilled, setPrefilled] = useState(identity.nickname);
+  if (identity.nickname !== prefilled) {
+    const untouched = nickname === prefilled;
+    setPrefilled(identity.nickname);
+    if (untouched) setNickname(identity.nickname);
+  }
+
+  /** [기본 이미지로] 예약 — 서버 반영은 [저장] 시점 (기준 15) */
+  const [removalReserved, setRemovalReserved] = useState(false);
+
+  const removeImage = useRemoveProfileImage();
+  const saveNickname = useUpdateNickname({ onSaved: () => router.back() });
+  const isSaving = removeImage.isPending || saveNickname.isPending;
+
+  const validationMessage = nicknameError(nickname);
+  const errorMessage =
+    removeImage.error !== null
+      ? profileImageErrorMessage(removeImage.error)
+      : saveNickname.error !== null
+        ? "닉네임 저장에 실패했어요. 다시 시도해주세요"
+        : null;
 
   const handleSave = () => {
-    profileStore.save({ nickname, locationEnabled });
+    const save = resolveNicknameSave(nickname, identity.nickname);
+    // 순차 실행: 이미지 삭제 → 닉네임. 무변경 단계는 요청을 만들지 않는다
+    const finishWithNickname = () => {
+      if (save.shouldRequest) saveNickname.mutate(save.nickname);
+      else router.back();
+    };
+    if (shouldRemoveProfileImage(removalReserved, identity.profileImageUrl)) {
+      // 성공분이 재요청되지 않도록 예약을 즉시 폐기한다. 다음 단계를 per-call 콜백으로
+      // 잇는 것은 저장 중 이탈이 **막혀 있기 때문에** 안전하다 — 아래 leaveIfIdle과
+      // hardwareBackPress 가드가 그 전제를 강제한다(가드가 없으면 이미지만 지워지고
+      // 닉네임 저장이 조용히 누락된다 — MSG-426 리뷰)
+      removeImage.mutate(undefined, {
+        onSuccess: () => {
+          setRemovalReserved(false);
+          finishWithNickname();
+        },
+      });
+      return;
+    }
+    finishWithNickname();
+  };
+
+  /**
+   * 저장 비행 중에는 이탈을 받지 않는다 (MSG-426 리뷰). 이미지 삭제 → 닉네임의 순차 실행이
+   * per-call 콜백으로 이어져 있어, 중간에 이 화면이 언마운트되면 **이미지는 서버에서 지워졌는데
+   * 닉네임 저장만 조용히 누락**된다(사용자에게 오류도 안 보인다). 하단 [취소]/[저장]은 이미
+   * `disabled={isSaving}`인데 헤더 `‹`와 하드웨어 뒤로가기만 열려 있던 구멍을 막는다.
+   * MSG-422 `abortSignup` 가드와 같은 취지다.
+   */
+  const leaveIfIdle = () => {
+    if (isSaving) return;
     router.back();
   };
 
+  // Effect Event로 감싸 구독을 마운트 1회로 고정한다 — 본문이 읽는 isSaving은 매번 최신이지만
+  // 의존성이 아니므로 저장 상태 변화가 BackHandler를 재등록시키지 않는다.
+  // 저장 중이면 true를 돌려 기본 동작(이전 화면)을 막고, 평시에는 false로 라우터에 맡긴다.
+  //
+  // 이 구독 보일러플레이트는 동의 게이트·도감과 3중 복제다. 공용 훅 추출을 시도했으나
+  // **React가 Effect Event를 다른 훅·함수로 넘기는 것을 금지한다**(rules-of-hooks:
+  // "cannot be assigned to a variable or passed down") — 판정 함수가 각 화면의 상태를
+  // 읽어야 하므로 추출이 불가능하다. nose.baseline.json에 의도 중복으로 등재했다.
+  const handleHardwareBack = useEffectEvent(() => isSaving);
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () =>
+      handleHardwareBack(),
+    );
+    return () => subscription.remove();
+  }, []);
+
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <AppHeader title="프로필 편집" onBack={() => router.back()} />
+      <AppHeader title="프로필 편집" onBack={leaveIfIdle} />
       <ScrollView
         className="flex-1"
         // grow: 콘텐츠가 짧아도 mt-auto 버튼 행이 화면 하단에 붙게 컨테이너를 채운다
@@ -41,63 +128,85 @@ export const ProfileEditScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View
-          className="flex-1 gap-lg px-5 pt-lg"
+          // grow(≠flex-1): flex-1은 flexBasis 0으로 높이를 뷰포트에 고정해, 콘텐츠가 더 길면
+          // mt-auto 버튼 행이 컨테이너 밖으로 밀려 잘리고 터치도 먹지 않는다(실기에서 확인).
+          // grow는 max(콘텐츠, 뷰포트)라 짧으면 하단 고정, 길면 스크롤이 생긴다
+          className="grow gap-lg px-5 pt-lg"
           // 하단 safe-area + 여백 (업로드 플로우 preview-screen 선례)
           style={{ paddingBottom: insets.bottom + 24 }}
         >
-          {/* 아바타 + [변경] (AC 10) — [변경]은 표시만, 탭 무동작 (핸들러 미배선) */}
+          {/* 아바타 + [변경]/[기본 이미지로] + 안내 (기준 14·15) — 아바타 80px */}
           <View className="items-center gap-md">
             <Avatar
               size="lg"
-              alt={profile.nickname}
-              fallback={avatarFallback(profile.nickname)}
-              className="size-22"
+              className="size-20"
+              // 예약 즉시 기본 이미지로 보인다 — 서버 반영 전에도 결과를 미리 보여 준다
+              src={
+                removalReserved
+                  ? undefined
+                  : (identity.profileImageUrl ?? undefined)
+              }
+              alt={identity.nickname}
+              fallbackIcon={<User size={40} color={semantic.muted} />}
             />
-            <Button
-              text="변경"
-              variant="secondary"
-              size="sm"
-              shape="pill"
-              className="border border-primary"
-            />
+            <View className="flex-row items-center gap-sm">
+              <Button
+                text="변경"
+                variant="secondary"
+                size="sm"
+                shape="pill"
+                className="border border-primary"
+              />
+              <Button
+                text="기본 이미지로"
+                variant="secondary"
+                size="sm"
+                shape="pill"
+                className="border border-border"
+                disabled={isSaving}
+                onPress={() => setRemovalReserved(true)}
+              />
+            </View>
+            <Text className="text-center text-fm-caption text-foreground-muted">
+              기본 이미지로 되돌리면 올린 사진은 삭제돼요.
+            </Text>
+            {errorMessage !== null && (
+              <Text
+                accessibilityRole="alert"
+                className="text-center text-fm-caption text-red-600"
+              >
+                {errorMessage}
+              </Text>
+            )}
           </View>
 
-          {/* 닉네임 입력 (AC 11) — 현재 닉네임 프리필 */}
+          {/* 닉네임 입력 (기준 17) — 현재 닉네임 프리필 + 범위 밖 사유 안내 */}
           <View className="gap-xs">
             <Text className="text-fm-label text-foreground">닉네임</Text>
             <Input value={nickname} onChangeText={setNickname} />
-          </View>
-
-          {/* 위치정보 토글 (AC 11·15) — 상태 문구는 locationStatusLabel */}
-          <View className="gap-xs">
-            <Text className="text-fm-label text-foreground">위치정보 사용</Text>
-            <View className="flex-row items-center gap-xs">
-              <Switch
-                checked={locationEnabled}
-                onCheckedChange={setLocationEnabled}
-                accessibilityLabel="위치정보 사용"
-              />
-              <Text className="text-fm-body text-foreground-muted">
-                {locationStatusLabel(locationEnabled)}
+            {validationMessage !== null && (
+              <Text className="text-fm-label text-red-600">
+                {validationMessage}
               </Text>
-            </View>
+            )}
           </View>
 
-          {/* [취소]/[저장] (AC 13·14·16) — 공백 닉네임이면 저장 비활성 (승인 추정 4) */}
+          {/* [취소]/[저장] — [취소]·뒤로가기는 삭제 예약·닉네임 편집을 모두 폐기한다 (기준 15) */}
           <View className="mt-auto flex-row gap-md pt-lg">
             <Button
               text="취소"
               variant="secondary"
               shape="pill"
               className="flex-1 border border-primary"
-              onPress={() => router.back()}
+              disabled={isSaving}
+              onPress={leaveIfIdle}
             />
             <Button
-              text="저장"
+              text={isSaving ? "저장 중…" : "저장"}
               variant="primary"
               shape="pill"
               className="flex-1"
-              disabled={!canSaveProfile(nickname)}
+              disabled={!canSaveProfile(nickname) || isSaving}
               onPress={handleSave}
             />
           </View>
