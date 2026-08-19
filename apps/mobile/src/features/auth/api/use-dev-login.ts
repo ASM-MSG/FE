@@ -5,6 +5,7 @@ import {
   DEVICE_ID_HEADER,
 } from "../../../shared/api/auth-pipeline";
 import { unwrapEnvelope } from "../../../shared/api/envelope";
+import { resetSessionCache } from "../../../shared/api/reset-session-cache";
 import { socialLogin } from "../../../shared/api/sdk";
 import { authStore } from "../model/auth-session";
 
@@ -38,8 +39,13 @@ export const useDevSocialLogin = () => {
       if (deviceId !== null) {
         await authStore.setDeviceId(deviceId);
       }
-      // 이전 세션 캐시가 다음 사용자에게 새지 않도록 비운다 (웹 선례)
-      queryClient.clear();
+      // 이전 세션 캐시가 다음 사용자에게 새지 않도록 비운다 (웹 선례).
+      // clear()가 아니라 resetSessionCache인 이유는 그 JSDoc 참조 — clear()는 이 시점에
+      // 구독 중이던 동의 게이트 옵저버를 파괴된 Query에 묶어 게이트를 영영 못 뜨게 했다
+      // (MSG-422 재작업 1회차). 실 소셜 로그인이 붙을 때도 이 함수를 쓴다.
+      // 폐기는 동기, 재조회만 비동기다 — 로그인 완료를 재조회에 묶지 않는다
+      // (`invalidateQueries`를 void로 흘리는 use-update-location-consent와 같은 관례).
+      void resetSessionCache(queryClient);
     },
   });
 };
