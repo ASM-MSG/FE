@@ -84,6 +84,14 @@ describe("buildVisibleCells (AC 3)", () => {
     );
   });
 
+  it("임계가 웹 정본과 같은 16이라 축척 250m(zoom 15)에는 격자가 없다 — 집계 마커 구간 (MSG-428 L3)", () => {
+    // MSG-428 승인 Q1: 15였던 모바일 임계를 웹(16)에 맞춰 상향했다. 이 줌부터 동 단위
+    // 클러스터 마커가 대신 뜨므로, 격자가 남으면 두 층이 겹쳐 보인다
+    expect(GRID_MIN_ZOOM).toBe(16);
+    expect(buildVisibleCells(viewport, 15)).toEqual([]);
+    expect(buildVisibleCells(viewport, 16).length).toBeGreaterThan(0);
+  });
+
   it("원점에서 먼 뷰포트에서도 정렬이 유지된다 — 원점 남서쪽(음수 인덱스) 뷰포트", () => {
     const southWest: Bounds = {
       sw: { lat: GRID_ORIGIN.lat - 0.003, lng: GRID_ORIGIN.lng - 0.004 },
