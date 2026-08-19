@@ -70,8 +70,24 @@ export const ProfileScreen = () => {
   // 조회 전·실패 시 mock 폴백 — 게이트를 세우지 않는다 (결정 E2)
   const identity = profile ?? MOCK_PROFILE;
   const notifications = useNotificationToggle();
-  const logout = useLogout();
+  const logout = useLogout({
+    onSettled: () => {
+      setLogoutOpen(false);
+      goToLogin();
+    },
+  });
   const [logoutOpen, setLogoutOpen] = useState(false);
+
+  /**
+   * 로그아웃 확인 모달 닫기 — 진행 중에는 닫지 않는다 (계정 삭제 모달과 동형).
+   * 확인을 누른 뒤에는 서버 호출 성패와 무관하게 로컬 세션이 끊기므로(로컬 우선 종료)
+   * 되돌릴 수 없다. 그때 모달만 닫아 주면 "취소했는데 잠시 뒤 로그인 화면으로 튕기는"
+   * 것처럼 보인다 — 진행 중임을 계속 보여 주는 편이 정직하다 (MSG-426 리뷰).
+   */
+  const closeLogoutModal = () => {
+    if (logout.isPending) return;
+    setLogoutOpen(false);
+  };
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const joinedText = `가입일 ${formatJoinedDate(identity.joinedAt)}`;
@@ -181,16 +197,9 @@ export const ProfileScreen = () => {
         confirmText={logout.isPending ? "로그아웃 중…" : "로그아웃"}
         confirmVariant="danger"
         confirmDisabled={logout.isPending}
-        onCancel={() => setLogoutOpen(false)}
-        onOverlayPress={() => setLogoutOpen(false)}
-        onConfirm={() =>
-          logout.mutate(undefined, {
-            onSettled: () => {
-              setLogoutOpen(false);
-              goToLogin();
-            },
-          })
-        }
+        onCancel={closeLogoutModal}
+        onOverlayPress={closeLogoutModal}
+        onConfirm={() => logout.mutate()}
       />
 
       {/* 계정 삭제 확인 모달 (기준 9·10) */}

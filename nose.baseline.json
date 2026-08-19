@@ -584,6 +584,32 @@
       ]
     },
     {
+      "id": "0ae15804f84a26a9",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (11 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "c06df32f484ef1fb",
+          "source_digest": "fnv1a64:e386a4e6bcee4f69",
+          "file": "apps/mobile/src/features/profile/ui/profile-edit-screen.tsx",
+          "lang": "typescript",
+          "start_line": 35,
+          "end_line": 217,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "12162737498f47cf",
+          "source_digest": "fnv1a64:a311e01387addc02",
+          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
+          "lang": "typescript",
+          "start_line": 66,
+          "end_line": 213,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "0c63d04b409def87",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -4240,42 +4266,6 @@
       ]
     },
     {
-      "id": "6c82d4e91ff87c6c",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (16 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "f2ce2ee14dcf07e9",
-          "source_digest": "fnv1a64:1c43b72aaa32d3ff",
-          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 204,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e23d1fd2abb24dd4",
-          "source_digest": "fnv1a64:f7eb6fef0a338e8c",
-          "file": "apps/mobile/src/features/profile/ui/profile-edit-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 186,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "ab3df50d7bcd3191",
-          "source_digest": "fnv1a64:f3322f9d47e0156d",
-          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 154,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "6cbfac606f3c0e72",
       "note": "local duplication — extract a method from the repeated block — high-parameter (7 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -5780,6 +5770,32 @@
       ]
     },
     {
+      "id": "976187226da8d947",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "5cb495afae3a1bec",
+          "source_digest": "fnv1a64:652016e0ff50d17a",
+          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
+          "lang": "typescript",
+          "start_line": 89,
+          "end_line": 94,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "a8b9503d641c9b2a",
+          "source_digest": "fnv1a64:652016e0ff50d17a",
+          "file": "apps/mobile/src/features/profile/ui/profile-edit-screen.tsx",
+          "lang": "typescript",
+          "start_line": 114,
+          "end_line": 119,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "98209b9fdcbf1222",
       "note": "consolidate `loadWebGridCard` — 2 copies — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -6920,6 +6936,32 @@
           "end_line": 93,
           "kind": "Function",
           "name": "at",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "b2ad57f0d596c670",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (15 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "9dc1b97b9f48402e",
+          "source_digest": "fnv1a64:2bbf1392d5eee047",
+          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 213,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "ab3df50d7bcd3191",
+          "source_digest": "fnv1a64:f3322f9d47e0156d",
+          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 154,
+          "kind": "Block",
           "is_fragment": false
         }
       ]

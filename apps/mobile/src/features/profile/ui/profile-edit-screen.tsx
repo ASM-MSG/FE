@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { useEffect, useEffectEvent, useState } from "react";
+import { BackHandler, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { User } from "lucide-react-native";
@@ -74,8 +74,10 @@ export const ProfileEditScreen = () => {
       else router.back();
     };
     if (shouldRemoveProfileImage(removalReserved, identity.profileImageUrl)) {
-      // 성공분이 재요청되지 않도록 예약을 즉시 폐기한다. 모달이 아니라 화면이라
-      // 저장 중 언마운트가 없어 per-call 콜백으로 다음 단계를 잇는다
+      // 성공분이 재요청되지 않도록 예약을 즉시 폐기한다. 다음 단계를 per-call 콜백으로
+      // 잇는 것은 저장 중 이탈이 **막혀 있기 때문에** 안전하다 — 아래 leaveIfIdle과
+      // hardwareBackPress 가드가 그 전제를 강제한다(가드가 없으면 이미지만 지워지고
+      // 닉네임 저장이 조용히 누락된다 — MSG-426 리뷰)
       removeImage.mutate(undefined, {
         onSuccess: () => {
           setRemovalReserved(false);
@@ -87,9 +89,38 @@ export const ProfileEditScreen = () => {
     finishWithNickname();
   };
 
+  /**
+   * 저장 비행 중에는 이탈을 받지 않는다 (MSG-426 리뷰). 이미지 삭제 → 닉네임의 순차 실행이
+   * per-call 콜백으로 이어져 있어, 중간에 이 화면이 언마운트되면 **이미지는 서버에서 지워졌는데
+   * 닉네임 저장만 조용히 누락**된다(사용자에게 오류도 안 보인다). 하단 [취소]/[저장]은 이미
+   * `disabled={isSaving}`인데 헤더 `‹`와 하드웨어 뒤로가기만 열려 있던 구멍을 막는다.
+   * MSG-422 `abortSignup` 가드와 같은 취지다.
+   */
+  const leaveIfIdle = () => {
+    if (isSaving) return;
+    router.back();
+  };
+
+  // Effect Event로 감싸 구독을 마운트 1회로 고정한다 — 본문이 읽는 isSaving은 매번 최신이지만
+  // 의존성이 아니므로 저장 상태 변화가 BackHandler를 재등록시키지 않는다.
+  // 저장 중이면 true를 돌려 기본 동작(이전 화면)을 막고, 평시에는 false로 라우터에 맡긴다.
+  //
+  // 이 구독 보일러플레이트는 동의 게이트·도감과 3중 복제다. 공용 훅 추출을 시도했으나
+  // **React가 Effect Event를 다른 훅·함수로 넘기는 것을 금지한다**(rules-of-hooks:
+  // "cannot be assigned to a variable or passed down") — 판정 함수가 각 화면의 상태를
+  // 읽어야 하므로 추출이 불가능하다. nose.baseline.json에 의도 중복으로 등재했다.
+  const handleHardwareBack = useEffectEvent(() => isSaving);
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () =>
+      handleHardwareBack(),
+    );
+    return () => subscription.remove();
+  }, []);
+
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <AppHeader title="프로필 편집" onBack={() => router.back()} />
+      <AppHeader title="프로필 편집" onBack={leaveIfIdle} />
       <ScrollView
         className="flex-1"
         // grow: 콘텐츠가 짧아도 mt-auto 버튼 행이 화면 하단에 붙게 컨테이너를 채운다
@@ -168,7 +199,7 @@ export const ProfileEditScreen = () => {
               shape="pill"
               className="flex-1 border border-primary"
               disabled={isSaving}
-              onPress={() => router.back()}
+              onPress={leaveIfIdle}
             />
             <Button
               text={isSaving ? "저장 중…" : "저장"}
