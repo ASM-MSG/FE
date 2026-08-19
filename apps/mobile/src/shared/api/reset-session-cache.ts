@@ -16,6 +16,12 @@ import type { QueryClient } from "@tanstack/react-query";
  * 나가지 않고, 이어서 활성 옵저버를 재조회시킨다 — "이전 사용자 데이터 폐기 + 화면 갱신"이라는
  * 원래 의도에 정확히 대응하는 API다.
  *
+ * 재조회 대상은 활성 옵저버(`enabled !== false`)뿐이라, 로그인 직후 아직 재렌더가 오지 않아
+ * `enabled:false`로 남아 있는 게이트 옵저버는 이 호출의 재조회에서 빠질 수 있다. 그래도
+ * 결과는 같다 — Query가 초기 상태로 되돌아가 있으므로 뒤늦은 재렌더가 `enabled:true`로 켜는
+ * 전이 자체가 조회를 발사한다. clear()와 갈리는 지점이 여기다(파괴된 Query에 남은 옵저버는
+ * 그 전이마저 무의미하다). 두 경로 모두 reset-session-cache.test.ts가 고정한다.
+ *
  * 로그아웃 경로에는 쓰지 않는다 — 거기서는 재조회가 곧 401이므로 clear()가 맞다.
  */
 export const resetSessionCache = (queryClient: QueryClient): Promise<void> =>

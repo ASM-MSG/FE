@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
 import { BackHandler, Pressable, ScrollView, Text, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -47,12 +53,18 @@ export const SignupConsentScreen = () => {
   // 헤더 `‹`와 하드웨어 뒤로가기의 공용 1회 가드 (AC 23) — 어느 쪽이 먼저 시작하든
   // 다른 쪽 발화를 막아 로그아웃 요청이 하나만 나간다. 실패해도 onSettled가 로컬 세션을
   // 끊어 게이트가 닫히므로 리셋하지 않는다 (웹 logoutRequestedRef 선례)
+  //
+  // 저장이 비행 중이면 이탈을 받지 않는다 — CTA를 누른 직후 뒤로가기를 누르면 로컬 세션은
+  // 즉시 끊기는데 이미 발사된 PUT은 뒤늦게 성공할 수 있어, "중단했는데 서버에는
+  // consented:true가 남는" 불확정 상태가 된다. 동의 이력이 이 화면의 존재 이유이므로
+  // 요청이 끝날 때까지 판정을 미룬다. 창은 유한하다 — ky 기본 timeout 10초 안에 성공이든
+  // 실패든 isSaving이 풀리고(실패면 인라인 안내 + 재시도), 성공하면 게이트 자체가 닫힌다
   const logoutRequestedRef = useRef(false);
   const abortSignup = useCallback(() => {
-    if (logoutRequestedRef.current) return;
+    if (logoutRequestedRef.current || isSaving) return;
     logoutRequestedRef.current = true;
     logout();
-  }, [logout]);
+  }, [logout, isSaving]);
 
   // 게이트가 Stack을 대체하면 app/index.tsx가 마운트되지 않아 hideAsync()가 불리지
   // 않는다 — 스플래시가 영구히 남아 게이트가 아예 안 보이는 사고를 막는다 (AC 6)
@@ -61,21 +73,25 @@ export const SignupConsentScreen = () => {
   }, []);
 
   // 하드웨어 뒤로가기 (AC 22) — 약관 전문이 열려 있으면 그것만 닫고, 동의 화면에서는
-  // 로그인 중단이다. 어느 경우든 true를 돌려줘 기본 동작(앱 종료·이전 화면)을 막는다
+  // 로그인 중단이다. 어느 경우든 true를 돌려줘 기본 동작(앱 종료·이전 화면)을 막는다.
+  // Effect Event로 감싸 구독을 마운트 1회로 고정한다 — 본문이 읽는 openedTerms·abortSignup은
+  // 매번 최신이지만 의존성이 아니므로, 전문 뷰 토글이나 저장 상태 변화가 BackHandler를
+  // 재등록시키지 않는다 (react-doctor prefer-use-effect-event)
+  const handleHardwareBack = useEffectEvent(() => {
+    if (openedTerms !== null) {
+      setOpenedTerms(null);
+      return true;
+    }
+    abortSignup();
+    return true;
+  });
+
   useEffect(() => {
-    const subscription = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        if (openedTerms !== null) {
-          setOpenedTerms(null);
-          return true;
-        }
-        abortSignup();
-        return true;
-      },
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () =>
+      handleHardwareBack(),
     );
     return () => subscription.remove();
-  }, [abortSignup, openedTerms]);
+  }, []);
 
   // 게이트 내부 전면 뷰 — 체크 상태(consent)는 이 컴포넌트가 계속 보유하므로 유지된다 (AC 25)
   if (openedTerms !== null) {

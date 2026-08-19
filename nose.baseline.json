@@ -877,34 +877,6 @@
       ]
     },
     {
-      "id": "11489316f3f1e35e",
-      "note": "consolidate `view` — 2 copies",
-      "members": [
-        {
-          "id": "2dc7ad8cb5a37baf",
-          "source_digest": "fnv1a64:443653867d2c95d6",
-          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
-          "lang": "typescript",
-          "start_line": 96,
-          "end_line": 107,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "832f704aea932a9a",
-          "source_digest": "fnv1a64:60389d8d635c6d6f",
-          "file": "apps/mobile/src/features/auth/ui/login-screen.tsx",
-          "lang": "typescript",
-          "start_line": 17,
-          "end_line": 27,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "11ae5f0606c7780d",
       "note": "local duplication — extract a method from the repeated block — high-parameter (8 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -1388,34 +1360,6 @@
           "start_line": 249,
           "end_line": 261,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "219b8c9baeb01fa6",
-      "note": "consolidate `view` — 2 copies",
-      "members": [
-        {
-          "id": "039ee3ccc5b23d6c",
-          "source_digest": "fnv1a64:9e7579013a9866f6",
-          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
-          "lang": "typescript",
-          "start_line": 111,
-          "end_line": 121,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "5b409d990d6a2caf",
-          "source_digest": "fnv1a64:c8bacf83cb3781ba",
-          "file": "packages/ui-native/src/checkbox.stories.tsx",
-          "lang": "typescript",
-          "start_line": 75,
-          "end_line": 85,
-          "kind": "Block",
-          "name": "view",
           "is_fragment": false
         }
       ]
@@ -2540,6 +2484,34 @@
       ]
     },
     {
+      "id": "4d019f1749cfc51e",
+      "note": "consolidate `view` — 2 copies",
+      "members": [
+        {
+          "id": "6e108d53dc247f8f",
+          "source_digest": "fnv1a64:443653867d2c95d6",
+          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
+          "lang": "typescript",
+          "start_line": 112,
+          "end_line": 123,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "832f704aea932a9a",
+          "source_digest": "fnv1a64:60389d8d635c6d6f",
+          "file": "apps/mobile/src/features/auth/ui/login-screen.tsx",
+          "lang": "typescript",
+          "start_line": 17,
+          "end_line": 27,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "4d13706fb30fb9fa",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -3412,6 +3384,34 @@
           "start_line": 7,
           "end_line": 10,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "68f1fdc6f7b525c6",
+      "note": "consolidate `view` — 2 copies",
+      "members": [
+        {
+          "id": "0e4a91c9b0c1b64c",
+          "source_digest": "fnv1a64:9e7579013a9866f6",
+          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
+          "lang": "typescript",
+          "start_line": 127,
+          "end_line": 137,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "5b409d990d6a2caf",
+          "source_digest": "fnv1a64:c8bacf83cb3781ba",
+          "file": "packages/ui-native/src/checkbox.stories.tsx",
+          "lang": "typescript",
+          "start_line": 75,
+          "end_line": 85,
+          "kind": "Block",
+          "name": "view",
           "is_fragment": false
         }
       ]
