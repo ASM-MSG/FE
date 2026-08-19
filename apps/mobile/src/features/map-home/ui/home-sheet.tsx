@@ -77,7 +77,7 @@ interface HomeSheetProps {
  * 4단계 드래그 바텀시트 쉘 (AC 10·11·13~16, D9) — 네이버 지도 앱 방식.
  * RNGH Pan + reanimated로 손가락을 따라 연속 이동, 릴리즈 시 최근접 단계 스냅(sheet-snap).
  * MSG-298에서 쉘(드래그·스냅·핸들)과 콘텐츠를 분리했다 — 콘텐츠는 children 슬롯이
- * 렌더하고(기본: DefaultSheetContent, 테마: ThemeSheetContent), 쉘은 콘텐츠를 모른다.
+ * 렌더하고(MSG-427부터 `HomeSheetSwitch`가 시트 7종을 가른다), 쉘은 콘텐츠를 모른다.
  * 단계 상태는 시트가 소유하고 부모는 ref 명령(snapTo·restoreIfHidden)만 내린다 —
  * prop 동기화 useEffect가 공유값 수정과 얽히는 것을 피한다 (react-hooks/immutability,
  * grid-map moveTo와 동일한 명령형 핸들 패턴).

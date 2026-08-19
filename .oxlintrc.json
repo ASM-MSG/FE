@@ -75,6 +75,54 @@
       }
     },
     {
+      // Hermes 미구현 API 차단 (MSG-427 실기 사고) — RN 런타임은 Hermes(RN 0.86 / Hermes 0.17)라
+      // ES2023 change-array-by-copy 등이 없다. vitest는 Node에서 돌고 typecheck의 lib에는 ES2023이
+      // 있어 **게이트 6종이 원리적으로 못 잡는다** — 웹에서 포팅해 온 코드가 런타임에서만 터진다.
+      // MSG-427에서 `toSorted` 3곳이 지도 홈을 마운트 즉시 크래시시켰고, 같은 함정이 이미 두 번
+      // 주석으로 문서화돼 있었는데도 재발했다(gallery-groups.ts · region-cluster-overlay.ts).
+      // 대안: 스프레드 복사 + 제자리 메서드 (`[...arr].sort(...)` — `sort`는 ES2019부터 안정 정렬).
+      "files": ["apps/mobile/**", "packages/ui-native/**"],
+      "rules": {
+        "no-restricted-properties": [
+          "error",
+          {
+            "property": "toSorted",
+            "message": "Hermes 미구현 — `[...arr].sort(...)`를 쓰세요 (sort는 ES2019부터 안정 정렬)"
+          },
+          {
+            "property": "toReversed",
+            "message": "Hermes 미구현 — `[...arr].reverse()`를 쓰세요"
+          },
+          {
+            "property": "toSpliced",
+            "message": "Hermes 미구현 — 복사 후 `splice`를 쓰세요"
+          },
+          {
+            "object": "Object",
+            "property": "groupBy",
+            "message": "Hermes 미구현 — `reduce`로 그룹핑하세요"
+          },
+          {
+            "object": "Map",
+            "property": "groupBy",
+            "message": "Hermes 미구현 — `reduce`로 그룹핑하세요"
+          },
+          {
+            "object": "Promise",
+            "property": "withResolvers",
+            "message": "Hermes 미구현 — `new Promise`로 resolve/reject를 꺼내 쓰세요"
+          }
+        ],
+        "no-restricted-globals": [
+          "error",
+          {
+            "name": "structuredClone",
+            "message": "Hermes 미구현 — 명시적 복사나 직렬화 왕복을 쓰세요"
+          }
+        ]
+      }
+    },
+    {
       // apps/mobile의 순수 JS 파일(metro 설정 등)은 commonjs+node 컨텍스트
       "files": ["apps/mobile/**/*.js"],
       "env": {

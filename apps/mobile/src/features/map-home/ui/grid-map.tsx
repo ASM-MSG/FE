@@ -26,7 +26,7 @@ import { buildDashedRectOutline } from "../model/dashed-outline";
 import { buildHatchSegments } from "../model/hatch-pattern";
 import { buildVisibleCells, type VisibleCell } from "../model/visible-grid";
 import type { Viewport } from "../model/viewport";
-import type { RouteWaypoint } from "../model/mock-theme-data";
+import type { RouteWaypoint } from "../model/route-overlay";
 import { drillInZoomForUnit } from "../model/aggregation-unit";
 import { gateOccupiedFill, isBelowGridZoom } from "../model/cluster-overlay";
 import type { RegionClusterMarker } from "../model/region-cluster-overlay";
@@ -62,9 +62,13 @@ const THEME_OUTLINE_WIDTH = 1.5;
 /** 교집합 빗금 (MSG-298 AC 9) — 테마 원색 실선 세그먼트 */
 const HATCH_LINE_WIDTH = 2;
 
-/** 추천 경로 (MSG-298 AC 10) — Figma 14094:5417/5419: 폴리라인 4px + 28px 번호 마커 */
+/** 코스 경로 (MSG-427 E14) — Figma 14094:5417/5419: 폴리라인 4px + 28px 번호 마커 */
 const ROUTE_LINE_WIDTH = 4;
 const ROUTE_MARKER_SIZE = 28;
+
+/** 선택 미션 이름표 마커 치수 (MSG-427 승인 Q4) — 한 줄 pill */
+const MISSION_LABEL_WIDTH = 140;
+const MISSION_LABEL_HEIGHT = 24;
 
 export interface GridMapRef {
   /** 카메라를 해당 좌표로 애니메이션 이동 — 내 위치 버튼 (AC 8) */
@@ -95,14 +99,24 @@ interface GridMapProps {
   highlightCell?: GridCellIndex;
   /** 내 점령 셀 — primary 채움 상시 표시 (MSG-298 AC 6). 교집합 셀도 포함해 넘긴다 */
   occupiedCells?: GridCellIndex[];
-  /** 테마 전용 셀 — themeColor 채움 (MSG-298 AC 7). 파생(3분류)은 theme-cells.ts가 담당 */
+  /**
+   * 미션·핫구역 강조 셀 — themeColor 채움 (MSG-427 D9). 파생(뷰포트 클리핑 + 3분류)은
+   * `mission.missionGridIdsInBounds` → `mission-cells`가 담당한다 — 이 컴포넌트는
+   * 뷰포트 밖 셀을 받지 않는다 (F-12: 렌더 비용을 화면 크기에 묶는다).
+   */
   themeCells?: GridCellIndex[];
-  /** 테마 원색 hex — themeCells·hatchCells·route에 공통 적용 */
+  /** 테마 원색 hex — themeCells·hatchCells·route·missionLabel에 공통 적용 */
   themeColor?: string;
-  /** 교집합(테마 ∩ 점령) 셀 — 테마 색 빗금 추가 (MSG-298 AC 9) */
+  /** 교집합(테마 ∩ 점령) 셀 — 테마 색 빗금 추가 (MSG-427 D9) */
   hatchCells?: GridCellIndex[];
-  /** 추천 경로 — 폴리라인 좌표 + 번호 웨이포인트 (MSG-298 AC 10, 경로추천 테마 전용) */
+  /** 코스 경로 — 폴리라인 좌표 + 번호 경유지 마커 (MSG-427 E14, 경로추천 전용) */
   route?: { path: LatLng[]; waypoints: RouteWaypoint[] };
+  /**
+   * 선택된 미션의 이름표 마커 (MSG-427 승인 Q4) — **선택된 미션에만** 붙인다.
+   * Figma 9개 프레임 어디에도 이름표가 없고 RN에는 hover가 없어(스펙 R4), 티켓
+   * [동작 요구]의 "이름표가 붙는다"를 지도가 글자로 덮이지 않는 최소 범위로 충족한다.
+   */
+  missionLabel?: { text: string; coord: LatLng };
   /**
    * 카메라 **이동 종료** 시 현재 뷰포트 통지 (MSG-423 요구 5) — 조회 재발사 트리거다.
    * SDK의 `onCameraIdle`에 물린다: 제스처가 완전히 끝나야 발화하므로 드래그·줌 중에는
@@ -178,6 +192,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     themeColor,
     hatchCells,
     route,
+    missionLabel,
     onViewportChange,
     clusters,
   },
@@ -422,6 +437,41 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
           <ClusterMarker marker={cluster} />
         </NaverMapMarkerOverlay>
       ))}
+      {/* 선택 미션 이름표 (승인 Q4) — 마커 서브뷰라 nativewind 대신 토큰 값을 style로
+          직접 주입한다 (번호 마커와 같은 관례). Android 서브뷰 평탄화 방지 collapsable={false} */}
+      {themeColor && missionLabel && (
+        <NaverMapMarkerOverlay
+          latitude={missionLabel.coord.lat}
+          longitude={missionLabel.coord.lng}
+          width={MISSION_LABEL_WIDTH}
+          height={MISSION_LABEL_HEIGHT}
+          anchor={{ x: 0.5, y: 0.5 }}
+        >
+          <View
+            collapsable={false}
+            style={{
+              width: MISSION_LABEL_WIDTH,
+              height: MISSION_LABEL_HEIGHT,
+              borderRadius: MISSION_LABEL_HEIGHT / 2,
+              backgroundColor: themeColor,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 8,
+            }}
+          >
+            <Text
+              numberOfLines={1}
+              style={{
+                color: semantic.onPrimary,
+                fontSize: 12,
+                fontWeight: "600",
+              }}
+            >
+              {missionLabel.text}
+            </Text>
+          </View>
+        </NaverMapMarkerOverlay>
+      )}
       {highlight && (
         <>
           <NaverMapPolygonOverlay
