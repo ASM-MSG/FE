@@ -1,113 +1,203 @@
+import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Lock, MapPin, Sparkles } from "lucide-react-native";
+import { MapPin, Sparkles } from "lucide-react-native";
 import { palette, semantic } from "@fillmap/design-tokens";
-import { AppHeader, Button, Chip } from "@fillmap/ui-native";
-import { LOCATION_FULL_TEXT } from "../model/upload-copy";
+import { AppHeader, Button } from "@fillmap/ui-native";
+import { useUploadLocation } from "../api/use-upload-location";
+import { useConfirmUpload } from "../api/use-upload-mutations";
+import { STAGE_FAILURE_MESSAGES } from "../model/analysis-copy";
+import { buildConfirmInput, canPublishUpload } from "../model/confirm-input";
+import { formatSegmentLabel } from "../model/highlight-selection";
+import { useUploadFlowHydrated } from "../model/upload-flow-persistence";
+import { backRouteFromPreview } from "../model/upload-flow-resume";
 import {
   selectSelectedSegment,
   uploadFlowStore,
   useUploadFlow,
 } from "../model/upload-flow-store";
+import { UploadFlowError } from "../model/upload-orchestration";
+import { useHardwareBack } from "./use-hardware-back";
+import { UploadCompleteView } from "./upload-complete-view";
+import { UploadVideoPreview } from "./upload-video-preview";
 
 /**
- * SOURCE: Figma "업로드 미리보기" (node 14094:4427) — 업로드 플로우 4/4 최종 확인 (MSG-305).
- * 다크 프리뷰(플레이스홀더 폴백 — 추정 4) + 요약 카드 3개. 수정 기능 없는 확인 전용.
- * 하이라이트 카드는 선택 구간의 시간·사유를 동적 반영 (승인 결정 2 — Figma 고정 문구는
- * 첫 구간 예시). 302에서 입력한 제목은 미표시 — Figma 준수 (승인 결정 3).
- * 게시는 mock — API 호출 없이 스토어 reset 후 지도 홈 복귀 (AC 6·7, 게시 완료 피드백
- * 없음 — 추정 2). 게시 후 지도 셀 상태 갱신은 제외 범위 (리스크 1).
+ * SOURCE: Figma "업로드 미리보기" (node 14799:26099) — 기준 19~22·27·29·34.
+ * 실 영상 프리뷰 + 선택 구간 카드 + 위치 카드를 확인하고 [업로드하기]로 확정한다.
+ *
+ * 현행 대비 사라지는 것들은 전부 의도다: "개인정보 자동 블러" 카드는 블러가 업로드
+ * 후처리로 빠지며 폐기됐고(오탐 방지 8), "4/4 단계 · 최종 확인" 행은 Figma 정본에 없다.
+ * 구간 카드의 사유 문장("조회수·움직임 기반 …")도 플레이스홀더라 시간·길이 문구로
+ * 대체된다(오탐 방지 2). 위치는 mock 상수가 아니라 역지오코딩 결과다(오탐 방지 4).
+ *
+ * 완료 화면은 라우트가 아니라 이 화면의 전면 오버레이다(D6) — 하드웨어 뒤로가기로
+ * 되돌아가 이미 확정된 업로드를 재게시하는 경로를 만들지 않기 위해서다.
  */
 export const PreviewScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const hydrated = useUploadFlowHydrated();
   const flow = useUploadFlow();
-  const segment = selectSelectedSegment(flow);
+  const location = useUploadLocation();
+  const confirm = useConfirmUpload();
+  const [completed, setCompleted] = useState(false);
 
-  /** 게시 (AC 6·7) — reset 후 홈까지 스택 해제 복귀 (업로드 스택에 남지 않게) */
-  const publish = () => {
+  const segment = selectSelectedSegment(flow);
+  const canPublish = canPublishUpload({
+    video: flow.video,
+    segment,
+    center: location.center,
+    submitting: confirm.isPending,
+  });
+
+  /** [확인] — 스택 해제 + 홈 복귀 + 플로우 초기화(영속 값 제거 포함) (기준 29·39) */
+  const finish = () => {
     uploadFlowStore.reset();
     router.dismissTo("/home");
   };
 
+  /**
+   * 이전 단계로 (기준 22) — 진행된 presign·S3 PUT을 버린다. 빠뜨리면 다른 구간으로
+   * 재게시할 때 직전 s3Key로 확정되는 정합성 버그가 된다(웹 backToHighlight 선례).
+   *
+   * 복귀 지점은 `backRouteFromPreview`(흐름 상태)가 정하고 **명시 이동**한다 —
+   * `router.back()`은 스택 이력에 기대는데 콜드 스타트로 복원된 흐름은 스택이
+   * `[/home, /upload/preview]`뿐이라 하이라이트를 건너뛰고 홈으로 나가버린다(codex 리뷰 P1).
+   */
+  const goBack = () => {
+    if (confirm.isPending) return;
+    const target = backRouteFromPreview(flow);
+    if (target === "/upload/highlight") {
+      uploadFlowStore.backToHighlight();
+    } else {
+      uploadFlowStore.backToSelect();
+    }
+    router.replace(target);
+  };
+
+  /**
+   * 하드웨어/제스처 백도 같은 이탈 경로를 태운다 (codex 리뷰 3회차 P2) — 우회하면 사용자는
+   * 이전 화면을 보는데 영속 스텝은 preview로 남아 재시작이 예기치 않게 미리보기로 재개된다.
+   * 완료 화면에서는 이미 정리가 끝났으므로(settleUploadSuccess) 홈으로 보낸다.
+   */
+  useHardwareBack(() => {
+    if (completed) {
+      finish();
+      return;
+    }
+    goBack();
+  });
+
+  // 재수화 전에는 렌더하지 않는다 — 복원값 깜빡임 방지 (기준 38)
+  if (!hydrated) return <View className="flex-1 bg-background" />;
+
+  /**
+   * [업로드하기] (기준 24) — 진행 중 재탭은 무동작 (기준 35).
+   * 중복 차단은 `confirm.publish`의 **동기** 잠금이 한다. `confirm.isPending`만 보면
+   * 같은 틱의 두 번째 탭 시점에는 아직 false라 확정 체인이 두 번 완주하고,
+   * 실제로 서버에 중복 영상이 생성됐다(실측 videoId 287+288 / 289+290).
+   */
+  const publish = () => {
+    if (
+      !canPublish ||
+      flow.video === null ||
+      segment === null ||
+      location.center === null
+    ) {
+      return;
+    }
+    confirm.publish(buildConfirmInput(flow.video, segment, location.center), {
+      onSuccess: () => setCompleted(true),
+      // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
+    });
+  };
+
+  const failureMessage = confirm.isError
+    ? STAGE_FAILURE_MESSAGES[
+        confirm.error instanceof UploadFlowError
+          ? confirm.error.stage
+          : "finalize"
+      ]
+    : null;
+
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <AppHeader title="업로드 미리보기" onBack={() => router.back()} />
+      <AppHeader title="업로드 미리보기" onBack={goBack} />
       <ScrollView
         className="flex-1"
         contentContainerClassName="px-5 pt-md"
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
       >
-        {/* 단계·최종 확인 (AC 2) */}
-        <View className="flex-row items-center justify-between">
-          <Text className="text-fm-label text-foreground-muted">4/4 단계</Text>
-          <Text className="text-fm-body-strong text-foreground">최종 확인</Text>
-        </View>
+        {/* 실 영상 프리뷰 (기준 19) — 최종 확인이라 재생 컨트롤을 연다 */}
+        <UploadVideoPreview uri={flow.video?.uri ?? null} nativeControls />
 
-        {/* 다크 프리뷰 (AC 2) — 썸네일 플레이스홀더 폴백, 재생 버튼 없는 순수 표시 (추정 4) */}
-        <View className="mt-sm aspect-[8/7] w-full rounded-lg bg-foreground" />
-
-        {/* AI 하이라이트 구간 다크 카드 (AC 3) — 우측 시간 슬롯이 Toast에 없어 화면 전용 조립 */}
-        <View className="mt-md w-full flex-row items-start gap-sm rounded-lg bg-foreground py-3.5 pl-3.5 pr-md">
+        {/* AI 하이라이트 구간 다크 카드 (기준 19) — 우측 시간 슬롯이 Toast에 없어 화면 전용 조립 */}
+        <View className="mt-md w-full flex-row items-center gap-sm rounded-lg bg-foreground py-3.5 pl-3.5 pr-md">
           <View className="size-7.5 items-center justify-center rounded-full bg-primary">
             <Sparkles size={14} color={semantic.onPrimary} />
           </View>
-          <View className="flex-1 gap-0.75">
-            <View className="flex-row items-center gap-sm">
-              <Text className="flex-1 text-fm-base font-semibold text-foreground-inverse">
-                AI 하이라이트 구간
-              </Text>
-              <Text className="text-fm-label text-highlight">
-                {segment.timeRange}
-              </Text>
-            </View>
-            <Text className="text-fm-label font-normal text-foreground-inverse/65">
-              {segment.reason} 구간이 선택되었습니다
-            </Text>
-          </View>
-        </View>
-
-        {/* 개인정보 자동 블러 카드 (AC 4) — 완료 칩, 블러 개수 미표시 */}
-        <View className="mt-sm rounded-lg border border-border bg-surface-soft p-md">
-          <View className="flex-row items-center gap-xs">
-            <Lock size={14} color={semantic.textPrimary} />
-            <Text className="flex-1 text-fm-body-strong text-foreground">
-              개인정보 자동 블러
-            </Text>
-            <Chip text="완료" className="bg-primary/10" />
-          </View>
-          <Text className="mt-xxs text-fm-label text-foreground-muted">
-            영상 전체에 블러 처리가 적용됐어요
+          <Text className="flex-1 text-fm-base font-semibold text-foreground-inverse">
+            AI 하이라이트 구간
+          </Text>
+          <Text className="text-fm-label text-highlight">
+            {segment === null ? "-" : formatSegmentLabel(segment)}
           </Text>
         </View>
 
-        {/* 위치 카드 (AC 5) — 302 위치 mock 상수와 단일 출처 */}
+        {/* 위치 카드 (기준 20) — 역지오코딩 regionName, 없으면 "현재 위치" */}
         <View className="mt-sm rounded-lg border border-border bg-surface-soft p-md">
           <Text className="text-fm-label text-foreground-muted">위치</Text>
           <View className="mt-xxs flex-row items-center gap-xs">
             <MapPin size={14} color={palette["red-500"]} />
             <Text className="text-fm-body-strong text-foreground">
-              {LOCATION_FULL_TEXT}
+              {location.label}
             </Text>
           </View>
         </View>
 
-        {/* CTA (AC 6·8) */}
+        {/* 단계 구분 실패 안내 (기준 34) */}
+        {failureMessage !== null && (
+          <Text
+            accessibilityLiveRegion="polite"
+            className="mt-sm text-fm-label text-error"
+          >
+            {failureMessage} — [업로드하기]로 다시 시도할 수 있어요
+          </Text>
+        )}
+
+        {/* CTA (기준 19·22·35) */}
+        {/* 좌표 확보 전에는 비활성 + 대기 표시 — 눌러도 아무 일이 없는 상태를 만들지 않는다
+            (codex 리뷰 P2, `resolveMapCenter()`가 비동기다) */}
         <Button
-          text="지금 게시하기"
+          text={
+            confirm.isPending
+              ? "업로드 중…"
+              : location.center === null
+                ? "위치 확인 중…"
+                : "업로드하기"
+          }
           shape="pill"
           className="mt-lg w-full"
+          disabled={!canPublish}
           onPress={publish}
         />
-        <Button
-          text="이전 단계로"
-          variant="secondary"
-          shape="pill"
-          className="mt-sm w-full border border-border"
-          onPress={() => router.back()}
-        />
+        {/* 하이라이트를 거쳐 왔을 때만 노출한다 — 추천이 없어 건너뛴 흐름
+            (analyzing → preview)에는 돌아갈 하이라이트가 없다 (웹 wentThroughHighlight) */}
+        {backRouteFromPreview(flow) === "/upload/highlight" && (
+          <Button
+            text="이전 단계로"
+            variant="secondary"
+            shape="pill"
+            className="mt-sm w-full border border-border"
+            disabled={confirm.isPending}
+            onPress={goBack}
+          />
+        )}
       </ScrollView>
+
+      {/* 완료 오버레이 (기준 27·29, D6) */}
+      {completed && <UploadCompleteView onConfirm={finish} />}
     </View>
   );
 };
