@@ -1,183 +1,188 @@
-import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { ActivityIndicator, BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { ChevronRight } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
-import { AppHeader, Button, Chip } from "@fillmap/ui-native";
+import { AppHeader } from "@fillmap/ui-native";
+import type { RecentRegion } from "../../../entities/dex/model/dex";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
+import { DEFAULT_DEX_TAB, selectDexTab, type DexTab } from "../model/dex-tab";
 import {
-  formatBadgeCount,
-  formatCollectionRate,
-  formatStreak,
-  formatVideoCount,
-  formatVisitSummary,
-} from "../model/collection-format";
+  deriveRecentRegions,
+  excludeRemovedRegions,
+  limitRecentRegions,
+} from "../model/recent-regions";
 import {
-  DEFAULT_DEX_TAB,
-  DEX_TAB_ITEMS,
-  selectDexTab,
-  type DexTab,
-} from "../model/dex-tab";
-import type { GalleryScope } from "../model/gallery-scope";
-import {
-  MOCK_COLLECTION_SUMMARY,
-  MOCK_VISIT_RECORDS,
-} from "../model/mock-collection";
+  useCollectionGridsQuery,
+  useCollectionSummaryQuery,
+} from "../model/use-collection-query";
+import { useCurrentRegionStatQuery } from "../model/use-region-stat-query";
 import { BadgeShelf } from "./badge-shelf";
-import { GalleryView } from "./gallery-view";
-
-/** 스탯 카드 1칸 — 라벨(캡션) 위, 값(타이틀) 아래 (AC 6) */
-const StatItem = ({ label, value }: { label: string; value: string }) => (
-  <View className="flex-1 gap-xxs">
-    <Text className="text-fm-caption text-foreground-muted">{label}</Text>
-    <Text className="text-fm-title text-foreground">{value}</Text>
-  </View>
-);
+import { DexErrorState } from "./dex-error-state";
+import { DexHeaderSummary } from "./dex-header-summary";
+import { DexTabBar } from "./dex-tab-bar";
+import { DexTabPlaceholder } from "./dex-tab-placeholder";
+import { MapTabBody } from "./map-tab-body";
+import { RegionGalleryView } from "./region-gallery-view";
 
 /**
- * SOURCE: Figma "개인 도감 — 지도 탭" (node 14094:4734, 2026-08-05 개정판) — MSG-299.
- * 헤더 + 스탯 카드 + [지도|뱃지] 전환 칩 + 지도 탭 콘텐츠(지도 프리뷰 플레이스홀더·
- * 지역별 방문 기록) 조립. mock 데이터 기반 UI만 — API 연동 제외 범위. 뱃지 탭은
- * 뱃지 진열장(MSG-301, badge-shelf). 칩 상태는 화면 로컬·비영속 (추정 5).
- * 시안의 "Image" 라벨은 플레이스홀더라 넣지 않는다 (추정 1, 오탐 방지 1).
+ * SOURCE: Figma "개인 도감 — 지도 탭"(node 14799:26328) · "동 갤러리"(node 14799:26373) — MSG-425.
+ * 개인 도감 3탭 셸 — 헤더 + 공통 요약(진행 바·통계 타일) + 탭 바 + 본문 스위치.
+ * 종전 mock 2탭 화면(MSG-299~301)을 실 API 3탭 구조로 전면 교체한다.
  *
- * 갤러리(MSG-300)는 별도 라우트가 아닌 화면 내 상태 — galleryScope가 있으면 지도
- * 탭 콘텐츠 대신 GalleryView를 렌더한다 (스펙 ASSUMPTION 2: 칩 동작·바텀 내비 활성
- * 보존, 트레이드오프로 시스템 back 미지원 — BackHandler 미도입 승인됨). 복귀는
- * 헤더 뒤로가기(갤러리 뷰에서만 표시) + 칩 탭(활성 재탭 포함, 스코프 해제) 2종
- * (ASSUMPTION 1, AC 9·10). 스코프도 화면 로컬·비영속 (추정 7).
+ * **이 파일이 셸을 소유한다 — 후속 티켓의 확장 계약은 다음과 같다.**
+ * - **MSG-430**(뱃지·기록 탭 내용): 아래 렌더 스위치의 **2줄**(`<BadgeShelf />` ·
+ *   `<DexTabPlaceholder … />`)을 새 본문 컴포넌트로 바꾸고 그 파일 2개를 추가한다.
+ *   `dex-header-summary`·`dex-tab-bar`·`dex-error-state`·이 셸은 무수정이 목표다.
+ * - **MSG-431**(내 영상 관리): `gallery-video-card.tsx` **한 파일**만 고친다.
+ *   `VideoCard`의 `overlay` prop에 ⋯ 버튼 + `ActionSheet`를 얹으면 되고, 셸·갤러리 뷰·
+ *   `ui-native`는 무수정이다.
+ *
+ * 상태는 전부 화면 로컬·비영속이다(추정 A2·A4) — 모바일에 `/dex/:tab` 라우트가 없고
+ * expo-router 세그먼트를 추가하면 MSG-430과 소유권이 충돌한다. X 감춤도 `useState`다
+ * (apps/mobile에 zustand 의존성이 없고, 감춤은 화면 1곳 상태다).
+ * 골격 게이트는 요약·수집 격자 두 쿼리만 본다 — 탐험률(by-point)은 부분 실패해도
+ * 화면을 막지 않고 진행 바만 숨긴다.
  */
 export const DexScreen = () => {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const [tab, setTab] = useState<DexTab>(DEFAULT_DEX_TAB);
-  const [galleryScope, setGalleryScope] = useState<GalleryScope | null>(null);
-  const summary = MOCK_COLLECTION_SUMMARY;
+  const [selected, setSelected] = useState<RecentRegion | null>(null);
+  const [removedRegionNames, setRemovedRegionNames] = useState<string[]>([]);
+
+  const summary = useCollectionSummaryQuery();
+  const grids = useCollectionGridsQuery();
+  const regionStat = useCurrentRegionStatQuery();
+
+  const isError = summary.isError || grids.isError;
+  const summaryData = summary.data;
+  const gridsData = grids.data;
+
+  const recentRegions = useMemo(
+    () => (gridsData ? deriveRecentRegions(gridsData) : []),
+    [gridsData],
+  );
+
+  // 파생 → 감춤 → 20개 상한 순서 (승인 Q5 — 감춘 만큼 아래 동이 올라온다)
+  const visibleRegions = useMemo(
+    () =>
+      limitRecentRegions(
+        excludeRemovedRegions(recentRegions, removedRegionNames),
+      ),
+    [recentRegions, removedRegionNames],
+  );
+
+  const clearSelected = useCallback(() => setSelected(null), []);
+
+  const handleRemove = useCallback(
+    (regionName: string) =>
+      setRemovedRegionNames((prev) =>
+        prev.includes(regionName) ? prev : [...prev, regionName],
+      ),
+    [],
+  );
+
+  /*
+   * 하드웨어 뒤로가기 (S9, 승인 Q3) — 갤러리가 열려 있을 때만 가로채 갤러리를 닫고,
+   * 닫힌 상태에서는 false를 돌려 기존 라우트 동작을 보존한다(앱 종료·이전 화면).
+   * Effect Event로 감싸 구독을 마운트 1회로 고정한다 — 본문이 읽는 selected는 매번
+   * 최신이지만 의존성이 아니므로 갤러리 진입·복귀가 BackHandler를 재등록시키지 않는다.
+   */
+  const handleHardwareBack = useEffectEvent(() => {
+    if (selected === null) return false;
+    setSelected(null);
+    return true;
+  });
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () =>
+      handleHardwareBack(),
+    );
+    return () => subscription.remove();
+  }, []);
+
+  /*
+   * 본문이 바뀔 때 스크롤을 맨 위로 되돌린다 (codex 리뷰 P2).
+   * 셸이 ScrollView 하나를 계속 들고 본문만 갈아끼우므로, 목록 아래쪽 동을 눌러
+   * 갤러리를 열면 직전 오프셋이 그대로 남아 갤러리가 중간부터 보인다(헤더·첫 영상이
+   * 가려짐). 복귀·탭 전환도 같은 문제라 세 경로를 한 곳에서 처리한다.
+   * animated: false — 화면이 이미 교체된 뒤라 스크롤 연출은 이동으로 읽히지 않는다.
+   */
+  const selectedRegionName = selected?.regionName ?? null;
+  const scrollRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [selectedRegionName, tab]);
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <AppHeader
         title="개인 도감"
-        // 갤러리 뷰에서만 뒤로가기 표시 — 지도 탭 콘텐츠로 복귀 (AC 8·9)
-        onBack={galleryScope ? () => setGalleryScope(null) : undefined}
+        // 갤러리 뷰에서만 뒤로가기 표시 — 동 목록으로 복귀 (S9)
+        onBack={selected ? clearSelected : undefined}
       />
-      <ScrollView className="flex-1">
-        <View className="px-5 pb-lg pt-md">
-          {/* 내 도감 — 스탯 카드 3항목 (AC 6) */}
-          <Text className="text-fm-title text-foreground">내 도감</Text>
-          <View className="mt-sm rounded-md border border-border bg-surface-soft p-md">
-            <View className="flex-row gap-sm">
-              <StatItem label="수집률" value={formatCollectionRate(summary)} />
-              <StatItem
-                label="현재 스트릭"
-                value={formatStreak(summary.streakDays)}
-              />
-              <StatItem
-                label="획득 뱃지"
-                value={formatBadgeCount(summary.badgeCount)}
-              />
-            </View>
-            {/* 스트릭 전체 기록 화면은 제외 범위 — 탭 무동작이라 button 역할을
-                부여하지 않는다 (스펙 리스크 권장 — 방문 기록 행과 동일 원칙) */}
-            <Text className="mt-sm text-fm-body text-foreground underline">
-              스트릭 전체 기록 보기
-            </Text>
+      {/* 바디 패딩 24 (Figma 실측) — 바텀 내비는 형제 요소라 겹치지 않는다 */}
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        contentContainerClassName="px-lg pb-lg pt-md"
+      >
+        {isError ? (
+          <DexErrorState
+            title="도감을 불러오지 못했어요"
+            description="네트워크 상태를 확인하고 다시 시도해 주세요"
+            onRetry={() => {
+              void summary.refetch();
+              void grids.refetch();
+            }}
+          />
+        ) : !summaryData || !gridsData ? (
+          <View className="py-xl">
+            <ActivityIndicator color={semantic.primary} />
           </View>
-
-          {/* [지도|뱃지] 전환 칩 (AC 1·11·12) — 활성 칩 Check 아이콘은 Chip 계약 (오탐 방지 2) */}
-          <View className="mt-md flex-row gap-xs">
-            {DEX_TAB_ITEMS.map(({ key, label }) => (
-              <Chip
-                key={key}
-                text={label}
-                active={tab === key}
-                onPress={() => {
-                  // 칩 전환·활성 재탭 모두 갤러리 스코프 해제 (AC 9·10)
-                  setTab((current) => selectDexTab(current, key));
-                  setGalleryScope(null);
-                }}
-                // 비활성 칩은 배경(white) 위라 윤곽이 없어 테두리만 보강
-                className={tab === key ? undefined : "border border-border"}
-              />
-            ))}
-          </View>
-
-          {tab === "map" && galleryScope ? (
-            // 갤러리 뷰 (AC 4~7·11) — 도감 골격(헤더·스탯 카드·칩)은 위에서 유지
-            <GalleryView
-              scope={galleryScope}
-              onShowAll={() => setGalleryScope({ mode: "all" })}
+        ) : (
+          <View className="gap-md">
+            <DexHeaderSummary
+              regionStat={regionStat.data ?? null}
+              summary={summaryData}
             />
-          ) : tab === "map" ? (
-            <>
-              {/* 내 지도 (AC 7·8) — 실지도 렌더링 제외 범위, 라벨 없는 dashed 플레이스홀더 (추정 1) */}
-              <Text className="mt-md text-fm-title text-foreground">
-                내 지도
-              </Text>
-              <View className="mt-sm h-40 rounded-md border border-dashed border-border bg-surface" />
-              <Button
-                text="지도 전체 보기"
-                variant="primary"
-                size="lg"
-                shape="pill"
-                className="mt-md w-full"
-                onPress={() => router.navigate("/home")}
-              />
-
-              {/* 지역별 방문 기록 — 행 탭이 지역 갤러리 진입점 (MSG-300 AC 4·5,
-                  MSG-299의 "탭 무동작 View"를 이 티켓이 의도적으로 대체) */}
-              <Text className="mt-lg text-fm-title text-foreground">
-                지역별 방문 기록
-              </Text>
-              <View className="mt-sm gap-sm">
-                {MOCK_VISIT_RECORDS.map((record) => (
-                  <Pressable
-                    key={record.regionName}
-                    accessibilityRole="button"
-                    onPress={() =>
-                      setGalleryScope({
-                        mode: "region",
-                        regionName: record.regionName,
-                      })
-                    }
-                    className="flex-row items-center gap-sm rounded-md border border-border bg-surface-soft px-md py-sm"
-                  >
-                    <View className="flex-1 gap-xxs">
-                      <Text className="text-fm-body-strong text-foreground">
-                        {record.regionName}
-                      </Text>
-                      <Text className="text-fm-body text-foreground-muted">
-                        {formatVisitSummary(record)}
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center gap-xxs">
-                      <Text className="text-fm-body text-foreground-muted">
-                        {formatVideoCount(record.videoCount)}
-                      </Text>
-                      <ChevronRight size={14} color={semantic.muted} />
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-
-              {/* 전체 모드 갤러리 진입 링크 (MSG-300 AC 6 — MSG-299의 무동작
-                  텍스트가 동작을 얻어 Pressable로 전환) */}
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setGalleryScope({ mode: "all" })}
-                className="mt-md self-start"
-              >
-                <Text className="text-fm-body text-foreground underline">
-                  갤러리 전체 보기
-                </Text>
-              </Pressable>
-            </>
-          ) : (
-            // 뱃지 진열장 (MSG-301 AC 3~5) — 콘텐츠 조립은 badge-shelf로 분리 (AC 7)
-            <BadgeShelf />
-          )}
-        </View>
+            <DexTabBar
+              active={tab}
+              onSelect={(next) => {
+                // 지도 탭 재탭 포함 — 탭을 누르면 갤러리를 닫아 동 목록으로 복귀한다
+                setTab((current) => selectDexTab(current, next));
+                clearSelected();
+              }}
+            />
+            {tab === "map" ? (
+              selected ? (
+                <RegionGalleryView
+                  // key — 동 변경 시 리마운트로 상태를 초기화한다
+                  key={selected.regionName}
+                  selection={selected}
+                  onViewAll={clearSelected}
+                />
+              ) : (
+                <MapTabBody
+                  regions={visibleRegions}
+                  hasCollected={recentRegions.length > 0}
+                  onSelect={setSelected}
+                  onRemove={handleRemove}
+                />
+              )
+            ) : tab === "badges" ? (
+              <BadgeShelf /> // ← MSG-430: 실 API BadgeTabBody로 교체 (1줄)
+            ) : (
+              <DexTabPlaceholder label="기록" /> // ← MSG-430: RecordTabBody로 교체 (1줄)
+            )}
+          </View>
+        )}
       </ScrollView>
       <AppBottomNav />
     </View>
