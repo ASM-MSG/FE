@@ -3360,45 +3360,6 @@
       ]
     },
     {
-      "id": "63561ddf0c0887e8",
-      "note": "consolidate `view` — 3 copies",
-      "members": [
-        {
-          "id": "6e108d53dc247f8f",
-          "source_digest": "fnv1a64:443653867d2c95d6",
-          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
-          "lang": "typescript",
-          "start_line": 112,
-          "end_line": 123,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "832f704aea932a9a",
-          "source_digest": "fnv1a64:60389d8d635c6d6f",
-          "file": "apps/mobile/src/features/auth/ui/login-screen.tsx",
-          "lang": "typescript",
-          "start_line": 17,
-          "end_line": 27,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "aac1ae14b19fee85",
-          "source_digest": "fnv1a64:78b3a09924ae24aa",
-          "file": "apps/mobile/src/features/onboarding/ui/onboarding-screen.tsx",
-          "lang": "typescript",
-          "start_line": 81,
-          "end_line": 91,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "64a2542f40da6c42",
       "note": "local duplication — extract a method from the repeated block — high-parameter (14 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -3516,6 +3477,34 @@
           "start_line": 7,
           "end_line": 10,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "6789b26a29d02a0d",
+      "note": "consolidate `pressable` — 2 copies",
+      "members": [
+        {
+          "id": "3a3019122e988040",
+          "source_digest": "fnv1a64:1d18f06639822347",
+          "file": "apps/mobile/src/features/onboarding/ui/onboarding-screen.tsx",
+          "lang": "typescript",
+          "start_line": 87,
+          "end_line": 96,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "6d209e8e90172720",
+          "source_digest": "fnv1a64:c2d47387f59192df",
+          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
+          "lang": "typescript",
+          "start_line": 99,
+          "end_line": 108,
+          "kind": "Block",
+          "name": "pressable",
           "is_fragment": false
         }
       ]
@@ -6129,34 +6118,6 @@
       ]
     },
     {
-      "id": "b98f8a8689268bfd",
-      "note": "consolidate `pressable` — 2 copies",
-      "members": [
-        {
-          "id": "dd9f253f29b89630",
-          "source_digest": "fnv1a64:1d18f06639822347",
-          "file": "apps/mobile/src/features/onboarding/ui/onboarding-screen.tsx",
-          "lang": "typescript",
-          "start_line": 69,
-          "end_line": 78,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
-        {
-          "id": "6d209e8e90172720",
-          "source_digest": "fnv1a64:c2d47387f59192df",
-          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
-          "lang": "typescript",
-          "start_line": 99,
-          "end_line": 108,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "bcece3c43fe1bfe6",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -7433,6 +7394,45 @@
           "start_line": 35,
           "end_line": 58,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "ef93945a52622428",
+      "note": "consolidate `view` — 3 copies",
+      "members": [
+        {
+          "id": "6e108d53dc247f8f",
+          "source_digest": "fnv1a64:443653867d2c95d6",
+          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
+          "lang": "typescript",
+          "start_line": 112,
+          "end_line": 123,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "832f704aea932a9a",
+          "source_digest": "fnv1a64:60389d8d635c6d6f",
+          "file": "apps/mobile/src/features/auth/ui/login-screen.tsx",
+          "lang": "typescript",
+          "start_line": 17,
+          "end_line": 27,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "545ef659e429a595",
+          "source_digest": "fnv1a64:78b3a09924ae24aa",
+          "file": "apps/mobile/src/features/onboarding/ui/onboarding-screen.tsx",
+          "lang": "typescript",
+          "start_line": 99,
+          "end_line": 109,
+          "kind": "Block",
+          "name": "view",
           "is_fragment": false
         }
       ]

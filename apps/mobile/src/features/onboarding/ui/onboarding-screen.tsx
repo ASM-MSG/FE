@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ComponentType } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -46,17 +46,35 @@ export const OnboardingScreen = ({ onDone, onSkip }: OnboardingScreenProps) => {
   const Hero = HERO_BY_STEP[content.id];
   const { total, current } = progressOf(step);
 
+  /**
+   * 종료 경로(완료 저장 → 부모가 화면 전환) 연타 가드.
+   * 화면이 사라지기 전에 탭이 두 번 들어올 수 있다 — 지금은 저장이 총함수고 콜백도 멱등이라
+   * 부작용이 없지만, 여기에 실제 부작용(네트워크 콜 등)이 붙는 순간 조용히 이중 실행된다.
+   *
+   * 상태가 아니라 ref로 잠근다: 상태로 잠그고 `Button`의 `disabled`를 물리면 저장이 끝날 때까지
+   * CTA가 흰 배경·회색 글씨로 바뀌어(ui-native Button의 disabled 배색) "CTA는 primary 채움 +
+   * 흰 글씨"라는 화면 기준과 어긋난다. 재진입만 막고 렌더는 건드리지 않는다.
+   * 잠금 해제는 없다 — 두 경로 모두 콜백이 항상 실행돼 이 화면이 언마운트된다.
+   */
+  const exitingRef = useRef(false);
+  const finishOnboarding = (onFinished: () => void) => {
+    if (exitingRef.current) return;
+    exitingRef.current = true;
+    void setOnboardingCompleted().then(onFinished);
+  };
+
   const handleCta = () => {
     const next = nextActionOf(step);
     if (next === "done") {
-      void setOnboardingCompleted().then(onDone);
+      finishOnboarding(onDone);
       return;
     }
+    // 장 넘김은 잠그지 않는다 — 빠른 연타로 여러 장을 넘기는 것은 의도된 조작이다
     setStep(next);
   };
 
   const handleSkip = () => {
-    void setOnboardingCompleted().then(onSkip);
+    finishOnboarding(onSkip);
   };
 
   return (
