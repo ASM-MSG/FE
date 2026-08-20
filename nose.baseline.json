@@ -4,6 +4,177 @@
   "baseline_kind": "accepted-duplication",
   "families": [
     {
+      "id": "00837dd4ca397d32",
+      "note": "consolidate `view` — 15 copies",
+      "members": [
+        {
+          "id": "39ee78a845f37eed",
+          "source_digest": "fnv1a64:e50ad16d25809228",
+          "file": "apps/mobile/src/features/map-home/ui/mission-status-badge.tsx",
+          "lang": "typescript",
+          "start_line": 36,
+          "end_line": 58,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "5a5d3b4d3265ca3d",
+          "source_digest": "fnv1a64:d71428976be88090",
+          "file": "apps/mobile/src/features/map-home/ui/course-spot-row.tsx",
+          "lang": "typescript",
+          "start_line": 51,
+          "end_line": 65,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "e5c4450f021a0dd2",
+          "source_digest": "fnv1a64:3ac1d3b5ffc868ce",
+          "file": "apps/mobile/src/features/map-home/ui/grid-detail-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 87,
+          "end_line": 97,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "5eada8bc5827ae4c",
+          "source_digest": "fnv1a64:2550d280264cfb66",
+          "file": "packages/ui-native/src/cell-badge.tsx",
+          "lang": "typescript",
+          "start_line": 20,
+          "end_line": 27,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "7f1253bb5553fd8f",
+          "source_digest": "fnv1a64:525017fa6f2719d5",
+          "file": "apps/mobile/src/features/map-home/ui/theme-badge-header.tsx",
+          "lang": "typescript",
+          "start_line": 18,
+          "end_line": 24,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "19143e641950e4b3",
+          "source_digest": "fnv1a64:375873ad3f9e31b6",
+          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
+          "lang": "typescript",
+          "start_line": 195,
+          "end_line": 199,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "0c95fc9ed81594d2",
+          "source_digest": "fnv1a64:ae9a38e7fecf1561",
+          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
+          "lang": "typescript",
+          "start_line": 19,
+          "end_line": 23,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "c61876af3cb6c5b6",
+          "source_digest": "fnv1a64:f5d4c559285a787f",
+          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
+          "lang": "typescript",
+          "start_line": 41,
+          "end_line": 45,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "9cf3a6d3f62f0a84",
+          "source_digest": "fnv1a64:26da3815b275faf2",
+          "file": "apps/mobile/src/features/map-home/ui/grid-detail-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 81,
+          "end_line": 85,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "e3db17b95c67013e",
+          "source_digest": "fnv1a64:767324494718a447",
+          "file": "apps/mobile/src/features/onboarding/ui/fill-hero-card.tsx",
+          "lang": "typescript",
+          "start_line": 65,
+          "end_line": 69,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "1797a508dd6dcce1",
+          "source_digest": "fnv1a64:57eb3aa5dc35f363",
+          "file": "apps/mobile/src/features/upload/ui/blur-preview.tsx",
+          "lang": "typescript",
+          "start_line": 79,
+          "end_line": 83,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "4403bab033a3cd4e",
+          "source_digest": "fnv1a64:49e3ea4c66569c26",
+          "file": "packages/ui-native/src/video-card.stories.tsx",
+          "lang": "typescript",
+          "start_line": 54,
+          "end_line": 58,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "367bb9881d3ecc87",
+          "source_digest": "fnv1a64:f4190910275304cd",
+          "file": "packages/ui-native/src/video-card.tsx",
+          "lang": "typescript",
+          "start_line": 102,
+          "end_line": 106,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "390e522fbd55a42c",
+          "source_digest": "fnv1a64:a5c7405dd2a91467",
+          "file": "apps/mobile/src/features/onboarding/ui/explore-hero-card.tsx",
+          "lang": "typescript",
+          "start_line": 109,
+          "end_line": 111,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "a97d779ce94db62c",
+          "source_digest": "fnv1a64:a870360b3d483bbe",
+          "file": "apps/mobile/src/features/onboarding/ui/fill-hero-card.tsx",
+          "lang": "typescript",
+          "start_line": 84,
+          "end_line": 86,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "0132e006eea42261",
       "note": "repeated across 4 directories — extract a shared abstraction — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -5795,32 +5966,6 @@
       ]
     },
     {
-      "id": "787e2fb09ee94390",
-      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "b994091d430e5b43",
-          "source_digest": "fnv1a64:724079301d6bd60b",
-          "file": "apps/mobile/src/features/notifications/api/push-registration-flow.test.ts",
-          "lang": "typescript",
-          "start_line": 44,
-          "end_line": 55,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e0b4d454ab822592",
-          "source_digest": "fnv1a64:b36da558432a22ff",
-          "file": "apps/mobile/src/features/notifications/api/push-registration-flow.test.ts",
-          "lang": "typescript",
-          "start_line": 68,
-          "end_line": 76,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "7a04681aad0cf311",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -9106,177 +9251,6 @@
           "start_line": 32,
           "end_line": 47,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "ba97b267061eab6e",
-      "note": "consolidate `view` — 15 copies",
-      "members": [
-        {
-          "id": "39ee78a845f37eed",
-          "source_digest": "fnv1a64:e50ad16d25809228",
-          "file": "apps/mobile/src/features/map-home/ui/mission-status-badge.tsx",
-          "lang": "typescript",
-          "start_line": 36,
-          "end_line": 58,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "5a5d3b4d3265ca3d",
-          "source_digest": "fnv1a64:d71428976be88090",
-          "file": "apps/mobile/src/features/map-home/ui/course-spot-row.tsx",
-          "lang": "typescript",
-          "start_line": 51,
-          "end_line": 65,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "e5c4450f021a0dd2",
-          "source_digest": "fnv1a64:3ac1d3b5ffc868ce",
-          "file": "apps/mobile/src/features/map-home/ui/grid-detail-sheet-content.tsx",
-          "lang": "typescript",
-          "start_line": 87,
-          "end_line": 97,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "5eada8bc5827ae4c",
-          "source_digest": "fnv1a64:2550d280264cfb66",
-          "file": "packages/ui-native/src/cell-badge.tsx",
-          "lang": "typescript",
-          "start_line": 20,
-          "end_line": 27,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "7f1253bb5553fd8f",
-          "source_digest": "fnv1a64:525017fa6f2719d5",
-          "file": "apps/mobile/src/features/map-home/ui/theme-badge-header.tsx",
-          "lang": "typescript",
-          "start_line": 18,
-          "end_line": 24,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "19143e641950e4b3",
-          "source_digest": "fnv1a64:375873ad3f9e31b6",
-          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
-          "lang": "typescript",
-          "start_line": 195,
-          "end_line": 199,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "0c95fc9ed81594d2",
-          "source_digest": "fnv1a64:ae9a38e7fecf1561",
-          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
-          "lang": "typescript",
-          "start_line": 19,
-          "end_line": 23,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "c61876af3cb6c5b6",
-          "source_digest": "fnv1a64:f5d4c559285a787f",
-          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
-          "lang": "typescript",
-          "start_line": 41,
-          "end_line": 45,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "9cf3a6d3f62f0a84",
-          "source_digest": "fnv1a64:26da3815b275faf2",
-          "file": "apps/mobile/src/features/map-home/ui/grid-detail-sheet-content.tsx",
-          "lang": "typescript",
-          "start_line": 81,
-          "end_line": 85,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "e3db17b95c67013e",
-          "source_digest": "fnv1a64:767324494718a447",
-          "file": "apps/mobile/src/features/onboarding/ui/fill-hero-card.tsx",
-          "lang": "typescript",
-          "start_line": 65,
-          "end_line": 69,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "d224d8b1019b1c4d",
-          "source_digest": "fnv1a64:57eb3aa5dc35f363",
-          "file": "apps/mobile/src/features/upload/ui/blur-preview.tsx",
-          "lang": "typescript",
-          "start_line": 73,
-          "end_line": 77,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "4403bab033a3cd4e",
-          "source_digest": "fnv1a64:49e3ea4c66569c26",
-          "file": "packages/ui-native/src/video-card.stories.tsx",
-          "lang": "typescript",
-          "start_line": 54,
-          "end_line": 58,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "367bb9881d3ecc87",
-          "source_digest": "fnv1a64:f4190910275304cd",
-          "file": "packages/ui-native/src/video-card.tsx",
-          "lang": "typescript",
-          "start_line": 102,
-          "end_line": 106,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "390e522fbd55a42c",
-          "source_digest": "fnv1a64:a5c7405dd2a91467",
-          "file": "apps/mobile/src/features/onboarding/ui/explore-hero-card.tsx",
-          "lang": "typescript",
-          "start_line": 109,
-          "end_line": 111,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "a97d779ce94db62c",
-          "source_digest": "fnv1a64:a870360b3d483bbe",
-          "file": "apps/mobile/src/features/onboarding/ui/fill-hero-card.tsx",
-          "lang": "typescript",
-          "start_line": 84,
-          "end_line": 86,
-          "kind": "Block",
-          "name": "view",
           "is_fragment": false
         }
       ]

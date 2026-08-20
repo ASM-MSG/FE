@@ -32,6 +32,10 @@ const deps = (
   return { ...base, stored };
 };
 
+/** 권한을 다시 묻지 않는지 관찰하는 공유 스파이 — 두 시나리오가 같은 형태를 쓴다 */
+const grantingSpy = () =>
+  vi.fn(async (): Promise<PushPermissionStatus> => "granted");
+
 describe("enablePush — 토글 ON (기준 14·15)", () => {
   it("권한을 요청해 허용되면 기기 토큰을 등록하고 보관한다", async () => {
     const d = deps({ readPermission: async () => "undetermined" });
@@ -43,9 +47,7 @@ describe("enablePush — 토글 ON (기준 14·15)", () => {
   });
 
   it("이미 허용된 상태면 권한을 다시 묻지 않는다", async () => {
-    const requestPermission = vi.fn(
-      async (): Promise<PushPermissionStatus> => "granted",
-    );
+    const requestPermission = grantingSpy();
     const d = deps({
       readPermission: async () => "granted",
       requestPermission,
@@ -67,9 +69,7 @@ describe("enablePush — 토글 ON (기준 14·15)", () => {
   });
 
   it("이미 영구 거부된 상태면 권한 요청 자체를 건너뛴다", async () => {
-    const requestPermission = vi.fn(
-      async (): Promise<PushPermissionStatus> => "granted",
-    );
+    const requestPermission = grantingSpy();
     const d = deps({ readPermission: async () => "denied", requestPermission });
 
     expect(await enablePush(d)).toEqual({ status: "denied" });
