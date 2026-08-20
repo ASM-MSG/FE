@@ -41,11 +41,17 @@ export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
-  // 매칭 없는 라우트(/upload 등)에서는 활성 탭 없음 — 홈 폴백 제거 (MSG-302 리스크 3,
-  // 기존 탭 라우트에서는 항상 매칭되므로 동작 변화 없음)
-  const activeKey = TAB_META.find(
-    (tab) => TAB_ROUTES[tab.key] === pathname,
-  )?.key;
+  /*
+   * 매칭 없는 라우트(/upload 등)에서는 활성 탭 없음 — 홈 폴백 제거 (MSG-302 리스크 3).
+   * MSG-430: 탭 라우트의 **자식**도 그 탭을 활성으로 친다 — `/dex/history`가 첫 사례이고,
+   * 정확 일치만 보면 도감 하위 화면에서 활성 탭이 사라져 현재 섹션을 알 수 없다.
+   * 세그먼트 경계(`/`)를 요구해 `/dexfoo` 같은 접두 오탐을 막는다. `/upload`는 여전히
+   * 어느 탭 경로의 자식도 아니므로 "활성 탭 없음"이 그대로 유지된다.
+   */
+  const activeKey = TAB_META.find((tab) => {
+    const route = TAB_ROUTES[tab.key];
+    return pathname === route || pathname.startsWith(`${route}/`);
+  })?.key;
 
   const items: BottomNavItem[] = TAB_META.map(({ key, label, Icon }) => ({
     key,
@@ -59,11 +65,18 @@ export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
   }));
 
   const handleSelect = (key: string) => {
+    const route = TAB_ROUTES[key as TabKey];
     if (key === activeKey) {
+      // 자식 라우트(`/dex/history` 등)에서 활성 탭 재탭 — 탭 루트로 되돌린다.
+      // 이 분기가 없으면 활성 판정만 넓힌 탓에 재탭이 무동작이 된다 (MSG-430).
+      if (pathname !== route) {
+        router.navigate(route);
+        return;
+      }
       if (key === "home") onHomeRetap?.();
       return;
     }
-    router.navigate(TAB_ROUTES[key as TabKey]);
+    router.navigate(route);
   };
 
   return (
