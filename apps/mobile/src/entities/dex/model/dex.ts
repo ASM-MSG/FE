@@ -103,9 +103,14 @@ export interface GalleryGridGroup {
 
 /**
  * 뱃지 카탈로그 항목 — `GET /api/badges` (획득+미획득 전체, MSG-430 L1).
- * 웹 `entities/dex/model/dex.ts`의 동명 타입 미러. `iconUrl`은 현재 서버가 전량 null이라
- * 로컬 메달 카탈로그(`entities/badge`)가 아트 정본이고, `featuredRank`는 대표 뱃지 1·2다
+ * 웹 `entities/dex/model/dex.ts`의 동명 타입 미러. `iconUrl`은 **서버가 채워 보낸다**
+ * (MSG-430 검증 실측 — S3 PNG). 아트 정본은 이 값이고 로컬 메달 카탈로그(`entities/badge`)는
+ * 폴백이다 — 우선순위는 `resolveBadgeArt`가 소유한다. `featuredRank`는 대표 뱃지 1·2다
  * (미지정이면 null).
+ *
+ * 종전 이 주석은 "iconUrl 전량 null"이라 적혀 있었고, 그 스테일 전제가 뷰를 SVG 전용
+ * 파서로 몰아 메달 24종이 높이 0으로 사라진 F1 결함의 근인이었다 — 서버 계약을 단정하는
+ * 문장을 남길 때는 실측으로 확인할 것.
  */
 export type DexBadge = Required<
   Pick<MyBadgeResponseDto, "badgeId" | "code" | "name" | "earned">

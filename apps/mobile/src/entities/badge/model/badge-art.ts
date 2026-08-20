@@ -109,10 +109,14 @@ export const resolveBadgeArt = (
   code: string,
   iconUrl: string | null | undefined,
 ): BadgeArt | null => {
-  if (iconUrl !== null && iconUrl !== undefined) {
-    return isSvgUri(iconUrl)
-      ? { kind: "svg-uri", uri: iconUrl }
-      : { kind: "image-uri", uri: iconUrl };
+  // `""`·공백은 null이 아니라 위 폴백을 건너뛰고 빈 uri가 `Image`에 닿아 깨진 이미지가 된다.
+  // 명세 타입(`string | null`)상 지금은 안 오지만, 서버가 값을 비우는 방식이 바뀌어도
+  // 폴백이 살아 있게 하는 가드다 [MSG-430 F1 동류].
+  const remote = iconUrl?.trim();
+  if (remote) {
+    return isSvgUri(remote)
+      ? { kind: "svg-uri", uri: remote }
+      : { kind: "image-uri", uri: remote };
   }
   const xml = BADGE_ART[code];
   return xml === undefined ? null : { kind: "xml", xml };

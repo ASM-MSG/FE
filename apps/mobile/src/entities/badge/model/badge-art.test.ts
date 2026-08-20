@@ -79,6 +79,25 @@ describe("resolveBadgeArt — 뱃지 아트 소스 결정 (L6)", () => {
   it("알 수 없는 code는 null이다 — 표시 컴포넌트가 민무늬 원으로 폴백한다 (경계)", () => {
     expect(resolveBadgeArt("MISSION_TOTAL_99", null)).toBeNull();
   });
+
+  it.each([
+    ["빈 문자열", ""],
+    ["공백뿐", "   "],
+  ])(
+    "iconUrl이 %s이면 주소 없음으로 보고 로컬 카탈로그로 폴백한다 (리뷰 환류 — F1 동류)",
+    (_label, iconUrl) => {
+      const art = resolveBadgeArt("STREAK_30", iconUrl);
+
+      // 빈 uri가 Image로 흘러가 깨진 이미지가 되는 경로를 막는다
+      expect(art?.kind).toBe("xml");
+    },
+  );
+
+  it("iconUrl 앞뒤 공백은 떼고 쓴다 — 그대로 넘기면 잘못된 주소가 된다", () => {
+    expect(
+      resolveBadgeArt("EXPLORER_1", "  https://cdn.example/badge.png  "),
+    ).toEqual({ kind: "image-uri", uri: "https://cdn.example/badge.png" });
+  });
 });
 
 describe("로컬 메달 카탈로그 (L6)", () => {
