@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  EMPTY_UPLOAD_HISTORY_MESSAGE,
   formatCollectedAt,
   formatCountTile,
   formatGallerySummary,
+  formatGrassMeta,
   formatGroupVideoCount,
   formatRecentRegionMeta,
   formatSeqLabel,
   formatStreakTile,
   formatVideoCount,
+  formatYearHeadline,
+  formatYearSubtitle,
 } from "./dex-format";
+import type { GrassSummary } from "./upload-grass";
 
 const NOW = new Date("2026-08-19T12:00:00+09:00");
 
@@ -74,5 +79,66 @@ describe("통계 타일 값 표기 (S2)", () => {
 
   it('스트릭 타일은 이모지 없이 "12일"로 표기된다 (추정 A6)', () => {
     expect(formatStreakTile(12)).toBe("12일");
+  });
+});
+
+/**
+ * 기록 탭·1년 화면 표시 문구 파생 (L7) — 수치는 전부 실데이터 파생이고,
+ * 시안의 "48일·12일·128일·토요일"은 플레이스홀더다.
+ */
+const SUMMARY: GrassSummary = {
+  uploadDayCount: 48,
+  longestStreak: 12,
+  maxDailyCount: 4,
+  mostActiveWeekday: "토요일",
+};
+
+describe("기록 탭 메타 줄 (L7)", () => {
+  it('"최근 24주 · N일 업로드 · 최장 연속 M일"로 표기된다', () => {
+    expect(formatGrassMeta(24, SUMMARY)).toBe(
+      "최근 24주 · 48일 업로드 · 최장 연속 12일",
+    );
+  });
+
+  it("업로드가 0건이어도 같은 형태로 0을 표기한다 (경계)", () => {
+    expect(
+      formatGrassMeta(24, {
+        uploadDayCount: 0,
+        longestStreak: 0,
+        maxDailyCount: 0,
+        mostActiveWeekday: null,
+      }),
+    ).toBe("최근 24주 · 0일 업로드 · 최장 연속 0일");
+  });
+});
+
+describe("1년 기록 화면 문구 (L7)", () => {
+  it('헤드라인은 "지난 1년 동안 N일 업로드했어요"다', () => {
+    expect(formatYearHeadline(SUMMARY)).toBe("지난 1년 동안 48일 업로드했어요");
+  });
+
+  it('부제는 "최장 연속 N일 · 하루 최다 M개 · 가장 활발한 요일 X"다', () => {
+    expect(formatYearSubtitle(SUMMARY)).toBe(
+      "최장 연속 12일 · 하루 최다 4개 · 가장 활발한 요일 토요일",
+    );
+  });
+
+  it("가장 활발한 요일이 null이면 그 조각만 생략한다 (업로드 0건)", () => {
+    expect(
+      formatYearSubtitle({
+        uploadDayCount: 0,
+        longestStreak: 0,
+        maxDailyCount: 0,
+        mostActiveWeekday: null,
+      }),
+    ).toBe("최장 연속 0일 · 하루 최다 0개");
+  });
+});
+
+describe("업로드 기록 빈 상태 문구 (L7, 승인 A4)", () => {
+  it("승인된 문구 그대로다", () => {
+    expect(EMPTY_UPLOAD_HISTORY_MESSAGE).toBe(
+      "아직 업로드 기록이 없어요. 첫 영상을 올리면 여기에 쌓여요.",
+    );
   });
 });

@@ -1,8 +1,10 @@
 import type {
   CollectionGridResponseDto,
   CollectionSummaryResponseDto,
+  MyBadgeResponseDto,
   RegionStatResponseDto,
   RegionVideoResponseDto,
+  UploadHistoryResponseDto,
 } from "../../../shared/api/sdk";
 
 /*
@@ -11,8 +13,8 @@ import type {
  * `shared/api/sdk` 배럴을 경유한다 — 크로스 앱 상대 경로를 `sdk.ts`·`query-options.ts`
  * 두 파일에만 가둔다는 MSG-419 결정을 지키기 위함이다.
  *
- * `DexBadge`·`UploadHistoryDay`는 이 티켓이 쓰지 않는다 — 뱃지·기록 탭 내용을 소유할
- * MSG-430이 자기 필요분을 추가하는 편이 소유가 깔끔하다 (추정 A9).
+ * `DexBadge`·`UploadHistoryDay`는 MSG-430(뱃지·기록 탭 내용)이 추가했다 — MSG-425가
+ * 예고한 소유 경계 그대로다 (추정 A9).
  */
 
 /**
@@ -98,3 +100,23 @@ export interface GalleryGridGroup {
   /** 그 격자의 영상 — 최신순 */
   videos: CollectedVideo[];
 }
+
+/**
+ * 뱃지 카탈로그 항목 — `GET /api/badges` (획득+미획득 전체, MSG-430 L1).
+ * 웹 `entities/dex/model/dex.ts`의 동명 타입 미러. `iconUrl`은 현재 서버가 전량 null이라
+ * 로컬 메달 카탈로그(`entities/badge`)가 아트 정본이고, `featuredRank`는 대표 뱃지 1·2다
+ * (미지정이면 null).
+ */
+export type DexBadge = Required<
+  Pick<MyBadgeResponseDto, "badgeId" | "code" | "name" | "earned">
+> &
+  Pick<MyBadgeResponseDto, "iconUrl" | "earnedAt" | "featuredRank">;
+
+/**
+ * 날짜별 업로드 이력 항목 — `GET /api/collections/upload-history` (MSG-430 L4).
+ * uploadDate는 KST 날짜 라벨("YYYY-MM-DD")이고 **희소 목록**이다 — 업로드가 없는 날은
+ * 항목 자체가 없다(빈 날 0 채움은 `buildGrassWeeks` 파생 몫). uploadCount는 1 이상.
+ */
+export type UploadHistoryDay = Required<
+  Pick<UploadHistoryResponseDto, "uploadDate" | "uploadCount">
+>;

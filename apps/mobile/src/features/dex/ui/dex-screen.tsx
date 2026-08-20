@@ -23,12 +23,12 @@ import {
   useCollectionSummaryQuery,
 } from "../model/use-collection-query";
 import { useCurrentRegionStatQuery } from "../model/use-region-stat-query";
-import { BadgeShelf } from "./badge-shelf";
+import { BadgeTabBody } from "./badge-tab-body";
 import { DexErrorState } from "./dex-error-state";
 import { DexHeaderSummary } from "./dex-header-summary";
 import { DexTabBar } from "./dex-tab-bar";
-import { DexTabPlaceholder } from "./dex-tab-placeholder";
 import { MapTabBody } from "./map-tab-body";
+import { RecordTabBody } from "./record-tab-body";
 import { RegionGalleryView } from "./region-gallery-view";
 
 /**
@@ -37,9 +37,9 @@ import { RegionGalleryView } from "./region-gallery-view";
  * 종전 mock 2탭 화면(MSG-299~301)을 실 API 3탭 구조로 전면 교체한다.
  *
  * **이 파일이 셸을 소유한다 — 후속 티켓의 확장 계약은 다음과 같다.**
- * - **MSG-430**(뱃지·기록 탭 내용): 아래 렌더 스위치의 **2줄**(`<BadgeShelf />` ·
- *   `<DexTabPlaceholder … />`)을 새 본문 컴포넌트로 바꾸고 그 파일 2개를 추가한다.
- *   `dex-header-summary`·`dex-tab-bar`·`dex-error-state`·이 셸은 무수정이 목표다.
+ * - **MSG-430**(뱃지·기록 탭 내용): **완료.** 렌더 스위치 2줄이 `<BadgeTabBody />` ·
+ *   `<RecordTabBody />`로 교체됐고(`badge-shelf`·`dex-tab-placeholder`는 삭제),
+ *   `dex-header-summary`·`dex-tab-bar`·`dex-error-state`·이 셸은 무수정으로 남았다.
  * - **MSG-431**(내 영상 관리): `gallery-video-card.tsx` **한 파일**만 고친다.
  *   `VideoCard`의 `overlay` prop에 ⋯ 버튼 + `ActionSheet`를 얹으면 되고, 셸·갤러리 뷰·
  *   `ui-native`는 무수정이다.
@@ -177,9 +177,9 @@ export const DexScreen = () => {
                 />
               )
             ) : tab === "badges" ? (
-              <BadgeShelf /> // ← MSG-430: 실 API BadgeTabBody로 교체 (1줄)
+              <BadgeTabBody />
             ) : (
-              <DexTabPlaceholder label="기록" /> // ← MSG-430: RecordTabBody로 교체 (1줄)
+              <RecordTabBody />
             )}
           </View>
         )}
