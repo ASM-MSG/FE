@@ -1,9 +1,14 @@
 import "../global.css";
+import { View } from "react-native";
 import { Stack } from "expo-router";
-import { bootstrapAuth } from "../features/auth/model/auth-session";
+import { bootstrapAuth, useAuth } from "../features/auth/model/auth-session";
 import { useConsentGate } from "../features/auth/model/use-consent-gate";
 import { SignupConsentScreen } from "../features/auth/ui/signup-consent-screen";
+import { usePushNavigation } from "../features/notifications/api/use-push-navigation";
+import { usePushTokenSync } from "../features/notifications/api/use-push-registration";
+import { ProcessingNoticeHost } from "../features/upload/ui/processing-notice-host";
 import { QueryProvider } from "../shared/api/query-provider";
+import { goToRoute } from "../shared/navigation";
 
 // API 부트스트랩 (MSG-419) — 에러 정규화 인터셉터 등록 + 인증 파이프라인 배선 +
 // 보안 저장소 재수화. 모듈 로드 시 1회 (웹 main.tsx 대응, 내부에 재진입 가드).
@@ -25,8 +30,30 @@ if (process.env.EXPO_PUBLIC_STORYBOOK !== "1") {
  */
 const AppShell = () => {
   const showConsentGate = useConsentGate();
+  const { isAuthenticated } = useAuth();
+
+  /**
+   * 푸시 배선 (MSG-429 기준 14·16) — 게이트 **바깥**에 둔다. 알림 탭은 동의 게이트가
+   * 떠 있는 동안에도 도착하고, 토큰 자동 동기화는 화면 상태와 무관한 상주 작업이다.
+   * 신규 등록 경로가 아니라 기존 등록자의 재등록·로테이션뿐이라 권한 프롬프트는 뜨지 않는다.
+   */
+  usePushTokenSync(isAuthenticated);
+  usePushNavigation(goToRoute);
+
   if (showConsentGate) return <SignupConsentScreen />;
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    /*
+      통지 호스트가 절대 배치로 얹히려면 화면을 채우는 부모가 필요하다(fragment로는 기준점이 없다).
+      className이 아니라 인라인 style을 쓰는 이유: 이 View는 화면 전체가 걸린 **루트 컨테이너**라
+      높이가 0이 되면 Stack이 통째로 안 보인다. NativeWind 스타일시트 적용 여부에 앱 기동을
+      걸지 않으려고 RN 기본 스타일로 고정한다(기능 차이는 없다).
+    */
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }} />
+      {/* 블러 완료 인앱 통지 (기준 11) — 루트 상주라 어느 화면에 있든 보인다 */}
+      <ProcessingNoticeHost />
+    </View>
+  );
 };
 
 export default function RootLayout() {

@@ -2,9 +2,9 @@
  * 블러 처리 폴링 — 웹 `features/upload/model/processing-poll.ts`의 모바일 복제본
  * (MSG-424 포팅, `processing-poll.parity.test.ts`가 동등성을 고정한다).
  *
- * **모델만 포팅한다 (D9).** 확정 이후 서버 블러 처리 대기(웹 `pendingVideoStorage` +
- * `use-processing-watcher` + 완료 통지)는 MSG-424의 제외 범위이고 MSG-429가 이어받는다 —
- * 그래서 지금은 호출부가 없다. 워처를 붙일 때 이 모델을 그대로 쓰면 된다.
+ * MSG-424는 **모델만** 포팅했고(D9), 확정 이후의 대기·워처·완료 통지는 MSG-429가 이어받아
+ * `pending-video-storage`·`processing-store`·`api/use-processing-watcher`로 붙였다.
+ * 이 파일은 그때 무수정으로 재사용됐다 — 판정 규칙(간격·상한·전이)의 정본은 여전히 여기다.
  */
 
 /** 폴링 간격 — 30초 (티켓 19 확정) */

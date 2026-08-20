@@ -2,6 +2,7 @@ import type {
   ApiResponseDtoNotificationPreferenceResponseDto,
   CategoryPreferenceDto,
 } from "../../../shared/api/sdk";
+import { PUSH_PERMISSION_DENIED_MESSAGE } from "../../notifications/model/push-registration";
 
 /**
  * `알림 받기` 단일 토글 ↔ 알림 카테고리 5종 파생 (MSG-426 기준 2~5).
@@ -67,3 +68,25 @@ export const applyMasterToggle = (
     })),
   },
 });
+
+/** 저장 실패 재시도 안내 (MSG-426 기준 5) — 다음 시도가 시작되면 사라진다 */
+export const NOTIFICATION_SAVE_ERROR_TEXT =
+  "알림 설정을 저장하지 못했어요. 잠시 후 다시 시도해주세요";
+
+/**
+ * `알림 받기` 행의 실패 안내 (MSG-429 기준 15).
+ *
+ * MSG-429에서 이 스위치 하나가 **서버 preferences 5종**(MSG-426)과 **OS 권한 + FCM 토큰**
+ * (MSG-429) 두 축을 함께 움직이게 되면서 실패 사유가 둘로 늘었다. 권한 거부를 최우선으로
+ * 보여준다 — "잠시 후 다시 시도"는 사용자가 기기 설정을 열기 전까지 영원히 거짓이기 때문이다.
+ */
+export const resolveNotificationErrorText = (input: {
+  pushError: "denied" | "failed" | null;
+  preferencesFailed: boolean;
+}): string | undefined => {
+  if (input.pushError === "denied") return PUSH_PERMISSION_DENIED_MESSAGE;
+  if (input.pushError === "failed" || input.preferencesFailed) {
+    return NOTIFICATION_SAVE_ERROR_TEXT;
+  }
+  return undefined;
+};

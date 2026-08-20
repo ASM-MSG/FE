@@ -51,7 +51,9 @@ export default (_ctx) => ({
     predictiveBackGestureEnabled: false,
     package: "kr.fillmap.app",
     // FCM 프로젝트 설정(fillmap-edd7d) — 등록 패키지명이 android.package와 일치해야 한다.
-    // prebuild가 android/app/으로 복사한다. 푸시 수신 자체는 MSG-418(expo-notifications) 몫.
+    // prebuild가 android/app/으로 복사한다. 푸시 수신(expo-notifications 권한·기기 토큰
+    // 등록·알림 탭 진입)은 **MSG-429**가 구현했다 — 종전 주석의 MSG-418 귀속은 오기였다.
+    // MSG-418은 지오펜싱 로컬 알림 기획 티켓이라 FCM 파이프라인을 타지 않는다.
     googleServicesFile: "./google-services.json",
   },
   plugins: [
@@ -77,6 +79,9 @@ export default (_ctx) => ({
     "expo-location",
     // MSG-304: 블러 확인 화면 프리뷰 재생 (expo install 안내에 따른 플러그인 등록)
     "expo-video",
+    // MSG-429: 블러 완료 푸시 수신 — 권한·FCM 기기 토큰·알림 탭 진입.
+    // 네이티브 모듈이라 `expo prebuild -p android` → `run:android` 재빌드가 필요하다.
+    "expo-notifications",
     [
       "@mj-studio/react-native-naver-map",
       {

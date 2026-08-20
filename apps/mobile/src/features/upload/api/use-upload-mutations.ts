@@ -4,6 +4,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import type { VideoUploadResponseDto } from "../../../shared/api/sdk";
 import type { ConfirmUploadInput } from "../model/confirm-input";
 import { withFlowProgress } from "../model/flow-progress";
+import { processingStore } from "../model/processing-persistence";
 import { runUploadFlow, UploadFlowError } from "../model/upload-orchestration";
 import { uploadFlowStore } from "../model/upload-flow-store";
 import { invalidateGridQueries } from "./invalidate-grid-queries";
@@ -78,7 +79,8 @@ export const useAnalyzeVideo = () => {
 };
 
 /**
- * 게시 성공 정산 (기준 28·29) — 격자 쿼리 무효화 + **재개 가능한 진행 정리**.
+ * 게시 성공 정산 (MSG-424 기준 28·29 + MSG-429 기준 8) — 격자 쿼리 무효화 +
+ * **재개 가능한 진행 정리** + **블러 처리 대기 등록**.
  *
  * 정리가 여기 있는 이유: 완료 오버레이는 화면 로컬 상태라, 그게 떠 있는 동안 앱이 종료되면
  * 스토어에는 `step:"preview"`와 `confirm:{presign, s3PutDone:true}`가 그대로 남는다. 다음
@@ -94,8 +96,16 @@ export const useAnalyzeVideo = () => {
 export const settleUploadSuccess = (
   queryClient: QueryClient,
   video: { videoId: number; gridId: string },
+  now: () => number = Date.now,
 ): void => {
   invalidateGridQueries(queryClient, video.gridId);
+  /**
+   * MSG-429 기준 8 — 여기가 대기 등록의 **유일한 지점**이다. 확정 응답을 손에 쥔 시점이
+   * videoId를 아는 첫 순간이고, 바로 아래 `reset()`이 플로우를 비우므로 나중에는 알 방법이
+   * 없다. 기산점(15분 만료 판정)도 이 시각이다. 저장은 비동기지만 기다리지 않는다 —
+   * 완료 화면 표시를 저장소 왕복에 묶지 않기 위해서다(실패해도 폴링은 이번 실행 동안 돈다).
+   */
+  void processingStore.track(video.videoId, now());
   uploadFlowStore.reset();
 };
 

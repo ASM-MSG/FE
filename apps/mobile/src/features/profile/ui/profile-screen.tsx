@@ -10,8 +10,10 @@ import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
 import { goToLogin } from "../../../shared/navigation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
+import { usePushRegistration } from "../../notifications/api/use-push-registration";
 import { useNotificationToggle } from "../api/use-notification-toggle";
 import { useProfileQuery } from "../api/use-profile-query";
+import { resolveNotificationErrorText } from "../model/notification-toggle";
 import { formatJoinedDate } from "../model/profile-format";
 import { DeleteAccountModal } from "./delete-account-modal";
 import { SettingInfoRow, SettingRow, SettingToggleRow } from "./setting-rows";
@@ -46,10 +48,6 @@ const ActivityStat = ({
   </View>
 );
 
-/** 알림 저장 실패 안내 (기준 5) — 다음 시도가 시작되면 사라진다 */
-const NOTIFICATION_ERROR_TEXT =
-  "알림 설정을 저장하지 못했어요. 잠시 후 다시 시도해주세요";
-
 /**
  * SOURCE: Figma "프로필/설정" (node 14799:26141) — MSG-306 → MSG-426 개편.
  * 프로필 카드(아바타·닉네임·가입일·이메일·[편집]) + 내 활동 + 설정(플랫 행 3개) +
@@ -70,6 +68,7 @@ export const ProfileScreen = () => {
   // 조회 전·실패 시 mock 폴백 — 게이트를 세우지 않는다 (결정 E2)
   const identity = profile ?? MOCK_PROFILE;
   const notifications = useNotificationToggle();
+  const push = usePushRegistration();
   const logout = useLogout({
     onSettled: () => {
       setLogoutOpen(false);
@@ -146,14 +145,25 @@ export const ProfileScreen = () => {
           {/* 설정 (기준 1~6) — 상세 화면 2종은 후속 티켓이라 "준비 중" 비활성 행 */}
           <ProfileSection title="설정">
             <SettingRow label="위치정보 동의 관리" hint="준비 중" />
+            {/*
+              MSG-429 기준 14·15 — 이 스위치 하나가 두 축을 움직인다: 서버 preferences
+              5종 일괄 저장(MSG-426)과 OS 알림 권한 + FCM 토큰 등록/해제(MSG-429).
+              **표시 정본은 푸시 축**이다(웹 MSG-408 미러) — 권한이 없거나 토큰이 등록되지
+              않았으면 preferences가 켜져 있어도 OFF로 보인다. "켰는데 알림이 안 온다"를
+              만들지 않기 위해서다. 권한 요청은 이 탭(사용자 제스처) 안에서만 일어난다.
+            */}
             <SettingToggleRow
               label="알림 받기"
-              checked={notifications.checked}
-              onCheckedChange={notifications.toggle}
-              busy={notifications.isPending}
-              errorText={
-                notifications.isError ? NOTIFICATION_ERROR_TEXT : undefined
-              }
+              checked={push.enabled}
+              onCheckedChange={(next) => {
+                notifications.toggle(next);
+                void push.setEnabled(next);
+              }}
+              busy={notifications.isPending || push.busy}
+              errorText={resolveNotificationErrorText({
+                pushError: push.error,
+                preferencesFailed: notifications.isError,
+              })}
             />
             <SettingRow label="신고 관리" hint="준비 중" />
           </ProfileSection>
