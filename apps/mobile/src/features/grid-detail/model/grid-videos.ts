@@ -64,14 +64,18 @@ const fromMine = (dto: GridVideoResponseDto, now?: Date): GridVideoRow => ({
  * 두 목록을 화면 행으로 병합한다 [L13~L15].
  * 내 영상이 앞(업로드 관례), 전역에서 같은 videoId는 제거한다 — 전역 목록의 내 영상 포함
  * 여부가 명세에 없어 FE 방어이며, 포함되지 않으면 무해한 no-op이다.
- * 내 영상 목록 미도착(undefined)이면 전역 목록만으로 구성한다 — 소유 판정은 도착 후 갱신된다.
+ *
+ * **`myVideos`는 필수다 — 부분 데이터로 부르지 못하게 타입으로 막는다.** 내 영상 목록이
+ * 미도착인 채로 빈 배열을 넣어 부르면 **모든 행이 `mine: false`가 되어 내 영상에
+ * "신고하기"가 뜬다**(자기 영상 신고). 호출부(`useGridVideosQuery`)가 두 응답이 모두
+ * 도착한 뒤에만 부르는 것은 그래서이며, 그전까지 화면은 스피너다 — 부분 렌더 경로는 없다.
  */
 export const buildGridVideoRows = (
   globalVideos: GridGlobalVideoResponseDto[],
-  myVideos: GridVideoResponseDto[] | undefined,
+  myVideos: GridVideoResponseDto[],
   now?: Date,
 ): GridVideoRow[] => {
-  const mine = (myVideos ?? []).map((dto) => fromMine(dto, now));
+  const mine = myVideos.map((dto) => fromMine(dto, now));
   const mineIds = new Set(mine.map((row) => row.videoId));
   return [
     ...mine,

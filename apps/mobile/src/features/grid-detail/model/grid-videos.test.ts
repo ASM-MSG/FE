@@ -47,16 +47,6 @@ describe("buildGridVideoRows — 격자 영상 목록 병합 (L13)", () => {
     expect(rows.map((row) => row.videoId)).toEqual([22, 11]);
   });
 
-  it("내 영상 목록이 미도착(undefined)이면 전역 목록만으로 구성된다 (L13 — 경계)", () => {
-    const rows = buildGridVideoRows(
-      [globalVideo(11, "부산러버")],
-      undefined,
-      NOW,
-    );
-
-    expect(rows.map((row) => row.videoId)).toEqual([11]);
-  });
-
   it("두 목록이 모두 비면 빈 목록이다 (L13 — 경계)", () => {
     expect(buildGridVideoRows([], [], NOW)).toEqual([]);
   });

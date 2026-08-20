@@ -6297,6 +6297,32 @@
       ]
     },
     {
+      "id": "78b154684a5df34b",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "e8a3a9467b4c18f7",
+          "source_digest": "fnv1a64:594064226760ba65",
+          "file": "apps/mobile/src/features/grid-detail/model/grid-videos.test.ts",
+          "lang": "typescript",
+          "start_line": 56,
+          "end_line": 66,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "09c8a0287ffd9689",
+          "source_digest": "fnv1a64:6f49acbd02649142",
+          "file": "apps/mobile/src/features/grid-detail/model/grid-videos.test.ts",
+          "lang": "typescript",
+          "start_line": 40,
+          "end_line": 48,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "7a04681aad0cf311",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -9714,32 +9740,6 @@
           "lang": "typescript",
           "start_line": 13,
           "end_line": 39,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "b50d50187d924893",
-      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "469e398034d319e7",
-          "source_digest": "fnv1a64:594064226760ba65",
-          "file": "apps/mobile/src/features/grid-detail/model/grid-videos.test.ts",
-          "lang": "typescript",
-          "start_line": 66,
-          "end_line": 76,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "09c8a0287ffd9689",
-          "source_digest": "fnv1a64:6f49acbd02649142",
-          "file": "apps/mobile/src/features/grid-detail/model/grid-videos.test.ts",
-          "lang": "typescript",
-          "start_line": 40,
-          "end_line": 48,
           "kind": "Block",
           "is_fragment": false
         }

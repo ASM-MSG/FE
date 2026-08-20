@@ -60,6 +60,9 @@ export const useGridVideosQuery = (gridId: string | null): GridVideosResult => {
   );
 
   return {
+    // 두 응답이 **모두** 도착한 뒤에만 행을 만든다 — 내 영상 목록 없이 만들면 모든 행이
+    // `mine: false`가 되어 내 영상에 "신고하기"가 뜬다. 그전까지 화면은 스피너다
+    // (`isPending`이 참). `buildGridVideoRows`가 부분 데이터를 받지 않는 것도 같은 이유다
     rows:
       global.data && mine.data
         ? buildGridVideoRows(global.data, mine.data)
