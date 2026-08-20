@@ -36,15 +36,19 @@ export type EnablePushResult =
  *
  * 보관(`saveStoredToken`)은 **서버 등록 성공 이후에만** 한다. 먼저 보관하면 등록이 실패한
  * 토큰이 ON으로 보이고(표시 정본이 보관 토큰이다), 서버에는 없는 토큰을 해제하려 든다.
+ *
+ * **총함수다 — 절대 거부하지 않는다** (PR #78 리뷰 ①). 권한 판독·요청도 네이티브 모듈
+ * 접점이라 모듈이 빠진 빌드에서 던진다(D2와 같은 실패면). 거부가 새어 나가면 호출 훅의
+ * busy 해제가 실행되지 않아 **토글이 영구히 잠긴다.**
  */
 export const enablePush = async (deps: PushDeps): Promise<EnablePushResult> => {
-  const current = await deps.readPermission();
-  if (current === "denied") return { status: "denied" };
-  const permission =
-    current === "granted" ? current : await deps.requestPermission();
-  if (permission !== "granted") return { status: "denied" };
-
   try {
+    const current = await deps.readPermission();
+    if (current === "denied") return { status: "denied" };
+    const permission =
+      current === "granted" ? current : await deps.requestPermission();
+    if (permission !== "granted") return { status: "denied" };
+
     const token = await deps.readDeviceToken();
     await deps.registerToken(token);
     await deps.saveStoredToken(token);
@@ -64,16 +68,33 @@ export type DisablePushResult = { status: "disabled" } | { status: "failed" };
 export const disablePush = async (
   deps: PushDeps,
 ): Promise<DisablePushResult> => {
-  const stored = await deps.readStoredToken();
-  if (stored === null) return { status: "disabled" };
   try {
+    const stored = await deps.readStoredToken();
+    if (stored === null) return { status: "disabled" };
     await deps.unregisterToken(stored);
     await deps.clearStoredToken();
     return { status: "disabled" };
   } catch {
+    // 보관 읽기 실패도 여기로 온다 — 해제 대상을 모르니 서버 호출 없이 실패로 접는다
     return { status: "failed" };
   }
 };
+
+/**
+ * 조작 결과 → 토글 표시 상태 (PR #78 리뷰 ②).
+ *
+ * 순진하게 `status === "enabled"`로 쓰면 **OFF 실패에서 표시가 실제와 반대가 된다.**
+ * `disablePush` 실패는 보관 토큰을 **의도적으로 유지**하므로(재해제 경로 보존 — 위 주석)
+ * 서버 등록이 살아 있고 푸시는 계속 온다. 그때 OFF로 보이면 "껐는데 알림이 온다"가 되고,
+ * 화면을 나갔다 들어오면 재판독으로 ON으로 되돌아와 사용자에겐 토글이 제멋대로 보인다.
+ *
+ * 판정을 훅에 두지 않고 순수 함수로 뺀 이유는 이 티켓의 다른 판정들과 같다 — 모바일에는
+ * 훅·렌더 테스트 인프라가 없어 화면에 두면 회귀를 잡을 자산이 실기뿐이 된다.
+ */
+export const resolveToggleDisplay = (
+  requested: boolean,
+  status: EnablePushResult["status"] | DisablePushResult["status"],
+): boolean => (requested ? status === "enabled" : status === "failed");
 
 /**
  * 상주 자동 동기화 (기준 14) — **기존 등록자 한정**이다. 보관 토큰이 없으면 권한도 묻지

@@ -22,6 +22,12 @@ interface BlurPreviewProps {
  *
  * Figma 정본에는 중앙 재생 버튼이 없으나 존치한다(스펙 Figma 오탐 방지 1) — 처리 결과를
  * 눈으로 확인시키는 것이 이 화면의 목적이고, 소스가 처리본이 된 지금 재생의 의미가 생겼다.
+ *
+ * **`uri`는 항상 null로 첫 렌더된 뒤 조회 응답으로 채워진다** — 그래도 `player.replace*`를
+ * 손으로 부르지 않는다. `useVideoPlayer`가 `useReleasingSharedObject(..., [JSON.stringify(
+ * parsedSource), …])`로 구현돼 **소스가 바뀌면 기존 플레이어를 해제하고 새로 만든다**
+ * (expo-video 57.0.2 `build/VideoPlayer.js:33-40` 실측). 여기에 `replaceAsync`를 더하면
+ * 재생성과 교체가 같은 소스를 두 번 로드하며 경합한다 (PR #78 리뷰 ③ 검토 결과 — 기각).
  */
 export const BlurPreview = ({ uri, durationSec }: BlurPreviewProps) => {
   const [playing, setPlaying] = useState(false);

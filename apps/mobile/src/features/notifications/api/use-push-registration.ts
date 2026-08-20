@@ -12,6 +12,7 @@ import {
 import {
   disablePush,
   enablePush,
+  resolveToggleDisplay,
   syncPushToken,
   type PushDeps,
 } from "./push-registration-flow";
@@ -79,17 +80,28 @@ export const usePushRegistration = (): PushRegistration => {
   const setEnabled = useCallback(async (next: boolean) => {
     setBusy(true);
     setError(null);
-    const result = next
-      ? await enablePush(pushDeps)
-      : await disablePush(pushDeps);
-    // 표시는 **실제 결과**를 따른다 — 실패한 조작이 켜진 것처럼 남지 않게 한다
-    setEnabledState(result.status === "enabled");
-    setError(
-      result.status === "denied" || result.status === "failed"
-        ? result.status
-        : null,
-    );
-    setBusy(false);
+    try {
+      const result = next
+        ? await enablePush(pushDeps)
+        : await disablePush(pushDeps);
+      /**
+       * 표시는 **실제 상태**를 따른다 (PR #78 리뷰 ②) — 판정은 `resolveToggleDisplay`가
+       * 소유한다. OFF 실패는 보관 토큰이 남아 서버 등록이 살아 있으므로 **켜짐**이다.
+       */
+      setEnabledState(resolveToggleDisplay(next, result.status));
+      setError(
+        result.status === "denied" || result.status === "failed"
+          ? result.status
+          : null,
+      );
+    } finally {
+      /**
+       * busy 해제는 `finally`에 둔다 (PR #78 리뷰 ①). 위 두 함수는 총함수라 지금은 거부하지
+       * 않지만, 그 계약이 깨지면 스위치가 영구히 잠긴 채 남아 사용자가 알림을 켤 수도 끌 수도
+       * 없게 된다 — 계약과 무관하게 성립하는 해제 지점을 둔다.
+       */
+      setBusy(false);
+    }
   }, []);
 
   return { enabled, busy, error, setEnabled };

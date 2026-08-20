@@ -3,6 +3,7 @@ import type { PushPermissionStatus } from "../model/push-registration";
 import {
   disablePush,
   enablePush,
+  resolveToggleDisplay,
   syncPushToken,
   type PushDeps,
 } from "./push-registration-flow";
@@ -173,5 +174,67 @@ describe("syncPushToken — 상주 자동 동기화 (기준 14)", () => {
 
     await expect(syncPushToken(d, true)).resolves.toBeUndefined();
     expect(d.stored.value).toBe("fcm-token");
+  });
+});
+
+/**
+ * PR #78 리뷰 반영 ①(react-doctor no-loading-flag-reset-outside-finally의 근인).
+ * `enablePush`/`disablePush`가 **거부(reject)하면** 호출 훅의 `setBusy(false)`가 실행되지
+ * 않아 토글이 영구히 잠긴다. 권한 판독·요청은 네이티브 모듈 접점이라(동적 로드) 모듈이 빠진
+ * 빌드에서 실제로 던진다 — D2와 같은 실패면이다. 여기서 **총함수 계약**으로 못박는다.
+ */
+describe("토글 조작은 거부하지 않는다 — 총함수 계약 (리뷰 반영 ①)", () => {
+  it("권한 판독이 던져도 실패로 접는다", async () => {
+    const d = deps({
+      readPermission: async () => {
+        throw new Error("Cannot find native module");
+      },
+    });
+    await expect(enablePush(d)).resolves.toEqual({ status: "failed" });
+  });
+
+  it("권한 요청이 던져도 실패로 접는다", async () => {
+    const d = deps({
+      readPermission: async () => "undetermined",
+      requestPermission: async () => {
+        throw new Error("Cannot find native module");
+      },
+    });
+    await expect(enablePush(d)).resolves.toEqual({ status: "failed" });
+    expect(d.registerToken).not.toHaveBeenCalled();
+  });
+
+  it("보관 토큰 읽기가 던져도 실패로 접는다 — 해제 대상을 모르므로 서버 호출은 없다", async () => {
+    const d = deps({
+      readStoredToken: async () => {
+        throw new Error("storage down");
+      },
+    });
+    await expect(disablePush(d)).resolves.toEqual({ status: "failed" });
+    expect(d.unregisterToken).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * PR #78 리뷰 반영 ② — 토글 OFF 실패 시 표시가 실제와 반대였다.
+ * `disablePush` 실패는 **보관 토큰을 의도적으로 유지**한다(재해제 경로 보존). 즉 서버 등록이
+ * 살아 있어 푸시는 계속 온다 — 그때 토글을 OFF로 보이면 "껐는데 알림이 온다"가 된다.
+ */
+describe("resolveToggleDisplay — 조작 결과 → 표시 상태 (리뷰 반영 ②)", () => {
+  it("ON 성공은 켜짐이다", () => {
+    expect(resolveToggleDisplay(true, "enabled")).toBe(true);
+  });
+
+  it("ON 실패·거부는 꺼짐이다 — 등록되지 않았으므로 실제와 일치한다", () => {
+    expect(resolveToggleDisplay(true, "denied")).toBe(false);
+    expect(resolveToggleDisplay(true, "failed")).toBe(false);
+  });
+
+  it("OFF 성공은 꺼짐이다", () => {
+    expect(resolveToggleDisplay(false, "disabled")).toBe(false);
+  });
+
+  it("**OFF 실패는 켜짐이다** — 보관 토큰이 남아 서버 등록이 살아 있다", () => {
+    expect(resolveToggleDisplay(false, "failed")).toBe(true);
   });
 });

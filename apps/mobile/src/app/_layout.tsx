@@ -40,6 +40,15 @@ const AppShell = () => {
   usePushTokenSync(isAuthenticated);
   usePushNavigation(goToRoute);
 
+  /**
+   * 게이트가 뜨면 통지 호스트는 **의도적으로 마운트하지 않는다** (PR #78 리뷰 ④ — 기각).
+   * MSG-422의 계약은 "동의 전에는 어떤 앱 화면에도 도달할 수 없다"이고, 통지 토스트의
+   * [확인하기]는 곧 `/upload/blur`로 가는 진입점이라 게이트 위에 띄우면 그 계약이 흔들린다.
+   * 폴링이 멈추는 대가는 감수한다 — 대기 항목은 저장소에 남아 게이트 통과 후 `hydrate`로
+   * 이어지고, 15분 만료 판정도 저장된 기산점으로 계속 성립한다.
+   * (푸시 배선은 위에서 게이트 밖에 둔다 — 알림 탭이 라우팅해도 `AppShell`이 `Stack` 자체를
+   * 대체하므로 게이트는 그대로 렌더된다. 우회가 아니다.)
+   */
   if (showConsentGate) return <SignupConsentScreen />;
   return (
     /*
