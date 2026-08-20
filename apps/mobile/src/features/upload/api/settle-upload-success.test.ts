@@ -48,6 +48,7 @@ type MutationsModule = typeof import("./use-upload-mutations");
 type StoreModule = typeof import("../model/upload-flow-store");
 type ResumeModule = typeof import("../model/upload-flow-resume");
 type OrchestrationModule = typeof import("../model/upload-orchestration");
+type ProcessingModule = typeof import("../model/processing-persistence");
 
 let settleUploadSuccess: MutationsModule["settleUploadSuccess"];
 let uploadFlowStore: StoreModule["uploadFlowStore"];
@@ -55,6 +56,7 @@ let createUploadFlowStore: StoreModule["createUploadFlowStore"];
 let isEmptyUploadFlow: StoreModule["isEmptyUploadFlow"];
 let resumeRouteForFlow: ResumeModule["resumeRouteForFlow"];
 let nextStage: OrchestrationModule["nextStage"];
+let processingStore: ProcessingModule["processingStore"];
 
 beforeEach(async () => {
   vi.stubEnv("EXPO_PUBLIC_API_BASE_URL", API_BASE);
@@ -64,6 +66,7 @@ beforeEach(async () => {
     await import("../model/upload-flow-store"));
   ({ resumeRouteForFlow } = await import("../model/upload-flow-resume"));
   ({ nextStage } = await import("../model/upload-orchestration"));
+  ({ processingStore } = await import("../model/processing-persistence"));
 });
 
 afterEach(() => {
@@ -125,6 +128,26 @@ describe("settleUploadSuccess — 게시 성공 정산 (기준 28·29·35)", () 
 
     expect(uploadFlowStore.getState()).toEqual(
       createUploadFlowStore().getState(),
+    );
+  });
+});
+
+/**
+ * MSG-429 기준 8 — 확정 성공은 블러 처리 대기 등록의 **유일한 지점**이다.
+ * 바로 다음 줄의 `reset()`이 플로우를 비우므로 videoId를 아는 마지막 순간이고, 여기서
+ * 빠지면 완료를 감지할 방법이 사라져 "알림으로 알려드릴게요"가 거짓말이 된다.
+ */
+describe("settleUploadSuccess — 블러 처리 대기 등록 (MSG-429 기준 8)", () => {
+  it("확정 성공한 videoId를 대기 목록에 남긴다", async () => {
+    primeConfirmedFlow();
+
+    settleUploadSuccess(new QueryClient(), uploaded, () => 1_700_000);
+
+    // track은 저장소 왕복이라 비동기다 — 완료 화면 표시를 막지 않으려 기다리지 않는다
+    await vi.waitFor(() =>
+      expect(processingStore.getPending()).toEqual([
+        { videoId: uploaded.videoId, startedAtMs: 1_700_000 },
+      ]),
     );
   });
 });

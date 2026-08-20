@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { PUSH_PERMISSION_DENIED_MESSAGE } from "../../notifications/model/push-registration";
 import {
   NOTIFICATION_CATEGORIES,
+  NOTIFICATION_SAVE_ERROR_TEXT,
   applyMasterToggle,
   deriveMasterToggle,
   readPreferences,
+  resolveNotificationErrorText,
   type PreferencesEnvelope,
 } from "./notification-toggle";
 
@@ -109,5 +112,48 @@ describe("applyMasterToggle — 낙관 전환 값을 봉투에 기록한다 (기
 
     expect(next.developCode).toBe(0);
     expect(next.message).toBe("ok");
+  });
+});
+
+/**
+ * MSG-429 기준 14·15 — 토글 하나가 서버 preferences(MSG-426)와 OS 권한·FCM 토큰(MSG-429)
+ * 두 축을 동시에 움직이면서 실패 사유가 둘로 늘었다. 어느 사유를 보여줄지의 우선순위를
+ * 화면에 두면 회귀를 잡을 자산이 실기밖에 남지 않아 순수 파생으로 뺀다.
+ */
+describe("resolveNotificationErrorText — 실패 안내 우선순위 (MSG-429 기준 15)", () => {
+  it("정상이면 안내가 없다", () => {
+    expect(
+      resolveNotificationErrorText({
+        pushError: null,
+        preferencesFailed: false,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("권한 거부는 기기 설정 안내를 보여준다 — 재시도 문구보다 우선한다", () => {
+    expect(
+      resolveNotificationErrorText({
+        pushError: "denied",
+        preferencesFailed: true,
+      }),
+    ).toBe(PUSH_PERMISSION_DENIED_MESSAGE);
+  });
+
+  it("푸시 등록 실패는 재시도 안내를 보여준다", () => {
+    expect(
+      resolveNotificationErrorText({
+        pushError: "failed",
+        preferencesFailed: false,
+      }),
+    ).toBe(NOTIFICATION_SAVE_ERROR_TEXT);
+  });
+
+  it("푸시는 멀쩡한데 preferences 저장만 실패해도 재시도 안내를 보여준다", () => {
+    expect(
+      resolveNotificationErrorText({
+        pushError: null,
+        preferencesFailed: true,
+      }),
+    ).toBe(NOTIFICATION_SAVE_ERROR_TEXT);
   });
 });
