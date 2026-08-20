@@ -109,12 +109,9 @@ export const resolveBadgeArt = (
   code: string,
   iconUrl: string | null | undefined,
 ): BadgeArt | null => {
-  /*
-   * 공백뿐인 값은 "주소 없음"으로 본다 — `""`는 null이 아니라서 그냥 두면 폴백을 건너뛰고
-   * 빈 uri가 `Image`로 흘러가 깨진 이미지가 남는다(로컬 카탈로그가 있는데도). 계약의 뜻은
-   * "주소가 있으면 그걸 쓴다"이고 빈 문자열은 주소가 아니다. 명세 타입은 `string | null`이라
-   * 지금은 안 오지만, 서버가 값을 비우는 방식이 바뀌어도 폴백이 살아 있게 한다 [F1 동류].
-   */
+  // `""`·공백은 null이 아니라 위 폴백을 건너뛰고 빈 uri가 `Image`에 닿아 깨진 이미지가 된다.
+  // 명세 타입(`string | null`)상 지금은 안 오지만, 서버가 값을 비우는 방식이 바뀌어도
+  // 폴백이 살아 있게 하는 가드다 [MSG-430 F1 동류].
   const remote = iconUrl?.trim();
   if (remote) {
     return isSvgUri(remote)
