@@ -1010,6 +1010,34 @@
       ]
     },
     {
+      "id": "0fd3ca0971418ced",
+      "note": "local duplication — extract a helper — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "db0f3461b432ea65",
+          "source_digest": "fnv1a64:414640b481743534",
+          "file": "apps/mobile/src/features/map-home/api/grid-names-query.test.ts",
+          "lang": "typescript",
+          "start_line": 11,
+          "end_line": 11,
+          "kind": "Function",
+          "name": "pending",
+          "is_fragment": false
+        },
+        {
+          "id": "a6f15b4ed1385a2d",
+          "source_digest": "fnv1a64:f700ced05302374f",
+          "file": "apps/mobile/src/features/map-home/api/grid-names-query.test.ts",
+          "lang": "typescript",
+          "start_line": 13,
+          "end_line": 13,
+          "kind": "Function",
+          "name": "failed",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "107f7f263353042b",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (7 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -2130,6 +2158,32 @@
           "is_fragment": true,
           "fragment_kind": "conditional-guard",
           "reason_code": "exact-conditional-guard"
+        }
+      ]
+    },
+    {
+      "id": "264e2997bfff01dc",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "526b15c5e89116da",
+          "source_digest": "fnv1a64:6b09a28c3214fc9c",
+          "file": "apps/mobile/src/features/map-home/api/grid-names-query.ts",
+          "lang": "typescript",
+          "start_line": 36,
+          "end_line": 53,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "41958f067eadc979",
+          "source_digest": "fnv1a64:84bfefa9bf72e0de",
+          "file": "apps/web/src/features/map-home/model/use-grid-names-query.ts",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 43,
+          "kind": "Block",
+          "is_fragment": false
         }
       ]
     },
@@ -5542,32 +5596,6 @@
           "end_line": 36,
           "kind": "Function",
           "name": "formatStreakDays",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "710f02ec0ae71b55",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "152eb8ac48d2a3c5",
-          "source_digest": "fnv1a64:43d820c7bf345fc1",
-          "file": "apps/mobile/src/features/map-home/api/use-grid-names-query.ts",
-          "lang": "typescript",
-          "start_line": 34,
-          "end_line": 52,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "f18d247ba7b9cf35",
-          "source_digest": "fnv1a64:4d79c3628bc5e1a1",
-          "file": "apps/web/src/features/map-home/model/use-grid-names-query.ts",
-          "lang": "typescript",
-          "start_line": 28,
-          "end_line": 43,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -9657,32 +9685,6 @@
           "lang": "typescript",
           "start_line": 360,
           "end_line": 368,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "d0a22f680bcf7149",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "f8a3c472edee9828",
-          "source_digest": "fnv1a64:b0701e8fc9e8dd40",
-          "file": "apps/mobile/src/features/auth/model/configure-auth.test.ts",
-          "lang": "typescript",
-          "start_line": 20,
-          "end_line": 27,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e1281b74daec32ba",
-          "source_digest": "fnv1a64:591b3f68b3d4fc5b",
-          "file": "apps/web/src/features/profile/ui/profile-edit-modal.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 43,
-          "end_line": 46,
           "kind": "Block",
           "is_fragment": false
         }

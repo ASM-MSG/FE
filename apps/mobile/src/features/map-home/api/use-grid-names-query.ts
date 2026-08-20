@@ -3,8 +3,8 @@ import { unwrapEnvelope } from "../../../shared/api/envelope";
 import { getCellOptions } from "../../../shared/api/query-options";
 import type { ApiResponseDtoGridCellResponseDto } from "../../../shared/api/sdk";
 import { useAuth } from "../../auth/model/auth-session";
-import { gridDisplayName } from "../model/home-grid-label";
 import { entityQueryPolicy } from "../model/map-query-policy";
+import { deriveGridNames, type GridNamesResult } from "./grid-names-query";
 
 /**
  * 격자 표시명 일괄 조회 (MSG-427 E12·E-16, 승인 Q2) — `GET /api/grids/{gridId}`.
@@ -14,12 +14,12 @@ import { entityQueryPolicy } from "../model/map-query-policy";
  * 미션 응답의 `spots`에는 좌표와 격자 id뿐이라 격자별로 이름을 받아온다.
  * 코스 하나의 스팟 수(6~8)만큼만 나가고 **코스 상세를 열었을 때만** 발사한다.
  * 조회 실패·무귀속이면 이름을 담지 않는다 — 뷰가 격자 코드로 폴백한다(E-16, 목 금지).
+ *
+ * 이름 파생과 로딩 게이트는 `grid-names-query.ts`(순수)가 갖고 그쪽이 테스트 대상이다
+ * (MSG-428 `grid-aggregation-query` 선례) — 이 파일은 `auth-session`이 파싱 단계에서
+ * expo-secure-store를 끌고 와 vitest에서 열리지 않는다.
  */
-export interface GridNamesResult {
-  names: ReadonlyMap<string, string>;
-  /** 하나라도 도착 전 — 로딩 중에 "이름 없는 경유 지점"을 거짓말하지 않게 게이트한다 */
-  isPending: boolean;
-}
+export type { GridNamesResult };
 
 export const useGridNamesQuery = (gridIds: string[]): GridNamesResult => {
   const { isAuthenticated } = useAuth();
@@ -35,19 +35,5 @@ export const useGridNamesQuery = (gridIds: string[]): GridNamesResult => {
     })),
   });
 
-  const names = new Map<string, string>();
-  for (const query of queries) {
-    const cell = query.data;
-    // 구역 밖 격자는 zoneName이 null이라 gridDisplayName이 행정동명으로 폴백한다.
-    // 둘 다 없으면 gridId가 나오는데 그건 이름이 아니므로 담지 않는다 — 뷰가
-    // "이름 없는 경유 지점"으로 분기할 수 있게 부재를 그대로 남긴다
-    if (!cell) continue;
-    const name = gridDisplayName(cell, cell.regionName);
-    if (name !== cell.gridId) names.set(cell.gridId, name);
-  }
-
-  return {
-    names,
-    isPending: active && queries.some((query) => query.data === undefined),
-  };
+  return deriveGridNames(queries, active);
 };
