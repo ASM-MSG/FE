@@ -111,6 +111,7 @@ export const RegionGalleryView = ({
                   video={video}
                   seq={group.videos.length - index}
                   isNew={isNewVideo(video.createdAt, now)}
+                  gridLabel={group.label}
                 />
               ))}
             </View>

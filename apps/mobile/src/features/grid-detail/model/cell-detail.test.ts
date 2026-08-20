@@ -148,18 +148,27 @@ describe("deriveCellDetail — 제외 영상 id 재파생 (MSG-317 AC 7·8)", ()
   });
 });
 
-describe("hasCellVideos — 영상 보유 격자 판정 (MSG-317 AC 15, 지도 홈 탭 게이트)", () => {
-  it("영상이 있는 등록 격자는 true — 격자 상세 진입 허용", () => {
+/**
+ * MSG-431: 게이트 기준이 "mock 등록 + videoCount > 0"에서 "인코딩 형식이 맞는 셀"로 바뀌었다.
+ * 격자 상세의 영상 목록이 실 API로 전환돼, mock 등재 여부로 진입을 막으면 서버에 있는
+ * 타인 영상(신고 대상)에 닿을 수 없기 때문이다 — 빈 격자 안내는 상세 화면이 실데이터로 한다.
+ */
+describe("hasCellVideos — 격자 상세 진입 가능 판정 (MSG-431 신고 배선 결정 5)", () => {
+  it("mock에 등록된 격자는 진입할 수 있다", () => {
     expect(hasCellVideos(tapIdFor("seomyeon-a-14"))).toBe(true);
   });
 
-  it("영상 0개 등록 격자(범천 I-01)는 false — 진입 차단(no-op)", () => {
-    expect(hasCellVideos(tapIdFor("beomcheon-i-01"))).toBe(false);
+  it("mock 영상이 0개인 격자도 진입할 수 있다 — 보유 판정은 서버가 한다", () => {
+    expect(hasCellVideos(tapIdFor("beomcheon-i-01"))).toBe(true);
   });
 
-  it("미등재 셀은 false — 진입 차단(no-op)", () => {
+  it("mock 미등재 셀도 진입할 수 있다 — 서버에 타인 영상이 있을 수 있다", () => {
     const index = cellIndexAt({ lat: 35.2, lng: 129.0 }); // mock 셀과 무관한 좌표
-    expect(hasCellVideos(cellIdFor(index))).toBe(false);
+    expect(hasCellVideos(cellIdFor(index))).toBe(true);
+  });
+
+  it("인코딩 형식이 아닌 셀 id는 진입을 막는다 — 상세 파생이 null이 되는 경로", () => {
+    expect(hasCellVideos("seomyeon-a-14")).toBe(false);
   });
 });
 
