@@ -119,6 +119,27 @@ export interface CourseSpotLabel {
 }
 
 /**
+ * 코스 상세의 포토스팟 목록 표시 상태. [E12·E-16]
+ *
+ * 이름이 **하나라도 도착 전**이면 행 대신 로딩이다 — `courseSpotLabel`이 이름 부재를
+ * `이름 없는 경유 지점`으로 적기 때문에, 아직 묻지도 않은 상태에 그 문구를 그리면
+ * 로딩을 부재로 위장하는 거짓말이 된다. 웹 `CourseDetailPanel`이 같은 이유로 패널을
+ * 막고, 모바일은 목록만 막는다(제목·진행도·거리는 이미 도착해 있다).
+ *
+ * 조회 **실패**는 로딩이 아니다 — 실패하면 `isPending`이 내려가고 이름 없는 스팟은
+ * 격자 코드로 폴백한다(E-16). 그래서 실패 상태가 따로 없다.
+ */
+export type CourseSpotListState = "empty" | "loading" | "list";
+
+export const courseSpotListState = (
+  spotCount: number,
+  namesPending: boolean,
+): CourseSpotListState => {
+  if (spotCount === 0) return "empty";
+  return namesPending ? "loading" : "list";
+};
+
+/**
  * 포토스팟 이름 표기. [E12·E-16]
  * 이름은 격자 조회(`GET /api/grids/{gridId}`)에서 온다 (승인 Q2) — 못 구했으면
  * **격자 코드로 폴백**하고 둘째 줄에 `이름 없는 경유 지점`을 적는다. 목 문자열을 쓰지 않는다.

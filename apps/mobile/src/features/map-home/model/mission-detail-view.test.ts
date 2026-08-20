@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MissionDetailResponseDto } from "../../../shared/api/sdk";
 import {
   courseSpotLabel,
+  courseSpotListState,
   deriveMissionDetailStats,
   missionDetailPeriod,
   pickSelectedView,
@@ -75,6 +76,21 @@ describe("포토스팟 행 표기 (E9·E12·E-16)", () => {
       description: "이름 없는 경유 지점",
       named: false,
     });
+  });
+
+  /**
+   * 회귀 방지 — `use-grid-names-query`의 `isPending`이 계산만 되고 아무도 소비하지 않아
+   * 이름 도착 전 모든 스팟이 잠깐 `이름 없는 경유 지점`으로 표시되던 결함(리뷰 지적).
+   * 판정을 여기로 끌어와 렌더 테스트 없이도 고정한다.
+   */
+  it("이름이 도착하기 전에는 행 대신 로딩이다 — `이름 없는 경유 지점`을 거짓말하지 않는다", () => {
+    expect(courseSpotListState(3, true)).toBe("loading");
+    expect(courseSpotListState(3, false)).toBe("list");
+  });
+
+  it("스팟이 없으면 이름 조회 상태와 무관하게 빈 결과다", () => {
+    expect(courseSpotListState(0, true)).toBe("empty");
+    expect(courseSpotListState(0, false)).toBe("empty");
   });
 });
 

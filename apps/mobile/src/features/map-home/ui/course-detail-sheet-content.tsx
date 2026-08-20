@@ -1,6 +1,8 @@
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { semantic } from "@fillmap/design-tokens";
 import { cx } from "@fillmap/ui-native";
 import type { HomeMissions } from "../api/use-home-missions";
+import { courseSpotListState } from "../model/mission-detail-view";
 import {
   formatCourseDuration,
   formatDistanceKm,
@@ -45,6 +47,12 @@ export const CourseDetailSheetContent = ({
   const { dto, progress, spots } = view;
   const distance = formatDistanceKm(dto.distanceMeters);
   const duration = formatCourseDuration(dto.durationMinutes);
+
+  /** 스팟 목록 상태 (E12·E-16) — 이름 미도착을 "이름 없음"으로 위장하지 않게 게이트 */
+  const spotListState = courseSpotListState(
+    spots.length,
+    missions.spotNames.isPending,
+  );
 
   return (
     <View className="flex-1 gap-sm">
@@ -103,10 +111,17 @@ export const CourseDetailSheetContent = ({
             </Text>
           </View>
 
-          {spots.length === 0 ? (
+          {spotListState === "empty" ? (
             <Text className="text-fm-body text-foreground-muted">
               이 코스에는 등록된 포토스팟이 없어요
             </Text>
+          ) : spotListState === "loading" ? (
+            /* 판정은 `courseSpotListState`가 한다 — 웹은 패널 전체를 막지만 모바일은
+               **이 목록만** 막는다. 제목·진행도·거리는 이미 도착해 있고, 격자 조회
+               6~8건을 기다리느라 그것까지 늦출 이유가 없다 */
+            <View className="items-center py-lg">
+              <ActivityIndicator color={semantic.primary} />
+            </View>
           ) : (
             spots.map((spot) => (
               <CourseSpotRow
