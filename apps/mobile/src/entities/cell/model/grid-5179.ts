@@ -1,5 +1,5 @@
 import proj4 from "proj4";
-import type { LatLng } from "./grid";
+import type { Bounds, LatLng } from "./grid";
 
 /**
  * EPSG:5179 100m 격자 디코드 — 웹 `apps/web/src/entities/cell/model/grid.ts`에서
@@ -67,3 +67,61 @@ export const cellCornersAt = ({ gridX, gridY }: Grid5179Index): CellCorners => {
 /** 셀 인덱스 → 셀 중심 좌표 — 5179 중심((gridX+0.5)·100, (gridY+0.5)·100)의 역변환 (BE `center` 대응) */
 export const cellCenterAt = ({ gridX, gridY }: Grid5179Index): LatLng =>
   toLatLng((gridX + 0.5) * CELL_SIZE_METERS, (gridY + 0.5) * CELL_SIZE_METERS);
+
+/** 위경도 → 5179 미터 좌표 [x, y] */
+const toMeters = (point: LatLng): [number, number] =>
+  converter.forward([point.lng, point.lat]);
+
+/**
+ * 좌표 → 소속 5179 격자 셀 인덱스 (floor 반열림 — 남서 변 포함, 북동 변 미포함).
+ * 웹 `entities/cell/model/grid.ts`의 `cellIndexAt` 복제본이다. 모바일 `grid.ts`에
+ * 같은 이름의 **구 위경도 스텝** 함수가 이미 있어(좌표계 이원화, 스펙 R2) 이름을 나눈다.
+ */
+const grid5179IndexAt = (point: LatLng): Grid5179Index => {
+  const [x, y] = toMeters(point);
+  return {
+    gridX: Math.floor(x / CELL_SIZE_METERS),
+    gridY: Math.floor(y / CELL_SIZE_METERS),
+  };
+};
+
+/**
+ * 좌표 → 서버 격자 ID `"{gridY}_{gridX}"` (MSG-427 승인 Q5 — 미션 영역 타일 렌더).
+ * 서버 `GridEncoder.encode`·웹 `encodeGridId`와 같은 식이며 동등성은
+ * encode-grid-id.parity.test.ts가 고정한다.
+ */
+export const encodeGridId = (point: LatLng): string => {
+  const { gridX, gridY } = grid5179IndexAt(point);
+  return `${gridY}_${gridX}`;
+};
+
+/** 뷰포트가 걸치는 5179 셀 인덱스 범위 (양끝 포함) */
+export interface GridRange {
+  minGridX: number;
+  maxGridX: number;
+  minGridY: number;
+  maxGridY: number;
+}
+
+/**
+ * 뷰포트(위경도 Bounds) → 5179 셀 인덱스 범위 (MSG-427 승인 Q5 · F-12 클리핑의 근거).
+ * 꼭짓점 4점을 각각 변환해 x·y 각각 min/max를 잡는다 — 자오선 수렴으로 격자가 위경도
+ * 평면에서 기울어져 있어 남서·북동 2점만 변환하면 가장자리 셀이 범위 밖으로 빠진다.
+ * 웹 `viewportGridRange`의 복제본 (viewport-grid-range.parity.test.ts가 동등성 고정).
+ */
+export const viewportGridRange = ({ sw, ne }: Bounds): GridRange => {
+  const corners = [
+    toMeters(sw),
+    toMeters({ lat: sw.lat, lng: ne.lng }),
+    toMeters(ne),
+    toMeters({ lat: ne.lat, lng: sw.lng }),
+  ];
+  const xs = corners.map(([x]) => x);
+  const ys = corners.map(([, y]) => y);
+  return {
+    minGridX: Math.floor(Math.min(...xs) / CELL_SIZE_METERS),
+    maxGridX: Math.floor(Math.max(...xs) / CELL_SIZE_METERS),
+    minGridY: Math.floor(Math.min(...ys) / CELL_SIZE_METERS),
+    maxGridY: Math.floor(Math.max(...ys) / CELL_SIZE_METERS),
+  };
+};
