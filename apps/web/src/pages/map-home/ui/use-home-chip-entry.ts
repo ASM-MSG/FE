@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { Bounds, LatLng } from "@/entities/cell";
 import type {
   CourseView,
@@ -61,11 +60,10 @@ export const useHomeChipEntry = ({
     commit,
   });
 
-  // 칩의 대상 목록 — 경로추천은 코스, 축제·팝업은 미션
-  const targets = useMemo(
-    () => (isRouteChip ? courseViews : missionViews),
-    [isRouteChip, courseViews, missionViews],
-  );
+  // 칩의 대상 목록 — 경로추천은 코스, 축제·팝업은 미션.
+  // useMemo를 쓰지 않는다: 삼항은 두 배열 중 하나를 **그대로** 돌려주므로 참조가 이미
+  // 안정적이다(메모해도 같은 값). 감싸면 비교 비용만 늘어난다 (react-doctor 지적)
+  const targets = isRouteChip ? courseViews : missionViews;
 
   // 정착 뒤, 지도 중심에서 가장 가까운 대상으로 지도를 옮긴다 — 고르지는 않는다 (AC 13)
   useNearestEntry({
