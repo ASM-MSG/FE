@@ -20,3 +20,18 @@ export const goToLogin = (): void => {
 export const goToRoute = (route: string): void => {
   router.navigate(route as Href);
 };
+
+/**
+ * 영상 재생 화면으로 (MSG-446 기준 8) — 진입점 4곳(지도 홈 시트·격자 상세·도감 갤러리·
+ * 미션 상세)이 **같은 목적지**로 들어가도록 라우트 리터럴을 이 한 곳에 가둔다.
+ * `push`라 직전 화면이 마운트된 채 남아 뒤로 갔을 때 목록 스크롤이 유지된다 (기준 9).
+ *
+ * `mine`은 **표기용 신호일 뿐 접근 판정에 쓰지 않는다** (기준 12) — 비공개·삭제 차단은
+ * 서버가 403·404로 내리고 화면은 그것만 반영한다 (`playbackAccessNotice`).
+ */
+export const goToVideoPlayback = (videoId: number, mine: boolean): void => {
+  router.push({
+    pathname: "/video/[videoId]",
+    params: { videoId: String(videoId), mine: mine ? "1" : "0" },
+  });
+};
