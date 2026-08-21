@@ -61,10 +61,24 @@ describe("toggleFeatured — 획득 뱃지 클릭 시 선택 토글 (AC 3·4)", 
     ).toBe(selection);
   });
 
-  it("이미 2개 선택된 상태에서 세 번째 뱃지 클릭은 무시된다 (AC 4)", () => {
-    const selection = [5, 7];
+  it("2개 찬 상태에서 새 뱃지를 누르면 먼저 누른 것이 빠진다 (MSG-451 AC 22)", () => {
+    const next = toggleFeatured([5, 7], badge({ badgeId: 9 }));
 
-    expect(toggleFeatured(selection, badge({ badgeId: 9 }))).toBe(selection);
+    expect(next).toEqual([7, 9]);
+  });
+
+  it("FIFO 교체 후 잔여 선택이 rank 1로 승격된다 (MSG-451 AC 22)", () => {
+    const next = toggleFeatured([5, 7], badge({ badgeId: 9 }));
+
+    expect(featuredRankOf(next, 7)).toBe(1);
+    expect(featuredRankOf(next, 9)).toBe(2);
+    expect(featuredRankOf(next, 5)).toBeNull();
+  });
+
+  it("교체를 반복하면 항상 가장 오래된 선택부터 빠진다 (MSG-451 AC 22)", () => {
+    const once = toggleFeatured([5, 7], badge({ badgeId: 9 }));
+
+    expect(toggleFeatured(once, badge({ badgeId: 11 }))).toEqual([9, 11]);
   });
 });
 

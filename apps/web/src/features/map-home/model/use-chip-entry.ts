@@ -29,6 +29,15 @@ interface ChipEntryInput {
  *
  * **지도 준비를 기다린다**(MSG-395 리뷰 반영): SDK 로드 전에는 zoomTo가 조용히 no-op이라
  * 진입 직후 칩을 누르면 그 세션 내내 줌이 안 맞았다. 뷰포트가 들어온 뒤에만 적용한다.
+ *
+ * **진입이 정착한 칩을 반환한다**(MSG-451 검증 재작업 1·3): 확정은 데이터 조회 bbox를 바꾸므로,
+ * 확정 뒤에 와야 하는 후속 진입(최근접 이동 — `use-nearest-entry`)이 그 시점을 알아야 한다.
+ * ref가 아니라 state인 이유가 여기 있다 — 소비처가 그 시점에 다시 렌더돼야 한다.
+ *
+ * **정착 = 목표 줌 도달**이지 확정 성공이 아니다(재작업 3). 확정은 행정동을 요구하는데,
+ * 코스가 해안선을 따라가 지도 중심이 바다에 놓이면 역지오코딩이 null이라 확정이 무기한
+ * 미뤄진다. 그 대기에 후속 진입까지 볼모로 잡히면 "줌만 바뀌고 화면은 안 움직이는" 상태가
+ * 되므로, 확정 대기와 진입 정착을 분리한다 — 확정 규칙 자체는 그대로다.
  */
 export const useChipEntry = ({
   activeTheme,
@@ -37,18 +46,36 @@ export const useChipEntry = ({
   region,
   zoomTo,
   commit,
-}: ChipEntryInput): void => {
+}: ChipEntryInput): ThemeId | null => {
   /** 이 칩 활성화에 대해 줌 명령을 냈는지 — 칩이 바뀌면 다시 처리한다 */
   const handledChipRef = useRef<ThemeId | null>(null);
-  /** 반영을 기다리는 목표 줌 — 그 줌에 도달한 화면에서만 확정한다 (null이면 대기 없음) */
-  const pendingZoomRef = useRef<number | null>(null);
   /** 아직 확정하지 못한 활성화가 있는지 — 행정동 판별이 늦으면 여기서 기다린다 */
   const pendingCommitRef = useRef(false);
+
+  /**
+   * 이 칩이 맞춰야 할 줌 (null이면 대기 없음) — **렌더 중 파생**한다.
+   * 종전에는 effect가 ref에 실어 두고 다른 effect가 읽었는데, 그러면 "이전 칩의 잔여
+   * 목표가 남는" 동기화 사고(MSG-403 주석 참조)가 구조적으로 가능해진다. 현재 칩에서
+   * 곧바로 계산하면 그 상태 자체가 사라진다.
+   */
+  const targetZoom = activeTheme === null ? null : chipEntryZoom(activeTheme);
+
+  /**
+   * 진입이 정착한 칩 — 후속 진입(`use-nearest-entry`)이 기다리는 신호 (MSG-451).
+   * **파생값이라 state로 복사하지 않는다**(react-doctor no-derived-state·
+   * no-adjust-state-on-prop-change): 정착 = 목표 줌 도달이므로 입력만으로 계산되고,
+   * state로 두면 effect가 한 박자 늦게 맞추는 동안 소비처가 옛 값을 본다.
+   */
+  const settledChip =
+    activeTheme !== null &&
+    bounds !== null &&
+    (targetZoom === null || targetZoom === zoom)
+      ? activeTheme
+      : null;
 
   useEffect(() => {
     if (activeTheme === null) {
       handledChipRef.current = null;
-      pendingZoomRef.current = null;
       pendingCommitRef.current = false;
       return;
     }
@@ -57,11 +84,6 @@ export const useChipEntry = ({
     handledChipRef.current = activeTheme;
     pendingCommitRef.current = true;
 
-    const targetZoom = chipEntryZoom(activeTheme);
-    // **항상 동기화한다** (PR 리뷰 반영) — null도 명시적으로 반영해 이전 칩의 잔여 목표를
-    // 지운다. 조건부 갱신이던 시절, 줌 대기 중 hot으로 직접 전환하면(toggle은 null을 안
-    // 거친다) 이전 칩의 목표 줌이 남아 hot의 확정이 필요 없는 줌 대기에 볼모잡혔다
-    pendingZoomRef.current = targetZoom;
     // 이미 목표 줌이면 기다릴 것이 없다 — 지도가 idle을 쏘지 않아 대기가 영영 남는다
     if (targetZoom === null || targetZoom === zoom) return;
     // 규칙 문서의 억제 조건 "자식이 부모가 구독할 수 없는 외부 구독을 소유"에 해당:
@@ -70,24 +92,28 @@ export const useChipEntry = ({
     // (PR #57 리뷰어도 오탐 동의 — 검증 리포트 기각 사유 참조).
     // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
     zoomTo(targetZoom);
-  }, [activeTheme, bounds, zoom, zoomTo]);
+  }, [activeTheme, bounds, zoom, targetZoom, zoomTo]);
 
   useEffect(() => {
-    if (!pendingCommitRef.current || bounds === null) return;
+    if (activeTheme === null || bounds === null) return;
+
+    if (!pendingCommitRef.current) return;
+    // **줌 도달로 판정한다**(검증 재작업 1): 영역 변화로 판정하면 줌이 반영되기 전의
+    // 사용자 이동(드래그)을 줌 결과로 오인해, 버튼을 누르기도 전에 목록이 갱신됐다.
+    // 정착 신호(settledChip)와 같은 조건이지만 여기서는 **확정**의 전제로만 쓴다 —
+    // 확정은 행정동을 더 요구하고, 정착은 그것을 기다리지 않는다 (재작업 3)
+    if (targetZoom !== null && zoom !== targetZoom) return;
     // 행정동 판별(역지오코딩 디바운스)이 끝날 때까지 기다린다 (codex 리뷰) — 여기서
-    // 포기하면 칩이 이전 확정 영역을 계속 조회한 채로 남는다
+    // 포기하면 칩이 이전 확정 영역을 계속 조회한 채로 남는다. 중심이 행정동 밖(바다)이면
+    // 이 대기가 길어질 수 있으나, 위에서 정착 신호를 먼저 보냈으므로 이동은 막지 않는다
     if (region === null) return;
 
-    const targetZoom = pendingZoomRef.current;
-    // **줌 도달로 판정한다**(검증 재작업): 영역 변화로 판정하면 줌이 반영되기 전의
-    // 사용자 이동(드래그)을 줌 결과로 오인해, 버튼을 누르기도 전에 목록이 갱신됐다
-    if (targetZoom !== null && zoom !== targetZoom) return;
-
     // 활성화당 한 번만 확정하고, 이후 이동·줌에는 반응하지 않는다 (AC 11)
-    pendingZoomRef.current = null;
     pendingCommitRef.current = false;
     commit(region, bounds);
     // activeTheme도 의존한다: 칩을 켜는 렌더에서는 영역·줌·행정동이 그대로라, 이것이
     // 없으면 확정이 다음 지도 변화까지 밀린다(= 사용자의 첫 이동이 확정이 된다)
-  }, [activeTheme, bounds, zoom, region, commit]);
+  }, [activeTheme, bounds, zoom, targetZoom, region, commit]);
+
+  return settledChip;
 };

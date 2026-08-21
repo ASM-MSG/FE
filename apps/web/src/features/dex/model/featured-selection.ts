@@ -22,9 +22,14 @@ export const initialFeaturedSelection = (badges: DexBadge[]): number[] =>
     .map((badge) => badge.badgeId);
 
 /**
- * 획득 뱃지 클릭 토글 [기준 3·4] —
- * 미획득 클릭·2개 찬 상태의 추가 클릭은 무시(원본 배열 그대로 반환).
+ * 획득 뱃지 클릭 토글 [기준 3·4 → MSG-451 AC 22] —
+ * 미획득 클릭은 무시(원본 배열 그대로 반환).
  * 해제는 배열에서 제거 — rank 1 해제 시 잔여 선택이 자연히 rank 1로 승격된다.
+ *
+ * **찬 상태의 추가 클릭은 FIFO 교체다**(MSG-451): 종전에는 무시라 두 개를 채운 뒤에는
+ * 세 번째 뱃지가 아무 반응이 없었고, 바꾸려면 먼저 해제해야 하는 것을 화면이 알려주지
+ * 않았다. 배열 순서가 곧 랭크이므로 앞(오래된 선택)을 잘라내면 잔여가 rank 1로 승격되고
+ * 새 뱃지가 rank 2가 된다 — 해제 경로의 승격 규칙과 같은 산술이다.
  */
 export const toggleFeatured = (
   selection: number[],
@@ -34,8 +39,7 @@ export const toggleFeatured = (
   if (selection.includes(badge.badgeId)) {
     return selection.filter((id) => id !== badge.badgeId);
   }
-  if (selection.length >= MAX_FEATURED) return selection;
-  return [...selection, badge.badgeId];
+  return [...selection.slice(-(MAX_FEATURED - 1)), badge.badgeId];
 };
 
 /** 선택 배열에서 랭크(1·2) 조회 — 미선택이면 null [기준 2] */

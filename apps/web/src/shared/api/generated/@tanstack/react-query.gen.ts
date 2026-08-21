@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, approve, delete_, deleteFriend, deleteMe, findMyBadges, getActiveMissionsInViewport, getCell, getCollectionGrids, getExploreRegions, getFriendGridAggregates, getFriendGrids, getFriendGridVideos, getFriendProfile, getFriends, getGridCover, getGridGlobalVideos, getGridHourlyUploads, getGridVideos, getHotZones, getMe, getMissionDetail, getMissionVideos, getMyFriendCode, getMyProgress, getOccupiedAggregatesInViewport, getOccupiedInViewport, getPlayback, getPreferences, getReceivedRequests, getRegionGrids, getRegionVideos, getReports, getStatByGrid, getStatByPoint, getStats, getSummary, getTrendingKeywords, getUploadHistory, getVideoForReview, getZones, highlightPreview, issuePresignedUrl, issueProfileImagePresignedUrl, login, logout, oauthCodeLogin, oauthLogin, type Options, preview, redirectToKakaoAuthorize, register, reissue, reject, reject1, removeProfileImage, replace, replaceFeatured, report, request, reverseGeocode, searchPlaces, setVisibility, signup, socialLogin, unblindVideo, unregister, update, updateLocationConsent, updateNickname, updateProfileImage, upload } from '../sdk.gen';
-import type { AcceptData, ApproveData, ApproveResponse, DeleteData, DeleteFriendData, DeleteMeData, FindMyBadgesData, FindMyBadgesResponse, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponse, GetCellData, GetCellResponse, GetCollectionGridsData, GetCollectionGridsResponse, GetExploreRegionsData, GetExploreRegionsResponse, GetFriendGridAggregatesData, GetFriendGridAggregatesResponse, GetFriendGridsData, GetFriendGridsResponse, GetFriendGridVideosData, GetFriendGridVideosResponse, GetFriendProfileData, GetFriendProfileResponse, GetFriendsData, GetFriendsResponse, GetGridCoverData, GetGridCoverResponse, GetGridGlobalVideosData, GetGridGlobalVideosResponse, GetGridHourlyUploadsData, GetGridHourlyUploadsResponse, GetGridVideosData, GetGridVideosResponse, GetHotZonesData, GetHotZonesResponse, GetMeData, GetMeResponse, GetMissionDetailData, GetMissionDetailResponse, GetMissionVideosData, GetMissionVideosResponse, GetMyFriendCodeData, GetMyFriendCodeResponse, GetMyProgressData, GetMyProgressResponse, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponse, GetOccupiedInViewportData, GetOccupiedInViewportResponse, GetPlaybackData, GetPlaybackResponse, GetPreferencesData, GetPreferencesResponse, GetReceivedRequestsData, GetReceivedRequestsResponse, GetRegionGridsData, GetRegionGridsResponse, GetRegionVideosData, GetRegionVideosResponse, GetReportsData, GetReportsResponse, GetStatByGridData, GetStatByGridResponse, GetStatByPointData, GetStatByPointResponse, GetStatsData, GetStatsResponse, GetSummaryData, GetSummaryResponse, GetTrendingKeywordsData, GetTrendingKeywordsResponse, GetUploadHistoryData, GetUploadHistoryResponse, GetVideoForReviewData, GetVideoForReviewResponse, GetZonesData, GetZonesResponse, HighlightPreviewData, HighlightPreviewResponse, IssuePresignedUrlData, IssuePresignedUrlResponse, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponse, LoginData, LoginResponse, LogoutData, OauthCodeLoginData, OauthCodeLoginResponse, OauthLoginData, OauthLoginResponse, PreviewData, PreviewResponse, RedirectToKakaoAuthorizeData, RegisterData, ReissueData, ReissueResponse, Reject1Data, Reject1Response, RejectData, RemoveProfileImageData, RemoveProfileImageResponse, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponse, ReplaceResponse, ReportData, ReportResponse, RequestData, RequestResponse, ReverseGeocodeData, ReverseGeocodeResponse, SearchPlacesData, SearchPlacesResponse, SetVisibilityData, SetVisibilityResponse, SignupData, SignupResponse, SocialLoginData, SocialLoginResponse, UnblindVideoData, UnblindVideoResponse, UnregisterData, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponse, UpdateNicknameData, UpdateNicknameResponse, UpdateProfileImageData, UpdateProfileImageResponse, UpdateResponse, UploadData, UploadResponse } from '../types.gen';
+import { accept, approve, delete_, deleteFriend, deleteMe, findMyBadges, getActiveMissionsInViewport, getCell, getCollectionGrids, getConsentStatus, getDistricts, getExploreRegions, getFriendGridAggregates, getFriendGrids, getFriendGridVideos, getFriendProfile, getFriends, getGridCover, getGridGlobalVideos, getGridHourlyUploads, getGridVideos, getHotZones, getInbox, getMe, getMissionAggregates, getMissionDetail, getMissionVideos, getMyFriendCode, getMyProgress, getNationalStat, getOccupiedAggregatesInViewport, getOccupiedInViewport, getPlayback, getPreferences, getReceivedRequests, getRegionGrids, getRegionVideos, getReports, getStatByGrid, getStatByPoint, getStats, getSummary, getTrendingKeywords, getUnreadCount, getUploadHistory, getVideoForReview, getViewerCount, getZones, heartbeat, highlightPreview, issuePresignedUrl, issueProfileImagePresignedUrl, login, logout, markAllRead, markRead, oauthCodeLogin, oauthLogin, type Options, preview, redirectToKakaoAuthorize, register, reissue, reject, reject1, removeProfileImage, replace, replaceFeatured, report, request, reverseGeocode, searchPlaces, setVisibility, signup, socialLogin, submitConsents, unblindVideo, unregister, update, updateLocationConsent, updateMarketingConsent, updateNickname, updateProfileImage, upload } from '../sdk.gen';
+import type { AcceptData, ApproveData, ApproveResponse, DeleteData, DeleteFriendData, DeleteMeData, FindMyBadgesData, FindMyBadgesResponse, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponse, GetCellData, GetCellResponse, GetCollectionGridsData, GetCollectionGridsResponse, GetConsentStatusData, GetConsentStatusResponse, GetDistrictsData, GetDistrictsResponse, GetExploreRegionsData, GetExploreRegionsResponse, GetFriendGridAggregatesData, GetFriendGridAggregatesResponse, GetFriendGridsData, GetFriendGridsResponse, GetFriendGridVideosData, GetFriendGridVideosResponse, GetFriendProfileData, GetFriendProfileResponse, GetFriendsData, GetFriendsResponse, GetGridCoverData, GetGridCoverResponse, GetGridGlobalVideosData, GetGridGlobalVideosResponse, GetGridHourlyUploadsData, GetGridHourlyUploadsResponse, GetGridVideosData, GetGridVideosResponse, GetHotZonesData, GetHotZonesResponse, GetInboxData, GetInboxResponse, GetMeData, GetMeResponse, GetMissionAggregatesData, GetMissionAggregatesResponse, GetMissionDetailData, GetMissionDetailResponse, GetMissionVideosData, GetMissionVideosResponse, GetMyFriendCodeData, GetMyFriendCodeResponse, GetMyProgressData, GetMyProgressResponse, GetNationalStatData, GetNationalStatResponse, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponse, GetOccupiedInViewportData, GetOccupiedInViewportResponse, GetPlaybackData, GetPlaybackResponse, GetPreferencesData, GetPreferencesResponse, GetReceivedRequestsData, GetReceivedRequestsResponse, GetRegionGridsData, GetRegionGridsResponse, GetRegionVideosData, GetRegionVideosResponse, GetReportsData, GetReportsResponse, GetStatByGridData, GetStatByGridResponse, GetStatByPointData, GetStatByPointResponse, GetStatsData, GetStatsResponse, GetSummaryData, GetSummaryResponse, GetTrendingKeywordsData, GetTrendingKeywordsResponse, GetUnreadCountData, GetUnreadCountResponse, GetUploadHistoryData, GetUploadHistoryResponse, GetVideoForReviewData, GetVideoForReviewResponse, GetViewerCountData, GetViewerCountResponse, GetZonesData, GetZonesResponse, HeartbeatData, HighlightPreviewData, HighlightPreviewResponse, IssuePresignedUrlData, IssuePresignedUrlResponse, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponse, LoginData, LoginResponse, LogoutData, MarkAllReadData, MarkReadData, OauthCodeLoginData, OauthCodeLoginResponse, OauthLoginData, OauthLoginResponse, PreviewData, PreviewResponse, RedirectToKakaoAuthorizeData, RegisterData, ReissueData, ReissueResponse, Reject1Data, Reject1Response, RejectData, RemoveProfileImageData, RemoveProfileImageResponse, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponse, ReplaceResponse, ReportData, ReportResponse, RequestData, RequestResponse, ReverseGeocodeData, ReverseGeocodeResponse, SearchPlacesData, SearchPlacesResponse, SetVisibilityData, SetVisibilityResponse, SignupData, SignupResponse, SocialLoginData, SocialLoginResponse, SubmitConsentsData, SubmitConsentsResponse, UnblindVideoData, UnblindVideoResponse, UnregisterData, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponse, UpdateMarketingConsentData, UpdateMarketingConsentResponse, UpdateNicknameData, UpdateNicknameResponse, UpdateProfileImageData, UpdateProfileImageResponse, UpdateResponse, UploadData, UploadResponse } from '../types.gen';
 
 /**
  * 영상 삭제
@@ -155,16 +155,78 @@ export const updateNicknameMutation = (options?: Partial<Options<UpdateNicknameD
 };
 
 /**
- * 위치정보 사용 동의 변경
+ * 마케팅 정보 수신 동의 변경
  *
- * 위치기반서비스 이용 동의를 켜거나 끄고 변경 후 프로필을 반환한다. 첫 로그인 온보딩의 동의 제출과 프로필 편집의 토글이 이 엔드포인트 하나를 공용으로 쓴다.
+ * 가입 후 설정 화면에서 마케팅 수신 동의를 켜거나 끈다. 이미 저장된 값과 같은 값을 다시 보내도 성공하며, 이때 서버가 보관하는 마지막 변경 시각은 갱신되지 않는다(멱등). 응답은 변경 후 동의 상태다 — 위치정보 사용 동의 변경과 같은 구조다.
+ */
+export const updateMarketingConsentMutation = (options?: Partial<Options<UpdateMarketingConsentData>>): UseMutationOptions<UpdateMarketingConsentResponse, DefaultError, Options<UpdateMarketingConsentData>> => {
+    const mutationOptions: UseMutationOptions<UpdateMarketingConsentResponse, DefaultError, Options<UpdateMarketingConsentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateMarketingConsent({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 위치정보 사용 동의 켜기
  *
- * 이미 저장된 값과 같은 값을 다시 보내도 성공하며, 이때 서버가 보관하는 마지막 변경 시각은 갱신되지 않는다(멱등). 동의를 꺼도 서버가 막는 API 는 없다 — 위치 기능 노출 제어는 클라이언트 몫이다.
+ * 위치기반서비스 이용 동의를 켜고 변경 후 프로필을 반환한다. 첫 로그인 온보딩의 동의 제출과 프로필 화면이 이 엔드포인트 하나를 공용으로 쓴다.
+ *
+ * 이 동의는 철회할 수 없다 — consented=false 요청은 1400 으로 거절된다. 되돌리려면 계정을 삭제해야 하며, 이는 다른 필수 약관 동의와 같은 규칙이다. 이미 켜진 상태에서 다시 켜는 요청은 성공하고, 이때 서버가 보관하는 동의 시각은 갱신되지 않는다(멱등).
  */
 export const updateLocationConsentMutation = (options?: Partial<Options<UpdateLocationConsentData>>): UseMutationOptions<UpdateLocationConsentResponse, DefaultError, Options<UpdateLocationConsentData>> => {
     const mutationOptions: UseMutationOptions<UpdateLocationConsentResponse, DefaultError, Options<UpdateLocationConsentData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await updateLocationConsent({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getConsentStatusQueryKey = (options?: Options<GetConsentStatusData>) => createQueryKey('getConsentStatus', options);
+
+/**
+ * 가입 약관 동의 상태 조회
+ *
+ * 로그인 직후 동의 게이트를 띄울지 판별하는 재료다. 항목별 동의 여부 5종과 필수 4항목 완료 여부(requiredCompleted)를 함께 반환한다 — 필수 항목 목록이 늘어도 클라이언트가 조립을 고치지 않도록 서버가 계산한다.
+ *
+ * 위치기반서비스 항목(locationTerms)은 프로필 화면의 위치정보 사용 동의와 같은 한 값이다. 이 동의는 철회할 수 없으므로 한 번 true 가 되면 되돌아가지 않고, 필수 동의를 마친 사용자에게 게이트가 다시 뜨는 일도 없다. 동의 시각은 서버에만 보관하고 응답에 싣지 않는다.
+ */
+export const getConsentStatusOptions = (options?: Options<GetConsentStatusData>) => queryOptions<GetConsentStatusResponse, DefaultError, GetConsentStatusResponse, ReturnType<typeof getConsentStatusQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getConsentStatus({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getConsentStatusQueryKey(options)
+});
+
+/**
+ * 가입 약관 동의 제출
+ *
+ * 가입 게이트의 "동의하고 시작하기" 제출이다. 필수 4항목(만 14세 이상·서비스 이용약관·개인정보 수집·이용·위치기반서비스 이용약관)은 true 여야 하고 마케팅만 선택이다 — 하나라도 false 거나 누락이면 400 이며 이때 아무 항목도 저장되지 않는다.
+ *
+ * 같은 내용을 다시 보내도 성공한다(멱등). 재제출이 필수 4항목의 최초 동의 시각을 덮지 않고, 마케팅만 값이 실제로 달라질 때 변경 시각이 갱신된다. 제출은 위치정보 사용 동의도 함께 켜므로 프로필 화면의 위치 동의와 값이 하나다. 응답은 제출 후 동의 상태다.
+ */
+export const submitConsentsMutation = (options?: Partial<Options<SubmitConsentsData>>): UseMutationOptions<SubmitConsentsResponse, DefaultError, Options<SubmitConsentsData>> => {
+    const mutationOptions: UseMutationOptions<SubmitConsentsResponse, DefaultError, Options<SubmitConsentsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await submitConsents({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -387,6 +449,25 @@ export const acceptMutation = (options?: Partial<Options<AcceptData>>): UseMutat
 };
 
 /**
+ * 열람 heartbeat
+ *
+ * 행사방을 보는 동안 30초 주기로 보낸다. 마지막 신호가 90초 이내인 세션만 열람 인원에 센다. 비로그인은 X-Viewer-Session 헤더(공백 아님·최대 64자) 필수 — 없으면 400. 캐시 장애는 삼켜져 200 이다.
+ */
+export const heartbeatMutation = (options?: Partial<Options<HeartbeatData>>): UseMutationOptions<unknown, DefaultError, Options<HeartbeatData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<HeartbeatData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await heartbeat({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
  * 이메일 회원가입
  *
  * 이메일/비밀번호/닉네임으로 신규 회원을 생성한다.
@@ -596,9 +677,47 @@ export const setVisibilityMutation = (options?: Partial<Options<SetVisibilityDat
 };
 
 /**
+ * 알림 하나 읽음 처리
+ *
+ * 행을 탭했을 때 그 알림을 읽음으로 바꾼다 — 이미 읽은 알림을 다시 요청해도 성공이고 최초로 읽은 시각이 그대로 남는다. 없는 알림이나 남의 알림이면 10404 로, 둘을 구분하지 않는다.
+ */
+export const markReadMutation = (options?: Partial<Options<MarkReadData>>): UseMutationOptions<unknown, DefaultError, Options<MarkReadData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<MarkReadData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await markRead({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 알림 모두 읽음 처리
+ *
+ * 안읽은 알림을 전부 읽음으로 바꾼다 — 안읽은 알림이 하나도 없어도 성공한다.
+ */
+export const markAllReadMutation = (options?: Partial<Options<MarkAllReadData>>): UseMutationOptions<unknown, DefaultError, Options<MarkAllReadData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<MarkAllReadData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await markAllRead({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
  * 카테고리 수신 토글
  *
- * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 5종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY, 대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다.
+ * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 7종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY, 대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다. MISSION_NEARBY 는 서버 발송이 없어 기기가 발화 전 이 설정을 조회해 로컬로 억제한다.
  */
 export const updateMutation = (options?: Partial<Options<UpdateData>>): UseMutationOptions<UpdateResponse, DefaultError, Options<UpdateData>> => {
     const mutationOptions: UseMutationOptions<UpdateResponse, DefaultError, Options<UpdateData>> = {
@@ -753,6 +872,26 @@ export const getStatsOptions = (options?: Options<GetStatsData>) => queryOptions
     queryKey: getStatsQueryKey(options)
 });
 
+export const getNationalStatQueryKey = (options?: Options<GetNationalStatData>) => createQueryKey('getNationalStat', options);
+
+/**
+ * 내 전국 탐험률 재료 (분자·분모)
+ *
+ * 도감·프로필 헤더의 "전체 지도 N% 탐험" 재료. 내가 점령한 격자 수(전국 합)와 전국 격자 총수를 반올림 없는 원값 정수 2개로 반환한다. 비율·표시 자릿수·100 상한은 화면이 min(100, 분자/분모 × 100) 으로 계산한다. 수집이 없어도 오류가 아니라 분자 0. 분모가 0 이면 기준 데이터 미적재 상태라 화면은 비율을 그리지 않는다.
+ */
+export const getNationalStatOptions = (options?: Options<GetNationalStatData>) => queryOptions<GetNationalStatResponse, DefaultError, GetNationalStatResponse, ReturnType<typeof getNationalStatQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getNationalStat({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getNationalStatQueryKey(options)
+});
+
 export const getStatByPointQueryKey = (options: Options<GetStatByPointData>) => createQueryKey('getStatByPoint', options);
 
 /**
@@ -833,12 +972,133 @@ export const getExploreRegionsOptions = (options?: Options<GetExploreRegionsData
     queryKey: getExploreRegionsQueryKey(options)
 });
 
+export const getDistrictsQueryKey = (options?: Options<GetDistrictsData>) => createQueryKey('getDistricts', options);
+
+/**
+ * 시군구 목록 (검색 지역 필터)
+ *
+ * 검색 화면 "전체 지역" 목록용 시군구 전량. 이름·식별자와 그 구의 전체 격자 수를 준다. 격자 수는 사용자 무관 값이고 0 인 시군구는 빠진다. 정렬은 이름순, 같은 이름은 식별자순. 응답의 parentCode 는 /api/regions/stats 의 parentCode 로 그대로 이어 쓸 수 있다.
+ */
+export const getDistrictsOptions = (options?: Options<GetDistrictsData>) => queryOptions<GetDistrictsResponse, DefaultError, GetDistrictsResponse, ReturnType<typeof getDistrictsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getDistricts({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getDistrictsQueryKey(options)
+});
+
+export const getInboxQueryKey = (options?: Options<GetInboxData>) => createQueryKey('getInbox', options);
+
+/**
+ * 알림 목록 조회
+ *
+ * 받은 알림을 최신순으로 한 페이지 반환한다. 최근 30일 이내 생성분만 보이고, 알림 설정을 꺼서 발송되지 않은 알림은 빠진다 — 전송률 상한이나 푸시 토큰 없음으로 발송되지 않은 알림은 보인다. 다음 페이지는 응답의 nextCursor 를 cursor 로 다시 넘긴다. 목록 조회는 읽음 상태를 바꾸지 않는다.
+ */
+export const getInboxOptions = (options?: Options<GetInboxData>) => queryOptions<GetInboxResponse, DefaultError, GetInboxResponse, ReturnType<typeof getInboxQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getInbox({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getInboxQueryKey(options)
+});
+
+const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
+    const params = { ...queryKey[0] };
+    if (page.body) {
+        params.body = {
+            ...queryKey[0].body as any,
+            ...page.body as any
+        };
+    }
+    if (page.headers) {
+        params.headers = {
+            ...queryKey[0].headers,
+            ...page.headers
+        };
+    }
+    if (page.path) {
+        params.path = {
+            ...queryKey[0].path as any,
+            ...page.path as any
+        };
+    }
+    if (page.query) {
+        params.query = {
+            ...queryKey[0].query as any,
+            ...page.query as any
+        };
+    }
+    return params as unknown as typeof page;
+};
+
+export const getInboxInfiniteQueryKey = (options?: Options<GetInboxData>): QueryKey<Options<GetInboxData>> => createQueryKey('getInbox', options, true);
+
+/**
+ * 알림 목록 조회
+ *
+ * 받은 알림을 최신순으로 한 페이지 반환한다. 최근 30일 이내 생성분만 보이고, 알림 설정을 꺼서 발송되지 않은 알림은 빠진다 — 전송률 상한이나 푸시 토큰 없음으로 발송되지 않은 알림은 보인다. 다음 페이지는 응답의 nextCursor 를 cursor 로 다시 넘긴다. 목록 조회는 읽음 상태를 바꾸지 않는다.
+ */
+export const getInboxInfiniteOptions = (options?: Options<GetInboxData>) => {
+    const opts = infiniteQueryOptions<GetInboxResponse, DefaultError, InfiniteData<GetInboxResponse>, QueryKey<Options<GetInboxData>>, number | Pick<QueryKey<Options<GetInboxData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetInboxData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getInbox({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getInboxInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getUnreadCountQueryKey = (options?: Options<GetUnreadCountData>) => createQueryKey('getUnreadCount', options);
+
+/**
+ * 안읽은 알림 개수 조회
+ *
+ * 목록과 같은 노출 조건으로 안읽은 알림 수를 센다 — 없으면 0 이다.
+ */
+export const getUnreadCountOptions = (options?: Options<GetUnreadCountData>) => queryOptions<GetUnreadCountResponse, DefaultError, GetUnreadCountResponse, ReturnType<typeof getUnreadCountQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getUnreadCount({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getUnreadCountQueryKey(options)
+});
+
 export const getPreferencesQueryKey = (options?: Options<GetPreferencesData>) => createQueryKey('getPreferences', options);
 
 /**
  * 알림 설정 조회
  *
- * 카테고리 5종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on.
+ * 카테고리 7종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on. MODERATION 은 설정 대상이 아니라 목록에 없다 (수신 거부 불가).
  */
 export const getPreferencesOptions = (options?: Options<GetPreferencesData>) => queryOptions<GetPreferencesResponse, DefaultError, GetPreferencesResponse, ReturnType<typeof getPreferencesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -895,35 +1155,6 @@ export const getMissionVideosOptions = (options: Options<GetMissionVideosData>) 
     queryKey: getMissionVideosQueryKey(options)
 });
 
-const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
-    const params = { ...queryKey[0] };
-    if (page.body) {
-        params.body = {
-            ...queryKey[0].body as any,
-            ...page.body as any
-        };
-    }
-    if (page.headers) {
-        params.headers = {
-            ...queryKey[0].headers,
-            ...page.headers
-        };
-    }
-    if (page.path) {
-        params.path = {
-            ...queryKey[0].path as any,
-            ...page.path as any
-        };
-    }
-    if (page.query) {
-        params.query = {
-            ...queryKey[0].query as any,
-            ...page.query as any
-        };
-    }
-    return params as unknown as typeof page;
-};
-
 export const getMissionVideosInfiniteQueryKey = (options: Options<GetMissionVideosData>): QueryKey<Options<GetMissionVideosData>> => createQueryKey('getMissionVideos', options, true);
 
 /**
@@ -976,6 +1207,32 @@ export const getMyProgressOptions = (options?: Options<GetMyProgressData>) => qu
         return data;
     },
     queryKey: getMyProgressQueryKey(options)
+});
+
+export const getMissionAggregatesQueryKey = (options: Options<GetMissionAggregatesData>) => createQueryKey('getMissionAggregates', options);
+
+/**
+ * 넓은 축척용 미션 행정 단위 집계 조회 (줌아웃)
+ *
+ * 지도를 축소해 개별 핀을 그릴 수 없는 축척에서, bbox 안의 축제·팝업 미션을 행정 단위(동·구·시)로 묶어 지역 이름과 개수로 반환한다. 단위 전환 시점은 서버가 정하지 않으며 클라이언트가 화면 축척에 맞춰 unit 만 바꿔 부른다.
+ *
+ * 항목마다 마커 식별 키(regionCode), 표시 이름, 대표 좌표, 미션 수, 그 묶음의 미션 id 목록이 온다. 대표 좌표는 묶음에 속한 미션 귀속점의 평균이라 마커가 실제 데이터 위에 선다. missionIds 는 묶음 마커를 눌러 줌인한 뒤 개별 조회(GET /api/missions/active) 결과와 교집합을 내 목록을 좁히는 재료다 — 카드 재료는 개별 조회 응답에 있다.
+ *
+ * 미션이 속한 격자 사각형이 아니라 그 사각형 중앙의 귀속점이 bbox 안인지로 센다. 사각형이 화면에 걸쳤지만 중심이 밖인 미션은 빠지며, 이 때문에 개별 조회와 집계를 갈아타는 순간 마커 수가 미세하게 달라질 수 있다. 행정동이 판정되지 않은 미션은 제외가 아니라 regionCode·name 이 null 인 항목 하나로 묶여 마지막에 온다. 범위 안에 미션이 없으면 빈 배열이다.
+ *
+ * bbox span 상한은 단위별로 다르다(DONG 1도, SIGUNGU 4도, SIDO 10도 — 위도·경도 각 변에 따로 적용, 정확히 상한값은 허용). 초과 시 400 + developCode 12401, 좌표가 WGS84 범위를 벗어나거나 bbox 가 뒤집히면 12400, type 이 없거나 EVENT·POPUP 이 아니면 12402, unit 이 없거나 미지원 값이면 12405 다. 응답에 사용자별 값은 없다.
+ */
+export const getMissionAggregatesOptions = (options: Options<GetMissionAggregatesData>) => queryOptions<GetMissionAggregatesResponse, DefaultError, GetMissionAggregatesResponse, ReturnType<typeof getMissionAggregatesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getMissionAggregates({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getMissionAggregatesQueryKey(options)
 });
 
 export const getActiveMissionsInViewportQueryKey = (options: Options<GetActiveMissionsInViewportData>) => createQueryKey('getActiveMissionsInViewport', options);
@@ -1434,6 +1691,26 @@ export const getMyFriendCodeOptions = (options?: Options<GetMyFriendCodeData>) =
         return data;
     },
     queryKey: getMyFriendCodeQueryKey(options)
+});
+
+export const getViewerCountQueryKey = (options: Options<GetViewerCountData>) => createQueryKey('getViewerCount', options);
+
+/**
+ * 현재 열람 인원 조회
+ *
+ * viewerCount 0 은 아무도 없음(표시), null 은 캐시 장애(숨김)다. 응답이 사용자 무관이라 인증 없이 호출할 수 있다.
+ */
+export const getViewerCountOptions = (options: Options<GetViewerCountData>) => queryOptions<GetViewerCountResponse, DefaultError, GetViewerCountResponse, ReturnType<typeof getViewerCountQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getViewerCount({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getViewerCountQueryKey(options)
 });
 
 export const getRegionVideosQueryKey = (options: Options<GetRegionVideosData>) => createQueryKey('getRegionVideos', options);

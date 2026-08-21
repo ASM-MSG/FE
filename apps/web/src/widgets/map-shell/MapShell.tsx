@@ -10,6 +10,7 @@ import {
   toRegionClusterMarkers,
 } from "@/features/map-home/model/region-cluster-overlay";
 import { useGridAggregationQuery } from "@/features/map-home/model/use-grid-aggregation-query";
+import { useMissionAggregationQuery } from "@/features/map-home/model/use-mission-aggregation-query";
 import {
   buildGridLines,
   excludeSectionCells,
@@ -94,16 +95,24 @@ export const MapShell = () => {
   // 게이트(로그인·저줌·칩 없음)는 훅이 판정한다 — 칩 활성 중에는 items가 비어 마커도 없다 (AC 9)
   const { items: aggregationItems, unit: aggregationUnit } =
     useGridAggregationQuery(viewportBounds, viewportZoom);
-  const clusters = useMemo(
-    () =>
-      aggregationUnit !== null
-        ? mergeOverlappingMarkers(
-            toRegionClusterMarkers(aggregationItems, aggregationUnit),
-            viewportZoom,
-          )
-        : [],
-    [aggregationItems, aggregationUnit, viewportZoom],
+  // 저줌 미션 집계 마커 (MSG-451 AC 6, 서버 MSG-437) — 축제·팝업 칩이 켜졌을 때
+  // 미션 격자를 대신하는 층. 점령 집계와 배타적이다: 위 훅이 칩 활성 중 items를 비우고,
+  // 이 훅은 칩이 없으면 비운다 — 한 지도에 두 종류의 집계 마커가 겹치지 않는다
+  const { markers: missionClusters } = useMissionAggregationQuery(
+    activeTheme === "festival" || activeTheme === "popup" ? activeTheme : null,
+    viewportBounds,
+    viewportZoom,
   );
+  const clusters = useMemo(() => {
+    if (missionClusters.length > 0)
+      return mergeOverlappingMarkers(missionClusters, viewportZoom);
+    return aggregationUnit !== null
+      ? mergeOverlappingMarkers(
+          toRegionClusterMarkers(aggregationItems, aggregationUnit),
+          viewportZoom,
+        )
+      : [];
+  }, [missionClusters, aggregationItems, aggregationUnit, viewportZoom]);
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
 

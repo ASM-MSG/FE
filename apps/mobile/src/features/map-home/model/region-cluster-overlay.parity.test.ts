@@ -158,15 +158,17 @@ describe("mergeOverlappingMarkers 동등성 (L8·L9)", () => {
     }
   });
 
-  it("병합 마커는 name:null + count 합산 + 앵커(최대 count) 좌표다 (L8)", () => {
-    // 임계(68px) 안쪽으로 10px 떨어뜨린 두 동 — count 큰 쪽(31)이 앵커가 된다
+  it("병합 마커는 앵커(최대 count) 이름 + count 합산 + 앵커 좌표다 (L8 → MSG-451 개정)", () => {
+    // 임계(68px) 안쪽으로 10px 떨어뜨린 두 동 — count 큰 쪽(31)이 앵커가 된다.
+    // 이름을 버리던 종전 규칙은 MSG-451에서 뒤집혔다(웹 원본과 동시) — 개수만 남으면
+    // 마커가 어디를 가리키는지 읽을 수 없어 개수가 쓸모를 잃는다
     const merged = mobileClusterOverlay.mergeOverlappingMarkers(
       apartByPx(10, "DONG"),
       MERGE_ZOOM,
     );
 
     expect(merged).toHaveLength(1);
-    expect(merged[0].name).toBeNull();
+    expect(merged[0].name).toBe("부전2동");
     expect(merged[0].count).toBe(31 + 12);
     expect(merged[0].position).toEqual({ lat: 35.1579, lng: 129.0594 });
   });

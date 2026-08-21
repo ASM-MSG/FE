@@ -103,12 +103,26 @@ const projectToWorldPx = (
 /**
  * 같은 줌 화면에서 임계 미만으로 붙는 마커들의 2차 병합.
  * count 큰 마커가 앵커가 되어 근접 마커를 흡수한다 — 위치는 앵커 좌표(지배 지역 위),
- * count는 합산(총합 보존), 이름은 null(서로 다른 지역명에 한 이름을 붙일 수 없다).
+ * count는 합산(총합 보존).
+ *
+ * **이름은 앵커의 이름을 이어받는다** (MSG-451, 웹 원본과 동시 개정). 종전에는 null이라
+ * "서로 다른 지역명에 한 이름을 붙일 수 없다"는 이유로 개수만 남았는데, 실제 화면에서는
+ * 마커가 어디를 가리키는지 읽을 수 없어 개수가 쓸모를 잃었다. 앵커는 이미 count 최대
+ * 멤버이므로 "가장 많았던 지역의 이름"이 그대로 나온다 — 동률은 가나다순으로 갈라
+ * 재조회에도 같은 이름이 나오게 한다.
  * 병합 키는 멤버 키 결합 — 멤버 구성이 같으면 재조회에도 같은 키다.
  *
  * 웹은 `markers.toSorted(...)`를 쓰지만 Hermes(RN 0.86)에 미구현이라 스프레드 복사+sort로
  * 옮겼다 — 입력 배열을 변형하지 않는 성질은 같다 (dex/gallery-groups.ts 선례).
  */
+const compareByName = (
+  a: RegionClusterMarker,
+  b: RegionClusterMarker,
+): number =>
+  a.name === null || b.name === null
+    ? Number(a.name === null) - Number(b.name === null)
+    : a.name.localeCompare(b.name, "ko");
+
 export const mergeOverlappingMarkers = (
   markers: RegionClusterMarker[],
   zoom: number,
@@ -122,7 +136,8 @@ export const mergeOverlappingMarkers = (
   const groups: MergeGroup[] = [];
 
   const sorted = [...markers].sort(
-    (a, b) => b.count - a.count || a.id.localeCompare(b.id),
+    (a, b) =>
+      b.count - a.count || compareByName(a, b) || a.id.localeCompare(b.id),
   );
   for (const marker of sorted) {
     const px = projectToWorldPx(marker.position, zoom);
@@ -149,7 +164,7 @@ export const mergeOverlappingMarkers = (
       ? anchor
       : {
           id: [...memberIds].sort().join("+"),
-          name: null,
+          name: anchor.name,
           count,
           position: anchor.position,
           unit: anchor.unit,

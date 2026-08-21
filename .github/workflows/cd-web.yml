@@ -1,0 +1,109 @@
+name: CD (web)
+
+# main 브랜치 push -> fillmap.kr 웹 배포.
+# 원안(성민 전달본)은 develop 배포였으나 README 브랜치 전략(main=배포 / develop=기본)에 맞춰
+# main으로 옮겼다 — 릴리스는 develop -> main PR로 낸다. CI가 그 PR에서 이미 돌므로(ci.yml의
+# pull_request: [develop, main]) main push 시점에는 검증이 끝나 있다. 같은 push에 걸린
+# 워크플로는 서로 순서가 없어 CD가 CI를 기다리지 않는데, 이 배치가 그 공백을 메운다.
+# 주의: BE는 develop이 라이브(cd-dev.yml)라 리듬이 다르다 — api.fillmap.kr(BE develop)이
+# 먼저 바뀌고 fillmap.kr(FE main)이 나중에 따라가는 구간이 생긴다.
+# 인프라 준비 전까지는 repo variable WEB_DEPLOY_ENABLED 로 비활성(skip) 상태.
+# 준비되면 Settings > Environments 에 "web" 환경을 만들고 아래를 등록한다:
+#   repo variables: WEB_DEPLOY_ENABLED=true
+#   web 환경 variables: VITE_API_BASE_URL=https://api.fillmap.kr
+#   web 환경 secrets: VITE_NAVER_MAP_NCP_KEY_ID
+# 전달본에 있던 VITE_KAKAO_JS_KEY / VITE_KAKAO_LOGIN_ENABLED 는 뺐다 — 코드가 읽지 않는다.
+# 카카오 로그인은 서버 진입점(/api/auth/oauth/kakao/authorize) 경유라 앱 키가 프론트에 없고,
+# 플래그를 보는 코드도 없어 등록해도 번들에 들어가지 않는다 (docs/DEPLOYMENT.md 참조).
+# AWS 인증은 GitHub OIDC -> IAM 역할(fillmap-fe-deploy) — 액세스 키를 레포에 저장하지 않는다.
+# 역할 신뢰 조건이 "environment:web"이라 environment 지정을 지우면 인증이 깨진다.
+# NCP 키는 어차피 번들에 노출되는 값이지만, 레포가 public이라 소스에 박지 않고 secrets로 주입한다.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # OIDC 토큰 발급 (aws-actions/configure-aws-credentials)
+  contents: read
+
+# 배포 도중 취소하면 절반만 올라간 사이트가 남는다 — 취소 없이 순서대로 완주
+concurrency:
+  group: cd-web
+  cancel-in-progress: false
+
+jobs:
+  deploy-web:
+    if: ${{ vars.WEB_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # pnpm 버전은 루트 package.json의 packageManager 필드가 단일 출처 — version 입력 생략 (ci.yml과 동일)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # VITE_* 는 빌드 타임 주입이다 — 여기 값이 곧 배포본의 값이고, 바꾸려면 재배포해야 한다.
+      # VITE_API_BASE_URL 미설정이면 API 호출이 즉시 실패하는 설계(.env.example)라 빈 값 가드를 둔다.
+      - name: Build web
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_NAVER_MAP_NCP_KEY_ID: ${{ secrets.VITE_NAVER_MAP_NCP_KEY_ID }}
+        run: |
+          test -n "$VITE_API_BASE_URL" || { echo "::error::VITE_API_BASE_URL 이 비어 있다 — web 환경 variables 확인"; exit 1; }
+          pnpm --filter web build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::951142447485:role/fillmap-fe-deploy
+          aws-region: ap-northeast-2
+
+      # 캐시 전략: 해시 파일명 에셋(assets/)은 불변 캐시 1년, index.html 은 no-cache.
+      # 새 배포는 index.html 이 새 해시를 가리키는 것으로 반영되고, 옛 에셋은 --delete 로 정리된다.
+      # public/ 정적 파일(파비콘 등)은 해시가 없어 기본 캐시로 두고 아래 무효화가 갱신을 보장한다.
+      #
+      # assets/ 에만 --size-only 를 붙인다: sync 기본 비교는 크기+mtime 인데 빌드가 매번 파일을
+      # 새로 만들어 mtime 이 항상 최신이라, 내용이 같아도 전량 재업로드된다(ffmpeg wasm 31MB 포함).
+      # assets/ 는 파일명이 내용 해시라 "같은 이름 = 같은 내용"이 보장되므로 크기 비교로 충분하다.
+      # 해시 없는 public/ 파일에는 붙이면 안 된다 — 크기가 같은 채 내용만 바뀌면 갱신을 놓친다.
+      - name: Sync to S3
+        run: |
+          aws s3 sync apps/web/dist s3://fillmap-web --delete \
+            --exclude "index.html" --exclude "assets/*"
+          aws s3 sync apps/web/dist/assets s3://fillmap-web/assets --delete \
+            --size-only \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp apps/web/dist/index.html s3://fillmap-web/index.html \
+            --cache-control "no-cache"
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id E2AVTMUIXD9JA1 --paths "/*"
+
+      # 배포가 실제로 서빙되는지 확인 — index.html 200 + 방금 올린 번들 해시가 응답에 있는지까지 본다
+      # (BE cd-dev.yml 헬스체크와 같은 취지: 업로드 성공과 서빙 성공은 별개 사실이다)
+      - name: Health check
+        run: |
+          expected=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' apps/web/dist/index.html | head -1)
+          test -n "$expected" || { echo "::error::빌드 산출물 index.html 에서 엔트리 번들을 못 찾았다"; exit 1; }
+          for i in $(seq 1 12); do
+            body=$(curl -s --max-time 5 https://fillmap.kr/ || true)
+            if echo "$body" | grep -q "$expected"; then
+              echo "서빙 확인 — fillmap.kr 이 $expected 를 가리킨다 ($((i * 5))초)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::60초 내에 새 번들($expected)이 서빙되지 않았다 — CloudFront 무효화 전파 또는 업로드 확인"
+          exit 1

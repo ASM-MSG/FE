@@ -37,8 +37,8 @@ describe("toggleFeatured — 편집 모드 선택 토글 (L3)", () => {
     expect(toggleFeatured([], locked)).toEqual([]);
   });
 
-  it("이미 2개를 고른 상태에서 세 번째를 누르면 선택되지 않는다", () => {
-    expect(toggleFeatured([1, 2], earned3)).toEqual([1, 2]);
+  it("2개를 고른 상태에서 세 번째를 누르면 먼저 고른 것이 빠진다 (MSG-451 AC 22)", () => {
+    expect(toggleFeatured([1, 2], earned3)).toEqual([2, 3]);
   });
 
   it("획득 뱃지를 누르면 선택되고, 다시 누르면 해제된다", () => {

@@ -45,10 +45,13 @@ pnpm format:check        # oxfmt 포맷 검사만(자동 수정 없음) — CI �
 | [docs/FIGMA_WORKFLOW.md](docs/FIGMA_WORKFLOW.md) | 피그마 연동 워크플로 |
 | [docs/TICKET_TEMPLATE.md](docs/TICKET_TEMPLATE.md) | 지라 티켓 작성 템플릿 |
 | [docs/decisions](docs/decisions) | 의사결정 기록 (ADR) |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | 웹 배포(fillmap.kr) 절차·콘솔 등록 |
 
 ## 브랜치 전략
 
 Git Flow를 기반으로 하되, `main`(배포) / `develop`(기본 브랜치) / 작업 브랜치 3계층으로 운영합니다. 작업 브랜치는 `develop`에서 분기하고 PR도 `develop`으로 보냅니다.
+
+**`main` push는 곧 배포입니다** — `develop → main` PR을 머지하면 [CD (web)](.github/workflows/cd-web.yml)이 https://fillmap.kr 로 자동 배포합니다. 릴리스를 PR로 내는 이유는 CD가 CI를 기다리지 않기 때문입니다(같은 push에 걸린 워크플로는 서로 순서가 없습니다). PR 단계에서 CI가 통과한 것만 main에 들어가게 해 그 공백을 메웁니다. 자세한 절차·콘솔 등록은 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### 브랜치 네이밍 컨벤션
 

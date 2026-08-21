@@ -4,7 +4,10 @@ on:
   pull_request:
     branches: [develop, main]
   push:
-    branches: [develop]
+    # main 도 본다 — main push 가 곧 배포(cd-web.yml)라 검증 이력이 남아야 한다.
+    # 릴리스 PR(develop -> main)에서 이미 pull_request 트리거로 돌지만, 그 결과는 PR에 붙고
+    # main 커밋에는 안 붙는다. 배포된 커밋만 보고 "이게 통과한 코드인가"를 판정할 수 있어야 한다.
+    branches: [develop, main]
 
 # 같은 PR/브랜치에 연속 push 시 이전 실행 취소
 concurrency:

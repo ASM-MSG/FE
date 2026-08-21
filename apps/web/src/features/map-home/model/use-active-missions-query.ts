@@ -25,6 +25,13 @@ export interface ActiveMissionsResult {
   missions: MissionResponseDto[];
   isPending: boolean;
   isError: boolean;
+  /**
+   * 지금 들고 있는 목록이 **직전 bbox의 것**인지 (MSG-451 검증 재작업 1).
+   * `mapQueryPolicy`의 `keepPreviousData` 때문에 bbox가 바뀌어도 새 응답이 올 때까지
+   * 이전 목록이 `isPending: false`인 채로 반환된다 — 깜빡임을 없애려는 의도적 정책이라
+   * 그대로 두고, "이 영역 기준 목록인가"를 물어야 하는 소비처만 이 값을 본다.
+   */
+  isPlaceholder: boolean;
   retry: () => void;
 }
 
@@ -53,6 +60,7 @@ export const useActiveMissionsQuery = (
 
   return {
     missions: query.data ?? EMPTY_MISSIONS,
+    isPlaceholder: active && query.isPlaceholderData,
     // 비활성 쿼리는 영원히 pending이라 게이트로 눌러준다 (region 훅 관례)
     ...gatedQueryStatus(query, active),
   };

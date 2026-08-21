@@ -236,7 +236,8 @@ describe("toClusterMarkers — 마커 파생 합성", () => {
     // 축척이 넓어지면(zoom 11) 두 동이 한 마커로 합쳐지고 개수는 합산된다
     const merged = toClusterMarkers(ITEMS, "DONG", 11);
     expect(merged).toHaveLength(1);
-    expect(merged[0].name).toBeNull();
+    // 합친 마커도 이름을 갖는다 — 개수 최다 지역 (MSG-451 AC 18)
+    expect(merged[0].name).toBe("부전2동");
     expect(merged[0].count).toBe(43);
   });
 });
