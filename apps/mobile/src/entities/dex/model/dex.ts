@@ -1,8 +1,10 @@
 import type {
   CollectionGridResponseDto,
   CollectionSummaryResponseDto,
+  MyBadgeResponseDto,
   RegionStatResponseDto,
   RegionVideoResponseDto,
+  UploadHistoryResponseDto,
 } from "../../../shared/api/sdk";
 
 /*
@@ -11,8 +13,8 @@ import type {
  * `shared/api/sdk` 배럴을 경유한다 — 크로스 앱 상대 경로를 `sdk.ts`·`query-options.ts`
  * 두 파일에만 가둔다는 MSG-419 결정을 지키기 위함이다.
  *
- * `DexBadge`·`UploadHistoryDay`는 이 티켓이 쓰지 않는다 — 뱃지·기록 탭 내용을 소유할
- * MSG-430이 자기 필요분을 추가하는 편이 소유가 깔끔하다 (추정 A9).
+ * `DexBadge`·`UploadHistoryDay`는 MSG-430(뱃지·기록 탭 내용)이 추가했다 — MSG-425가
+ * 예고한 소유 경계 그대로다 (추정 A9).
  */
 
 /**
@@ -98,3 +100,28 @@ export interface GalleryGridGroup {
   /** 그 격자의 영상 — 최신순 */
   videos: CollectedVideo[];
 }
+
+/**
+ * 뱃지 카탈로그 항목 — `GET /api/badges` (획득+미획득 전체, MSG-430 L1).
+ * 웹 `entities/dex/model/dex.ts`의 동명 타입 미러. `iconUrl`은 **서버가 채워 보낸다**
+ * (MSG-430 검증 실측 — S3 PNG). 아트 정본은 이 값이고 로컬 메달 카탈로그(`entities/badge`)는
+ * 폴백이다 — 우선순위는 `resolveBadgeArt`가 소유한다. `featuredRank`는 대표 뱃지 1·2다
+ * (미지정이면 null).
+ *
+ * 종전 이 주석은 "iconUrl 전량 null"이라 적혀 있었고, 그 스테일 전제가 뷰를 SVG 전용
+ * 파서로 몰아 메달 24종이 높이 0으로 사라진 F1 결함의 근인이었다 — 서버 계약을 단정하는
+ * 문장을 남길 때는 실측으로 확인할 것.
+ */
+export type DexBadge = Required<
+  Pick<MyBadgeResponseDto, "badgeId" | "code" | "name" | "earned">
+> &
+  Pick<MyBadgeResponseDto, "iconUrl" | "earnedAt" | "featuredRank">;
+
+/**
+ * 날짜별 업로드 이력 항목 — `GET /api/collections/upload-history` (MSG-430 L4).
+ * uploadDate는 KST 날짜 라벨("YYYY-MM-DD")이고 **희소 목록**이다 — 업로드가 없는 날은
+ * 항목 자체가 없다(빈 날 0 채움은 `buildGrassWeeks` 파생 몫). uploadCount는 1 이상.
+ */
+export type UploadHistoryDay = Required<
+  Pick<UploadHistoryResponseDto, "uploadDate" | "uploadCount">
+>;

@@ -54,12 +54,20 @@ const boundsCenter = (index: GridCellIndex): LatLng => {
 };
 
 /**
- * 영상 보유 격자 판정 (MSG-317 AC 15) — 지도 홈 격자 탭 게이트용.
- * 등록 mock 셀이면서 전체 영상 수(videoCount — 표본 아님, AC 8 재정의와 동일 기준)가
- * 있는 격자만 true (미등재·영상 0개는 상세 진입 차단).
+ * 격자 상세 진입 가능 판정 — 지도 홈 격자 탭 게이트용 (MSG-431 신고 배선 결정 5).
+ *
+ * MSG-317은 이것을 "mock 등록 셀 + videoCount > 0"으로 판정했다. 격자 상세의 영상 목록이
+ * 실 API로 바뀐 지금 그 게이트는 **틀린 답을 준다**: 서버에 영상이 있어도 mock에 없는
+ * 격자면 진입이 막혀 타인 영상 신고 경로에 아예 닿을 수 없다. 반대로 영상 보유 여부는
+ * 탭 시점에 동기적으로 알 수 없다(서버 조회가 필요하고, 이 함수는 호출부 diff를 0으로
+ * 두기 위해 동기 시그니처를 유지한다 — `map-home-screen.tsx` 무수정 원칙).
+ *
+ * 그래서 게이트를 "인코딩 형식이 맞는 셀인가"로 좁힌다. 영상이 없는 격자는 진입 후
+ * 상세 화면의 빈 상태("이 격자에 아직 업로드된 영상이 없어요")가 실데이터로 안내한다 —
+ * 판정 주체가 mock에서 서버로 옮겨간 것이고, 이름·시그니처는 그대로다.
  */
 export const hasCellVideos = (cellId: string): boolean =>
-  (REGISTERED_BY_INDEX.get(cellId)?.videoCount ?? 0) > 0;
+  parseCellId(cellId) !== null;
 
 /**
  * 인코딩 셀 id → 상세 표시 모델. 인코딩 형식이 아니면 null. `now` 주입으로 결정적 테스트.

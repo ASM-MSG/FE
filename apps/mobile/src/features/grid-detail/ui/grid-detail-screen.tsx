@@ -1,20 +1,27 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useMemo, useState, type ReactNode } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { MoreHorizontal, Share2 } from "lucide-react-native";
+import { Share2 } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
+import { BottomSheet, Button, MapIconButton, Toast } from "@fillmap/ui-native";
+import { serverGridIdFromCellId } from "../../../entities/cell/model/cell-id";
+import { useReportVideo } from "../../video-actions/api/use-video-mutations";
 import {
-  BottomSheet,
-  Button,
-  MapIconButton,
-  ModalCard,
-  Toast,
-  VideoRow,
-} from "@fillmap/ui-native";
+  reportFailureNotice,
+  type ReportReasonId,
+} from "../../video-actions/model/report";
+import { useAutoDismissToast } from "../../video-actions/model/use-auto-dismiss-toast";
 import { GridMap } from "../../map-home/ui/grid-map";
+import { useGridVideosQuery } from "../api/use-grid-videos-query";
 import { deriveCellDetail } from "../model/cell-detail";
-import { MoreMenuSheet } from "./more-menu-sheet";
+import { GridVideoRow } from "./grid-video-row";
 import { ReportModal } from "./report-modal";
 import { VideoPreview } from "./video-preview";
 
@@ -30,31 +37,25 @@ const Stat = ({ value, label }: { value: string; label: string }) => (
 );
 
 /**
- * 공유·더보기 원형 아이콘 버튼 — Figma 14094:4210/4216. onPress 지정 시 실동작
- * (MSG-317 더보기 배선), 미지정은 no-op 스텁 + 준비 중 hint (공유 — 범위 밖 유지)
+ * 공유 원형 아이콘 버튼 — Figma 14094:4210. 준비 중 스텁(공유는 범위 밖 유지).
+ * 짝이던 더보기(⋯)는 MSG-431에서 제거했다 — 아래 화면 JSDoc 참조.
  */
 const CircleIconButton = ({
   label,
-  onPress,
   children,
 }: {
   label: string;
-  onPress?: () => void;
   children: ReactNode;
 }) => (
   <Pressable
     accessibilityRole="button"
     accessibilityLabel={label}
-    accessibilityHint={onPress ? undefined : "아직 준비 중인 기능입니다"}
-    onPress={onPress}
+    accessibilityHint="아직 준비 중인 기능입니다"
     className="size-9 items-center justify-center rounded-full bg-surface-soft active:opacity-60"
   >
     {children}
   </Pressable>
 );
-
-/** 신고 접수 토스트 자동 소멸 (MSG-317 추정 4) */
-const REPORT_TOAST_MS = 2500;
 
 interface GridDetailScreenProps {
   cellId: string;
@@ -62,56 +63,67 @@ interface GridDetailScreenProps {
 
 /**
  * 격자 상세 화면 (MSG-296 AC 1~11, Figma 14094:4192) — 상단 지도(선택 격자 점선
- * 강조 + 뒤로 가기) + 고정형 바텀시트(내부 스크롤만 — 추정 3 승인).
- * 서버 연동 없이 mock 파생 모델(deriveCellDetail) 기반. 재생·공유는 스텁.
- * MSG-317: 더보기(⋯) 배선 — 메뉴 시트 + 삭제 확인·영상 신고 모달 + 접수 토스트.
- * 삭제는 화면 로컬 제외 id 상태 — 이탈 후 재진입 시 복원되는 mock 한계는 정상
- * (스펙 리스크 2, DELETE /api/videos 실연동 티켓에서 대체).
+ * 강조 + 뒤로 가기) + 고정형 바텀시트(내부 스크롤만).
+ *
+ * **MSG-431 — "이 격자의 영상"만 실 API로 전환했다.** 상단 통계·지도·미리보기는 여전히
+ * `deriveCellDetail` mock이다(이 티켓의 목적은 신고 배선이지 격자 상세 실연동이 아니다 —
+ * 남은 mock은 빌드 리포트에 명시하고 환류한다). 영상 목록은 전역·내 영상 2개 응답의
+ * videoId 교집합으로 소유를 판정해(`useGridVideosQuery`) 행마다 ⋯ 를 얹고, 도감 갤러리와
+ * **같은** 시트를 연다 — 내 영상은 공개 범위·삭제, 타인 영상은 신고하기.
+ *
+ * **화면 상단의 격자 단위 ⋯(수정/삭제/신고)는 제거했다** (스펙 신고 배선 결정 4의 "정리"
+ * 판정 = 제거). 세 항목 모두 영상 단위 메뉴와 의미가 겹치면서 대상이 불분명했다:
+ * ①"삭제하기"는 목록 첫 영상을 화면 로컬 상태로 감추는 mock이었고 이제 실 삭제가 행마다
+ * 있다 ②"신고하기"는 대상 영상이 지정되지 않아 실 API로 옮길 수 없다 ③"수정하기"는 어떤
+ * 영상과도 연결되지 않은 채 `/upload`로 보내는데 영상 교체는 티켓 [제외 범위]다.
+ * 남겨 두면 같은 화면에 대상이 다르고 정확도도 다른(mock vs 실 API) 두 메뉴가 공존한다.
  */
 export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
-  /** 신고 접수 토스트 표시 카운터 — 0이면 숨김. boolean이면 표시 중 재제출 시 동일 값
-   * 재설정으로 이펙트가 재실행되지 않아 타이머가 연장되지 않는다 (리뷰 반영) */
-  const [reportToastCount, setReportToastCount] = useState(0);
-  /** 삭제된 영상 id (AC 5) — deriveCellDetail 재파생 입력 */
-  const [excludedVideoIds, setExcludedVideoIds] = useState<string[]>([]);
-  const detail = useMemo(
-    () => deriveCellDetail(cellId, new Date(), excludedVideoIds),
-    [cellId, excludedVideoIds],
-  );
+  const [reportTarget, setReportTarget] = useState<number | null>(null);
+  const [reportToast, setReportToast] = useAutoDismissToast();
+  const [reportFailure, setReportFailure] = useAutoDismissToast();
 
-  // 접수 토스트 자동 소멸 (AC 12) — 재제출 시 카운터 증가로 이펙트가 재실행되어 타이머 재설정
-  useEffect(() => {
-    if (reportToastCount === 0) return;
-    const timer = setTimeout(() => setReportToastCount(0), REPORT_TOAST_MS);
-    return () => clearTimeout(timer);
-  }, [reportToastCount]);
+  const detail = useMemo(() => deriveCellDetail(cellId), [cellId]);
+  // 라우트 셀 id(구 위경도 스텝 체계)를 서버 격자 id(EPSG:5179)로 옮긴다 — 두 체계를
+  // 잇는 유일한 정확한 경로다 (serverGridIdFromCellId JSDoc)
+  const gridId = useMemo(() => serverGridIdFromCellId(cellId), [cellId]);
+  const videos = useGridVideosQuery(gridId);
+
+  /**
+   * 신고 모달 닫기 — **대상과 실패 안내를 함께 비운다**. 실패 안내는 3초 자동 소멸이라
+   * 그 사이에 닫고 다른 영상의 신고 모달을 열면 A의 실패 문구가 B의 카드에 뜬다
+   * (모달 로컬 선택 상태와 같은 부류의 잔존 — MSG-431 재작업에서 함께 잡았다).
+   */
+  const closeReport = () => {
+    setReportTarget(null);
+    setReportFailure(null);
+  };
+
+  const report = useReportVideo({
+    onReported: () => {
+      closeReport();
+      setReportToast("신고가 접수되었어요");
+    },
+    onFailed: (error) => {
+      const notice = reportFailureNotice(error);
+      if (notice.shouldClose) {
+        closeReport();
+        setReportToast(notice.message);
+        return;
+      }
+      setReportFailure(notice.message);
+    },
+  });
 
   // 유일한 진입 경로(지도 탭)는 항상 인코딩 id를 만든다 — 형식 밖 param은 렌더 없음
   if (!detail) return null;
 
-  /** 수정하기 (AC 3) — 업로드 플로우 진입까지 (영상 교체 연동은 제외 범위) */
-  const handleEdit = () => {
-    setMenuOpen(false);
-    router.navigate("/upload");
-  };
-
-  /** 삭제 확인 (AC 5) — 대상은 대표 영상 = 목록 첫 항목 (사용자 확정 추정 1) */
-  const handleDeleteConfirm = () => {
-    setDeleteOpen(false);
-    const targetId = detail.videos[0]?.id;
-    // 전부 삭제해 목록이 빈 뒤의 재삭제 — 제외할 대상 없음
-    if (targetId) setExcludedVideoIds((prev) => [...prev, targetId]);
-  };
-
-  /** 신고 제출 (AC 12) — mock: 서버 전송 없이 접수 토스트만 */
-  const handleReportSubmit = () => {
-    setReportOpen(false);
-    setReportToastCount((count) => count + 1);
+  const handleReportSubmit = (reasonId: ReportReasonId) => {
+    if (reportTarget === null) return;
+    // 연타 방어는 `mutate`에 씌워진 in-flight 가드가 맡는다 (guardMutate — codex 리뷰 2)
+    report.mutate({ videoId: reportTarget, reasonId });
   };
 
   return (
@@ -140,7 +152,7 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
         />
       </View>
 
-      {/* 고정형 상세 시트 (추정 3) — ui-native BottomSheet 쉘 + 내부 스크롤 */}
+      {/* 고정형 상세 시트 — ui-native BottomSheet 쉘 + 내부 스크롤 */}
       <BottomSheet className="absolute inset-x-0 bottom-0 top-[36%]">
         <ScrollView
           className="flex-1"
@@ -171,10 +183,6 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
             <CircleIconButton label="공유">
               <Share2 size={18} color={semantic.textPrimary} />
             </CircleIconButton>
-            {/* 더보기 (MSG-317 AC 1) — 메뉴 시트 열기 */}
-            <CircleIconButton label="더보기" onPress={() => setMenuOpen(true)}>
-              <MoreHorizontal size={18} color={semantic.textPrimary} />
-            </CircleIconButton>
           </View>
 
           <View className="flex-row gap-xs">
@@ -191,7 +199,25 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
           />
 
           <Text className="text-fm-title text-foreground">이 격자의 영상</Text>
-          {detail.isEmpty ? (
+          {videos.isError ? (
+            <View className="items-center gap-xs py-lg">
+              <Text className="text-fm-body text-foreground-muted">
+                영상을 불러오지 못했어요
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={videos.retry}
+                className="active:opacity-60"
+              >
+                <Text className="text-fm-label text-primary">다시 시도</Text>
+              </Pressable>
+            </View>
+          ) : videos.isPending || !videos.rows ? (
+            <View className="py-xl">
+              <ActivityIndicator color={semantic.primary} />
+            </View>
+          ) : videos.rows.length === 0 ? (
             <View className="items-center py-lg">
               <Text className="text-fm-body text-foreground-muted">
                 이 격자에 아직 업로드된 영상이 없어요
@@ -199,11 +225,14 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
             </View>
           ) : (
             <View className="gap-sm">
-              {detail.videos.map((video) => (
-                <VideoRow
-                  key={video.id}
-                  title={video.title}
-                  meta={video.meta}
+              {videos.rows.map((row) => (
+                <GridVideoRow
+                  key={row.videoId}
+                  row={row}
+                  // gridId는 목록이 도착했다는 것 자체가 non-null임을 뜻한다(쿼리 게이트)
+                  gridId={gridId ?? ""}
+                  gridLabel={detail.label}
+                  onReport={(target) => setReportTarget(target.videoId)}
                 />
               ))}
             </View>
@@ -211,49 +240,23 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
         </ScrollView>
       </BottomSheet>
 
-      {/* 더보기 메뉴 시트 (AC 1~3) — 수정/삭제/신고 진입점, 취소·딤 탭 닫기 */}
-      <MoreMenuSheet
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        onEdit={handleEdit}
-        onDelete={() => {
-          setMenuOpen(false);
-          setDeleteOpen(true);
-        }}
-        onReport={() => {
-          setMenuOpen(false);
-          setReportOpen(true);
-        }}
-      />
-
-      {/* 삭제 확인 모달 (AC 4~6, 추정 6) — MSG-306 로그아웃 확인 관례 미러 */}
-      <ModalCard
-        visible={deleteOpen}
-        title="영상 삭제"
-        description="정말 삭제하시겠습니까?"
-        cancelText="취소"
-        confirmText="삭제"
-        confirmVariant="danger"
-        onCancel={() => setDeleteOpen(false)}
-        onOverlayPress={() => setDeleteOpen(false)}
-        onConfirm={handleDeleteConfirm}
-      />
-
-      {/* 영상 신고 모달 (AC 9~13) */}
+      {/* 영상 신고 모달 (AC 9~13) — 대상 videoId는 영상 행이 정한다 */}
       <ReportModal
-        visible={reportOpen}
-        onClose={() => setReportOpen(false)}
+        visible={reportTarget !== null}
+        onClose={closeReport}
         onSubmit={handleReportSubmit}
+        submitting={report.isPending}
+        failureMessage={reportFailure}
       />
 
-      {/* 신고 접수 토스트 (AC 12, 추정 4) — 홈 인디케이터 위 오버레이, 자동 소멸 */}
-      {reportToastCount > 0 && (
+      {/* 신고 접수·중복 안내 토스트 — 홈 인디케이터 위 오버레이, 자동 소멸 */}
+      {reportToast !== null && (
         <View
           pointerEvents="none"
           className="absolute inset-x-0 px-md"
           style={{ bottom: insets.bottom + 16 }}
         >
-          <Toast title="신고가 접수되었어요" />
+          <Toast title={reportToast} />
         </View>
       )}
     </View>

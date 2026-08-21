@@ -50,3 +50,13 @@ export const formatViewCount = (count: number): string => {
 /** 초 → "m:ss" 뱃지 표기 (예: 24 → "0:24") — 표시 전용 포맷 */
 export const formatDuration = (sec: number) =>
   `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+
+/**
+ * ISO 시각 → "N월 N일" (예: "8월 11일) — 웹 `apps/web/src/shared/format.ts`
+ * `formatMonthDay`의 복제본 (MSG-427). 격자 점령 시작일·내 영상 촬영일 표기에 쓴다.
+ * 동등성은 grid-videos.parity.test.ts의 `videoOwnerLabel` 대조가 함께 고정한다.
+ */
+export const formatMonthDay = (iso: string): string => {
+  const date = new Date(iso);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+};
