@@ -52,24 +52,29 @@ export const GalleryVideoCard = ({
 }: GalleryVideoCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // 길이·순번은 화면 표기와 낭독 라벨이 **같은 값이어야** 한다 — 한 번만 만들어 두 곳에
+  // 넘긴다(각각 호출하면 한쪽만 고쳐져 표기와 낭독이 갈릴 수 있다. feed-video-list 동일)
+  const durationLabel = formatDuration(video.durationSec);
+  const seqLabel = formatSeqLabel(seq);
+
   return (
     <>
       <VideoCard
         src={video.thumbnailUrl ?? undefined}
-        durationLabel={formatDuration(video.durationSec)}
+        durationLabel={durationLabel}
         overlay={
           <VideoMoreButton
             onPress={() => setMenuOpen(true)}
             className="absolute right-xs top-xs"
           />
         }
-        accessibilityLabel={`${gridLabel} ${formatSeqLabel(seq)} 영상, ${formatDuration(video.durationSec)}`}
+        accessibilityLabel={`${gridLabel} ${seqLabel} 영상, ${durationLabel}`}
         onPress={() => goToVideoPlayback(video.videoId, true)}
         title={
           <View className="flex-row items-center gap-xs">
             <View className="rounded-xs bg-surface px-1.5 py-0.5">
               <Text className="text-fm-caption text-foreground-muted">
-                {formatSeqLabel(seq)}
+                {seqLabel}
               </Text>
             </View>
             <Text
