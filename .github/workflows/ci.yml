@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    # main 도 본다 — main push 가 곧 배포(cd-web.yml)라 검증 이력이 남아야 한다.
+    # 릴리스 PR(develop -> main)에서 이미 pull_request 트리거로 돌지만, 그 결과는 PR에 붙고
+    # main 커밋에는 안 붙는다. 배포된 커밋만 보고 "이게 통과한 코드인가"를 판정할 수 있어야 한다.
+    branches: [develop, main]
+
+# 같은 PR/브랜치에 연속 push 시 이전 실행 취소
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # pnpm 버전은 루트 package.json의 packageManager 필드가 단일 출처 — version 입력 생략
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # CI 환경에서는 pnpm이 자동으로 frozen-lockfile 모드로 동작하지만 명시성을 위해 지정
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # 커밋된 스냅샷(openapi/api-docs.json)으로 재생성해 생성물 드리프트를 검사한다 (MSG-323).
+      # 생성물 수기 수정·재생성 누락 시 실패. diff는 추적 파일만 잡으므로 신규 untracked
+      # 파일은 git status --porcelain으로 병행 검출한다. 라이브 명세 curl은 CI에서 하지
+      # 않는다(스냅샷 갱신은 사람이 의도적으로). Lint 이전 배치 — 이후 게이트가 재생성본 기준.
+      - name: OpenAPI codegen drift check
+        run: |
+          pnpm openapi-ts
+          git diff --exit-code -- apps/web/src/shared/api/generated
+          test -z "$(git status --porcelain apps/web/src/shared/api/generated)"
+
+      # oxlint 단일 실행(MSG-386) — 범용 룰 + 커스텀 룰(토큰: tools/oxlint JS 플러그인, RN 경계:
+      # 네이티브 no-restricted-imports/globals)을 루트 .oxlintrc.json 하나로 검사한다. eslint 제거됨.
+      - name: Lint
+        run: pnpm lint
+
+      # oxfmt(Rust 기반 Prettier 호환 포매터) — 2026-08-03 전체 도입, printWidth 80(.oxfmtrc.json)으로
+      # 기존 코드 스타일과 정렬. --check만 실행(자동 수정 없음), 포맷 안 맞으면 실패.
+      - name: Format check (oxfmt)
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Build Storybook
+        run: pnpm build-storybook
+
+  # optional 게이트 — 도입 초기(2026-08-03, MSG-307 후속)라 continue-on-error로 PR 머지를 막지 않는다.
+  # 팀 검토 후 안정화되면 continue-on-error 줄을 제거해 필수 게이트로 승격한다.
+  # nose.baseline.json은 도입 시점의 기존 중복(71 families)을 그대로 승인한 것 — 신규/변경분만 실패 대상.
+  # 로컬 재실행: pnpm check:duplication (nose CLI 설치 필요 — https://github.com/corca-ai/nose)
+  duplication:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # 버전은 로컬 개발 환경(brew install corca-ai/tap/nose)과 동일하게 고정 — 임의 업데이트로
+      # 인한 예기치 않은 신규 탐지 방식 변경을 방지. nose CLI 업그레이드 시 이 버전도 함께 올릴 것.
+      - name: Install nose
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/corca-ai/nose/releases/download/v0.20.0/nose-cli-installer.sh | sh
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Check code duplication (baseline — 신규 중복만 실패)
+        run: pnpm check:duplication
+
+  e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # azure.archive.ubuntu.com이 이 러너에서 불통이라, apt가 저장소 4개마다 재시도를
+      # 반복한 뒤에야 archive.ubuntu.com으로 폴백한다 — 그 재시도 구간이 20분 넘게 걸려
+      # e2e가 멈춘 것처럼 보인다(2026-08-19 PR #74에서 2회 실측: 21분·14분+).
+      # 미러리스트를 정본 아카이브로 고정해 재시도 구간 자체를 없앤다.
+      # `playwright install --with-deps`도 같은 apt 경로를 타므로 명령을 바꿔서는 해결되지 않는다.
+      - name: Pin apt mirror
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+
+      # timeout-minutes: apt가 그래도 물리면 25분 잡아먹지 말고 빨리 실패하게 한다
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 8
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      # cache hit 시: 브라우저 바이너리만 캐시되고 apt 의존성은 캐시 경로 밖이라 매번 재설치 필요
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 8
+        run: pnpm --filter web exec playwright install-deps chromium
+
+      # NOTE: pull_request 이벤트는 포크에서 열린 PR에 리포지토리 Secret을 노출하지 않는 게
+      # GitHub Actions 기본 동작이다 (보안 목적). 그 경우 VITE_NAVER_MAP_NCP_KEY_ID가 빈 값이 되어
+      # 네이버 지도 SDK 로딩이 실패하고 이 job은 항상 실패한다. 지금은 continue-on-error라 머지를
+      # 막지 않지만, 이 job을 필수 게이트로 승격하기 전에는 반드시 재확인할 것 — 사내 기여자만
+      # PR을 연다면 문제없으나(이 레포는 Private), 외부 포크 PR이 생기는 시점에 재발 가능.
+      - name: E2E Test
+        working-directory: apps/web
+        run: pnpm test:e2e
+        env:
+          VITE_NAVER_MAP_NCP_KEY_ID: ${{ secrets.VITE_NAVER_MAP_NCP_KEY_ID }}
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7

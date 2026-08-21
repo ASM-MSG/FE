@@ -1,0 +1,54 @@
+/**
+ * 네이버 지도 zoom(6~21) → 축척 거리 표기 — 웹 `features/map-home/model/map-scale.ts`의
+ * 복제본이다 (MSG-428). 모바일에는 축척 바 UI가 없지만, 집계 단위 경계 줌
+ * (aggregation-unit)이 이 표를 역산해 쓰므로 zoom 숫자 하드코딩(14·11·10)을 피하려면
+ * 표 자체가 있어야 한다. 동등성은 map-scale.parity.test.ts가 웹 원본을 직접 import해
+ * 단정한다 — 웹 쪽 재보정 시 이 테스트가 깨져 드리프트를 알린다.
+ * 지도 SDK를 import하지 않는 순수 모듈(RN 경계).
+ */
+const SCALE_BY_ZOOM = [
+  "128km",
+  "64km",
+  "32km",
+  "16km",
+  "8km",
+  "4km",
+  "2km",
+  "1km",
+  "500m",
+  "250m",
+  "100m",
+  "50m",
+  "30m",
+  "20m",
+  "10m",
+  "5m",
+] as const;
+
+/** 네이버 지도 zoom 유효 범위 — 축척 표와 줌 클램핑이 공유하는 단일 정의 */
+export const MIN_ZOOM = 6;
+export const MAX_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.length - 1;
+
+/**
+ * 축척 `500m`·`1km` 단의 zoom — 표에서 직접 찾아 하드코딩(14·13)을 피한다:
+ * 축척 표가 재보정되면 이 값도 따라 움직인다.
+ */
+export const MAP_SCALE_500M_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("500m");
+export const MAP_SCALE_1KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("1km");
+/** 축척 `2km` 단 — 웹 "장소 불러오기"가 동작하는 가장 넓은 줌(모바일 미사용, 표 동등성 보존) */
+export const MAP_SCALE_2KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("2km");
+/** 축척 `4km` 단 — 시 마커 클릭이 들어가는 구 구간 줌 */
+export const MAP_SCALE_4KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("4km");
+/** 축척 `8km` 단 — 집계 unit SIGUNGU/SIDO 경계이자 모바일 줌 하한(MAP_MIN_ZOOM) */
+export const MAP_SCALE_8KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("8km");
+
+/**
+ * zoom을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.
+ * NaN은 클램프를 전파 통과해 undefined 렌더로 이어지므로 최소 zoom 축척으로 방어한다
+ * (±Infinity는 클램프가 경계 값으로 흡수 — 별도 가드 불필요).
+ */
+export const scaleLabelForZoom = (zoom: number): string => {
+  if (Number.isNaN(zoom)) return SCALE_BY_ZOOM[0];
+  const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.floor(zoom)));
+  return SCALE_BY_ZOOM[clamped - MIN_ZOOM];
+};

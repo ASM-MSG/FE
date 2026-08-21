@@ -1,0 +1,14 @@
+/*
+ * apps/web/src/styles/globals.css 의 토큰 레이어 미러 — 스토리북 전용.
+ * globals.css 쪽 토큰 구성이 바뀌면 여기도 동기화한다.
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* design-tokens 기반 preset (원시 색상·타이포·spacing·radius·shadow) */
+@config "../tailwind.config.ts";
+@source "../src";
+
+@theme {
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
+}

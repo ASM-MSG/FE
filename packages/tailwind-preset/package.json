@@ -6,12 +6,17 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./native": "./native.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fillmap/design-tokens": "workspace:*"
   },
   "devDependencies": {
-    "tailwindcss": "^4.3.2"
+    "tailwindcss": "^4.3.2",
+    "typescript": "catalog:"
   }
 }

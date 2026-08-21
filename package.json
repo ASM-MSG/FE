@@ -5,13 +5,31 @@
   "description": "FillMap 모노레포 — 웹(React) + 앱(React Native, 추후) 디자인 시스템 기반",
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "dev:mobile": "pnpm --filter mobile start",
     "build": "pnpm --filter web build",
-    "lint": "pnpm --filter web lint",
-    "prepare": "husky"
+    "lint": "oxlint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm --filter web test run && pnpm --filter mobile test run",
+    "openapi-ts": "pnpm --filter web openapi-ts",
+    "storybook": "pnpm --filter @fillmap/ui-web storybook",
+    "build-storybook": "pnpm --filter @fillmap/ui-web build-storybook",
+    "check:duplication": "nose query -r apps/web/src -r apps/mobile/src -r packages/ui-web/src -r packages/ui-native/src -r packages/design-tokens/src --exclude 'apps/web/src/shared/api/generated/**' --baseline nose.baseline.json --fail-on new",
+    "format": "oxfmt 'apps/web/src/**' 'apps/mobile/src/**' 'packages/ui-web/src/**' 'packages/ui-native/src/**' 'packages/design-tokens/src/**' 'packages/tailwind-preset/**'",
+    "format:check": "oxfmt --check 'apps/web/src/**' 'apps/mobile/src/**' 'packages/ui-web/src/**' 'packages/ui-native/src/**' 'packages/design-tokens/src/**' 'packages/tailwind-preset/**'",
+    "prepare": "husky",
+    "doctor": "npx react-doctor@latest"
   },
   "license": "ISC",
   "packageManager": "pnpm@10.17.1",
+  "engines": {
+    "node": ">=24"
+  },
   "devDependencies": {
-    "husky": "^9.1.7"
+    "@hey-api/openapi-ts": "^0.99.0",
+    "husky": "^9.1.7",
+    "oxfmt": "^0.61.0",
+    "oxlint": "^1.76.0",
+    "react-doctor": "^0.9.3",
+    "typescript": "~6.0.3"
   }
 }

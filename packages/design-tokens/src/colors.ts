@@ -23,6 +23,31 @@ export const palette = {
   "gray-100": "#F5F5F7",
   "surface-soft": "#FAFAFC",
   white: "#FFFFFF",
+  // 카카오 브랜드 고정색 (MSG-46 소셜 로그인) — Figma 변수 미등록, 컨테이너 fill은
+  // node 13686:1508에서 확정(#FEE500, 카카오 브랜드 가이드 표준). 라벨·로고는 kakao/logo(#000000).
+  // 브랜드 규정색이라 시맨틱 매핑 없이 원시 토큰으로만 사용한다.
+  "kakao-yellow": "#FEE500",
+  "kakao-black": "#000000",
+  // 지도 홈 테마 필터 색 4종 (MSG-252 A1) — Figma 지도 홈 프레임(13845:6974 계열) 실측값.
+  // 기존 error(#EF4444)·success(#22C55E)와 값이 달라 신규 토큰으로 둔다(근사 사용 금지 — 스펙 R2).
+  // Figma 변수 미등록 상태의 선등록 — SEED v3(ver 7) 전환 시 값만 교체한다.
+  "theme-hot": "#FF3B30",
+  "theme-festival": "#AF52DE",
+  "theme-popup": "#FF9500",
+  "theme-route": "#34C759",
+  // 밝은 배경 위 error "텍스트"용 진한 단계 (MSG-317) — red-500(#EF4444)은 흰 배경 대비
+  // 3.76:1로 WCAG AA(4.5:1) 미달, 텍스트 용도만 이 값(4.54:1)을 쓴다. 채움(fill) 용도는
+  // error(red-500) 유지. Figma 변수 미등록 상태의 선등록(theme-* 선례) — 더보기 메뉴
+  // 프레임(14094:4885)은 동일 값으로 동기함.
+  "red-600": "#DC2626",
+  // 도감 업로드 잔디 5단계 램프의 lv0~3 (MSG-414 A4) — Figma ver 13 잔디 카드
+  // (14786:3572·14789:3834) 실측값. lv4는 primary(blue-500 #0066CC)와 정확히 일치해
+  // 기존 토큰을 재사용한다. 투명도 근사(primary/25 류)는 실측과 불일치라 기각
+  // (근사 사용 금지 — theme-* 선례). Figma 변수 미등록 상태의 선등록(red-600 선례).
+  "grass-0": "#EDEFF2",
+  "grass-1": "#C7DFF7",
+  "grass-2": "#8CBBEF",
+  "grass-3": "#4A93E0",
 } as const;
 
 /** 시맨틱 토큰 — Figma "FeelMap Color" 컬렉션과 1:1. 컴포넌트에서는 이것을 우선 사용 */

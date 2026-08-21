@@ -26,7 +26,12 @@ export const typography = {
   /** FeelMap/Base — 본문/입력 */
   base: { fontWeight: 400, fontSize: 14, lineHeight: 20, letterSpacing: 0 },
   /** FeelMap/Body Strong — 카드 제목 */
-  "body-strong": { fontWeight: 600, fontSize: 13, lineHeight: 17, letterSpacing: 0 },
+  "body-strong": {
+    fontWeight: 600,
+    fontSize: 13,
+    lineHeight: 17,
+    letterSpacing: 0,
+  },
   /** FeelMap/Body — 본문 보조 */
   body: { fontWeight: 400, fontSize: 13, lineHeight: 18, letterSpacing: 0 },
   /** FeelMap/Label — 라벨/버튼 보조 */

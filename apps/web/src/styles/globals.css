@@ -12,128 +12,128 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    /* radius는 design-tokens/src/radius.ts (Figma FeelMap Radius)와 1:1 */
-    --radius-none: 0px;
-    --radius-xs: 4px;
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
-    --radius-full: 9999px;
+  --font-heading: var(--font-sans);
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  /* radius는 design-tokens/src/radius.ts (Figma FeelMap Radius)와 1:1 */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
 }
 
 :root {
-    /* 값은 design-tokens semantic 토큰과 1:1 (Figma FeelMap Color) */
-    --background: #FFFFFF;            /* canvas */
-    --foreground: #1D1D1F;            /* text-primary */
-    --card: #FFFFFF;                  /* surface-elevated */
-    --card-foreground: #1D1D1F;       /* text-primary */
-    --popover: #FFFFFF;               /* surface-elevated */
-    --popover-foreground: #1D1D1F;    /* text-primary */
-    --primary: #0066CC;               /* primary */
-    --primary-foreground: #FFFFFF;    /* on-primary */
-    --secondary: #0071E3;             /* secondary */
-    --secondary-foreground: #FFFFFF;  /* text-inverse */
-    --muted: #F5F5F7;                 /* surface */
-    --muted-foreground: #7A7A7A;      /* muted */
-    --accent: #2997FF;                /* accent */
-    --accent-foreground: #FFFFFF;     /* text-inverse */
-    --destructive: #EF4444;           /* error */
-    --border: #E0E0E0;                /* border */
-    --input: #E0E0E0;                 /* border */
-    --ring: #0066CC;                  /* primary */
-    --chart-1: #0066CC;               /* primary */
-    --chart-2: #0071E3;               /* secondary */
-    --chart-3: #2997FF;               /* accent */
-    --chart-4: #22C55E;               /* success */
-    --chart-5: #F59E0B;               /* warning */
-    --radius: 12px;                   /* radius md */
-    --sidebar: #FAFAFC;               /* surface-soft */
-    --sidebar-foreground: #1D1D1F;    /* text-primary */
-    --sidebar-primary: #0066CC;       /* primary */
-    --sidebar-primary-foreground: #FFFFFF; /* on-primary */
-    --sidebar-accent: #F5F5F7;        /* surface */
-    --sidebar-accent-foreground: #1D1D1F;  /* text-primary */
-    --sidebar-border: #E0E0E0;        /* border */
-    --sidebar-ring: #0066CC;          /* primary */
+  /* 값은 design-tokens semantic 토큰과 1:1 (Figma FeelMap Color) */
+  --background: #ffffff; /* canvas */
+  --foreground: #1d1d1f; /* text-primary */
+  --card: #ffffff; /* surface-elevated */
+  --card-foreground: #1d1d1f; /* text-primary */
+  --popover: #ffffff; /* surface-elevated */
+  --popover-foreground: #1d1d1f; /* text-primary */
+  --primary: #0066cc; /* primary */
+  --primary-foreground: #ffffff; /* on-primary */
+  --secondary: #0071e3; /* secondary */
+  --secondary-foreground: #ffffff; /* text-inverse */
+  --muted: #f5f5f7; /* surface */
+  --muted-foreground: #7a7a7a; /* muted */
+  --accent: #2997ff; /* accent */
+  --accent-foreground: #ffffff; /* text-inverse */
+  --destructive: #ef4444; /* error */
+  --border: #e0e0e0; /* border */
+  --input: #e0e0e0; /* border */
+  --ring: #0066cc; /* primary */
+  --chart-1: #0066cc; /* primary */
+  --chart-2: #0071e3; /* secondary */
+  --chart-3: #2997ff; /* accent */
+  --chart-4: #22c55e; /* success */
+  --chart-5: #f59e0b; /* warning */
+  --radius: 12px; /* radius md */
+  --sidebar: #fafafc; /* surface-soft */
+  --sidebar-foreground: #1d1d1f; /* text-primary */
+  --sidebar-primary: #0066cc; /* primary */
+  --sidebar-primary-foreground: #ffffff; /* on-primary */
+  --sidebar-accent: #f5f5f7; /* surface */
+  --sidebar-accent-foreground: #1d1d1f; /* text-primary */
+  --sidebar-border: #e0e0e0; /* border */
+  --sidebar-ring: #0066cc; /* primary */
 }
 
 /* 다크 모드는 Figma에 미정의 — shadcn 기본값 유지. Figma에 다크 토큰이 추가되면 동기화한다. */
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
 }

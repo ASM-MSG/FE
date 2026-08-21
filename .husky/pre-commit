@@ -1,0 +1,102 @@
+# react-doctor hook start
+# 모노레포 루트에는 react 의존성이 없어 react-doctor의 React 전용 규칙이 통째로 꺼진다 —
+# 루트 단일 실행은 "No React project detected" 상태의 가짜 그린이었다 (MSG-329 실증:
+# 같은 스테이징이 루트 exit 0 / apps/web exit 1). React 패키지 루트에서 각각 실행해
+# 해당 서브트리의 스테이징분을 React 규칙 포함으로 스캔한다. 스테이징이 없는 패키지는
+# "No staged source files found"로 즉시 통과라 비용이 거의 없다.
+REACT_DOCTOR_REPO_ROOT="$(pwd)"
+REACT_DOCTOR_PKGS="apps/web apps/mobile packages/ui-web packages/ui-native"
+
+# 링크드 워크트리 보정 (2026-08-16): git commit이 훅에 GIT_DIR(워크트리 git 디렉토리)을
+# 주입하면, 패키지 하위 디렉토리로 cd한 react-doctor가 워크 트리 루트를 cwd로 오인해
+# 루트 설정 파일 전부를 "index-worktree 불일치"로 오탐한다(재현: GIT_DIR만 넣으면 실패).
+# 훅의 git 사용은 전부 정상 탐색으로 충분하므로 주입 변수를 걷어낸다.
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE
+
+react_doctor_run_in() {
+  pkg_dir="$1"
+  if [ -x "$REACT_DOCTOR_REPO_ROOT/node_modules/.bin/react-doctor" ]; then
+    (cd "$pkg_dir" && "$REACT_DOCTOR_REPO_ROOT/node_modules/.bin/react-doctor" --staged --blocking warning)
+    return
+  fi
+
+  if command -v react-doctor >/dev/null 2>&1; then
+    (cd "$pkg_dir" && react-doctor --staged --blocking warning)
+    return
+  fi
+
+  # package.json의 react-doctor 버전과 맞춰둔다(재현성) — 위 두 분기가 이미 실패한
+  # 드문 경우에만 타는 폴백이라, 버전 올릴 때 이 범위도 같이 갱신할 것.
+  if command -v pnpm >/dev/null 2>&1; then
+    (cd "$pkg_dir" && pnpm dlx react-doctor@^0.9.3 --staged --blocking warning)
+    return
+  fi
+
+  if command -v npx >/dev/null 2>&1; then
+    (cd "$pkg_dir" && npx --yes react-doctor@^0.9.3 --staged --blocking warning)
+    return
+  fi
+
+  printf '%s\n' "react-doctor: command not found; skipping staged scan."
+}
+
+react_doctor_scan_staged_files() {
+  for react_doctor_pkg in $REACT_DOCTOR_PKGS; do
+    [ -d "$react_doctor_pkg" ] || continue
+    react_doctor_run_in "$react_doctor_pkg" || return $?
+  done
+}
+
+react_doctor_output=$(mktemp "${TMPDIR:-/tmp}/react-doctor-hook.XXXXXX")
+if react_doctor_scan_staged_files > "$react_doctor_output" 2>&1; then
+  rm -f "$react_doctor_output"
+else
+  react_doctor_exit_code=$?
+  cat "$react_doctor_output" >&2
+  rm -f "$react_doctor_output"
+  printf '%s\n' "React Doctor found staged regressions." "Run react-doctor --staged --blocking warning (해당 패키지 디렉토리에서) to inspect." "Want them fixed? Ask your agent to run that command and resolve the findings." >&2
+  exit "$react_doctor_exit_code"
+fi
+# react-doctor hook end
+
+# format gate start — CI(format:check)와 동일 게이트를 커밋 시점에 (MSG-298 CI 실패 환류)
+pnpm format:check || {
+  printf '%s\n' "oxfmt: 포맷 불일치 — 'pnpm format'으로 정리 후 다시 커밋하세요." >&2
+  exit 1
+}
+# format gate end
+
+# verify-report gate start — 검증 단계 누락 차단 (MSG-395 사고 환류)
+# 하네스가 "검증 절차는 생략하지 않는다"고 적어두기만 했더니, 에이전트 위임이 막힌
+# 세션에서 Phase 3이 통째로 빠진 채 커밋까지 갔다. 문서 대신 훅이 막는다.
+#
+# 판정: 브랜치명의 MSG-번호로 _workspace/MSG-{번호}/ 를 찾고, 그 디렉토리가 있는데
+# 03_verify_report.md 가 없으면 거부. _workspace 자체가 없으면(하네스 밖 작업) 통과.
+verify_report_gate() {
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return 0
+  # -i + 대문자 정규화: feat/msg-395-… 처럼 소문자 브랜치로 게이트를 우회하지 못하게.
+  # (`|| true`는 no-op이라 뺀다 — 파이프 종료 코드는 마지막 head -1의 것이라 항상 0이다)
+  ticket=$(printf '%s' "$branch" | grep -oiE 'MSG-[0-9]+' | head -1 | tr '[:lower:]' '[:upper:]')
+  [ -n "$ticket" ] || return 0
+
+  workspace="_workspace/$ticket"
+  [ -d "$workspace" ] || return 0
+
+  # 스펙이 없으면 아직 파이프라인 초입(스펙 승인 전 커밋) — 게이트 대상 아님
+  [ -f "$workspace/01_spec.md" ] || return 0
+
+  if [ ! -f "$workspace/03_verify_report.md" ]; then
+    printf '%s\n' \
+      "검증 리포트 없음: $workspace/03_verify_report.md" \
+      "" \
+      "$ticket 은 스펙까지 진행됐는데 검증 단계(Phase 3) 산출물이 없습니다." \
+      "page-verification 스킬로 검증을 마친 뒤 커밋하세요." \
+      "에이전트 위임이 불가한 환경이면 메인 스레드가 스킬을 직접 로드해 같은 절차를 밟습니다." \
+      "" \
+      "의도적으로 건너뛰려면 --no-verify (사유를 커밋 본문에 남길 것)." >&2
+    return 1
+  fi
+}
+
+verify_report_gate || exit 1
+# verify-report gate end

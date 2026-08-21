@@ -1,10 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- 파비콘: 32px는 탭에서 또렷하게 보이도록 따로 굽고, 512px는 북마크·검색 결과 등
+         큰 자리를 담당한다. 배경은 투명이라 밝은 탭·어두운 탭 어디서도 흰 사각형이 남지 않는다 -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <!-- iOS는 투명을 검정으로 합성하므로 이 아이콘만 흰 바탕을 깔아 둔다 -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
+    <title>필맵</title>
   </head>
   <body>
     <div id="root"></div>

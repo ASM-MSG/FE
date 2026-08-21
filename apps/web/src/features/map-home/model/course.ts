@@ -1,0 +1,100 @@
+import { distanceMeters, type LatLng } from "@/entities/cell";
+import type { CourseSpotDto } from "./mission";
+
+/**
+ * 코스(COURSE) 미션 기하·순서 파생 (MSG-395 AC 21~23).
+ * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
+ */
+
+/**
+ * 코스 라인 GeoJSON LineString 원문 → 좌표 배열. [AC 21]
+ * GeoJSON은 `[경도, 위도]` 순서다 — 뒤집으면 라인이 엉뚱한 곳에 그려진다.
+ * `missions.path`는 NULL 허용 컬럼이고 원문이 깨져 올 수도 있어, 파싱 실패는 빈 배열로
+ * 흡수한다 — 라인 없이 포토스팟 마커만 그리는 것이 스펙의 폴백이다.
+ */
+export const parseLineString = (line: string | null): LatLng[] => {
+  if (line === null) return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(line);
+  } catch {
+    return [];
+  }
+
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    (parsed as { type?: unknown }).type !== "LineString"
+  )
+    return [];
+
+  const coordinates = (parsed as { coordinates?: unknown }).coordinates;
+  if (!Array.isArray(coordinates)) return [];
+
+  return coordinates
+    .filter(
+      (pair): pair is [number, number] =>
+        Array.isArray(pair) &&
+        typeof pair[0] === "number" &&
+        typeof pair[1] === "number",
+    )
+    .map(([lng, lat]) => ({ lat, lng }));
+};
+
+/** 표시용 포토스팟 — 코스 순번(1부터)과 방문 여부가 붙는다 */
+export interface CourseSpot {
+  gridId: string;
+  position: LatLng;
+  /** 화면 표시 번호 — 서버 seq가 비어도 목록 순서로 1부터 매긴다 */
+  order: number;
+  visited: boolean;
+}
+
+/**
+ * 포토스팟을 코스 순서로 정렬하고 방문을 판정한다. [AC 23]
+ * `seq`는 NULL 허용 컬럼이라 없는 스팟은 뒤로 보낸다(같은 순번끼리는 입력 순서 유지 —
+ * `toSorted`는 안정 정렬). 방문 판정은 미션 진행도와 같은 근거(내 수집 격자)를 쓴다.
+ */
+export const courseSpots = (
+  spots: CourseSpotDto[],
+  collectedGridIds: ReadonlySet<string>,
+): CourseSpot[] =>
+  spots
+    .toSorted(
+      (a, b) =>
+        (a.seq ?? Number.MAX_SAFE_INTEGER) - (b.seq ?? Number.MAX_SAFE_INTEGER),
+    )
+    .map((spot, index) => ({
+      gridId: spot.gridId,
+      position: { lat: spot.lat, lng: spot.lng },
+      order: index + 1,
+      visited: collectedGridIds.has(spot.gridId),
+    }));
+
+/**
+ * 지도에 그릴 코스 연결선 좌표. [MSG-403 후속 — 사용자 요청]
+ * 서버 라인(`shape.line`)이 있으면 그 경로를 쓰고, **없으면 포토스팟을 번호 순서대로
+ * 직선으로 잇는다** — 실 데이터의 코스는 라인이 비어 있어 번호 마커만 흩어져 보였고,
+ * 어느 순서로 도는 코스인지 지도만 봐서는 읽을 수 없었다.
+ * 점이 하나뿐이면 이을 선이 없으므로 빈 배열이다(렌더 경계도 2점 미만은 그리지 않는다).
+ */
+export const coursePath = (
+  line: string | null,
+  spots: readonly CourseSpot[],
+): LatLng[] => {
+  const parsed = parseLineString(line);
+  if (parsed.length > 0) return parsed;
+  return spots.length > 1 ? spots.map((spot) => spot.position) : [];
+};
+
+/** 순환형 판정 거리(m) — 격자 한 변과 같은 눈금 */
+const LOOP_THRESHOLD_METERS = 100;
+
+/**
+ * 순환/비순환 판별. [AC 22]
+ * 서버 DTO에 코스 형태 필드가 없어 라인 시작·끝점의 근접으로 대신한다 (스펙 추정 6).
+ */
+export const isLoopCourse = (path: LatLng[]): boolean =>
+  path.length >= 2 &&
+  distanceMeters(path[0], path[path.length - 1]) <= LOOP_THRESHOLD_METERS;
