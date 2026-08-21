@@ -30,9 +30,14 @@ interface ChipEntryInput {
  * **지도 준비를 기다린다**(MSG-395 리뷰 반영): SDK 로드 전에는 zoomTo가 조용히 no-op이라
  * 진입 직후 칩을 누르면 그 세션 내내 줌이 안 맞았다. 뷰포트가 들어온 뒤에만 적용한다.
  *
- * **확정을 마친 칩을 반환한다**(MSG-451 검증 재작업 1): 확정은 데이터 조회 bbox를 바꾸므로,
+ * **진입이 정착한 칩을 반환한다**(MSG-451 검증 재작업 1·3): 확정은 데이터 조회 bbox를 바꾸므로,
  * 확정 뒤에 와야 하는 후속 진입(최근접 이동 — `use-nearest-entry`)이 그 시점을 알아야 한다.
- * ref가 아니라 state인 이유가 여기 있다 — 소비처가 확정 시점에 다시 렌더돼야 한다.
+ * ref가 아니라 state인 이유가 여기 있다 — 소비처가 그 시점에 다시 렌더돼야 한다.
+ *
+ * **정착 = 목표 줌 도달**이지 확정 성공이 아니다(재작업 3). 확정은 행정동을 요구하는데,
+ * 코스가 해안선을 따라가 지도 중심이 바다에 놓이면 역지오코딩이 null이라 확정이 무기한
+ * 미뤄진다. 그 대기에 후속 진입까지 볼모로 잡히면 "줌만 바뀌고 화면은 안 움직이는" 상태가
+ * 되므로, 확정 대기와 진입 정착을 분리한다 — 확정 규칙 자체는 그대로다.
  */
 export const useChipEntry = ({
   activeTheme,
@@ -48,23 +53,23 @@ export const useChipEntry = ({
   const pendingZoomRef = useRef<number | null>(null);
   /** 아직 확정하지 못한 활성화가 있는지 — 행정동 판별이 늦으면 여기서 기다린다 */
   const pendingCommitRef = useRef(false);
-  /** 확정을 마친 칩 — 후속 진입이 기다리는 신호 (MSG-451) */
-  const [committedChip, setCommittedChip] = useState<ThemeId | null>(null);
+  /** 진입이 정착한 칩 — 후속 진입이 기다리는 신호 (MSG-451) */
+  const [settledChip, setSettledChip] = useState<ThemeId | null>(null);
 
   useEffect(() => {
     if (activeTheme === null) {
       handledChipRef.current = null;
       pendingZoomRef.current = null;
       pendingCommitRef.current = false;
-      setCommittedChip(null);
+      setSettledChip(null);
       return;
     }
     if (handledChipRef.current === activeTheme || bounds === null) return;
 
     handledChipRef.current = activeTheme;
-    // 새 활성화의 확정은 아직이다 — 이전 칩의 확정 신호가 남아 후속 진입이
-    // 확정 전 목록으로 움직이는 것을 막는다
-    setCommittedChip(null);
+    // 새 활성화는 아직 정착 전이다 — 이전 칩의 신호가 남아 후속 진입이 옛 목록으로
+    // 움직이는 것을 막는다
+    setSettledChip(null);
     pendingCommitRef.current = true;
 
     const targetZoom = chipEntryZoom(activeTheme);
@@ -83,24 +88,30 @@ export const useChipEntry = ({
   }, [activeTheme, bounds, zoom, zoomTo]);
 
   useEffect(() => {
-    if (!pendingCommitRef.current || bounds === null) return;
-    // 행정동 판별(역지오코딩 디바운스)이 끝날 때까지 기다린다 (codex 리뷰) — 여기서
-    // 포기하면 칩이 이전 확정 영역을 계속 조회한 채로 남는다
-    if (region === null) return;
+    if (activeTheme === null || bounds === null) return;
 
     const targetZoom = pendingZoomRef.current;
-    // **줌 도달로 판정한다**(검증 재작업): 영역 변화로 판정하면 줌이 반영되기 전의
+    // **줌 도달로 판정한다**(검증 재작업 1): 영역 변화로 판정하면 줌이 반영되기 전의
     // 사용자 이동(드래그)을 줌 결과로 오인해, 버튼을 누르기도 전에 목록이 갱신됐다
     if (targetZoom !== null && zoom !== targetZoom) return;
+
+    // 목표 줌에 도달했으면 진입은 정착이다 — 확정 성공 여부와 분리한다 (재작업 3).
+    // 같은 값 재설정은 React가 흡수하므로 매 렌더 호출해도 안전하다
+    setSettledChip(activeTheme);
+
+    if (!pendingCommitRef.current) return;
+    // 행정동 판별(역지오코딩 디바운스)이 끝날 때까지 기다린다 (codex 리뷰) — 여기서
+    // 포기하면 칩이 이전 확정 영역을 계속 조회한 채로 남는다. 중심이 행정동 밖(바다)이면
+    // 이 대기가 길어질 수 있으나, 위에서 정착 신호를 먼저 보냈으므로 이동은 막지 않는다
+    if (region === null) return;
 
     // 활성화당 한 번만 확정하고, 이후 이동·줌에는 반응하지 않는다 (AC 11)
     pendingZoomRef.current = null;
     pendingCommitRef.current = false;
     commit(region, bounds);
-    setCommittedChip(activeTheme);
     // activeTheme도 의존한다: 칩을 켜는 렌더에서는 영역·줌·행정동이 그대로라, 이것이
     // 없으면 확정이 다음 지도 변화까지 밀린다(= 사용자의 첫 이동이 확정이 된다)
   }, [activeTheme, bounds, zoom, region, commit]);
 
-  return committedChip;
+  return settledChip;
 };
