@@ -26,6 +26,47 @@ const naverMapClientId =
   "";
 
 /**
+ * MSG-444: 카카오 네이티브 SDK 앱 키 (.env의 EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY).
+ * 웹이 쓰는 REST API 키와 다른 값이다 — 네이티브 앱 키는 클라이언트 공개를 전제로 하고
+ * 카카오 콘솔의 **패키지명 + 키 해시** 등록으로 보호된다.
+ *
+ * 값이 없으면 플러그인을 **아예 등록하지 않는다** — `@react-native-kakao/core`의 config
+ * plugin은 빈 키에 throw해서, 등록해 두면 키 없는 환경의 `expo start`·`prebuild`가 통째로
+ * 죽는다(네이버 지도 키의 `?? ""` 처리와 갈리는 지점). 조용한 누락이 되지 않도록 여기서
+ * 경고하고, 실제 실패는 런타임 어댑터가 사용자 문구로 낸다 (kakao-adapter.ts).
+ */
+const kakaoNativeAppKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY ?? "";
+if (!kakaoNativeAppKey) {
+  console.warn(
+    "[app.config] EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY 미설정 — 카카오 로그인 네이티브 설정을 건너뜁니다 (.env.example 참조)",
+  );
+}
+
+/**
+ * 조건부 등록이라 배열로 만들어 스프레드한다. 타입을 명시하지 않으면 삼항의 빈 배열이
+ * `never[]`로 좁혀져 plugins 튜플 추론이 깨진다(tsc TS2322).
+ * @type {NonNullable<import("expo/config").ExpoConfig["plugins"]>}
+ */
+const kakaoPlugins = kakaoNativeAppKey
+  ? [
+      [
+        "@react-native-kakao/core",
+        {
+          nativeAppKey: kakaoNativeAppKey,
+          // `android`·`ios` 객체를 넘기지 않으면 플러그인이 두 블록을 **통째로 건너뛴다**
+          // (`if (android)` / `if (ios)`) — 플러그인은 등록됐는데 매니페스트에는 아무것도
+          // 안 들어가고, 로그인은 실기에서야 실패한다. prebuild 산출물 대조로 실측 확인했다.
+          // authCodeHandlerActivity: 카카오계정 웹 로그인이 `kakao{앱키}://oauth`로 돌아올
+          // 인가 코드 수신 액티비티. 이게 없으면 카카오톡 미설치 경로가 끊긴다.
+          android: { authCodeHandlerActivity: true },
+          // handleKakaoOpenUrl: 같은 스킴의 iOS 복귀 처리 (Android 우선이라 미검증, 스펙 Q7)
+          ios: { handleKakaoOpenUrl: true },
+        },
+      ],
+    ]
+  : [];
+
+/**
  * @param {import("expo/config").ConfigContext} _ctx
  * @returns {import("expo/config").ExpoConfig}
  */
@@ -88,12 +129,21 @@ export default (_ctx) => ({
         client_id: naverMapClientId,
       },
     ],
+    // MSG-444: 카카오 로그인 네이티브 설정 — AndroidManifest의 `kakao{앱키}` 스킴 인가
+    // 핸들러와 iOS CFBundleURLTypes를 플러그인이 주입한다. 키가 없으면 등록하지 않는다(위 주석).
+    ...kakaoPlugins,
     [
       "expo-build-properties",
       {
         android: {
-          // 네이버 지도 SDK 배포 저장소 (라이브러리 공식 Expo 설치 절차)
-          extraMavenRepos: ["https://repository.map.naver.com/archive/maven"],
+          extraMavenRepos: [
+            // 네이버 지도 SDK 배포 저장소 (라이브러리 공식 Expo 설치 절차)
+            "https://repository.map.naver.com/archive/maven",
+            // MSG-444: 카카오 SDK 배포 저장소. `com.kakao.sdk:v2-*`는 Maven Central에
+            // 없어(2.20.1 기준 404) 이 저장소가 없으면 gradle이 의존성 해석 단계에서
+            // 실패한다 — 실측으로 확인한 빌드 블로커다.
+            "https://devrepo.kakao.com/nexus/content/groups/public/",
+          ],
         },
       },
     ],
