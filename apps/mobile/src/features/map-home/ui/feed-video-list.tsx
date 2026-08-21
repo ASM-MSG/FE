@@ -33,21 +33,28 @@ export const FeedVideoList = ({ items, emptyText }: FeedVideoListProps) => {
 
   return (
     <View className="gap-md">
-      {items.map((item) => (
-        <VideoCard
-          key={item.videoId}
-          src={item.thumbnailUrl ?? undefined}
-          durationLabel={formatDuration(item.durationSec)}
-          title={videoOwnerLabel(item, item.mine)}
-          meta={
-            item.viewCount === null
-              ? undefined
-              : `조회 ${formatViewCount(item.viewCount)}`
-          }
-          accessibilityLabel={`${videoOwnerLabel(item, item.mine)} 영상, ${formatDuration(item.durationSec)}`}
-          onPress={() => goToVideoPlayback(item.videoId, item.mine)}
-        />
-      ))}
+      {items.map((item) => {
+        // 소유 문구·길이는 화면 표기와 낭독 라벨이 **같은 값이어야** 한다 — 한 번만 만들어
+        // 두 곳에 넘긴다(각각 호출하면 한쪽만 고쳐져 표기와 낭독이 갈릴 수 있다)
+        const ownerLabel = videoOwnerLabel(item, item.mine);
+        const durationLabel = formatDuration(item.durationSec);
+
+        return (
+          <VideoCard
+            key={item.videoId}
+            src={item.thumbnailUrl ?? undefined}
+            durationLabel={durationLabel}
+            title={ownerLabel}
+            meta={
+              item.viewCount === null
+                ? undefined
+                : `조회 ${formatViewCount(item.viewCount)}`
+            }
+            accessibilityLabel={`${ownerLabel} 영상, ${durationLabel}`}
+            onPress={() => goToVideoPlayback(item.videoId, item.mine)}
+          />
+        );
+      })}
     </View>
   );
 };
