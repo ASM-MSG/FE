@@ -1,6 +1,5 @@
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { startKakaoLogin } from "../model/kakao-login";
 
 /**
  * SOURCE: Figma 카카오 로고 (node 13686:1509) — 커밋된 웹 export
@@ -21,18 +20,31 @@ const KakaoLogo = () => (
   </Svg>
 );
 
+interface KakaoLoginButtonProps {
+  onPress: () => void;
+  /** 인증 진행 중 — 중복 탭을 막는다 (기준 15) */
+  pending?: boolean;
+}
+
 /**
  * SOURCE: Figma "Default Button" (node 14094:4867 하위) — 카카오 소셜 로그인 버튼 (전폭 62px pill).
  * 카카오 브랜드 규정색(컨테이너 kakao-yellow, 라벨·심벌 kakao-black) 고정이라 ui-native Button
  * variant로 승격하지 않는다(웹 MSG-46 확정 승계 — 아이콘 슬롯·62px 규격도 불일치).
- * 탭 시 startKakaoLogin 스텁만 호출한다(실연동·상태 전환 제외 범위). 접근성 이름은
- * accessibilityLabel로 고정하고 로고 심벌은 버튼 그룹핑 안 장식으로 남긴다(a11y 트리 비노출).
+ * 프레젠테이셔널 — 로그인 수행은 호출부(login-screen)가 훅으로 담당한다 (MSG-444).
+ * 진행 중에도 **라벨을 바꾸지 않는다** — 62px 고정 pill에서 문구가 길어지면 레이아웃이 흔들린다.
+ * 접근성 이름은 accessibilityLabel로 고정하고 로고 심벌은 버튼 그룹핑 안 장식으로 남긴다
+ * (a11y 트리 비노출).
  */
-export const KakaoLoginButton = () => (
+export const KakaoLoginButton = ({
+  onPress,
+  pending = false,
+}: KakaoLoginButtonProps) => (
   <Pressable
     accessibilityRole="button"
     accessibilityLabel="카카오로 계속하기"
-    onPress={startKakaoLogin}
+    accessibilityState={{ disabled: pending, busy: pending }}
+    disabled={pending}
+    onPress={onPress}
     className="h-15.5 w-full flex-row items-center justify-center gap-xs rounded-full bg-kakao-yellow"
   >
     <View className="h-4.5 w-4.5">
