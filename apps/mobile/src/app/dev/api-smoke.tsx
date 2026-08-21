@@ -18,6 +18,14 @@ import { getMeOptions } from "../../shared/api/query-options";
  * 딥링크 전용 dev 화면으로, 프로덕션 진입 연결이 없다(`/login` 라우트 선례).
  * 진입: `npx uri-scheme open fillmap://dev/api-smoke --ios` 또는 개발 메뉴의 주소 입력.
  *
+ * **`__DEV__` 밖에서는 렌더하지 않는다** (PR #84 리뷰). expo-router는 파일 존재만으로
+ * 라우트를 등록하므로 "화면에서 진입 경로가 없다"는 것이 프로덕션 미도달을 뜻하지 않는다 —
+ * 딥링크(`fillmap://dev/api-smoke`)를 아는 사람은 스토어 빌드에서도 이 화면에 닿고,
+ * 여기 있는 dev 로그인 버튼은 고정 oid로 **실제 세션 토큰**을 발급받는다. 서버가 운영에서
+ * `/api/auth/dev/social-login`을 막아 두었더라도 FE 쪽 심층 방어를 함께 둔다.
+ * 웹 `DevLoginPanel`(`import.meta.env.DEV ? <DevLoginForm /> : null`)과 같은 래퍼 형태다 —
+ * 훅보다 앞에 조건부 return을 두면 훅 규칙 위반이라 화면 본체를 별도 컴포넌트로 분리한다.
+ *
  * 관찰 항목
  * - QueryProvider 아래에서 useQuery가 로딩→성공으로 전이하는가 (AC 1)
  * - dev 로그인 후 토큰이 보안 저장소에 남아 앱 재시작에도 인증이 유지되는가 (AC 5)
@@ -66,7 +74,7 @@ const describeError = (error: unknown): string => {
   return `비정규화 오류 · ${String(error)}`;
 };
 
-export default function ApiSmoke() {
+const ApiSmokeScreen = () => {
   const { accessToken, refreshToken, deviceId, isAuthenticated, hydrated } =
     useAuth();
   const queryClient = useQueryClient();
@@ -147,4 +155,8 @@ export default function ApiSmoke() {
       </ScrollView>
     </SafeAreaView>
   );
+};
+
+export default function ApiSmoke() {
+  return __DEV__ ? <ApiSmokeScreen /> : null;
 }

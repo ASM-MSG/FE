@@ -70,13 +70,19 @@ export const fromServerHighlights = (
 /**
  * 시작 핸들을 newStart로 옮길 때의 clamp 결과. 끝은 고정. [B7]
  * - 끝-5초보다 뒤로 못 감(최소 길이), 끝-28초보다 앞으로 못 감(최대 길이), 0 미만 불가(경계).
+ *
+ * 상한을 하한 아래로 내려보내지 않는다: 5초 미만 원본은 select-validation이 일부러
+ * 통과시키는 정상 경로인데(길이 하한 없음), 초기 구간이 {0, duration}이라 `끝-5초`가
+ * 음수다. min>max로 역전되면 clamp가 그 음수를 그대로 돌려줘 start가 음수로 새어나간다
+ * (슬라이더 ratio가 표시만 가리고 상태·서버 트리밍 요청에는 음수 시각이 남는다).
+ * 최소 길이를 만족시킬 여지가 없는 구간이므로 시작은 0 고정이 유일한 정의다. (PR #84 리뷰)
  */
 export const adjustStartHandle = (
   segment: Segment,
   newStart: number,
 ): Segment => {
   const min = Math.max(0, segment.end - SEGMENT_MAX_SEC);
-  const max = segment.end - SEGMENT_MIN_SEC;
+  const max = Math.max(min, segment.end - SEGMENT_MIN_SEC);
   return { start: clamp(newStart, min, max), end: segment.end };
 };
 

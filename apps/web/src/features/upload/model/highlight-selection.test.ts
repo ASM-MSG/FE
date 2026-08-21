@@ -141,6 +141,16 @@ describe("직접 구간 지정 상한 28초·하한 5초 (B7)", () => {
     expect(adjustEndHandle({ start: 3, end: 10 }, 99, 12).end).toBe(12);
   });
 
+  // 5초 미만 원본은 정상 경로다(업로드 검증에 길이 하한 없음 — 서버는 durationSec 1초부터
+  // 받고 highlight-preview는 5초 미만에 빈 배열을 준다). 이때 초기 구간이 {0, duration}이라
+  // 끝-5초가 음수가 되는데, min>max 역전으로 clamp가 그 음수를 그대로 돌려주면 start가
+  // 음수로 새어 서버 트리밍 요청까지 간다 (PR #84 리뷰).
+  it("영상이 5초보다 짧아도 시작 핸들이 음수로 가지 않는다", () => {
+    expect(adjustStartHandle({ start: 0, end: 3 }, 2).start).toBe(0);
+    expect(adjustStartHandle({ start: 0, end: 3 }, -1).start).toBe(0);
+    expect(adjustStartHandle({ start: 0, end: 0.5 }, 0.4).start).toBe(0);
+  });
+
   it("clampSegment는 5~28초 길이·[0, duration] 범위로 정규화한다", () => {
     expect(clampSegment({ start: 0, end: 60 }, 100)).toEqual({
       start: 0,
