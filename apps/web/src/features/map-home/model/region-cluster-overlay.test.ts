@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { RegionAggregateResponseDto } from "@/shared/api/generated";
+import type {
+  MissionRegionAggregateResponseDto,
+  RegionAggregateResponseDto,
+} from "@/shared/api/generated";
 import {
   mergeOverlappingMarkers,
+  toMissionClusterMarkers,
   toRegionClusterMarkers,
   type RegionClusterMarker,
 } from "./region-cluster-overlay";
@@ -134,10 +138,46 @@ describe("mergeOverlappingMarkers — 화면 픽셀 임계 병합 (AC 5)", () =>
     expect(merged[0].count).toBe(13);
   });
 
-  it("병합 마커는 이름을 주장하지 않는다 — 서로 다른 지역명에 한 이름을 붙일 수 없다 (추정 2)", () => {
+  it("병합 마커는 개수가 가장 많았던 지역의 이름을 쓴다 (MSG-451 AC 18)", () => {
     const merged = mergeOverlappingMarkers(near, 8);
 
-    expect(merged[0].name).toBeNull();
+    expect(merged[0].name).toBe("부산진구");
+  });
+
+  it("개수가 같으면 가나다순으로 앞선 이름을 쓴다 (MSG-451 AC 19)", () => {
+    const tied = [
+      markerOf("agg-SIGUNGU-26260", "동래구", 35.1579, 129.0594, 7),
+      markerOf("agg-SIGUNGU-26230", "부산진구", 35.1579, 129.1094, 7),
+    ];
+
+    expect(mergeOverlappingMarkers(tied, 8)[0].name).toBe("동래구");
+  });
+
+  it("이름 없는 멤버가 섞이면 이름 있는 쪽이 이긴다 — 개수가 같아도 (MSG-451 AC 20)", () => {
+    const withUnassigned = [
+      markerOf("agg-SIGUNGU-unassigned-0", null, 35.1579, 129.0594, 7),
+      markerOf("agg-SIGUNGU-26230", "부산진구", 35.1579, 129.1094, 7),
+    ];
+
+    expect(mergeOverlappingMarkers(withUnassigned, 8)[0].name).toBe("부산진구");
+  });
+
+  it("이름 없는 멤버끼리 병합되면 이름은 null이다 (MSG-451 AC 20, 경계)", () => {
+    const allNull = [
+      markerOf("agg-SIGUNGU-unassigned-0", null, 35.1579, 129.0594, 7),
+      markerOf("agg-SIGUNGU-unassigned-1", null, 35.1579, 129.1094, 4),
+    ];
+
+    expect(mergeOverlappingMarkers(allNull, 8)[0].name).toBeNull();
+  });
+
+  it("이름 있는 멤버가 개수에서 지면 개수 최다 쪽 이름을 쓴다 (MSG-451 AC 18)", () => {
+    const bigger = [
+      markerOf("agg-SIGUNGU-26260", "동래구", 35.1579, 129.0594, 4),
+      markerOf("agg-SIGUNGU-26230", "부산진구", 35.1579, 129.1094, 9),
+    ];
+
+    expect(mergeOverlappingMarkers(bigger, 8)[0].name).toBe("부산진구");
   });
 
   it("임계 이상 떨어진 마커들은 병합되지 않고 그대로다 (AC 5)", () => {
@@ -184,6 +224,36 @@ describe("mergeOverlappingMarkers — 화면 픽셀 임계 병합 (AC 5)", () =>
     expect(mergeOverlappingMarkers(dong, zoom)).toHaveLength(2);
   });
 
+  it("미션 마커가 병합돼도 칩 테마가 유지된다 — 합친 마커도 색을 잃지 않는다 (MSG-451 AC 6)", () => {
+    const missionMarkers = toMissionClusterMarkers(
+      [
+        {
+          regionCode: "26230",
+          name: "부산진구",
+          lat: 35.1579,
+          lng: 129.0594,
+          count: 9,
+          missionIds: [],
+        },
+        {
+          regionCode: "26260",
+          name: "동래구",
+          lat: 35.1579,
+          lng: 129.1094,
+          count: 4,
+          missionIds: [],
+        },
+      ],
+      "SIGUNGU",
+      "festival",
+    );
+
+    const merged = mergeOverlappingMarkers(missionMarkers, 8);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].theme).toBe("festival");
+  });
+
   it("병합 후 count 총합 = 입력 총합 — 어떤 병합 구성에서도 유지된다 (AC 5)", () => {
     const spread = ["가야1동", "가야2동", "개금1동", "개금2동", "당감1동"].map(
       (name, i) =>
@@ -201,5 +271,91 @@ describe("mergeOverlappingMarkers — 화면 픽셀 임계 병합 (AC 5)", () =>
         sumCount(spread),
       );
     }
+  });
+});
+
+/** 미션 집계 응답 픽스처 — 도감 항목에 missionIds가 붙는다 (MSG-437 서버) */
+const missionItem = (
+  over: Partial<MissionRegionAggregateResponseDto> = {},
+): MissionRegionAggregateResponseDto => ({
+  regionCode: "26230",
+  name: "부산진구",
+  lat: 35.1568,
+  lng: 129.0592,
+  count: 12,
+  missionIds: [1, 2, 3],
+  ...over,
+});
+
+describe("toMissionClusterMarkers — 미션 집계 items[] → 마커 파생 (MSG-451 AC 6)", () => {
+  it("지역명·count·좌표는 응답 값 그대로 마커가 되고 활성 칩 테마가 실린다", () => {
+    const [marker] = toMissionClusterMarkers(
+      [missionItem()],
+      "SIGUNGU",
+      "festival",
+    );
+
+    expect(marker.name).toBe("부산진구");
+    expect(marker.count).toBe(12);
+    expect(marker.position).toEqual({ lat: 35.1568, lng: 129.0592 });
+    expect(marker.theme).toBe("festival");
+  });
+
+  it("시 단위 이름은 도감 마커와 같은 규칙으로 축약된다", () => {
+    const [marker] = toMissionClusterMarkers(
+      [missionItem({ regionCode: "26", name: "부산광역시" })],
+      "SIDO",
+      "popup",
+    );
+
+    expect(marker.name).toBe("부산");
+  });
+
+  it("칩이 다르면 같은 지역이라도 마커 키가 다르다 — 칩 전환 시 렌더가 섞이지 않는다", () => {
+    const [festival] = toMissionClusterMarkers(
+      [missionItem()],
+      "SIGUNGU",
+      "festival",
+    );
+    const [popup] = toMissionClusterMarkers(
+      [missionItem()],
+      "SIGUNGU",
+      "popup",
+    );
+
+    expect(festival.id).not.toBe(popup.id);
+  });
+
+  it("점령 집계 마커와도 키가 겹치지 않는다 — 두 층이 같은 지도에 설 수 있다", () => {
+    const [mission] = toMissionClusterMarkers(
+      [missionItem()],
+      "SIGUNGU",
+      "festival",
+    );
+    const [occupied] = toRegionClusterMarkers(
+      [
+        {
+          regionCode: "26230",
+          name: "부산진구",
+          lat: 35.1568,
+          lng: 129.0592,
+          count: 12,
+        },
+      ],
+      "SIGUNGU",
+    );
+
+    expect(mission.id).not.toBe(occupied.id);
+  });
+
+  it("행정동 미판정 묶음(regionCode·name null)은 이름 없이 개수만 남는다 (경계)", () => {
+    const [marker] = toMissionClusterMarkers(
+      [missionItem({ regionCode: null, name: null })],
+      "SIGUNGU",
+      "festival",
+    );
+
+    expect(marker.name).toBeNull();
+    expect(marker.count).toBe(12);
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bounds } from "@/entities/cell";
 import type { DisplayedRegion } from "@/features/region/model/region-panel-store";
 import { chipEntryZoom } from "./chip-zoom";
@@ -29,6 +29,10 @@ interface ChipEntryInput {
  *
  * **지도 준비를 기다린다**(MSG-395 리뷰 반영): SDK 로드 전에는 zoomTo가 조용히 no-op이라
  * 진입 직후 칩을 누르면 그 세션 내내 줌이 안 맞았다. 뷰포트가 들어온 뒤에만 적용한다.
+ *
+ * **확정을 마친 칩을 반환한다**(MSG-451 검증 재작업 1): 확정은 데이터 조회 bbox를 바꾸므로,
+ * 확정 뒤에 와야 하는 후속 진입(최근접 이동 — `use-nearest-entry`)이 그 시점을 알아야 한다.
+ * ref가 아니라 state인 이유가 여기 있다 — 소비처가 확정 시점에 다시 렌더돼야 한다.
  */
 export const useChipEntry = ({
   activeTheme,
@@ -37,24 +41,30 @@ export const useChipEntry = ({
   region,
   zoomTo,
   commit,
-}: ChipEntryInput): void => {
+}: ChipEntryInput): ThemeId | null => {
   /** 이 칩 활성화에 대해 줌 명령을 냈는지 — 칩이 바뀌면 다시 처리한다 */
   const handledChipRef = useRef<ThemeId | null>(null);
   /** 반영을 기다리는 목표 줌 — 그 줌에 도달한 화면에서만 확정한다 (null이면 대기 없음) */
   const pendingZoomRef = useRef<number | null>(null);
   /** 아직 확정하지 못한 활성화가 있는지 — 행정동 판별이 늦으면 여기서 기다린다 */
   const pendingCommitRef = useRef(false);
+  /** 확정을 마친 칩 — 후속 진입이 기다리는 신호 (MSG-451) */
+  const [committedChip, setCommittedChip] = useState<ThemeId | null>(null);
 
   useEffect(() => {
     if (activeTheme === null) {
       handledChipRef.current = null;
       pendingZoomRef.current = null;
       pendingCommitRef.current = false;
+      setCommittedChip(null);
       return;
     }
     if (handledChipRef.current === activeTheme || bounds === null) return;
 
     handledChipRef.current = activeTheme;
+    // 새 활성화의 확정은 아직이다 — 이전 칩의 확정 신호가 남아 후속 진입이
+    // 확정 전 목록으로 움직이는 것을 막는다
+    setCommittedChip(null);
     pendingCommitRef.current = true;
 
     const targetZoom = chipEntryZoom(activeTheme);
@@ -87,7 +97,10 @@ export const useChipEntry = ({
     pendingZoomRef.current = null;
     pendingCommitRef.current = false;
     commit(region, bounds);
+    setCommittedChip(activeTheme);
     // activeTheme도 의존한다: 칩을 켜는 렌더에서는 영역·줌·행정동이 그대로라, 이것이
     // 없으면 확정이 다음 지도 변화까지 밀린다(= 사용자의 첫 이동이 확정이 된다)
   }, [activeTheme, bounds, zoom, region, commit]);
+
+  return committedChip;
 };

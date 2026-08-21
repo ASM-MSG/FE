@@ -57,7 +57,7 @@ describe("reloadLabel — 버튼 라벨 조합 (AC 8)", () => {
 
 describe("deriveReloadTarget — 버튼 대상 파생 (MSG-403 리뷰 반영)", () => {
   const BASE = {
-    isDetailPanel: false,
+    isThemeDetailPanel: false,
     isGridListMode: true,
     committedRegionCode: "2644056000",
     currentRegion: { regionCode: "2644057000", regionName: "부전제2동" },
@@ -68,9 +68,20 @@ describe("deriveReloadTarget — 버튼 대상 파생 (MSG-403 리뷰 반영)", 
     expect(deriveReloadTarget(BASE)?.regionName).toBe("부전제2동");
   });
 
-  it("상세 화면·전체 지역 리스트에서는 대상이 없다 — 갱신할 목록이 화면에 없다", () => {
-    expect(deriveReloadTarget({ ...BASE, isDetailPanel: true })).toBeNull();
+  it("미션·코스 상세와 전체 지역 리스트에서는 대상이 없다 — 갱신할 목록이 화면에 없다", () => {
+    expect(
+      deriveReloadTarget({ ...BASE, isThemeDetailPanel: true }),
+    ).toBeNull();
     expect(deriveReloadTarget({ ...BASE, isGridListMode: false })).toBeNull();
+  });
+
+  it("줌 상한·지역 상이 판정은 상세 여부와 무관하게 그대로다 (MSG-451 AC 16)", () => {
+    expect(
+      deriveReloadTarget({ ...BASE, zoom: MIN_RELOAD_ZOOM - 1 }),
+    ).toBeNull();
+    expect(
+      deriveReloadTarget({ ...BASE, committedRegionCode: "2644057000" }),
+    ).toBeNull();
   });
 
   it("축척 2km보다 넓게 줌아웃하면 대상이 없다", () => {

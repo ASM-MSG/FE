@@ -32,8 +32,9 @@ interface BadgeTabBodyProps {
  *
  * MSG-413 편집모드(Figma node 14783:4202) — 헤더 "대표 뱃지 지정" 텍스트 버튼(추정 A1)으로
  * 진입하는 **컴포넌트 로컬 상태**(URL 무변경, 기준 11). 전체 카탈로그 스크롤(추정 A4) 위에서
- * 획득 뱃지를 최대 2개 토글하고(featured-selection), "대표 뱃지 저장"이 PUT 커밋 + 성공 시
- * 종료, "완료"는 서버 호출 없이 종료(미저장 폐기 = 취소 역할, 추정 A2). 저장 중 정렬은
+ * 획득 뱃지를 최대 2개 토글하고(featured-selection — MSG-451부터 3개째는 FIFO 교체),
+ * "대표 뱃지 저장"이 PUT 커밋 + 성공 시 종료, 우상단 "취소"는 서버 호출 없이 종료한다
+ * (미저장 폐기. 문구는 MSG-451 AC 24에서 "완료"→"취소"로 정정 — 동작은 그대로). 저장 중 정렬은
  * 서버 featuredRank 기준 그대로다 — 선택 중 메달이 튀지 않고, 재정렬은 저장 성공의
  * findMyBadges invalidate가 만든다 (기준 7).
  */
@@ -71,17 +72,21 @@ export const BadgeTabBody = ({
           {/* 저장 pending 중 비활성 — 이탈 후 재진입한 새 편집 세션을 늦은
               onSaved가 닫는 레이스 차단 (codex 리뷰 반영, LocationConsentScreen
               disabled:opacity-60 선례) */}
+          {/* MSG-451 AC 24: 문구가 "완료"였을 때 저장으로 읽혀, 고른 뱃지가 사라진다는
+              신고가 있었다. 동작(저장 없이 편집 종료)은 그대로 두고 문구를 맞춘다 —
+              저장 진입점은 아래 "대표 뱃지 저장" 하나로 유지된다 */}
           <button
             type="button"
             className="text-fm-body text-primary disabled:opacity-60"
             disabled={save.isPending}
             onClick={() => setEditing(false)}
           >
-            완료
+            취소
           </button>
         </div>
         <p className="text-fm-body text-foreground-muted">
-          최대 2개까지 골라 프로필에 노출해요. 다시 누르면 해제됩니다.
+          최대 2개까지 골라 프로필에 노출해요. 다시 누르면 해제되고, 2개를 채운
+          뒤 다른 뱃지를 누르면 먼저 고른 뱃지가 빠집니다.
         </p>
         {/* pt-1 — 첫 행 선택 링·마크(-top-1)가 스크롤 컨테이너에 잘리지 않게 */}
         <ul className="grid min-h-0 flex-1 grid-cols-4 content-start gap-x-xs gap-y-md overflow-y-auto pt-1 scrollbar-gutter-stable">

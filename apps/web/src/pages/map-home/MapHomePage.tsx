@@ -3,9 +3,7 @@ import { decodeGridCenter } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
-import { homePanelKind } from "@/features/map-home/model/panel-branch";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
-import { useChipEntry } from "@/features/map-home/model/use-chip-entry";
 import { useGridCardPlay } from "@/features/map-home/model/use-grid-card-play";
 import { useHomeMissions } from "@/features/map-home/model/use-home-missions";
 import { useHomeGridDetail } from "@/features/map-home/model/use-home-grid-detail";
@@ -15,7 +13,6 @@ import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-gr
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
-import { deriveReloadTarget } from "@/features/region/model/region-reload";
 import { useReverseGeocodeQuery } from "@/features/region/model/use-reverse-geocode-query";
 import { zoomForGridFocus } from "@/features/search/model/zone-search";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
@@ -25,22 +22,11 @@ import { CardPlayNotice } from "./ui/CardPlayNotice";
 import { HomePanelSwitch } from "./ui/HomePanelSwitch";
 import { HomeSearchBox } from "./ui/HomeSearchBox";
 import { RegionReloadButton } from "./ui/RegionReloadButton";
+import { useHomeChipEntry } from "./ui/use-home-chip-entry";
+import { useHomeCloseHandlers } from "./ui/use-home-close-handlers";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
 import { useHomeOverlayPublish } from "./ui/use-home-overlay-publish";
-
-/**
- * Escape 우선순위 래핑 (MSG-277 3차 AC 13) — 미니 패널이 열려 있으면 그것만 닫고,
- * 아니면 원래 닫기를 실행한다. 패널의 useEscapeClose 훅·onClose 계약은 불변 —
- * 우선순위는 페이지 레벨 콜백 조합으로만 해결한다 (스펙 재사용 항목).
- */
-const withMiniPanelPriority = (close: () => void) => () => {
-  const mini = useVideoMiniPanelStore.getState();
-  if (mini.selected) {
-    mini.close();
-    return;
-  }
-  close();
-};
+import { useHomePanelState } from "./ui/use-home-panel-state";
 
 /**
  * 홈 패널(`/`) — 지속 셸(MapShell)이 렌더한 지도 위에 얹는 388px 좌측 사이드바 + 상단 테마 칩.
@@ -58,7 +44,6 @@ export const MapHomePage = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
-  const toggleTheme = useThemeFilterStore((s) => s.toggle);
   const selectedCellId = useHomeCellDetailStore((s) => s.selectedCellId);
   const selectCell = useHomeCellDetailStore((s) => s.select);
   const closeDetail = useHomeCellDetailStore((s) => s.close);
@@ -82,7 +67,6 @@ export const MapHomePage = () => {
   const committedRegion = useRegionPanelStore((s) => s.displayedRegion);
   const committedBounds = useRegionPanelStore((s) => s.committedBounds);
   const commitRegion = useRegionPanelStore((s) => s.commit);
-  const panelMode = useRegionPanelStore((s) => s.mode);
   const { grids: occupiedGrids } = useOccupiedGridsQuery(committedBounds);
   const occupiedIds = useMemo(
     () => occupiedGrids.map((g) => g.gridId),
@@ -108,6 +92,7 @@ export const MapHomePage = () => {
     spotNames,
     collectedGrids,
     isPending: missionsPending,
+    isPlaceholder: missionsPlaceholder,
     isError: missionListFailed,
     progressFailed,
     retry: retryMissionList,
@@ -137,6 +122,7 @@ export const MapHomePage = () => {
     focusedMissionId,
     occupiedIds,
     viewportBounds: committedBounds,
+    zoom: viewportZoom,
   });
 
   // 지역 격자 카드 클릭 (MSG-328) — 좌측은 지역 패널 그대로 두고 오른쪽 미니 패널에서
@@ -174,13 +160,20 @@ export const MapHomePage = () => {
     openRegionList();
   }, [closeDetail, openRegionList]);
 
-  // 칩 활성화 진입 — 칩에 맞는 줌으로 옮기고 그 화면을 1회 확정한다 (AC 6·9)
-  useChipEntry({
+  // 칩 진입 — 줌+확정(MSG-403) 후 최근접 대상으로 이동+선택(MSG-451 AC 13)
+  useHomeChipEntry({
     activeTheme,
-    bounds: viewportBounds,
-    zoom: viewportZoom,
-    region: currentRegion,
+    viewportBounds,
+    viewportCenter,
+    viewportZoom,
+    currentRegion,
+    missionViews,
+    courseViews,
+    isRouteChip,
+    listPending: missionsPending,
+    listPlaceholder: missionsPlaceholder,
     zoomTo,
+    moveTo,
     commit: commitRegion,
   });
 
@@ -215,41 +208,17 @@ export const MapHomePage = () => {
     openUploadModal(anchor ? decodeGridCenter(anchor) : viewportCenter);
   }, [hotSummary.hotGridIds, openUploadModal, viewportCenter]);
 
-  const closeThemeFilter = useCallback(() => {
-    if (activeTheme) toggleTheme(activeTheme);
-  }, [activeTheme, toggleTheme]);
+  // Escape·닫기 핸들러 — 미니 패널 우선순위 조합 (리뷰 반영 — 300줄 초과 분할)
+  const { closeDetailMiniFirst, closeThemeMiniFirst } =
+    useHomeCloseHandlers(activeTheme);
 
-  // Escape는 미니 패널 먼저 (MSG-277 3차 AC 13)
-  const closeDetailMiniFirst = useMemo(
-    () => withMiniPanelPriority(closeDetail),
-    [closeDetail],
-  );
-  const closeThemeMiniFirst = useMemo(
-    () => withMiniPanelPriority(closeThemeFilter),
-    [closeThemeFilter],
-  );
-
-  // 선택한 미션이 목록에 실제로 있을 때만 상세로 분기한다 (codex 리뷰 반영).
-  // 재조회로 그 미션이 목록에서 빠지면 selectedMission이 null이 되는데, id만 보고
-  // "mission-detail"로 분기하면 아래 JSX 가드가 전부 미끄러져 **칩이 켜진 채 지역
-  // 패널**이 뜬다. 없는 미션은 선택이 없는 것으로 보아 목록으로 돌아간다
-  const resolvedMissionId =
-    (selectedMission ?? selectedCourse)?.missionId ?? null;
-  const panel = homePanelKind({
+  // 패널 분기 + "장소 불러오기" 대상 (리뷰 반영 — 300줄 초과 분할)
+  const { panel, reloadTarget } = useHomePanelState({
     activeTheme,
-    selectedMissionId: resolvedMissionId,
-    selectedGridId: selectedCellId,
-  });
-
-  // "장소 불러오기" (AC 10) — 칩 4종 화면과 지역 격자 패널이 같은 버튼을 공유하므로
-  // 패널이 아니라 페이지가 소유한다. 판정은 순수 함수(region-reload) 몫
-  const reloadTarget = deriveReloadTarget({
-    isDetailPanel:
-      panel === "grid-detail" ||
-      panel === "mission-detail" ||
-      panel === "course-detail",
-    isGridListMode: panelMode === "grids",
-    committedRegionCode: committedRegion?.regionCode ?? null,
+    selectedMission,
+    selectedCourse,
+    selectedCellId,
+    committedRegion,
     currentRegion,
     zoom: viewportZoom,
   });

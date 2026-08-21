@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetMeData, GetMeResponses, GetMissionDetailData, GetMissionDetailResponses, GetMissionVideosData, GetMissionVideosResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetMyProgressData, GetMyProgressResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetZonesData, GetZonesResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponses, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileImageData, UpdateProfileImageResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetConsentStatusData, GetConsentStatusResponses, GetDistrictsData, GetDistrictsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetInboxData, GetInboxResponses, GetMeData, GetMeResponses, GetMissionAggregatesData, GetMissionAggregatesResponses, GetMissionDetailData, GetMissionDetailResponses, GetMissionVideosData, GetMissionVideosResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetMyProgressData, GetMyProgressResponses, GetNationalStatData, GetNationalStatResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUnreadCountData, GetUnreadCountResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetViewerCountData, GetViewerCountResponses, GetZonesData, GetZonesResponses, HeartbeatData, HeartbeatResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, MarkAllReadData, MarkAllReadResponses, MarkReadData, MarkReadResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, SubmitConsentsData, SubmitConsentsResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponses, UpdateMarketingConsentData, UpdateMarketingConsentResponses, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileImageData, UpdateProfileImageResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -97,15 +97,60 @@ export const updateNickname = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
- * 위치정보 사용 동의 변경
+ * 마케팅 정보 수신 동의 변경
  *
- * 위치기반서비스 이용 동의를 켜거나 끄고 변경 후 프로필을 반환한다. 첫 로그인 온보딩의 동의 제출과 프로필 편집의 토글이 이 엔드포인트 하나를 공용으로 쓴다.
+ * 가입 후 설정 화면에서 마케팅 수신 동의를 켜거나 끈다. 이미 저장된 값과 같은 값을 다시 보내도 성공하며, 이때 서버가 보관하는 마지막 변경 시각은 갱신되지 않는다(멱등). 응답은 변경 후 동의 상태다 — 위치정보 사용 동의 변경과 같은 구조다.
+ */
+export const updateMarketingConsent = <ThrowOnError extends boolean = false>(options: Options<UpdateMarketingConsentData, ThrowOnError>): RequestResult<UpdateMarketingConsentResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateMarketingConsentResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/marketing-consent',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 위치정보 사용 동의 켜기
  *
- * 이미 저장된 값과 같은 값을 다시 보내도 성공하며, 이때 서버가 보관하는 마지막 변경 시각은 갱신되지 않는다(멱등). 동의를 꺼도 서버가 막는 API 는 없다 — 위치 기능 노출 제어는 클라이언트 몫이다.
+ * 위치기반서비스 이용 동의를 켜고 변경 후 프로필을 반환한다. 첫 로그인 온보딩의 동의 제출과 프로필 화면이 이 엔드포인트 하나를 공용으로 쓴다.
+ *
+ * 이 동의는 철회할 수 없다 — consented=false 요청은 1400 으로 거절된다. 되돌리려면 계정을 삭제해야 하며, 이는 다른 필수 약관 동의와 같은 규칙이다. 이미 켜진 상태에서 다시 켜는 요청은 성공하고, 이때 서버가 보관하는 동의 시각은 갱신되지 않는다(멱등).
  */
 export const updateLocationConsent = <ThrowOnError extends boolean = false>(options: Options<UpdateLocationConsentData, ThrowOnError>): RequestResult<UpdateLocationConsentResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateLocationConsentResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/users/me/location-consent',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 가입 약관 동의 상태 조회
+ *
+ * 로그인 직후 동의 게이트를 띄울지 판별하는 재료다. 항목별 동의 여부 5종과 필수 4항목 완료 여부(requiredCompleted)를 함께 반환한다 — 필수 항목 목록이 늘어도 클라이언트가 조립을 고치지 않도록 서버가 계산한다.
+ *
+ * 위치기반서비스 항목(locationTerms)은 프로필 화면의 위치정보 사용 동의와 같은 한 값이다. 이 동의는 철회할 수 없으므로 한 번 true 가 되면 되돌아가지 않고, 필수 동의를 마친 사용자에게 게이트가 다시 뜨는 일도 없다. 동의 시각은 서버에만 보관하고 응답에 싣지 않는다.
+ */
+export const getConsentStatus = <ThrowOnError extends boolean = false>(options?: Options<GetConsentStatusData, ThrowOnError>): RequestResult<GetConsentStatusResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetConsentStatusResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/consents',
+    ...options
+});
+
+/**
+ * 가입 약관 동의 제출
+ *
+ * 가입 게이트의 "동의하고 시작하기" 제출이다. 필수 4항목(만 14세 이상·서비스 이용약관·개인정보 수집·이용·위치기반서비스 이용약관)은 true 여야 하고 마케팅만 선택이다 — 하나라도 false 거나 누락이면 400 이며 이때 아무 항목도 저장되지 않는다.
+ *
+ * 같은 내용을 다시 보내도 성공한다(멱등). 재제출이 필수 4항목의 최초 동의 시각을 덮지 않고, 마케팅만 값이 실제로 달라질 때 변경 시각이 갱신된다. 제출은 위치정보 사용 동의도 함께 켜므로 프로필 화면의 위치 동의와 값이 하나다. 응답은 제출 후 동의 상태다.
+ */
+export const submitConsents = <ThrowOnError extends boolean = false>(options: Options<SubmitConsentsData, ThrowOnError>): RequestResult<SubmitConsentsResponses, unknown, ThrowOnError> => (options.client ?? client).put<SubmitConsentsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/consents',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -269,6 +314,17 @@ export const accept = <ThrowOnError extends boolean = false>(options: Options<Ac
 });
 
 /**
+ * 열람 heartbeat
+ *
+ * 행사방을 보는 동안 30초 주기로 보낸다. 마지막 신호가 90초 이내인 세션만 열람 인원에 센다. 비로그인은 X-Viewer-Session 헤더(공백 아님·최대 64자) 필수 — 없으면 400. 캐시 장애는 삼켜져 200 이다.
+ */
+export const heartbeat = <ThrowOnError extends boolean = false>(options: Options<HeartbeatData, ThrowOnError>): RequestResult<HeartbeatResponses, unknown, ThrowOnError> => (options.client ?? client).post<HeartbeatResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences/{occurrenceId}/heartbeat',
+    ...options
+});
+
+/**
  * 이메일 회원가입
  *
  * 이메일/비밀번호/닉네임으로 신규 회원을 생성한다.
@@ -422,9 +478,31 @@ export const setVisibility = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
+ * 알림 하나 읽음 처리
+ *
+ * 행을 탭했을 때 그 알림을 읽음으로 바꾼다 — 이미 읽은 알림을 다시 요청해도 성공이고 최초로 읽은 시각이 그대로 남는다. 없는 알림이나 남의 알림이면 10404 로, 둘을 구분하지 않는다.
+ */
+export const markRead = <ThrowOnError extends boolean = false>(options: Options<MarkReadData, ThrowOnError>): RequestResult<MarkReadResponses, unknown, ThrowOnError> => (options.client ?? client).patch<MarkReadResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/notifications/{notificationId}/read',
+    ...options
+});
+
+/**
+ * 알림 모두 읽음 처리
+ *
+ * 안읽은 알림을 전부 읽음으로 바꾼다 — 안읽은 알림이 하나도 없어도 성공한다.
+ */
+export const markAllRead = <ThrowOnError extends boolean = false>(options?: Options<MarkAllReadData, ThrowOnError>): RequestResult<MarkAllReadResponses, unknown, ThrowOnError> => (options?.client ?? client).patch<MarkAllReadResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/notifications/read-all',
+    ...options
+});
+
+/**
  * 카테고리 수신 토글
  *
- * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 5종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY, 대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다.
+ * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 7종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY, 대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다. MISSION_NEARBY 는 서버 발송이 없어 기기가 발화 전 이 설정을 조회해 로컬로 억제한다.
  */
 export const update = <ThrowOnError extends boolean = false>(options: Options<UpdateData, ThrowOnError>): RequestResult<UpdateResponses, unknown, ThrowOnError> => (options.client ?? client).patch<UpdateResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -514,6 +592,17 @@ export const getStats = <ThrowOnError extends boolean = false>(options?: Options
 });
 
 /**
+ * 내 전국 탐험률 재료 (분자·분모)
+ *
+ * 도감·프로필 헤더의 "전체 지도 N% 탐험" 재료. 내가 점령한 격자 수(전국 합)와 전국 격자 총수를 반올림 없는 원값 정수 2개로 반환한다. 비율·표시 자릿수·100 상한은 화면이 min(100, 분자/분모 × 100) 으로 계산한다. 수집이 없어도 오류가 아니라 분자 0. 분모가 0 이면 기준 데이터 미적재 상태라 화면은 비율을 그리지 않는다.
+ */
+export const getNationalStat = <ThrowOnError extends boolean = false>(options?: Options<GetNationalStatData, ThrowOnError>): RequestResult<GetNationalStatResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetNationalStatResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/regions/stats/national',
+    ...options
+});
+
+/**
  * 현재 위치 행정동 탐험률 (좌표 → 수집률)
  *
  * 도감 갤러리 진입 초기값. 현재 위치 좌표가 속한 행정동 1건의 내 수집률을 반환한다. 그 행정동에 수집이 없어도 0% 로 합성해 반환하고, 어떤 행정동에도 안 속하면(바다·국외) 404 가 아니라 200 + data null. 서비스 범위 밖 좌표는 400(6400).
@@ -558,9 +647,42 @@ export const getExploreRegions = <ThrowOnError extends boolean = false>(options?
 });
 
 /**
+ * 시군구 목록 (검색 지역 필터)
+ *
+ * 검색 화면 "전체 지역" 목록용 시군구 전량. 이름·식별자와 그 구의 전체 격자 수를 준다. 격자 수는 사용자 무관 값이고 0 인 시군구는 빠진다. 정렬은 이름순, 같은 이름은 식별자순. 응답의 parentCode 는 /api/regions/stats 의 parentCode 로 그대로 이어 쓸 수 있다.
+ */
+export const getDistricts = <ThrowOnError extends boolean = false>(options?: Options<GetDistrictsData, ThrowOnError>): RequestResult<GetDistrictsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetDistrictsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/regions/districts',
+    ...options
+});
+
+/**
+ * 알림 목록 조회
+ *
+ * 받은 알림을 최신순으로 한 페이지 반환한다. 최근 30일 이내 생성분만 보이고, 알림 설정을 꺼서 발송되지 않은 알림은 빠진다 — 전송률 상한이나 푸시 토큰 없음으로 발송되지 않은 알림은 보인다. 다음 페이지는 응답의 nextCursor 를 cursor 로 다시 넘긴다. 목록 조회는 읽음 상태를 바꾸지 않는다.
+ */
+export const getInbox = <ThrowOnError extends boolean = false>(options?: Options<GetInboxData, ThrowOnError>): RequestResult<GetInboxResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetInboxResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/notifications',
+    ...options
+});
+
+/**
+ * 안읽은 알림 개수 조회
+ *
+ * 목록과 같은 노출 조건으로 안읽은 알림 수를 센다 — 없으면 0 이다.
+ */
+export const getUnreadCount = <ThrowOnError extends boolean = false>(options?: Options<GetUnreadCountData, ThrowOnError>): RequestResult<GetUnreadCountResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetUnreadCountResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/notifications/unread-count',
+    ...options
+});
+
+/**
  * 알림 설정 조회
  *
- * 카테고리 5종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on.
+ * 카테고리 7종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on. MODERATION 은 설정 대상이 아니라 목록에 없다 (수신 거부 불가).
  */
 export const getPreferences = <ThrowOnError extends boolean = false>(options?: Options<GetPreferencesData, ThrowOnError>): RequestResult<GetPreferencesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetPreferencesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -602,6 +724,23 @@ export const getMissionVideos = <ThrowOnError extends boolean = false>(options: 
 export const getMyProgress = <ThrowOnError extends boolean = false>(options?: Options<GetMyProgressData, ThrowOnError>): RequestResult<GetMyProgressResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMyProgressResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/missions/progress',
+    ...options
+});
+
+/**
+ * 넓은 축척용 미션 행정 단위 집계 조회 (줌아웃)
+ *
+ * 지도를 축소해 개별 핀을 그릴 수 없는 축척에서, bbox 안의 축제·팝업 미션을 행정 단위(동·구·시)로 묶어 지역 이름과 개수로 반환한다. 단위 전환 시점은 서버가 정하지 않으며 클라이언트가 화면 축척에 맞춰 unit 만 바꿔 부른다.
+ *
+ * 항목마다 마커 식별 키(regionCode), 표시 이름, 대표 좌표, 미션 수, 그 묶음의 미션 id 목록이 온다. 대표 좌표는 묶음에 속한 미션 귀속점의 평균이라 마커가 실제 데이터 위에 선다. missionIds 는 묶음 마커를 눌러 줌인한 뒤 개별 조회(GET /api/missions/active) 결과와 교집합을 내 목록을 좁히는 재료다 — 카드 재료는 개별 조회 응답에 있다.
+ *
+ * 미션이 속한 격자 사각형이 아니라 그 사각형 중앙의 귀속점이 bbox 안인지로 센다. 사각형이 화면에 걸쳤지만 중심이 밖인 미션은 빠지며, 이 때문에 개별 조회와 집계를 갈아타는 순간 마커 수가 미세하게 달라질 수 있다. 행정동이 판정되지 않은 미션은 제외가 아니라 regionCode·name 이 null 인 항목 하나로 묶여 마지막에 온다. 범위 안에 미션이 없으면 빈 배열이다.
+ *
+ * bbox span 상한은 단위별로 다르다(DONG 1도, SIGUNGU 4도, SIDO 10도 — 위도·경도 각 변에 따로 적용, 정확히 상한값은 허용). 초과 시 400 + developCode 12401, 좌표가 WGS84 범위를 벗어나거나 bbox 가 뒤집히면 12400, type 이 없거나 EVENT·POPUP 이 아니면 12402, unit 이 없거나 미지원 값이면 12405 다. 응답에 사용자별 값은 없다.
+ */
+export const getMissionAggregates = <ThrowOnError extends boolean = false>(options: Options<GetMissionAggregatesData, ThrowOnError>): RequestResult<GetMissionAggregatesResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionAggregatesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/missions/aggregation',
     ...options
 });
 
@@ -809,6 +948,17 @@ export const preview = <ThrowOnError extends boolean = false>(options: Options<P
 export const getMyFriendCode = <ThrowOnError extends boolean = false>(options?: Options<GetMyFriendCodeData, ThrowOnError>): RequestResult<GetMyFriendCodeResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMyFriendCodeResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/friends/code',
+    ...options
+});
+
+/**
+ * 현재 열람 인원 조회
+ *
+ * viewerCount 0 은 아무도 없음(표시), null 은 캐시 장애(숨김)다. 응답이 사용자 무관이라 인증 없이 호출할 수 있다.
+ */
+export const getViewerCount = <ThrowOnError extends boolean = false>(options: Options<GetViewerCountData, ThrowOnError>): RequestResult<GetViewerCountResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetViewerCountResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences/{occurrenceId}/viewer-count',
     ...options
 });
 

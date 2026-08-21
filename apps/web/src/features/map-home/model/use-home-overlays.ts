@@ -7,6 +7,7 @@ import {
   buildMissionLabels,
 } from "./mission-overlay";
 import type { CourseView, MissionView } from "./mission-view";
+import { missionCellsVisible } from "./occupancy-visibility";
 import { THEME_META, type ThemeCell, type ThemeId } from "./theme";
 import {
   buildHomeOverlayCells,
@@ -45,6 +46,8 @@ interface HomeOverlaysInput {
   focusedMissionId: number | null;
   occupiedIds: string[];
   viewportBounds: Bounds | null;
+  /** 현재 줌 단 — 저줌에서 미션 격자를 집계 마커에 넘기는 게이트 (MSG-451 AC 2·3) */
+  zoom: number;
 }
 
 export interface HomeOverlays {
@@ -65,16 +68,24 @@ export const useHomeOverlays = ({
   focusedMissionId,
   occupiedIds,
   viewportBounds,
+  zoom,
 }: HomeOverlaysInput): HomeOverlays => {
   // 상세 대상의 경계 — 있으면 클리핑 기준이 된다(자기 자신은 항상 포함).
   // 경계가 없는 미션(좌표 없는 shape)은 확정 영역으로 떨어진다
   const detailBounds: Bounds | null =
     (selectedCourse ?? selectedMission)?.shape.bbox ?? viewportBounds;
 
+  // 저줌에서는 목록 상태의 미션 격자·이름표를 집계 마커에 넘긴다 (MSG-451 AC 2·3).
+  // 코스는 라인 표시라 대상이 아니다 — 티켓 제외 범위(1km 화면 묶음 유지)
+  const missionLayerHidden =
+    eventChip !== null &&
+    !missionCellsVisible({ zoom, hasDetailTarget: selectedMission !== null });
+
   const cells = useMemo(() => {
     if (activeTheme === "hot")
       return buildHomeOverlayCells("hot", hotCells, occupiedIds);
     if (viewportBounds === null) return [];
+    if (missionLayerHidden) return [];
     if (isRouteChip)
       return buildMissionCells(
         selectedCourse ? [selectedCourse] : courseViews,
@@ -105,6 +116,7 @@ export const useHomeOverlays = ({
     selectedCourse,
     focusedMissionId,
     viewportBounds,
+    missionLayerHidden,
   ]);
 
   // 코스 라인 — 상세를 열면 그 코스만 남긴다 (AC 18의 코스판)
@@ -119,6 +131,9 @@ export const useHomeOverlays = ({
 
   const labels = useMemo(() => {
     if (viewportBounds === null) return [];
+    // 격자를 걷은 줌에서는 이름표도 함께 걷는다 — 이름표 좌표가 격자 꼭짓점이라
+    // 셀 없이 남으면 집계 마커 위에 뜬 미아가 된다 (MSG-451 AC 2 해석)
+    if (missionLayerHidden) return [];
     if (isRouteChip)
       return buildCourseLabels(
         selectedCourse ? [selectedCourse] : courseViews,
@@ -143,6 +158,7 @@ export const useHomeOverlays = ({
     selectedMission,
     focusedMissionId,
     viewportBounds,
+    missionLayerHidden,
   ]);
 
   return { cells, routes, labels };

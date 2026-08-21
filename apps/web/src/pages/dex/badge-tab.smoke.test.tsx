@@ -91,7 +91,7 @@ describe("뱃지 진열장 스모크", () => {
     expect(screen.queryByText("뱃지 진열장")).toBeNull();
   });
 
-  it("저장 요청이 진행 중이면 '완료'가 비활성화된다 — 늦은 저장 응답이 새 편집 세션을 닫는 레이스 차단 (기준 9 — codex 리뷰 반영)", async () => {
+  it("저장 요청이 진행 중이면 '취소'가 비활성화된다 — 늦은 저장 응답이 새 편집 세션을 닫는 레이스 차단 (기준 9 — codex 리뷰 반영)", async () => {
     stubDexFetch({ badges: BADGES, holdFeaturedPut: true });
     renderBadgeTab();
 
@@ -103,7 +103,7 @@ describe("뱃지 진열장 스모크", () => {
     // PUT이 in-flight로 남는다 — pending 동안 편집모드 이탈 경로가 전부 닫혀야 한다
     await waitFor(() => {
       expect(
-        screen.getByRole<HTMLButtonElement>("button", { name: "완료" })
+        screen.getByRole<HTMLButtonElement>("button", { name: "취소" })
           .disabled,
       ).toBe(true);
     });

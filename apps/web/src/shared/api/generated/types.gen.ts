@@ -103,13 +103,85 @@ export type NicknameUpdateRequestDto = {
 };
 
 /**
- * 위치정보 사용 동의 변경 요청
+ * 마케팅 정보 수신 동의 변경 요청
  */
-export type LocationConsentUpdateRequestDto = {
+export type MarketingConsentUpdateRequestDto = {
     /**
      * true 면 동의, false 면 철회
      */
     consented: boolean;
+};
+
+export type ApiResponseDtoConsentStatusResponseDto = {
+    developCode: number;
+    message: string;
+    data: ConsentStatusResponseDto;
+};
+
+/**
+ * 가입 약관 동의 상태. 조회·제출·마케팅 변경이 같은 형태를 반환한다.
+ */
+export type ConsentStatusResponseDto = {
+    /**
+     * 만 14세 이상 확인 여부 (필수). 자기 확인 체크 사실만 저장하며 생년월일은 수집하지 않는다
+     */
+    ageOver14: boolean;
+    /**
+     * 서비스 이용약관 동의 여부 (필수)
+     */
+    serviceTerms: boolean;
+    /**
+     * 개인정보 수집·이용 동의 여부 (필수)
+     */
+    privacyPolicy: boolean;
+    /**
+     * 위치기반서비스 이용약관 동의 여부 (필수). 프로필 화면의 위치정보 사용 동의와 같은 한 값이며 철회할 수 없다 — 한 번 true 가 되면 되돌아가지 않는다
+     */
+    locationTerms: boolean;
+    /**
+     * 마케팅 정보 수신 동의 여부 (선택). 가입 후에도 전용 API 로 켜고 끌 수 있다
+     */
+    marketing: boolean;
+    /**
+     * 필수 4항목을 전부 동의했으면 true. false 면 클라이언트가 동의 게이트를 띄운다
+     */
+    requiredCompleted: boolean;
+};
+
+/**
+ * 위치정보 사용 동의 켜기 요청
+ */
+export type LocationConsentUpdateRequestDto = {
+    /**
+     * true 면 동의. 이 동의는 철회할 수 없어 false 는 1400 으로 거절된다
+     */
+    consented: boolean;
+};
+
+/**
+ * 가입 약관 동의 제출 요청. 필수 4항목은 true 여야 하고 마케팅만 선택이다.
+ */
+export type ConsentSubmitRequestDto = {
+    /**
+     * 만 14세 이상 확인 (필수, true 만 허용)
+     */
+    ageOver14: boolean;
+    /**
+     * 서비스 이용약관 동의 (필수, true 만 허용)
+     */
+    serviceTerms: boolean;
+    /**
+     * 개인정보 수집·이용 동의 (필수, true 만 허용)
+     */
+    privacyPolicy: boolean;
+    /**
+     * 위치기반서비스 이용약관 동의 (필수, true 만 허용)
+     */
+    locationTerms: boolean;
+    /**
+     * 마케팅 정보 수신 동의 (선택). true·false 모두 유효하되 누락은 400 이다
+     */
+    marketing: boolean;
 };
 
 /**
@@ -739,7 +811,7 @@ export type CategoryPreferenceDto = {
     /**
      * 알림 카테고리
      */
-    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY';
+    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY' | 'FRIEND' | 'MISSION_NEARBY';
     /**
      * 수신 여부 — off 행 부재면 true (opt-out 기본 전부 on)
      */
@@ -747,11 +819,11 @@ export type CategoryPreferenceDto = {
 };
 
 /**
- * 알림 설정 — 전 카테고리(5종)의 수신 상태 (저장 행 없는 카테고리는 true)
+ * 알림 설정 — 전 카테고리(7종)의 수신 상태 (저장 행 없는 카테고리는 true)
  */
 export type NotificationPreferenceResponseDto = {
     /**
-     * 카테고리별 수신 상태 (BADGE·HOTZONE·REMIND·VIDEO·WEEKLY 고정 5종)
+     * 카테고리별 수신 상태 (BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY 고정 7종 — MODERATION 은 설정 대상이 아니라 없다)
      */
     preferences: Array<CategoryPreferenceDto>;
 };
@@ -1046,6 +1118,26 @@ export type RegionStatResponseDto = {
     updatedAt: string;
 };
 
+export type ApiResponseDtoRegionNationalStatResponseDto = {
+    developCode: number;
+    message: string;
+    data: RegionNationalStatResponseDto;
+};
+
+/**
+ * 내 전국 탐험률 재료. 점령한 격자 수(분자)와 전국 격자 총수(분모)의 원값.
+ */
+export type RegionNationalStatResponseDto = {
+    /**
+     * 내가 점령(수집)한 격자 수의 전국 합. 수집이 없으면 0
+     */
+    collectedCount: number;
+    /**
+     * 전국 격자 총수(분모). 0 이면 기준 데이터 미적재 상태라 화면은 비율을 그리지 않는다
+     */
+    totalCount: number;
+};
+
 export type ApiResponseDtoRegionStatResponseDto = {
     developCode: number;
     message: string;
@@ -1100,6 +1192,100 @@ export type RegionGridCountResponseDto = {
     gridCount: number;
 };
 
+export type ApiResponseDtoListRegionDistrictResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<RegionDistrictResponseDto>;
+};
+
+/**
+ * 시군구 한 건. 이름·식별자·전체 격자 수.
+ */
+export type RegionDistrictResponseDto = {
+    /**
+     * 시군구 식별자(행정동 코드 앞 5자리). /api/regions/stats 의 parentCode 로 그대로 쓴다
+     */
+    parentCode: string;
+    /**
+     * 시군구 이름
+     */
+    name: string;
+    /**
+     * 그 시군구의 전체 격자 수(사용자 무관). 0 인 시군구는 목록에 없다
+     */
+    gridCount: number;
+};
+
+export type ApiResponseDtoNotificationPageResponseDto = {
+    developCode: number;
+    message: string;
+    data: NotificationPageResponseDto;
+};
+
+/**
+ * 알림 한 건
+ */
+export type NotificationItemResponseDto = {
+    /**
+     * 알림 ID — 읽음 처리와 커서에 쓴다
+     */
+    notificationId: number;
+    /**
+     * 알림 카테고리
+     */
+    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY' | 'FRIEND' | 'MODERATION';
+    /**
+     * 알림 제목
+     */
+    title: string;
+    /**
+     * 알림 본문
+     */
+    body: string;
+    /**
+     * 생성 시각 (UTC)
+     */
+    createdAt: string;
+    /**
+     * 읽음 여부
+     */
+    read: boolean;
+};
+
+/**
+ * 알림함 목록 한 페이지 — 최신순(id 내림차순)
+ */
+export type NotificationPageResponseDto = {
+    /**
+     * 알림 항목 — 없으면 빈 배열
+     */
+    notifications: Array<NotificationItemResponseDto>;
+    /**
+     * 다음 페이지 커서 — 다음 요청의 cursor 로 그대로 되돌려 준다. hasNext 가 false 면 null
+     */
+    nextCursor: number | null;
+    /**
+     * 다음 페이지 존재 여부
+     */
+    hasNext: boolean;
+};
+
+export type ApiResponseDtoNotificationUnreadCountResponseDto = {
+    developCode: number;
+    message: string;
+    data: NotificationUnreadCountResponseDto;
+};
+
+/**
+ * 안읽은 알림 개수 — 목록과 같은 노출 조건(최근 30일·수신 거부 스킵 제외)
+ */
+export type NotificationUnreadCountResponseDto = {
+    /**
+     * 안읽은 알림 개수 — 없으면 0
+     */
+    count: number;
+};
+
 export type ApiResponseDtoMissionDetailResponseDto = {
     developCode: number;
     message: string;
@@ -1107,7 +1293,7 @@ export type ApiResponseDtoMissionDetailResponseDto = {
 };
 
 /**
- * 이벤트(EVENT) — 격자 집합을 감싸는 경계 사각형
+ * 축제·팝업(EVENT·POPUP) — 격자 집합을 감싸는 경계 사각형
  */
 export type BoxShape = MissionShape & {
     polygon: Array<LatLng>;
@@ -1362,6 +1548,42 @@ export type ApiResponseDtoListMissionProgressResponseDto = {
     developCode: number;
     message: string;
     data: Array<MissionProgressResponseDto>;
+};
+
+export type ApiResponseDtoListMissionRegionAggregateResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<MissionRegionAggregateResponseDto>;
+};
+
+/**
+ * 행정 단위로 묶어 센 미션 집계 한 항목
+ */
+export type MissionRegionAggregateResponseDto = {
+    /**
+     * 묶음 키 — 행정동 코드(10자리)를 단위 길이로 자른 접두(동 10, 구 5, 시 2자리). 행정동이 판정되지 않은 묶음만 null
+     */
+    regionCode: string | null;
+    /**
+     * 단위 표시 이름 (동 "부전2동", 구 "부산진구", 시 "부산광역시"). 무귀속만 null
+     */
+    name: string | null;
+    /**
+     * 마커 대표 좌표 위도 — 묶음에 속한 미션 귀속점의 평균이라 마커가 실제 데이터 위에 선다
+     */
+    lat: number;
+    /**
+     * 마커 대표 좌표 경도
+     */
+    lng: number;
+    /**
+     * 그 단위 안의 미션 수
+     */
+    count: number;
+    /**
+     * 그 묶음에 속한 미션 id 오름차순 — 줌인 후 개별 조회 결과와 교집합으로 목록을 좁힌다(D5). 크기는 count 와 같다
+     */
+    missionIds: Array<number>;
 };
 
 export type ApiResponseDtoListMissionResponseDto = {
@@ -1906,6 +2128,22 @@ export type FriendCodeResponseDto = {
     friendCode: string;
 };
 
+export type ApiResponseDtoEventViewerCountResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventViewerCountResponseDto;
+};
+
+/**
+ * 행사방 현재 열람 인원 응답.
+ */
+export type EventViewerCountResponseDto = {
+    /**
+     * 현재 열람 인원 — 마지막 heartbeat 가 90초 이내인 고유 세션 수. 0 은 아무도 없음(표시), null 은 캐시 장애(숨김)
+     */
+    viewerCount: number | null;
+};
+
 export type ApiResponseDtoListRegionVideoResponseDto = {
     developCode: number;
     message: string;
@@ -2327,6 +2565,22 @@ export type UpdateNicknameResponses = {
 
 export type UpdateNicknameResponse = UpdateNicknameResponses[keyof UpdateNicknameResponses];
 
+export type UpdateMarketingConsentData = {
+    body: MarketingConsentUpdateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/marketing-consent';
+};
+
+export type UpdateMarketingConsentResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoConsentStatusResponseDto;
+};
+
+export type UpdateMarketingConsentResponse = UpdateMarketingConsentResponses[keyof UpdateMarketingConsentResponses];
+
 export type UpdateLocationConsentData = {
     body: LocationConsentUpdateRequestDto;
     path?: never;
@@ -2342,6 +2596,38 @@ export type UpdateLocationConsentResponses = {
 };
 
 export type UpdateLocationConsentResponse = UpdateLocationConsentResponses[keyof UpdateLocationConsentResponses];
+
+export type GetConsentStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/consents';
+};
+
+export type GetConsentStatusResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoConsentStatusResponseDto;
+};
+
+export type GetConsentStatusResponse = GetConsentStatusResponses[keyof GetConsentStatusResponses];
+
+export type SubmitConsentsData = {
+    body: ConsentSubmitRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/consents';
+};
+
+export type SubmitConsentsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoConsentStatusResponseDto;
+};
+
+export type SubmitConsentsResponse = SubmitConsentsResponses[keyof SubmitConsentsResponses];
 
 export type ReplaceFeaturedData = {
     body: FeaturedBadgeRequestDto;
@@ -2519,6 +2805,25 @@ export type AcceptData = {
 };
 
 export type AcceptResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type HeartbeatData = {
+    body?: never;
+    headers?: {
+        'X-Viewer-Session'?: string;
+    };
+    path: {
+        occurrenceId: number;
+    };
+    query?: never;
+    url: '/api/event-occurrences/{occurrenceId}/heartbeat';
+};
+
+export type HeartbeatResponses = {
     /**
      * OK
      */
@@ -2773,11 +3078,44 @@ export type SetVisibilityResponses = {
 
 export type SetVisibilityResponse = SetVisibilityResponses[keyof SetVisibilityResponses];
 
+export type MarkReadData = {
+    body?: never;
+    path: {
+        /**
+         * 읽음 처리할 알림 ID
+         */
+        notificationId: number;
+    };
+    query?: never;
+    url: '/api/notifications/{notificationId}/read';
+};
+
+export type MarkReadResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type MarkAllReadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/notifications/read-all';
+};
+
+export type MarkAllReadResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type UpdateData = {
     body: NotificationPreferenceUpdateRequestDto;
     path: {
         /**
-         * 알림 카테고리 — BADGE·HOTZONE·REMIND·VIDEO·WEEKLY (대소문자 무시)
+         * 알림 카테고리 — BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY (대소문자 무시)
          */
         category: string;
     };
@@ -2935,6 +3273,22 @@ export type GetStatsResponses = {
 
 export type GetStatsResponse = GetStatsResponses[keyof GetStatsResponses];
 
+export type GetNationalStatData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/regions/stats/national';
+};
+
+export type GetNationalStatResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoRegionNationalStatResponseDto;
+};
+
+export type GetNationalStatResponse = GetNationalStatResponses[keyof GetNationalStatResponses];
+
 export type GetStatByPointData = {
     body?: never;
     path?: never;
@@ -3021,6 +3375,63 @@ export type GetExploreRegionsResponses = {
 };
 
 export type GetExploreRegionsResponse = GetExploreRegionsResponses[keyof GetExploreRegionsResponses];
+
+export type GetDistrictsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/regions/districts';
+};
+
+export type GetDistrictsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListRegionDistrictResponseDto;
+};
+
+export type GetDistrictsResponse = GetDistrictsResponses[keyof GetDistrictsResponses];
+
+export type GetInboxData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 직전 응답의 nextCursor — 생략하면 첫 페이지
+         */
+        cursor?: number;
+        /**
+         * 페이지 크기 — 0 이하면 20, 50 초과면 50 으로 자른다
+         */
+        size?: number;
+    };
+    url: '/api/notifications';
+};
+
+export type GetInboxResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoNotificationPageResponseDto;
+};
+
+export type GetInboxResponse = GetInboxResponses[keyof GetInboxResponses];
+
+export type GetUnreadCountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/notifications/unread-count';
+};
+
+export type GetUnreadCountResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoNotificationUnreadCountResponseDto;
+};
+
+export type GetUnreadCountResponse = GetUnreadCountResponses[keyof GetUnreadCountResponses];
 
 export type GetPreferencesData = {
     body?: never;
@@ -3109,6 +3520,47 @@ export type GetMyProgressResponses = {
 };
 
 export type GetMyProgressResponse = GetMyProgressResponses[keyof GetMyProgressResponses];
+
+export type GetMissionAggregatesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 미션 종류 — EVENT(지역축제), POPUP(팝업스토어). 대소문자 무관
+         */
+        type: string;
+        /**
+         * 집계 단위 — DONG(동), SIGUNGU(시군구), SIDO(시도). 대소문자 무관
+         */
+        unit: string;
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+    };
+    url: '/api/missions/aggregation';
+};
+
+export type GetMissionAggregatesResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListMissionRegionAggregateResponseDto;
+};
+
+export type GetMissionAggregatesResponse = GetMissionAggregatesResponses[keyof GetMissionAggregatesResponses];
 
 export type GetActiveMissionsInViewportData = {
     body?: never;
@@ -3564,6 +4016,24 @@ export type GetMyFriendCodeResponses = {
 };
 
 export type GetMyFriendCodeResponse = GetMyFriendCodeResponses[keyof GetMyFriendCodeResponses];
+
+export type GetViewerCountData = {
+    body?: never;
+    path: {
+        occurrenceId: number;
+    };
+    query?: never;
+    url: '/api/event-occurrences/{occurrenceId}/viewer-count';
+};
+
+export type GetViewerCountResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventViewerCountResponseDto;
+};
+
+export type GetViewerCountResponse = GetViewerCountResponses[keyof GetViewerCountResponses];
 
 export type GetRegionVideosData = {
     body?: never;

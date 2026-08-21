@@ -53,6 +53,8 @@ export interface HomeMissions {
   /** 내 수집 격자 — 격자 상세의 점령 시작일 출처 */
   collectedGrids: ReturnType<typeof useCollectedGridsQuery>["grids"];
   isPending: boolean;
+  /** 들고 있는 목록이 직전 확정 영역의 것인지 — 확정 직후 한 박자 (MSG-451) */
+  isPlaceholder: boolean;
   /** 목록 실패 — **미션 조회만** 본다. 목록을 통째로 가리는 판정이라 좁게 유지한다 */
   isError: boolean;
   /**
@@ -154,6 +156,7 @@ export const useHomeMissions = ({
     spotNames,
     collectedGrids: collected.grids,
     isPending: missions.isPending,
+    isPlaceholder: missions.isPlaceholder,
     isError: missions.isError,
     // 상세 실패도 진행도 실패로 본다 — 스팟 방문 표시의 출처가 같은 응답이다
     progressFailed: progress.isError || detail.isError,

@@ -1,6 +1,10 @@
 import type { LatLng } from "@/entities/cell";
-import type { RegionAggregateResponseDto } from "@/shared/api/generated";
+import type {
+  MissionRegionAggregateResponseDto,
+  RegionAggregateResponseDto,
+} from "@/shared/api/generated";
 import type { AggregationUnit } from "./aggregation-unit";
+import type { ThemeId } from "./theme";
 
 /**
  * 서버 집계 `items[]` → 지역명+점령 격자 수 마커 파생 (MSG-410 AC 4·5).
@@ -13,11 +17,28 @@ import type { AggregationUnit } from "./aggregation-unit";
 export interface RegionClusterMarker {
   /** regionCode 기반 안정 키 — null 버킷·병합 마커는 별도 규칙 (AC 4) */
   id: string;
-  /** 표기 축약 적용된 지역명 — 미판정 버킷·병합 마커는 null(개수만 표시, 추정 2) */
+  /** 표기 축약 적용된 지역명 — 미판정 버킷은 null(개수만 표시, 추정 2) */
   name: string | null;
   count: number;
   position: LatLng;
   unit: AggregationUnit;
+  /**
+   * 미션 집계 마커의 소속 칩 (MSG-451 AC 6) — 채움색과 접근성 문구의 근거.
+   * 없으면 도감 점령 집계 마커다(기존 primary 렌더 유지 — MapCanvas 계약).
+   */
+  theme?: MissionMarkerTheme;
+}
+
+/** 집계 마커를 갖는 칩 — 축제·팝업. 핫구역은 격자, 코스는 라인이라 대상이 아니다 */
+export type MissionMarkerTheme = Extract<ThemeId, "festival" | "popup">;
+
+/** 파생에 필요한 집계 항목의 최소 형태 — 점령·미션 두 응답의 공통부 */
+interface ClusterAggregateItem {
+  regionCode: string | null;
+  name: string | null;
+  lat: number;
+  lng: number;
+  count: number;
 }
 
 /** 시도 접미 축약 대상 — 긴 접미부터 검사한다("특별자치시"가 "광역시"보다 먼저) */
@@ -48,16 +69,18 @@ const abbreviateSidoName = (name: string): string => {
  * - 좌표·count는 응답 값 그대로 — 서버가 격자 중심 평균으로 대표 좌표를 준다
  * - 시 단위 이름만 표기 축약한다("부산광역시 214" → "부산 214")
  */
-export const toRegionClusterMarkers = (
-  items: RegionAggregateResponseDto[],
+const toClusterMarkers = (
+  items: ClusterAggregateItem[],
   unit: AggregationUnit,
+  keyPrefix: string,
+  theme?: MissionMarkerTheme,
 ): RegionClusterMarker[] => {
   let nullBucketSeq = 0;
   return items.map((item) => ({
     id:
       item.regionCode !== null
-        ? `agg-${unit}-${item.regionCode}`
-        : `agg-${unit}-unassigned-${nullBucketSeq++}`,
+        ? `${keyPrefix}-${unit}-${item.regionCode}`
+        : `${keyPrefix}-${unit}-unassigned-${nullBucketSeq++}`,
     name:
       item.name === null
         ? null
@@ -67,8 +90,28 @@ export const toRegionClusterMarkers = (
     count: item.count,
     position: { lat: item.lat, lng: item.lng },
     unit,
+    ...(theme ? { theme } : {}),
   }));
 };
+
+export const toRegionClusterMarkers = (
+  items: RegionAggregateResponseDto[],
+  unit: AggregationUnit,
+): RegionClusterMarker[] => toClusterMarkers(items, unit, "agg");
+
+/**
+ * 미션 집계 항목 → 마커 파생 (MSG-451 AC 6) — `GET /api/missions/aggregation`.
+ * 점령 집계와 표시 규칙(키 안정성·시도명 축약·미판정 버킷)이 같아 같은 산술을 공유하고,
+ * **칩별 키 접두**로 두 층이 한 지도에 서도 렌더 키가 겹치지 않게 한다. 칩을 바꾸면 키가
+ * 통째로 달라져 이전 칩의 마커가 새 칩 자리에 재사용되지 않는다.
+ * 응답의 `missionIds`는 여기서 쓰지 않는다 — 묶음 선택 시 목록 좁힘(서버 D5)은 후속 몫.
+ */
+export const toMissionClusterMarkers = (
+  items: MissionRegionAggregateResponseDto[],
+  unit: AggregationUnit,
+  theme: MissionMarkerTheme,
+): RegionClusterMarker[] =>
+  toClusterMarkers(items, unit, `mission-${theme}`, theme);
 
 /**
  * 겹침 병합 임계(px) — 마커 중심 간 화면 거리가 이보다 가까우면 하나로 합친다.
@@ -98,9 +141,27 @@ const projectToWorldPx = (
 };
 
 /**
+ * 이름 우선순위 비교 — 가나다순(ko), 이름 없는(null) 멤버는 최후순 (MSG-451 AC 19·20).
+ * count 동률의 tiebreak이자, 이름 있는 멤버가 무귀속 버킷에 앵커를 뺏기지 않게 하는 규칙이다.
+ */
+const compareByName = (
+  a: RegionClusterMarker,
+  b: RegionClusterMarker,
+): number =>
+  a.name === null || b.name === null
+    ? Number(a.name === null) - Number(b.name === null)
+    : a.name.localeCompare(b.name, "ko");
+
+/**
  * 같은 줌 화면에서 임계 미만으로 붙는 마커들의 2차 병합 (AC 5).
  * count 큰 마커가 앵커가 되어 근접 마커를 흡수한다 — 위치는 앵커 좌표(지배 지역 위),
- * count는 합산(총합 보존), 이름은 null(서로 다른 지역명에 한 이름을 붙일 수 없다 — 추정 2).
+ * count는 합산(총합 보존).
+ *
+ * **이름은 앵커의 이름을 이어받는다** (MSG-451 AC 18~20). 종전에는 null이라
+ * "서로 다른 지역명에 한 이름을 붙일 수 없다"(MSG-410 추정 2)는 이유로 개수만 남았는데,
+ * 실제 화면에서는 마커가 어디를 가리키는지 읽을 수 없어 개수가 쓸모를 잃었다. 앵커는
+ * 이미 count 최대 멤버이므로 "가장 많았던 지역의 이름"이 그대로 나온다 — 동률은
+ * 가나다순(compareByName)으로 갈라 재조회에도 같은 이름이 나오게 한다.
  * 병합 키는 멤버 키 결합 — 멤버 구성이 같으면 재조회에도 같은 키다.
  */
 export const mergeOverlappingMarkers = (
@@ -116,7 +177,8 @@ export const mergeOverlappingMarkers = (
   const groups: MergeGroup[] = [];
 
   const sorted = markers.toSorted(
-    (a, b) => b.count - a.count || a.id.localeCompare(b.id),
+    (a, b) =>
+      b.count - a.count || compareByName(a, b) || a.id.localeCompare(b.id),
   );
   for (const marker of sorted) {
     const px = projectToWorldPx(marker.position, zoom);
@@ -143,10 +205,13 @@ export const mergeOverlappingMarkers = (
       ? anchor
       : {
           id: memberIds.sort().join("+"),
-          name: null,
+          name: anchor.name,
           count,
           position: anchor.position,
           unit: anchor.unit,
+          // 한 병합 입력은 단일 층(점령 또는 한 칩)이므로 앵커의 테마가 곧 묶음의 테마다.
+          // 빠뜨리면 합쳐진 미션 마커만 도감 색(primary)으로 렌더된다
+          ...(anchor.theme ? { theme: anchor.theme } : {}),
         },
   );
 };

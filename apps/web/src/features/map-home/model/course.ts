@@ -1,4 +1,4 @@
-import type { LatLng } from "@/entities/cell";
+import { distanceMeters, type LatLng } from "@/entities/cell";
 import type { CourseSpotDto } from "./mission";
 
 /**
@@ -90,19 +90,6 @@ export const coursePath = (
 
 /** 순환형 판정 거리(m) — 격자 한 변과 같은 눈금 */
 const LOOP_THRESHOLD_METERS = 100;
-
-const EARTH_RADIUS_METERS = 6_371_000;
-
-/** 두 좌표 사이 거리(m) — 하버사인 */
-const distanceMeters = (a: LatLng, b: LatLng): number => {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(h));
-};
 
 /**
  * 순환/비순환 판별. [AC 22]

@@ -24,8 +24,11 @@ import {
   type AggregationUnit,
 } from "@/features/map-home/model/aggregation-unit";
 import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
+import type { MissionMarkerTheme } from "@/features/map-home/model/region-cluster-overlay";
+import { THEME_META } from "@/features/map-home/model/theme";
 import { buildHatchLines } from "@/features/map-home/model/theme-overlay";
 import type { Viewport } from "@/features/map-home/model/viewport-store";
+import { THEME_FILL_CLASS } from "./theme-classes";
 import {
   buildNaverMapsScriptUrl,
   loadNaverMapsScript,
@@ -107,6 +110,13 @@ export interface MapClusterOverlay {
   count: number;
   /** 집계 단위 — 마커 크기 3단(동<구<시, Figma 14599:7042~7048)과 클릭 목표 줌의 근거 */
   unit: AggregationUnit;
+  /**
+   * 미션 집계 마커의 소속 칩 (MSG-451 AC 6) — 채움색·문구가 갈린다.
+   * 없으면 도감 점령 집계 마커(primary 채움) — 기존 렌더 그대로.
+   * Figma에 미션용 클러스터 노드가 없어, 도감 마커(14599:7041) 형태에 채움만 테마
+   * 토큰으로 바꾼 것이 정본이다 (MSG-437 "색만 미션용으로 구분").
+   */
+  theme?: MissionMarkerTheme;
 }
 
 interface MapCanvasProps {
@@ -329,12 +339,24 @@ const clusterMarkerContent = ({
   name,
   count,
   unit,
+  theme,
 }: MapClusterOverlay): string =>
-  `<div class="flex ${CLUSTER_UNIT_SIZE_CLASS[unit]} -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-3 border-background bg-primary text-primary-foreground shadow-raised">${name !== null ? `<span class="max-w-full truncate px-xxs text-fm-caption">${escapeHtml(name)}</span>` : ""}<span class="text-fm-body-strong">${formatClusterCount(count)}</span></div>`;
+  `<div class="flex ${CLUSTER_UNIT_SIZE_CLASS[unit]} -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-3 border-background ${theme ? THEME_FILL_CLASS[theme] : "bg-primary"} text-primary-foreground shadow-raised">${name !== null ? `<span class="max-w-full truncate px-xxs text-fm-caption">${escapeHtml(name)}</span>` : ""}<span class="text-fm-body-strong">${formatClusterCount(count)}</span></div>`;
 
-/** 집계 마커 접근성 이름 — 스크린리더 대체 텍스트이자 e2e 셀렉터 계약 */
-const clusterMarkerTitle = ({ name, count }: MapClusterOverlay): string =>
-  name !== null ? `${name} 점령 격자 ${count}개` : `점령 격자 ${count}개`;
+/**
+ * 집계 마커 접근성 이름 — 스크린리더 대체 텍스트이자 e2e 셀렉터 계약.
+ * 미션 집계 마커는 세는 대상이 격자가 아니라 그 칩의 행사다 (MSG-451 AC 6, 추정 2).
+ */
+const clusterMarkerTitle = ({
+  name,
+  count,
+  theme,
+}: MapClusterOverlay): string => {
+  const subject = theme ? THEME_META[theme].label : "점령 격자";
+  return name !== null
+    ? `${name} ${subject} ${count}개`
+    : `${subject} ${count}개`;
+};
 
 /**
  * HTML 이스케이프 — 이름표 텍스트는 **서버가 준 미션 제목**이라 그대로 innerHTML에 넣으면
