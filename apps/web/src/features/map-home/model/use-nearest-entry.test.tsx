@@ -11,8 +11,7 @@ const boxAt = (lat: number, lng: number): Bounds => ({
   ne: { lat: lat + 0.001, lng: lng + 0.001 },
 });
 
-const target = (missionId: number, lat: number, lng: number) => ({
-  missionId,
+const target = (lat: number, lng: number) => ({
   shape: { bbox: boxAt(lat, lng) },
 });
 
@@ -22,27 +21,25 @@ const baseInput = (over: Record<string, unknown> = {}) => ({
   // 이 활성화의 확정이 끝난 칩 — 확정 전에는 null이다
   committedChip: "festival" as ThemeId | null,
   center: SEOMYEON,
-  targets: [target(1, 35.18, 129.09), target(2, 35.159, 129.06)],
+  targets: [target(35.18, 129.09), target(35.159, 129.06)],
   listSettled: true,
   moveTo: vi.fn(),
-  select: vi.fn(),
   ...over,
 });
 
-describe("useNearestEntry — 칩 진입 시 최근접 대상 자동 선택 (AC 11~14)", () => {
-  it("칩이 켜지면 최근접 대상으로 이동하고 그 대상을 선택한다 (AC 13)", () => {
+describe("useNearestEntry — 칩 진입 시 최근접 대상으로 이동 (AC 11~14)", () => {
+  it("칩이 켜지면 최근접 대상으로 지도가 이동한다 (AC 13)", () => {
     const input = baseInput();
 
     renderHook(() => useNearestEntry(input));
 
-    expect(input.select).toHaveBeenCalledExactlyOnceWith(2);
     expect(input.moveTo).toHaveBeenCalledExactlyOnceWith({
       lat: 35.159,
       lng: 129.06,
     });
   });
 
-  it("칩 활성화당 한 번만 선택한다 — 이후 지도 이동에는 반응하지 않는다 (AC 11)", () => {
+  it("칩 활성화당 한 번만 이동한다 — 이후 지도 이동에는 반응하지 않는다 (AC 11)", () => {
     const input = baseInput();
 
     const { rerender } = renderHook((props) => useNearestEntry(props), {
@@ -51,7 +48,6 @@ describe("useNearestEntry — 칩 진입 시 최근접 대상 자동 선택 (AC 
     rerender({ ...input, center: { lat: 35.2, lng: 129.12 } });
     rerender({ ...input, center: { lat: 35.3, lng: 129.2 } });
 
-    expect(input.select).toHaveBeenCalledTimes(1);
     expect(input.moveTo).toHaveBeenCalledTimes(1);
   });
 
@@ -65,19 +61,21 @@ describe("useNearestEntry — 칩 진입 시 최근접 대상 자동 선택 (AC 
       ...input,
       activeTheme: "popup" as ThemeId | null,
       committedChip: "popup" as ThemeId | null,
-      targets: [target(7, 35.1585, 129.0596)],
+      targets: [target(35.1585, 129.0596)],
     });
 
-    expect(input.select).toHaveBeenCalledTimes(2);
-    expect(input.select).toHaveBeenLastCalledWith(7);
+    expect(input.moveTo).toHaveBeenCalledTimes(2);
+    expect(input.moveTo).toHaveBeenLastCalledWith({
+      lat: 35.1585,
+      lng: 129.0596,
+    });
   });
 
-  it("목록이 비면 이동·선택 명령이 나가지 않는다 (AC 10)", () => {
+  it("목록이 비면 이동 명령이 나가지 않는다 (AC 10)", () => {
     const input = baseInput({ targets: [] });
 
     renderHook(() => useNearestEntry(input));
 
-    expect(input.select).not.toHaveBeenCalled();
     expect(input.moveTo).not.toHaveBeenCalled();
   });
 
@@ -87,11 +85,14 @@ describe("useNearestEntry — 칩 진입 시 최근접 대상 자동 선택 (AC 
     const { rerender } = renderHook((props) => useNearestEntry(props), {
       initialProps: pending,
     });
-    expect(pending.select).not.toHaveBeenCalled();
+    expect(pending.moveTo).not.toHaveBeenCalled();
 
     rerender({ ...pending, listSettled: true });
 
-    expect(pending.select).toHaveBeenCalledExactlyOnceWith(2);
+    expect(pending.moveTo).toHaveBeenCalledExactlyOnceWith({
+      lat: 35.159,
+      lng: 129.06,
+    });
   });
 
   it("확정 전 목록이 비어 있어도 활성화를 소진하지 않는다 — 확정 후 도착한 목록으로 진입한다 (AC 13 회귀)", () => {
@@ -118,10 +119,13 @@ describe("useNearestEntry — 칩 진입 시 최근접 대상 자동 선택 (AC 
       ...cold,
       committedChip: "festival" as ThemeId | null,
       listSettled: true,
-      targets: [target(2, 35.159, 129.06)],
+      targets: [target(35.159, 129.06)],
     });
 
-    expect(cold.select).toHaveBeenCalledExactlyOnceWith(2);
+    expect(cold.moveTo).toHaveBeenCalledExactlyOnceWith({
+      lat: 35.159,
+      lng: 129.06,
+    });
   });
 
   it("확정이 끝나기 전에는 이동하지 않는다 — 확정 전 목록으로 엉뚱한 대상을 고르지 않게 (AC 12·13)", () => {
@@ -130,7 +134,6 @@ describe("useNearestEntry — 칩 진입 시 최근접 대상 자동 선택 (AC 
     renderHook(() => useNearestEntry(beforeCommit));
 
     expect(beforeCommit.moveTo).not.toHaveBeenCalled();
-    expect(beforeCommit.select).not.toHaveBeenCalled();
   });
 
   it("이전 칩의 확정이 남아 있으면 새 칩은 기다린다 (AC 11)", () => {
@@ -149,7 +152,6 @@ describe("useNearestEntry — 칩 진입 시 최근접 대상 자동 선택 (AC 
 
     renderHook(() => useNearestEntry(input));
 
-    expect(input.select).not.toHaveBeenCalled();
     expect(input.moveTo).not.toHaveBeenCalled();
   });
 

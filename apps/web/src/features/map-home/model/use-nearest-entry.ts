@@ -4,12 +4,16 @@ import { nearestTarget } from "./nearest-target";
 import type { ThemeId } from "./theme";
 
 /**
- * 칩 진입 시 최근접 대상 자동 선택 (MSG-451 AC 11~14).
+ * 칩 진입 시 최근접 대상으로 지도 이동 (MSG-451 AC 11~14).
  * 지도 SDK를 import하지 않는다 — 이동은 콜백 주입(RN 경계).
  *
  * 칩을 눌러도 목록만 바뀌고 지도는 그대로여서, 어느 카드가 지금 보고 있는 곳의 것인지
- * 매번 눈으로 찾아야 했다. 칩을 켜는 순간 **지도 중심에서 가장 가까운 대상**으로 옮겨
- * 상세를 열어 준다.
+ * 매번 눈으로 찾아야 했다. 칩을 켜는 순간 **지도 중심에서 가장 가까운 대상**으로 옮겨 준다.
+ *
+ * **옮기기만 하고 고르지는 않는다** (AC 13 개정, 사용자 환류): 초안은 최근접 대상의 상세까지
+ * 열었는데, 칩을 눌렀을 뿐인데 특정 행사가 선택된 채로 화면이 바뀌어 사용자가 고른 것처럼
+ * 보였다. 칩의 목적은 "이 근처에 뭐가 있나"를 보여주는 것이고 어느 것을 볼지는 사용자
+ * 몫이다 — 그래서 선택 콜백을 아예 받지 않는다(줌 명령을 받지 않는 것과 같은 이유).
  *
  * **줌은 건드리지 않는다** (AC 14): 줌 조정은 `use-chip-entry`가 칩별로 이미 하고 있고,
  * 여기서 또 맞추면 두 훅이 같은 지도에 서로 다른 줌을 명령한다. 그래서 `zoomTo`를 아예
@@ -26,7 +30,6 @@ import type { ThemeId } from "./theme";
  * 칩 진입 줌 도달은 확정의 전제 조건이므로 여기서 따로 볼 필요가 없다.
  */
 interface NearestEntryTarget {
-  missionId: number;
   shape: { bbox: Bounds | null };
 }
 
@@ -46,8 +49,6 @@ interface NearestEntryInput {
   listSettled: boolean;
   /** 이동 명령 — 지도 SDK는 호출부(셸)가 감싼다 */
   moveTo: (coords: LatLng) => void;
-  /** 대상 선택 — 좌측 패널이 그 대상 상세로 바뀐다 */
-  select: (missionId: number) => void;
 }
 
 export const useNearestEntry = ({
@@ -57,7 +58,6 @@ export const useNearestEntry = ({
   targets,
   listSettled,
   moveTo,
-  select,
 }: NearestEntryInput): void => {
   /** 이 칩 활성화를 이미 처리했는지 — 칩이 바뀌면 다시 처리한다 */
   const handledChipRef = useRef<ThemeId | null>(null);
@@ -76,22 +76,13 @@ export const useNearestEntry = ({
     handledChipRef.current = activeTheme;
 
     const nearest = nearestTarget(targets, center);
-    // 대상이 없으면 이동도 선택도 하지 않는다 (AC 10)
+    // 대상이 없으면 이동하지 않는다 (AC 10)
     if (nearest === null || nearest.shape.bbox === null) return;
 
-    // 규칙 문서의 억제 조건에 해당(use-chip-entry 선례): moveTo·select는 부모로 데이터를
-    // 올리는 콜백이 아니라 지도 SDK 명령과 선택 스토어 갱신이고, 칩 활성화의 결과가
-    // 비동기(목록 도착·줌 반영)로 도착해 effect가 정위치다
+    // 규칙 문서의 억제 조건에 해당(use-chip-entry 선례): moveTo는 부모로 데이터를 올리는
+    // 콜백이 아니라 지도 SDK 명령이고, 칩 활성화의 결과가 비동기(목록 도착·확정)로
+    // 도착해 effect가 정위치다
     // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
     moveTo(boundsCenter(nearest.shape.bbox));
-    select(nearest.missionId);
-  }, [
-    activeTheme,
-    committedChip,
-    center,
-    targets,
-    listSettled,
-    moveTo,
-    select,
-  ]);
+  }, [activeTheme, committedChip, center, targets, listSettled, moveTo]);
 };

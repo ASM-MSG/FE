@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import type { Bounds, LatLng } from "@/entities/cell";
-import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import type {
   CourseView,
   MissionView,
@@ -12,7 +11,7 @@ import type { DisplayedRegion } from "@/features/region/model/region-panel-store
 
 /**
  * 칩 진입 배선 (MSG-451 — 페이지 300줄 분할).
- * 뷰-레이어 훅: 두 진입 훅(줌+확정 / 최근접 이동+선택)을 순서대로 엮기만 한다.
+ * 뷰-레이어 훅: 두 진입 훅(줌+확정 / 최근접 이동)을 순서대로 엮기만 한다.
  * 파생·판정은 각 model 훅이 소유하고 여기에는 조립만 남는다.
  *
  * 순서는 데이터로 강제된다 — `useChipEntry`가 확정을 마친 칩을 반환하고 최근접 진입이 그것을
@@ -51,8 +50,6 @@ export const useHomeChipEntry = ({
   moveTo,
   commit,
 }: HomeChipEntryInput): void => {
-  const selectMission = useMissionSelectionStore((s) => s.select);
-
   // 칩 활성화 진입 — 칩에 맞는 줌으로 옮기고 그 화면을 1회 확정한다 (MSG-403 AC 6·9).
   // 반환값은 확정을 마친 칩 — 최근접 진입이 이 신호를 기다린다 (MSG-451 검증 재작업 1)
   const committedChip = useChipEntry({
@@ -70,7 +67,7 @@ export const useHomeChipEntry = ({
     [isRouteChip, courseViews, missionViews],
   );
 
-  // 확정 뒤, 지도 중심에서 가장 가까운 대상으로 이동해 상세를 연다 (MSG-451 AC 13)
+  // 확정 뒤, 지도 중심에서 가장 가까운 대상으로 지도를 옮긴다 — 고르지는 않는다 (AC 13)
   useNearestEntry({
     activeTheme,
     committedChip,
@@ -78,6 +75,5 @@ export const useHomeChipEntry = ({
     targets,
     listSettled: !listPending && !listPlaceholder,
     moveTo,
-    select: selectMission,
   });
 };
