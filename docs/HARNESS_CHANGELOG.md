@@ -5,6 +5,7 @@ CLAUDE.md에는 최근 5행만 유지하고, 행이 밀려나면 이 파일로 �
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
+| 2026-08-13 | task-retro 산출 경로 변경 — docs/retro/(레포) → ~/fillmaphtml/(레포 밖, 커밋 없음) | skills/task-retro, skills/fillmap-page-dev, CLAUDE.md | 사용자 결정 — 회고는 개인 학습 자산, 레포 스테이징분은 사용자가 되돌림 |
 | 2026-08-13 | 테스트 템플릿 신설 — 유형 선택 매트릭스(로직/스토어/쿼리 훅/스모크/흐름)와 단정 범위, test-first에 템플릿 선택 의무화, 검증 감사에 템플릿 부합 추가 | skills/page-implementation(+references/test-templates.md), skills/page-verification | MSG-380 — 템플릿 없는 TDD가 무의미 테스트를 양산(사용자 보고). Testing Trophy·공식 가이드 리서치 기반 |
 | 2026-08-13 | 린트 강제 주체 서술 현행화 — eslint → oxlint(자작 토큰 플러그인 + 네이티브 규칙), 우회 감사를 lint 비활성 주석 일반형으로 | skills/page-implementation, skills/page-verification | MSG-386 — oxlint 단일화·TS 7.0.2 상향에 따른 문서-코드 동기화 |
 | 2026-07-15 | 초기 구성 (에이전트 3 + 스킬 4 + vitest 셋업) | 전체 | - |

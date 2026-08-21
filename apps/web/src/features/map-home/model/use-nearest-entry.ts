@@ -71,12 +71,16 @@ export const useNearestEntry = ({
     if (settledChip !== activeTheme) return;
     if (!listSettled || center === null) return;
 
-    // 여기서부터는 이 활성화를 소진한다 — 대상이 없어도 매 렌더 재시도하지 않는다
-    handledChipRef.current = activeTheme;
-
     const nearest = nearestTarget(targets, center);
-    // 대상이 없으면 이동하지 않는다 (AC 10)
+    // 대상이 없으면 이동하지 않고 **활성화도 소진하지 않는다** (AC 10 + codex P1).
+    // 소진해 버리면 나중에 대상이 도착해도 영영 못 움직인다 — 정착 신호만으로는 목록이
+    // 이 화면 기준이라는 보장이 없기 때문이다: 중심이 행정동 밖이면 확정(commit)이
+    // 미뤄지는데 정착은 줌 도달로 먼저 발행되므로, 그 사이 목록은 직전 확정 영역의 것이다.
+    // 실제로 움직였을 때만 소진하면 그 구간에서 빈 목록을 만나도 뒤에 도착한 목록으로 간다.
     if (nearest === null || nearest.shape.bbox === null) return;
+
+    // 여기서부터는 이 활성화를 소진한다 — 이후 이동·줌에는 반응하지 않는다 (AC 11)
+    handledChipRef.current = activeTheme;
 
     // 규칙 문서의 억제 조건에 해당(use-chip-entry 선례): moveTo는 부모로 데이터를 올리는
     // 콜백이 아니라 지도 SDK 명령이고, 칩 활성화의 결과가 비동기(목록 도착·확정)로

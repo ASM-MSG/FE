@@ -88,18 +88,21 @@ const setup = () => {
  * 실제 순서 재현 — commit은 확정 영역을 바꾸므로 목록 쿼리 키가 바뀌고,
  * `keepPreviousData` 탓에 한 박자 동안 직전 영역 목록이 placeholder로 남는다.
  */
+interface RealisticProps extends Props {
+  listPlaceholder: boolean;
+  /** 미지정이면 REGION — 행정동 밖(바다) 재현은 null을 명시한다 */
+  currentRegion?: typeof REGION | null;
+  /** 미지정이면 축제 1건 — 확정 전 빈 목록 재현은 []를 명시한다 */
+  missionViews?: MissionView[];
+}
+
 const setupRealistic = () => {
   const zoomTo = vi.fn();
   const moveTo = vi.fn();
   const commit = vi.fn();
 
   const { rerender } = renderHook(
-    (
-      props: Props & {
-        listPlaceholder: boolean;
-        currentRegion?: typeof REGION | null;
-      },
-    ) =>
+    (props: RealisticProps) =>
       useHomeChipEntry({
         activeTheme: props.activeTheme,
         viewportBounds: props.viewportBounds,
@@ -107,7 +110,7 @@ const setupRealistic = () => {
         viewportZoom: props.viewportZoom,
         currentRegion:
           props.currentRegion === undefined ? REGION : props.currentRegion,
-        missionViews: [FESTIVAL],
+        missionViews: props.missionViews ?? [FESTIVAL],
         courseViews: [COURSE],
         isRouteChip: props.activeTheme === "route",
         listPending: false,
@@ -122,8 +125,7 @@ const setupRealistic = () => {
         viewportZoom: MAP_SCALE_500M_ZOOM,
         viewportBounds: AREA_500M,
         listPlaceholder: false,
-        currentRegion: REGION as typeof REGION | null,
-      },
+      } satisfies RealisticProps as RealisticProps,
     },
   );
 
@@ -212,6 +214,47 @@ describe("useHomeChipEntry — 칩을 갈아탈 때의 진입 순서 (MSG-451)",
     });
     // 확정은 여전히 행정동을 기다린다 — 이동만 풀어 준 것이지 규칙을 바꾼 것이 아니다
     expect(commit).not.toHaveBeenCalled();
+  });
+
+  it("행정동 밖에서 확정 전 목록이 비면 활성화를 소진하지 않는다 — 확정 후 도착한 목록으로 이동 (codex P1)", () => {
+    // 3차 재작업이 만든 회귀: region===null이면 settledChip은 발행되는데 commit은 안 된다.
+    // 그 사이 목록은 **직전 확정 영역** 기준인데, 그게 비어 있으면 활성화만 태우고 끝난다 —
+    // 나중에 행정동이 잡혀 확정·재조회로 대상이 도착해도 이미 늦다 (1차 재작업 버그의 재발)
+    const { moveTo, rerender } = setupRealistic();
+
+    rerender({
+      activeTheme: "festival",
+      viewportZoom: MAP_SCALE_1KM_ZOOM,
+      viewportBounds: AREA_1KM,
+      listPlaceholder: false,
+      currentRegion: null,
+      missionViews: [],
+    });
+    // 줌 도달 — settledChip 발행되지만 확정은 못 한다. 목록은 직전 영역 기준이라 비어 있다
+    rerender({
+      activeTheme: "festival",
+      viewportZoom: MAP_SCALE_500M_ZOOM,
+      viewportBounds: AREA_500M,
+      listPlaceholder: false,
+      currentRegion: null,
+      missionViews: [],
+    });
+    expect(moveTo).not.toHaveBeenCalled();
+
+    // 행정동이 잡혀 확정 → 재조회 → 이 화면 기준 목록 도착
+    rerender({
+      activeTheme: "festival",
+      viewportZoom: MAP_SCALE_500M_ZOOM,
+      viewportBounds: AREA_500M,
+      listPlaceholder: false,
+      currentRegion: REGION,
+      missionViews: [FESTIVAL],
+    });
+
+    expect(moveTo).toHaveBeenCalledExactlyOnceWith({
+      lat: 35.1536,
+      lng: 129.1186,
+    });
   });
 
   it("행정동이 뒤늦게 잡히면 그때 확정된다 — 확정 규칙은 그대로다 (MSG-403 회귀)", () => {
