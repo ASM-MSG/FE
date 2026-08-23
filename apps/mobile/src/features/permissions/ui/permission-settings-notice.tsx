@@ -30,10 +30,17 @@ export const PermissionSettingsNotice = ({
     >
       {message}
     </Text>
+    {/*
+      캡션 텍스트만 감싸는 CTA라 터치 영역이 44dp에 크게 미달한다(11px/줄높이 14px).
+      `checkbox.tsx`가 세운 계산을 그대로 따른다 — hitSlop 12(저장소의 작은 요소 보강
+      표준값)만으로는 14+24=38dp라 모자라, 세로 패딩 4dp를 더해 22+24=46dp를 확보한다.
+      권한 거부에서 빠져나오는 유일한 진입점이라 여기서 놓치면 복구 동선 자체가 막힌다.
+    */}
     <Pressable
       accessibilityRole="button"
       onPress={() => void openAppSettings()}
-      className="active:opacity-60"
+      hitSlop={12}
+      className="py-1 active:opacity-60"
     >
       <Text className="text-fm-caption font-semibold text-primary">
         {PERMISSION_SETTINGS_LABEL}

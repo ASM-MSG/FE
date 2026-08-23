@@ -78,12 +78,23 @@ export const usePushPermissionPrompt = (): PushPromptOutcome => {
         if (!shouldRegisterAfterSettings(noticeShownRef.current, permission)) {
           return;
         }
+        /**
+         * 권한이 켜진 것이 확인된 시점에 **등록 결과를 기다리지 않고** 안내를 내린다
+         * (PR #89 리뷰). 등록이 실패해도 화면에 남는 문구는 "기기 설정에서 알림 권한을
+         * 허용해야 한다"인데, 사용자는 방금 그렇게 하고 돌아왔다 — 실제 원인(등록 실패)과
+         * 다른 원인을 안내하게 된다. `reconcilePushError`가 "권한과 등록 실패는 다른 축"으로
+         * 가른 것과 같은 판단이다.
+         */
+        if (aliveRef.current) setOutcome("none");
         const result = await enablePush(pushDeps);
-        if (!aliveRef.current || result.status !== "enabled") return;
-        noticeShownRef.current = false;
-        setOutcome("none");
+        /**
+         * 재시도 대상에서 빼는 것은 **등록까지 성공했을 때만**이다. 실패했는데 여기서
+         * 지우면 다음 포그라운드 복귀가 재시도할 근거를 잃어, 권한은 있는데 토큰은 영영
+         * 등록되지 않는 상태로 굳는다(프로필 토글이 유일한 복구 경로가 된다).
+         */
+        if (result.status === "enabled") noticeShownRef.current = false;
       } catch {
-        // 판독·등록 실패는 안내를 그대로 두고 다음 복귀에서 다시 시도된다
+        // 판독·등록 실패는 다음 복귀에서 다시 시도된다
       }
     })();
   }, []);
