@@ -20,13 +20,16 @@ export interface ExploreRegionsResult {
  * 죽은 파라미터 + 재사용 시 비로그인 조회 함정이라 제거). 마운트 자체가 "전체 보기"
  * 모드에서만 일어나므로(RegionListView) 별도 활성 조건은 없다.
  * 지도 SDK를 import하지 않는다(RN 경계).
+ *
+ * 응답이 배열에서 커서 페이지(`items`·`hasNext`·`nextCursor`)로 바뀌어(MSG-460 서버 레인)
+ * 첫 페이지 20개만 꺼낸다 — 다음 페이지 이어받기는 MSG-463 몫이다.
  */
 export const useExploreRegionsQuery = (): ExploreRegionsResult => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const query = useQuery({
     ...getExploreRegionsOptions(),
-    select: unwrapEnvelope,
+    select: (response) => unwrapEnvelope(response).items,
     enabled: isAuthenticated,
   });
 

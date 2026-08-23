@@ -184,6 +184,52 @@ export type ConsentSubmitRequestDto = {
     marketing: boolean;
 };
 
+export type ApiResponseDtoEventVideoHelpfulResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventVideoHelpfulResponseDto;
+};
+
+/**
+ * 행사 영상 도움돼요 변경 결과
+ */
+export type EventVideoHelpfulResponseDto = {
+    /**
+     * 처리 후 현재 도움돼요 수
+     */
+    helpfulCount: number;
+    /**
+     * 내가 누른 상태인지
+     */
+    helpfulByMe: boolean;
+};
+
+/**
+ * 행사 알림 구독 토글
+ */
+export type EventNotificationUpdateRequestDto = {
+    /**
+     * 구독 여부 — true 면 ON, false 면 OFF
+     */
+    enabled: boolean;
+};
+
+export type ApiResponseDtoEventNotificationResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventNotificationResponseDto;
+};
+
+/**
+ * 행사 알림 구독 상태
+ */
+export type EventNotificationResponseDto = {
+    /**
+     * 구독 여부 — 구독 행 존재이면서 회차가 예정·진행 중일 때만 true
+     */
+    enabled: boolean;
+};
+
 /**
  * 대표 뱃지 집합 교체 요청 — 배열 순서가 표시 순서, 빈 배열은 전부 해제
  */
@@ -515,6 +561,60 @@ export type PushTokenRequestDto = {
 };
 
 /**
+ * 미션 경유 영상 업로드 확정 요청
+ */
+export type MissionVideoUploadRequestDto = {
+    /**
+     * presigned 발급 때 받은 S3 객체 키. 같은 키로 다시 보내면 멱등하게 처리된다
+     */
+    s3Key: string;
+    /**
+     * 영상 길이(초). 1~30초
+     */
+    durationSec: number;
+    /**
+     * 촬영 시각. 미래 시각은 거부되고(단말 시계 오차 5분 허용), 미션 기간 밖도 거부된다
+     */
+    recordedAt: string;
+};
+
+export type ApiResponseDtoMissionVideoUploadResponseDto = {
+    developCode: number;
+    message: string;
+    data: MissionVideoUploadResponseDto;
+};
+
+/**
+ * 미션 경유 영상 업로드 확정 응답
+ */
+export type MissionVideoUploadResponseDto = {
+    /**
+     * 생성된 영상 ID
+     */
+    videoId: number;
+    /**
+     * 서버가 정한 그 미션의 대표 격자 ID
+     */
+    gridId: string;
+    /**
+     * 영상 처리 상태 (UPLOADED/ENCODING/BLURRING/READY/FAILED)
+     */
+    processingStatus: string;
+    /**
+     * 이 업로드로 대표 격자를 처음 점령했는지 여부. 재시도 응답은 항상 false
+     */
+    occupied: boolean;
+    /**
+     * 이 업로드로 새로 획득한 뱃지 목록 — 없거나 재시도 응답이면 빈 배열
+     */
+    newBadges: Array<EarnedBadgeResponseDto>;
+    /**
+     * 이 업로드로 새로 발급된 스탬프 — 이미 받았거나 재시도 응답이면 빈 배열
+     */
+    completedMissions: Array<CompletedMissionResponseDto>;
+};
+
+/**
  * 친구 요청 생성 요청
  */
 export type FriendRequestCreateRequestDto = {
@@ -538,6 +638,98 @@ export type FriendRequestCreateResponseDto = {
      * PENDING = 요청이 등록돼 상대 수락 대기, ACCEPTED = 상대가 먼저 보낸 요청이 있어 즉시 친구 성립(자동 수락 — FR-8). FE 는 이 값으로 "요청 보냄"과 "친구가 됐어요" 화면을 구분한다.
      */
     status: 'PENDING' | 'ACCEPTED';
+};
+
+/**
+ * 행사 영상 댓글 작성·수정 요청
+ */
+export type EventVideoCommentRequestDto = {
+    /**
+     * 댓글 본문 (1~500자)
+     */
+    content: string;
+};
+
+export type ApiResponseDtoEventVideoCommentResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventVideoCommentResponseDto;
+};
+
+/**
+ * 행사 영상 댓글
+ */
+export type EventVideoCommentResponseDto = {
+    /**
+     * 댓글 ID
+     */
+    commentId: number;
+    /**
+     * 작성자 사용자 ID
+     */
+    authorId: number;
+    /**
+     * 작성자 닉네임
+     */
+    authorNickname: string;
+    /**
+     * 댓글 본문
+     */
+    content: string;
+    /**
+     * 작성 시각
+     */
+    createdAt: string;
+};
+
+/**
+ * 행사 영상 업로드 확정 요청
+ */
+export type EventVideoUploadRequestDto = {
+    /**
+     * presigned 발급 때 받은 S3 객체 키. 같은 키로 다시 보내면 멱등하게 처리된다
+     */
+    s3Key: string;
+    /**
+     * 영상 길이(초). 1~30초
+     */
+    durationSec: number;
+    /**
+     * 촬영 시각. 미래 시각은 거부된다(단말 시계 오차 5분 허용)
+     */
+    recordedAt: string;
+};
+
+export type ApiResponseDtoEventVideoUploadResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventVideoUploadResponseDto;
+};
+
+/**
+ * 행사 영상 업로드 확정 응답
+ */
+export type EventVideoUploadResponseDto = {
+    /**
+     * 생성된 영상 ID
+     */
+    videoId: number;
+    /**
+     * 서버가 지정한 대표 격자 ID
+     */
+    gridId: string;
+    /**
+     * 영상 처리 상태 (UPLOADED/ENCODING/BLURRING/READY/FAILED)
+     */
+    processingStatus: string;
+    /**
+     * 이 업로드로 대표 격자를 처음 점령했는지 여부. 재시도 응답은 항상 false
+     */
+    occupied: boolean;
+    /**
+     * 이 업로드로 새로 획득한 뱃지 목록 — 없거나 재시도 응답이면 빈 배열
+     */
+    newBadges: Array<EarnedBadgeResponseDto>;
 };
 
 /**
@@ -811,7 +1003,7 @@ export type CategoryPreferenceDto = {
     /**
      * 알림 카테고리
      */
-    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY' | 'FRIEND' | 'MISSION_NEARBY';
+    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY' | 'FRIEND' | 'MISSION_NEARBY' | 'EVENT';
     /**
      * 수신 여부 — off 행 부재면 true (opt-out 기본 전부 on)
      */
@@ -819,11 +1011,11 @@ export type CategoryPreferenceDto = {
 };
 
 /**
- * 알림 설정 — 전 카테고리(7종)의 수신 상태 (저장 행 없는 카테고리는 true)
+ * 알림 설정 — 전 카테고리(8종)의 수신 상태 (저장 행 없는 카테고리는 true)
  */
 export type NotificationPreferenceResponseDto = {
     /**
-     * 카테고리별 수신 상태 (BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY 고정 7종 — MODERATION 은 설정 대상이 아니라 없다)
+     * 카테고리별 수신 상태 (BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY·EVENT 고정 8종 — MODERATION 은 설정 대상이 아니라 없다)
      */
     preferences: Array<CategoryPreferenceDto>;
 };
@@ -1168,10 +1360,28 @@ export type RegionResponseDto = {
     parentCode: string | null;
 };
 
-export type ApiResponseDtoListRegionGridCountResponseDto = {
+export type ApiResponseDtoRegionExplorePageResponseDto = {
     developCode: number;
     message: string;
-    data: Array<RegionGridCountResponseDto>;
+    data: RegionExplorePageResponseDto;
+};
+
+/**
+ * 전체 지역 개인화 커서 페이지
+ */
+export type RegionExplorePageResponseDto = {
+    /**
+     * 현재 페이지 행정동 목록. 최대 20개
+     */
+    items: Array<RegionGridCountResponseDto>;
+    /**
+     * 다음 페이지 존재 여부
+     */
+    hasNext: boolean;
+    /**
+     * 다음 요청에 그대로 전달할 불투명 커서
+     */
+    nextCursor: string | null;
 };
 
 /**
@@ -1233,7 +1443,7 @@ export type NotificationItemResponseDto = {
     /**
      * 알림 카테고리
      */
-    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY' | 'FRIEND' | 'MODERATION';
+    category: 'BADGE' | 'HOTZONE' | 'REMIND' | 'VIDEO' | 'WEEKLY' | 'FRIEND' | 'MODERATION' | 'EVENT';
     /**
      * 알림 제목
      */
@@ -1332,7 +1542,7 @@ export type MissionDetailResponseDto = {
      */
     mission: MissionResponseDto;
     /**
-     * 내 진행도 — 목록 진행도(GET /api/missions/progress)와 같은 계산 (MSG-398 D8)
+     * 내 진행도 — 목록 진행도(GET /api/missions/progress)와 같은 계산 (MSG-398 D8). 비로그인 조회면 키는 그대로 있고 값이 null 이다 (MSG-454)
      */
     progress: MissionProgressResponseDto;
     /**
@@ -1481,7 +1691,7 @@ export type SpotStats = {
      */
     gridId: string;
     /**
-     * 미션 기간 안에 촬영한 내 영상이 있는지 — 진행도와 같은 술어
+     * 미션 기간 안에 촬영한 내 영상이 있는지 — 진행도와 같은 술어. 비로그인 조회면 항상 false (MSG-454)
      */
     visited: boolean;
     /**
@@ -1760,6 +1970,42 @@ export type GridVideoResponseDto = {
     createdAt: string;
 };
 
+export type ApiResponseDtoListGridMissionResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<GridMissionResponseDto>;
+};
+
+/**
+ * 격자가 대표 격자인 미션
+ */
+export type GridMissionResponseDto = {
+    /**
+     * 미션 ID — 상세(GET /api/missions/{missionId})로 넘어가는 키
+     */
+    missionId: number;
+    /**
+     * 미션 종류 — EVENT(지역축제) 또는 POPUP(팝업스토어)
+     */
+    type: string;
+    /**
+     * 미션 이름
+     */
+    title: string;
+    /**
+     * 시작 시각
+     */
+    startAt: string | null;
+    /**
+     * 종료 시각
+     */
+    endAt: string | null;
+    /**
+     * 미션 기간 안에 촬영된 전역 공개 영상 수 — 미션 상세의 videoCount 와 같은 술어다
+     */
+    videoCount: number;
+};
+
 export type ApiResponseDtoGridHourlyUploadResponseDto = {
     developCode: number;
     message: string;
@@ -1792,6 +2038,54 @@ export type HourlyUploadCountResponseDto = {
      * 그 시간대의 전역 공개 영상 수. 업로드가 없으면 0
      */
     count: number;
+};
+
+export type ApiResponseDtoListGridEventLocationResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<GridEventLocationResponseDto>;
+};
+
+/**
+ * 격자 역조회 결과 하나 — 회차와 해석된 행사 위치
+ */
+export type GridEventLocationResponseDto = {
+    /**
+     * 소속 행사 회차 id
+     */
+    occurrenceId: number;
+    /**
+     * 행사명
+     */
+    occurrenceTitle: string;
+    /**
+     * 서버 시각 기준 파생 상태 — 상세와 같은 계산
+     */
+    occurrenceStatus: 'UPCOMING' | 'LIVE' | 'UPLOAD_GRACE' | 'ARCHIVED';
+    /**
+     * 해석된 행사 위치 id — 피드 진입 키
+     */
+    locationId: number;
+    /**
+     * 위치 이름
+     */
+    locationName: string;
+    /**
+     * 대표 격자 — 피드(MSG-440)가 영상을 붙일 격자
+     */
+    representativeGridId: string;
+    /**
+     * 대표 격자가 속한 구역 이름. 구역 밖이면 null
+     */
+    zoneName: string | null;
+    /**
+     * 구역 안 위치 코드. 구역 밖이면 null
+     */
+    zoneCell: string | null;
+    /**
+     * 대표 격자의 행정동 이름 — 구역 밖 표시명 폴백. 무귀속이면 null
+     */
+    regionName: string | null;
 };
 
 export type ApiResponseDtoGridCoverVideoResponseDto = {
@@ -2128,6 +2422,224 @@ export type FriendCodeResponseDto = {
     friendCode: string;
 };
 
+export type ApiResponseDtoEventVideoDetailResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventVideoDetailResponseDto;
+};
+
+/**
+ * 행사 영상 댓글 페이지 (keyset 커서 페이지네이션)
+ */
+export type EventVideoCommentPageResponseDto = {
+    /**
+     * 이 페이지의 댓글 (오래된 순). 댓글이 없으면 빈 배열
+     */
+    comments: Array<EventVideoCommentResponseDto>;
+    /**
+     * 다음 페이지 존재 여부 (lookahead 판정)
+     */
+    hasNext: boolean;
+    /**
+     * 다음 페이지 조회용 opaque 커서. 다음 요청 cursor 파라미터에 그대로 넣는다. 마지막 페이지면 null
+     */
+    nextCursor: string | null;
+};
+
+/**
+ * 행사 영상 상세
+ */
+export type EventVideoDetailResponseDto = {
+    /**
+     * 영상 ID
+     */
+    videoId: number;
+    /**
+     * 소속 행사 회차 ID
+     */
+    occurrenceId: number;
+    /**
+     * 요청 시점 회차 상태 (UPCOMING/LIVE/UPLOAD_GRACE/ARCHIVED)
+     */
+    occurrenceStatus: string;
+    /**
+     * 소속 행사 위치 ID
+     */
+    locationId: number;
+    /**
+     * 소속 행사 위치 이름
+     */
+    locationName: string;
+    /**
+     * 영상이 붙은 대표 격자 ID
+     */
+    representativeGridId: string;
+    /**
+     * 대표 격자가 속한 구역 이름. 구역 밖이면 null — 이때 라벨은 regionName 이다
+     */
+    zoneName: string | null;
+    /**
+     * 구역 내 위치 코드 "{행}-{열}". zoneName 과 항상 쌍이라 구역 밖이면 함께 null
+     */
+    zoneCell: string | null;
+    /**
+     * 대표 격자 중심점 행정동 이름 — 구역 밖 격자의 폴백 라벨. 무귀속이면 null
+     */
+    regionName: string | null;
+    /**
+     * 재생본 presigned GET URL
+     */
+    playbackUrl: string;
+    /**
+     * 영상 길이(초)
+     */
+    durationSec: number;
+    /**
+     * 촬영 시각
+     */
+    recordedAt: string;
+    /**
+     * 업로드 시각
+     */
+    createdAt: string;
+    /**
+     * 작성자 닉네임
+     */
+    uploaderNickname: string;
+    /**
+     * 댓글·도움돼요 입력 UI 를 비활성화할지 여부 — 아카이브 전환(행사 종료 + 30일)부터 true
+     */
+    interactionLocked: boolean;
+    /**
+     * 도움돼요 수
+     */
+    helpfulCount: number;
+    /**
+     * 내가 도움돼요를 누른 상태인지. 비로그인 조회는 항상 false
+     */
+    helpfulByMe: boolean;
+    /**
+     * 댓글 수
+     */
+    commentCount: number;
+    /**
+     * 댓글 첫 페이지 (오래된 순 20건)
+     */
+    comments: EventVideoCommentPageResponseDto;
+};
+
+export type ApiResponseDtoEventVideoCommentPageResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventVideoCommentPageResponseDto;
+};
+
+export type ApiResponseDtoListEventOccurrenceChipResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<EventOccurrenceChipResponseDto>;
+};
+
+/**
+ * 뷰포트에 걸친 행사 회차 하나 — 지도 홈 칩 재료
+ */
+export type EventOccurrenceChipResponseDto = {
+    /**
+     * 행사 회차 id
+     */
+    occurrenceId: number;
+    /**
+     * 행사명 — 칩 라벨 재료
+     */
+    title: string;
+    /**
+     * 대상 지역 시 이름 — 시 칩 묶음 기준
+     */
+    cityName: string;
+    /**
+     * 행사 시작 시각
+     */
+    startsAt: string;
+    /**
+     * 행사 종료 시각
+     */
+    endsAt: string;
+    /**
+     * 서버 시각 기준 파생 상태 — 이 목록에는 두 값만 담긴다
+     */
+    status: 'UPCOMING' | 'LIVE';
+};
+
+export type ApiResponseDtoEventOccurrenceDetailResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventOccurrenceDetailResponseDto;
+};
+
+/**
+ * 행사 회차 상세 — 행사방 헤더
+ */
+export type EventOccurrenceDetailResponseDto = {
+    /**
+     * 행사 회차 id
+     */
+    occurrenceId: number;
+    /**
+     * 행사 시리즈 id — 이전 회차 묶음 기준
+     */
+    seriesId: number;
+    /**
+     * 행사명
+     */
+    title: string;
+    /**
+     * 행사 시작 시각
+     */
+    startsAt: string;
+    /**
+     * 행사 종료 시각
+     */
+    endsAt: string;
+    /**
+     * 영상 업로드 마감 — 종료 30일 후 파생값
+     */
+    uploadClosesAt: string;
+    /**
+     * 서버 시각 기준 파생 상태
+     */
+    status: 'UPCOMING' | 'LIVE' | 'UPLOAD_GRACE' | 'ARCHIVED';
+    /**
+     * 알림 구독 여부 — 구독 행 존재이면서 회차가 예정·진행 중일 때만 true. 비로그인은 항상 false 고, 종료된 회차는 구독 행이 남아 있어도 false 다
+     */
+    notificationOn: boolean;
+    /**
+     * 같은 시리즈의 지난 회차 — 최신순. 없으면 빈 배열
+     */
+    previousOccurrences: Array<PreviousOccurrenceDto>;
+};
+
+/**
+ * 같은 시리즈의 지난 회차 하나
+ */
+export type PreviousOccurrenceDto = {
+    /**
+     * 행사 회차 id
+     */
+    occurrenceId: number;
+    /**
+     * 행사명
+     */
+    title: string;
+    /**
+     * 행사 시작 시각
+     */
+    startsAt: string;
+    /**
+     * 행사 종료 시각
+     */
+    endsAt: string;
+};
+
 export type ApiResponseDtoEventViewerCountResponseDto = {
     developCode: number;
     message: string;
@@ -2142,6 +2654,112 @@ export type EventViewerCountResponseDto = {
      * 현재 열람 인원 — 마지막 heartbeat 가 90초 이내인 고유 세션 수. 0 은 아무도 없음(표시), null 은 캐시 장애(숨김)
      */
     viewerCount: number | null;
+};
+
+export type ApiResponseDtoListEventLocationResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<EventLocationResponseDto>;
+};
+
+/**
+ * 행사 위치 하나 — 영역 격자·대표 격자·표시명 재료·영상 수
+ */
+export type EventLocationResponseDto = {
+    /**
+     * 행사 위치 id — 위치별 영상 피드 진입 키
+     */
+    locationId: number;
+    /**
+     * 위치 이름
+     */
+    name: string;
+    /**
+     * 위치 유형 — 표시 라벨 변환은 FE 몫
+     */
+    type: 'POPUP' | 'EXPERIENCE_ZONE' | 'PARADE' | 'PHOTO_ZONE' | 'ETC';
+    /**
+     * 운영 시간 표시 문자열
+     */
+    operatingHours: string | null;
+    /**
+     * 영역을 구성하는 격자 전체 — FE 영역 채색 재료
+     */
+    gridIds: Array<string>;
+    /**
+     * 대표 격자 — 이 위치의 영상이 붙는 단 하나의 격자
+     */
+    representativeGridId: string;
+    /**
+     * 대표 격자가 속한 구역 이름. 구역 밖이면 null
+     */
+    zoneName: string | null;
+    /**
+     * 구역 안 위치 코드. 구역 밖이면 null
+     */
+    zoneCell: string | null;
+    /**
+     * 대표 격자의 행정동 이름 — 구역 밖 표시명 폴백. 무귀속이면 null
+     */
+    regionName: string | null;
+    /**
+     * 이 위치의 영상 수 — 조회 시점 실측(전역 노출 게이트 통과분)
+     */
+    videoCount: number;
+};
+
+export type ApiResponseDtoEventLocationVideoPageResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventLocationVideoPageResponseDto;
+};
+
+/**
+ * 위치별 영상 피드 페이지 (keyset 커서 페이지네이션)
+ */
+export type EventLocationVideoPageResponseDto = {
+    /**
+     * 이 페이지의 영상. 조건에 맞는 영상이 없으면 빈 배열
+     */
+    videos: Array<EventLocationVideoResponseDto>;
+    /**
+     * 다음 페이지 존재 여부 (lookahead 판정)
+     */
+    hasNext: boolean;
+    /**
+     * 다음 페이지 조회용 opaque 커서. 다음 요청 cursor 파라미터에 그대로 넣는다. 마지막 페이지면 null
+     */
+    nextCursor: string | null;
+};
+
+/**
+ * 위치별 영상 피드 항목
+ */
+export type EventLocationVideoResponseDto = {
+    /**
+     * 영상 ID — 상세 진입 키
+     */
+    videoId: number;
+    /**
+     * 썸네일 presigned GET URL
+     */
+    thumbnailUrl: string;
+    /**
+     * 영상 길이(초)
+     */
+    durationSec: number;
+    /**
+     * 업로드 시각
+     */
+    createdAt: string;
+    /**
+     * 도움돼요 수
+     */
+    helpfulCount: number;
+    /**
+     * 댓글 수
+     */
+    commentCount: number;
 };
 
 export type ApiResponseDtoListRegionVideoResponseDto = {
@@ -2629,6 +3247,66 @@ export type SubmitConsentsResponses = {
 
 export type SubmitConsentsResponse = SubmitConsentsResponses[keyof SubmitConsentsResponses];
 
+export type RemoveHelpfulData = {
+    body?: never;
+    path: {
+        /**
+         * 영상 id
+         */
+        videoId: number;
+    };
+    query?: never;
+    url: '/api/event-videos/{videoId}/helpful';
+};
+
+export type RemoveHelpfulResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventVideoHelpfulResponseDto;
+};
+
+export type RemoveHelpfulResponse = RemoveHelpfulResponses[keyof RemoveHelpfulResponses];
+
+export type AddHelpfulData = {
+    body?: never;
+    path: {
+        /**
+         * 영상 id
+         */
+        videoId: number;
+    };
+    query?: never;
+    url: '/api/event-videos/{videoId}/helpful';
+};
+
+export type AddHelpfulResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventVideoHelpfulResponseDto;
+};
+
+export type AddHelpfulResponse = AddHelpfulResponses[keyof AddHelpfulResponses];
+
+export type UpdateSubscriptionData = {
+    body: EventNotificationUpdateRequestDto;
+    path: {
+        occurrenceId: number;
+    };
+    query?: never;
+    url: '/api/event-occurrences/{occurrenceId}/notification';
+};
+
+export type UpdateSubscriptionResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventNotificationResponseDto;
+};
+
+export type UpdateSubscriptionResponse = UpdateSubscriptionResponses[keyof UpdateSubscriptionResponses];
+
 export type ReplaceFeaturedData = {
     body: FeaturedBadgeRequestDto;
     path?: never;
@@ -2763,6 +3441,57 @@ export type RegisterResponses = {
     200: unknown;
 };
 
+export type GetMissionVideosData = {
+    body?: never;
+    path: {
+        /**
+         * 미션 ID
+         */
+        missionId: number;
+    };
+    query?: {
+        /**
+         * 직전 응답의 nextCursor (opaque). 생략하면 첫 페이지
+         */
+        cursor?: string;
+        /**
+         * 페이지 크기 (1~50, 기본 20)
+         */
+        size?: number;
+    };
+    url: '/api/missions/{missionId}/videos';
+};
+
+export type GetMissionVideosResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoGridVideoPageResponseDto;
+};
+
+export type GetMissionVideosResponse = GetMissionVideosResponses[keyof GetMissionVideosResponses];
+
+export type UploadMissionVideoData = {
+    body: MissionVideoUploadRequestDto;
+    path: {
+        /**
+         * 미션 ID
+         */
+        missionId: number;
+    };
+    query?: never;
+    url: '/api/missions/{missionId}/videos';
+};
+
+export type UploadMissionVideoResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoMissionVideoUploadResponseDto;
+};
+
+export type UploadMissionVideoResponse = UploadMissionVideoResponses[keyof UploadMissionVideoResponses];
+
 export type RequestData = {
     body: FriendRequestCreateRequestDto;
     path?: never;
@@ -2810,6 +3539,116 @@ export type AcceptResponses = {
      */
     200: unknown;
 };
+
+export type GetCommentsData = {
+    body?: never;
+    path: {
+        /**
+         * 영상 id
+         */
+        videoId: number;
+    };
+    query?: {
+        /**
+         * 직전 응답의 nextCursor. 첫 페이지는 생략
+         */
+        cursor?: string;
+        /**
+         * 페이지 크기 (1~50, 기본 20)
+         */
+        size?: number;
+    };
+    url: '/api/event-videos/{videoId}/comments';
+};
+
+export type GetCommentsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventVideoCommentPageResponseDto;
+};
+
+export type GetCommentsResponse = GetCommentsResponses[keyof GetCommentsResponses];
+
+export type CreateCommentData = {
+    body: EventVideoCommentRequestDto;
+    path: {
+        /**
+         * 영상 id
+         */
+        videoId: number;
+    };
+    query?: never;
+    url: '/api/event-videos/{videoId}/comments';
+};
+
+export type CreateCommentResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventVideoCommentResponseDto;
+};
+
+export type CreateCommentResponse = CreateCommentResponses[keyof CreateCommentResponses];
+
+export type GetLocationVideosData = {
+    body?: never;
+    path: {
+        /**
+         * 행사 회차 id
+         */
+        occurrenceId: number;
+        /**
+         * 행사 위치 id
+         */
+        locationId: number;
+    };
+    query?: {
+        /**
+         * 직전 응답의 nextCursor. 첫 페이지는 생략
+         */
+        cursor?: string;
+        /**
+         * 페이지 크기 (1~50, 기본 20)
+         */
+        size?: number;
+    };
+    url: '/api/event-occurrences/{occurrenceId}/locations/{locationId}/videos';
+};
+
+export type GetLocationVideosResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventLocationVideoPageResponseDto;
+};
+
+export type GetLocationVideosResponse = GetLocationVideosResponses[keyof GetLocationVideosResponses];
+
+export type Upload1Data = {
+    body: EventVideoUploadRequestDto;
+    path: {
+        /**
+         * 행사 회차 id
+         */
+        occurrenceId: number;
+        /**
+         * 행사 위치 id
+         */
+        locationId: number;
+    };
+    query?: never;
+    url: '/api/event-occurrences/{occurrenceId}/locations/{locationId}/videos';
+};
+
+export type Upload1Responses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventVideoUploadResponseDto;
+};
+
+export type Upload1Response = Upload1Responses[keyof Upload1Responses];
 
 export type HeartbeatData = {
     body?: never;
@@ -3132,6 +3971,54 @@ export type UpdateResponses = {
 
 export type UpdateResponse = UpdateResponses[keyof UpdateResponses];
 
+export type DeleteCommentData = {
+    body?: never;
+    path: {
+        /**
+         * 영상 id
+         */
+        videoId: number;
+        /**
+         * 댓글 id
+         */
+        commentId: number;
+    };
+    query?: never;
+    url: '/api/event-videos/{videoId}/comments/{commentId}';
+};
+
+export type DeleteCommentResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type UpdateCommentData = {
+    body: EventVideoCommentRequestDto;
+    path: {
+        /**
+         * 영상 id
+         */
+        videoId: number;
+        /**
+         * 댓글 id
+         */
+        commentId: number;
+    };
+    query?: never;
+    url: '/api/event-videos/{videoId}/comments/{commentId}';
+};
+
+export type UpdateCommentResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventVideoCommentResponseDto;
+};
+
+export type UpdateCommentResponse = UpdateCommentResponses[keyof UpdateCommentResponses];
+
 export type GetZonesData = {
     body?: never;
     path?: never;
@@ -3363,7 +4250,12 @@ export type ReverseGeocodeResponse = ReverseGeocodeResponses[keyof ReverseGeocod
 export type GetExploreRegionsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * 직전 응답의 nextCursor. 첫 페이지는 생략
+         */
+        cursor?: string;
+    };
     url: '/api/regions/explore';
 };
 
@@ -3371,7 +4263,7 @@ export type GetExploreRegionsResponses = {
     /**
      * OK
      */
-    200: ApiResponseDtoListRegionGridCountResponseDto;
+    200: ApiResponseDtoRegionExplorePageResponseDto;
 };
 
 export type GetExploreRegionsResponse = GetExploreRegionsResponses[keyof GetExploreRegionsResponses];
@@ -3469,36 +4361,6 @@ export type GetMissionDetailResponses = {
 };
 
 export type GetMissionDetailResponse = GetMissionDetailResponses[keyof GetMissionDetailResponses];
-
-export type GetMissionVideosData = {
-    body?: never;
-    path: {
-        /**
-         * 미션 ID
-         */
-        missionId: number;
-    };
-    query?: {
-        /**
-         * 직전 응답의 nextCursor (opaque). 생략하면 첫 페이지
-         */
-        cursor?: string;
-        /**
-         * 페이지 크기 (1~50, 기본 20)
-         */
-        size?: number;
-    };
-    url: '/api/missions/{missionId}/videos';
-};
-
-export type GetMissionVideosResponses = {
-    /**
-     * OK
-     */
-    200: ApiResponseDtoGridVideoPageResponseDto;
-};
-
-export type GetMissionVideosResponse = GetMissionVideosResponses[keyof GetMissionVideosResponses];
 
 export type GetMyProgressData = {
     body?: never;
@@ -3745,6 +4607,27 @@ export type GetGridVideosResponses = {
 
 export type GetGridVideosResponse = GetGridVideosResponses[keyof GetGridVideosResponses];
 
+export type GetMissionsByGridData = {
+    body?: never;
+    path: {
+        /**
+         * 격자 id — "{gridY}_{gridX}" 포맷
+         */
+        gridId: string;
+    };
+    query?: never;
+    url: '/api/grids/{gridId}/missions';
+};
+
+export type GetMissionsByGridResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListGridMissionResponseDto;
+};
+
+export type GetMissionsByGridResponse = GetMissionsByGridResponses[keyof GetMissionsByGridResponses];
+
 export type GetGridHourlyUploadsData = {
     body?: never;
     path: {
@@ -3765,6 +4648,27 @@ export type GetGridHourlyUploadsResponses = {
 };
 
 export type GetGridHourlyUploadsResponse = GetGridHourlyUploadsResponses[keyof GetGridHourlyUploadsResponses];
+
+export type GetEventLocationsByGridData = {
+    body?: never;
+    path: {
+        /**
+         * 격자 id — "{gridY}_{gridX}" 포맷
+         */
+        gridId: string;
+    };
+    query?: never;
+    url: '/api/grids/{gridId}/event-locations';
+};
+
+export type GetEventLocationsByGridResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListGridEventLocationResponseDto;
+};
+
+export type GetEventLocationsByGridResponse = GetEventLocationsByGridResponses[keyof GetEventLocationsByGridResponses];
 
 export type GetGridCoverData = {
     body?: never;
@@ -4017,6 +4921,81 @@ export type GetMyFriendCodeResponses = {
 
 export type GetMyFriendCodeResponse = GetMyFriendCodeResponses[keyof GetMyFriendCodeResponses];
 
+export type GetVideoDetailData = {
+    body?: never;
+    path: {
+        /**
+         * 영상 id
+         */
+        videoId: number;
+    };
+    query?: never;
+    url: '/api/event-videos/{videoId}';
+};
+
+export type GetVideoDetailResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventVideoDetailResponseDto;
+};
+
+export type GetVideoDetailResponse = GetVideoDetailResponses[keyof GetVideoDetailResponses];
+
+export type GetOccurrencesInViewportData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+    };
+    url: '/api/event-occurrences';
+};
+
+export type GetOccurrencesInViewportResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListEventOccurrenceChipResponseDto;
+};
+
+export type GetOccurrencesInViewportResponse = GetOccurrencesInViewportResponses[keyof GetOccurrencesInViewportResponses];
+
+export type GetOccurrenceDetailData = {
+    body?: never;
+    path: {
+        /**
+         * 행사 회차 id
+         */
+        occurrenceId: number;
+    };
+    query?: never;
+    url: '/api/event-occurrences/{occurrenceId}';
+};
+
+export type GetOccurrenceDetailResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventOccurrenceDetailResponseDto;
+};
+
+export type GetOccurrenceDetailResponse = GetOccurrenceDetailResponses[keyof GetOccurrenceDetailResponses];
+
 export type GetViewerCountData = {
     body?: never;
     path: {
@@ -4034,6 +5013,27 @@ export type GetViewerCountResponses = {
 };
 
 export type GetViewerCountResponse = GetViewerCountResponses[keyof GetViewerCountResponses];
+
+export type GetLocationsData = {
+    body?: never;
+    path: {
+        /**
+         * 행사 회차 id
+         */
+        occurrenceId: number;
+    };
+    query?: never;
+    url: '/api/event-occurrences/{occurrenceId}/locations';
+};
+
+export type GetLocationsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListEventLocationResponseDto;
+};
+
+export type GetLocationsResponse = GetLocationsResponses[keyof GetLocationsResponses];
 
 export type GetRegionVideosData = {
     body?: never;
