@@ -25,3 +25,20 @@ export const decidePushPrompt = (
     : permission === "denied"
       ? "notice"
       : "skip";
+
+/**
+ * 설정 왕복에서 돌아온 뒤 등록할지 (**push 전 codex 리뷰 P1**).
+ *
+ * 완료 화면에서 권한을 거부한 사용자가 [설정 열기]로 나가 권한을 켜고 돌아오는 경로는
+ * 종전에 **끊겨 있었다**: 안내는 그대로 남고 토큰 등록도 일어나지 않아, 완료 화면이 약속한
+ * 알림이 끝내 오지 않았다. `decidePushPrompt("granted")`가 `skip`인 탓인데, 그 판정의
+ * 전제("granted인데 토큰이 없으면 사용자가 토글로 끈 것")가 **이 경로에서만 거짓**이다 —
+ * 사용자는 방금 알림을 켜려고 설정까지 다녀왔다.
+ *
+ * 두 상태를 가르는 것이 `noticeShown`이다. 안내를 띄운 적 없는 사용자에게는 아무 일도
+ * 일어나지 않으므로 D3("업로드가 사용자의 OFF 결정을 뒤집지 않는다")는 그대로 지켜진다.
+ */
+export const shouldRegisterAfterSettings = (
+  noticeShown: boolean,
+  permission: PermissionState,
+): boolean => noticeShown && permission === "granted";

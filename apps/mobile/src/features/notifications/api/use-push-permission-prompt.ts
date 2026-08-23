@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
-import { decidePushPrompt } from "../model/push-prompt";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAppForeground } from "../../../shared/use-app-foreground";
+import {
+  decidePushPrompt,
+  shouldRegisterAfterSettings,
+} from "../model/push-prompt";
 import { readPermissionStatus } from "./notifications-adapter";
 import { enablePush } from "./push-registration-flow";
 import { pushDeps } from "./use-push-registration";
@@ -28,29 +32,63 @@ export type PushPromptOutcome = "none" | "settings-needed";
  */
 export const usePushPermissionPrompt = (): PushPromptOutcome => {
   const [outcome, setOutcome] = useState<PushPromptOutcome>("none");
+  const aliveRef = useRef(true);
+  /**
+   * 이 화면이 설정 안내를 띄운 적이 있는가 — 복귀 후 등록 여부의 조건이다(codex P1).
+   * state가 아니라 ref인 이유: 포그라운드 콜백은 마운트 시점에 고정되므로 state를 읽으면
+   * 낡은 값을 본다.
+   */
+  const noticeShownRef = useRef(false);
+
+  const showNotice = useCallback(() => {
+    noticeShownRef.current = true;
+    if (aliveRef.current) setOutcome("settings-needed");
+  }, []);
 
   useEffect(() => {
-    let alive = true;
+    aliveRef.current = true;
     void (async () => {
       try {
         const decision = decidePushPrompt(await readPermissionStatus());
         if (decision === "skip") return;
         if (decision === "notice") {
-          if (alive) setOutcome("settings-needed");
+          showNotice();
           return;
         }
         const result = await enablePush(pushDeps);
-        if (alive && result.status === "denied") {
-          setOutcome("settings-needed");
-        }
+        if (result.status === "denied") showNotice();
       } catch {
         // 네이티브 모듈이 빠진 빌드 — 푸시 없음까지만 퇴화시키고 안내는 띄우지 않는다
       }
     })();
     return () => {
-      alive = false;
+      aliveRef.current = false;
     };
+  }, [showNotice]);
+
+  /**
+   * 설정 왕복 복귀 (codex P1) — 우리가 [설정 열기]로 내보낸 사용자가 권한을 켜고 돌아오면
+   * **그때 등록한다**. 이 배선이 없으면 안내가 남은 채 토큰도 등록되지 않아, 완료 화면이
+   * 약속한 알림이 끝내 오지 않는다. 프로필 토글이 기준 13에서 같은 이유로 재판독을 붙였다.
+   */
+  const handleForeground = useCallback(() => {
+    void (async () => {
+      try {
+        const permission = await readPermissionStatus();
+        if (!shouldRegisterAfterSettings(noticeShownRef.current, permission)) {
+          return;
+        }
+        const result = await enablePush(pushDeps);
+        if (!aliveRef.current || result.status !== "enabled") return;
+        noticeShownRef.current = false;
+        setOutcome("none");
+      } catch {
+        // 판독·등록 실패는 안내를 그대로 두고 다음 복귀에서 다시 시도된다
+      }
+    })();
   }, []);
+
+  useAppForeground(handleForeground);
 
   return outcome;
 };
