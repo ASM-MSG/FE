@@ -23,6 +23,11 @@ export interface ExploreRegionsResult {
  *
  * 응답이 배열에서 커서 페이지(`items`·`hasNext`·`nextCursor`)로 바뀌어(MSG-460 서버 레인)
  * 첫 페이지 20개만 꺼낸다 — 다음 페이지 이어받기는 MSG-463 몫이다.
+ *
+ * 그때까지 리스트는 21번째 지역부터 **안내 없이 잘린다**(`hasNext`가 true여도 UI에 표시가
+ * 없다). `hasNext`·`nextCursor`를 버리는 것은 누락이 아니라 이 한 단계의 의도다 — 되살리지
+ * 말고 MSG-463에서 `getExploreRegionsInfiniteOptions`로 훅째 교체하라. 결과 타입에 지금
+ * 쓰지 않는 `hasNext`를 미리 싣지 않는 이유도 같다(위 `enabled` 죽은 파라미터 제거와 같은 판단).
  */
 export const useExploreRegionsQuery = (): ExploreRegionsResult => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
