@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, ApproveData, ApproveResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetConsentStatusData, GetConsentStatusResponses, GetDistrictsData, GetDistrictsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetInboxData, GetInboxResponses, GetMeData, GetMeResponses, GetMissionAggregatesData, GetMissionAggregatesResponses, GetMissionDetailData, GetMissionDetailResponses, GetMissionVideosData, GetMissionVideosResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetMyProgressData, GetMyProgressResponses, GetNationalStatData, GetNationalStatResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUnreadCountData, GetUnreadCountResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetViewerCountData, GetViewerCountResponses, GetZonesData, GetZonesResponses, HeartbeatData, HeartbeatResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, MarkAllReadData, MarkAllReadResponses, MarkReadData, MarkReadResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, SubmitConsentsData, SubmitConsentsResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponses, UpdateMarketingConsentData, UpdateMarketingConsentResponses, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileImageData, UpdateProfileImageResponses, UpdateResponses, UploadData, UploadResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, AddHelpfulData, AddHelpfulResponses, ApproveData, ApproveResponses, CreateCommentData, CreateCommentResponses, DeleteCommentData, DeleteCommentResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetCommentsData, GetCommentsResponses, GetConsentStatusData, GetConsentStatusResponses, GetDistrictsData, GetDistrictsResponses, GetEventLocationsByGridData, GetEventLocationsByGridResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZonesData, GetHotZonesResponses, GetInboxData, GetInboxResponses, GetLocationsData, GetLocationsResponses, GetLocationVideosData, GetLocationVideosResponses, GetMeData, GetMeResponses, GetMissionAggregatesData, GetMissionAggregatesResponses, GetMissionDetailData, GetMissionDetailResponses, GetMissionsByGridData, GetMissionsByGridResponses, GetMissionVideosData, GetMissionVideosResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetMyProgressData, GetMyProgressResponses, GetNationalStatData, GetNationalStatResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetOccurrenceDetailData, GetOccurrenceDetailResponses, GetOccurrencesInViewportData, GetOccurrencesInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUnreadCountData, GetUnreadCountResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoDetailData, GetVideoDetailResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetViewerCountData, GetViewerCountResponses, GetZonesData, GetZonesResponses, HeartbeatData, HeartbeatResponses, HighlightPreviewData, HighlightPreviewResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, MarkAllReadData, MarkAllReadResponses, MarkReadData, MarkReadResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, RejectData, RejectResponses, RemoveHelpfulData, RemoveHelpfulResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, SubmitConsentsData, SubmitConsentsResponses, UnblindVideoData, UnblindVideoResponses, UnregisterData, UnregisterResponses, UpdateCommentData, UpdateCommentResponses, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponses, UpdateMarketingConsentData, UpdateMarketingConsentResponses, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileImageData, UpdateProfileImageResponses, UpdateResponses, UpdateSubscriptionData, UpdateSubscriptionResponses, Upload1Data, Upload1Responses, UploadData, UploadMissionVideoData, UploadMissionVideoResponses, UploadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -159,6 +159,55 @@ export const submitConsents = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
+ * 행사 영상 도움돼요 취소
+ *
+ * 누른 도움돼요를 되돌린다. 누른 적이 없어도 실패하지 않는다(멱등).
+ *
+ * 아카이브된 행사(종료 30일 후)에서는 409 + developCode 13422 다 — 유예 기간까지는 취소할 수 있다. 상세에 보이지 않는 영상은 404 + 13406 이다.
+ */
+export const removeHelpful = <ThrowOnError extends boolean = false>(options: Options<RemoveHelpfulData, ThrowOnError>): RequestResult<RemoveHelpfulResponses, unknown, ThrowOnError> => (options.client ?? client).delete<RemoveHelpfulResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-videos/{videoId}/helpful',
+    ...options
+});
+
+/**
+ * 행사 영상 도움돼요 추가
+ *
+ * 이 영상에 도움돼요를 누른다. 사용자당 한 번이고 이미 누른 상태에서 다시 불러도 성공하며 수가 늘지 않는다 — 네트워크 재시도가 수를 흔들지 않도록 PUT 으로 둔 이유다.
+ *
+ * 응답의 helpfulCount 는 처리 후 다시 센 값이라 그 사이 다른 사람이 누른 것도 반영된다.
+ *
+ * 아카이브된 행사(종료 30일 후)에서는 409 + developCode 13422 다 — 유예 기간까지는 계속 누를 수 있다. 상세에 보이지 않는 영상은 404 + 13406 이다.
+ */
+export const addHelpful = <ThrowOnError extends boolean = false>(options: Options<AddHelpfulData, ThrowOnError>): RequestResult<AddHelpfulResponses, unknown, ThrowOnError> => (options.client ?? client).put<AddHelpfulResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-videos/{videoId}/helpful',
+    ...options
+});
+
+/**
+ * 행사 알림 구독 토글
+ *
+ * 행사 회차 단위로 알림을 켜고 끈다. 행사방에는 참여 절차가 없어 구독이 사용자와 행사가 맺는 관계의 전부다. 같은 값을 반복 요청해도 같은 결과로 성공한다.
+ *
+ * 응답의 enabled 는 저장된 구독 행의 존재가 아니라 **노출 상태**다 — 구독 행이 있으면서 회차가 예정이거나 진행 중일 때만 true 이고, 종료된 회차는 행이 남아 있어도 false 다(종료 시점부터 즉시 OFF, 정리 배치를 기다리지 않는다).
+ *
+ * 종료된 행사(업로드 유예·아카이브)에 켜기를 요청하면 409 + developCode 13422 다 — 시작 알림이 이미 지나 받을 것이 없기 때문이다. 끄기는 상태와 무관하게 언제나 성공한다. 없는 회차이거나 아직 노출 기간 전인 예정 회차면 404 + developCode 13404 다.
+ *
+ * 실제 발송은 이 구독 위에 알림 설정의 EVENT 카테고리 스위치가 겹쳐 결정된다 — 카테고리를 끈 사용자에게는 구독이 켜져 있어도 발송되지 않는다.
+ */
+export const updateSubscription = <ThrowOnError extends boolean = false>(options: Options<UpdateSubscriptionData, ThrowOnError>): RequestResult<UpdateSubscriptionResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateSubscriptionResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences/{occurrenceId}/notification',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * 대표 뱃지 집합 교체
  *
  * 획득한 뱃지 중 최대 2개를 대표로 교체 지정한다(멱등). 배열 순서 = 표시 순서(rank 1·2), 빈 배열은 전부 해제. 미획득·미존재 뱃지는 7403, 중복 id 는 7400, 3개 이상은 400 이다.
@@ -277,6 +326,40 @@ export const register = <ThrowOnError extends boolean = false>(options: Options<
 });
 
 /**
+ * 미션 영상 목록 조회
+ *
+ * 그 미션의 대상 격자에서 미션 기간에 촬영된 공개(PUBLIC)·READY 영상을 촬영 시각(recordedAt) 최신순으로 페이지 조회한다 — 촬영 시각이 같으면 videoId 내림차순으로 갈린다. 기간이 없는 미션(코스·지속형)은 기간 조건 없이 과거 영상까지 담고, 기간이 끝난 미션도 목록은 그대로 조회된다. 비공개·친구 공개·삭제·블라인드·인코딩 미완 영상은 본인 것이라도 제외되며, 응답은 누가 부르든 같다. 첫 요청은 cursor 없이 부르고, hasNext 가 true 면 응답의 nextCursor 를 다음 요청 cursor 로 넘기면 이어진다. 커서는 발급된 그 미션 전용이라 다른 미션 커서는 400(INVALID_CURSOR)이고, 형식이 깨진 커서도 같다. size 는 1~50 밖이면 클램프된다. 조건에 맞는 영상이 없거나 존재하지 않는 missionId 는 빈 페이지다. 썸네일은 presigned GET URL 로 내려준다.
+ */
+export const getMissionVideos = <ThrowOnError extends boolean = false>(options: Options<GetMissionVideosData, ThrowOnError>): RequestResult<GetMissionVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionVideosResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/missions/{missionId}/videos',
+    ...options
+});
+
+/**
+ * 미션 경유 영상 업로드 확정
+ *
+ * 축제·팝업 미션에 영상을 올린다. 파일은 기존 presigned 발급(POST /api/videos/presigned-url)으로 S3 에 먼저 올리고 이 API 가 확정한다.
+ *
+ * 좌표도 격자도 받지 않는다. 저장 위치는 서버가 그 미션의 대표 격자로 정하므로 같은 미션의 영상이 지도에서 한 칸에 모인다. 공개 범위는 PUBLIC 으로 고정되고, 업로드는 일반 업로드와 똑같이 그 격자의 점령을 만들며 뱃지·스트릭·미션 스탬프도 그대로 반영된다.
+ *
+ * 같은 s3Key 로 다시 보내면 영상이 하나 더 생기지 않고 저장된 행 기준의 성공이 돌아온다. 이때 occupied 는 false, newBadges 와 completedMissions 는 빈 배열이다(첫 응답 전용 필드).
+ *
+ * 촬영 시각이 미래면 400 + developCode 3424, 키 형식이 아니거나 남의 pending 키면 400 + 3401 이다. 그 밖의 모든 실패는 409 + 12409 하나로 돌아온다 — 없는 미션, 코스처럼 대상이 아닌 유형, 기간 밖, 촬영 시각이 미션 기간 밖, 대표 격자가 없는 미션, 이미 다른 자리에 쓴 키, S3 에 없는 키가 전부 여기 해당하며 사유는 갈라 주지 않는다. 이 응답을 받으면 그대로 재시도하지 말고 미션 상세를 다시 불러 업로드 가능 여부를 확인하고, 미션이 여전히 열려 있으면 presigned URL 을 새로 발급받아 파일부터 다시 올린다.
+ *
+ * 인코딩이 끝나기 전에는 목록에 잡히지 않는다 — 업로드 직후 화면에 카드를 보여주려면 이 응답으로 낙관적으로 그린다(기존 업로드와 같은 성질).
+ */
+export const uploadMissionVideo = <ThrowOnError extends boolean = false>(options: Options<UploadMissionVideoData, ThrowOnError>): RequestResult<UploadMissionVideoResponses, unknown, ThrowOnError> => (options.client ?? client).post<UploadMissionVideoResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/missions/{missionId}/videos',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * 친구 요청
  *
  * 상대의 친구 코드로 요청을 보낸다. 응답 status 가 PENDING 이면 상대 수락 대기, ACCEPTED 면 상대가 먼저 보낸 요청이 있어 즉시 친구 성립(자동 수락)이다.
@@ -311,6 +394,80 @@ export const accept = <ThrowOnError extends boolean = false>(options: Options<Ac
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/friends/requests/{requesterId}/accept',
     ...options
+});
+
+/**
+ * 행사 영상 댓글 목록 조회
+ *
+ * 영상에 달린 댓글을 오래된 순으로 한 페이지 돌려준다 — 새 댓글이 아래에 쌓이는 배열이다.
+ *
+ * 영상 상세가 첫 페이지(20건)를 이미 품고 있으므로 이 API 는 둘째 페이지부터를 위한 것이다. cursor 는 직전 응답의 nextCursor 를 그대로 넣는다(첫 페이지는 생략). 형식이 깨졌거나 다른 영상 목록에서 받은 커서면 400 + developCode 13402 다. size 는 1~50 범위 밖이면 잘라서 적용하고 생략하면 20 이다.
+ *
+ * 아카이브된 행사에서도 조회할 수 있고 댓글이 없으면 실패가 아니라 빈 페이지다. 비로그인으로도 조회할 수 있다.
+ */
+export const getComments = <ThrowOnError extends boolean = false>(options: Options<GetCommentsData, ThrowOnError>): RequestResult<GetCommentsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetCommentsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-videos/{videoId}/comments',
+    ...options
+});
+
+/**
+ * 행사 영상 댓글 작성
+ *
+ * 행사 영상에 댓글을 단다. 내용은 1~500자다.
+ *
+ * 행사방이 아카이브로 넘어가면 댓글을 더 달 수 없다 — 종료 30일 후부터 409 + developCode 13422 다(기존 댓글은 계속 보인다). 그 전까지는 예정·진행 중은 물론 유예 기간(종료 후 30일)에도 쓸 수 있고, 유예 기간에 새로 올라온 영상에도 댓글을 남길 수 있다.
+ *
+ * 상세에 보이는 영상에만 쓸 수 있다 — 삭제·블라인드·비공개·처리 미완료 영상과 행사 영상이 아닌 영상 id 는 올린 본인에게도 404 + 13406 이다.
+ */
+export const createComment = <ThrowOnError extends boolean = false>(options: Options<CreateCommentData, ThrowOnError>): RequestResult<CreateCommentResponses, unknown, ThrowOnError> => (options.client ?? client).post<CreateCommentResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-videos/{videoId}/comments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 위치별 영상 피드 조회
+ *
+ * 행사 위치에 올라온 영상을 최신 업로드순으로 한 페이지 돌려준다. 영역 안 어느 격자를 눌러 들어와도 같은 위치의 같은 피드다.
+ *
+ * 여기 담기는 영상은 위치 목록의 영상 수와 정확히 같은 집합이다 — 삭제·비공개·처리 미완료 영상은 숫자에서도 목록에서도 함께 빠진다. 인코딩이 끝나기 전 영상은 아직 담기지 않는다.
+ *
+ * cursor 는 직전 응답의 nextCursor 를 그대로 넣는다(첫 페이지는 생략). 형식이 깨졌거나 다른 위치 피드에서 받은 커서면 400 + developCode 13402 다. size 는 1~50 범위 밖이면 잘라서 적용하고 생략하면 20 이다.
+ *
+ * 아카이브된 행사에서도 조회할 수 있고 영상이 없으면 실패가 아니라 빈 페이지다. 존재하지 않거나 노출 기간 전인 회차는 404 + 13404, 위치가 없거나 그 회차의 위치가 아니면 404 + 13405 다. 비로그인으로도 조회할 수 있다.
+ */
+export const getLocationVideos = <ThrowOnError extends boolean = false>(options: Options<GetLocationVideosData, ThrowOnError>): RequestResult<GetLocationVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetLocationVideosResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences/{occurrenceId}/locations/{locationId}/videos',
+    ...options
+});
+
+/**
+ * 행사 영상 업로드 확정
+ *
+ * 행사 위치에 영상을 올린다. 파일은 기존 presigned 발급(POST /api/videos/presigned-url)으로 S3 에 먼저 올리고 이 API 가 확정한다 — 촬영이든 갤러리 선택이든 서버 계약은 하나다.
+ *
+ * 좌표를 받지 않는다. 격자는 서버가 그 위치의 대표 격자로 정하므로 현장에 없어도 올릴 수 있고, 공개 범위는 PUBLIC 으로 고정된다. 업로드는 일반 업로드와 똑같이 그 격자의 점령을 만들고 뱃지·스트릭도 그대로 반영된다(미션만 연계되지 않는다).
+ *
+ * 같은 s3Key 로 다시 보내면 영상이 하나 더 생기지 않고 저장된 행 기준의 성공이 돌아온다. 이때 occupied 는 false, newBadges 는 빈 배열이다(첫 응답 전용 필드).
+ *
+ * 올릴 수 있는 기간은 행사 시작부터 종료 30일 후 직전까지다. 시작 전이면 409 + developCode 13410, 마감 이후면 409 + 13409 다. 존재하지 않거나 아직 노출 기간 전인 회차는 404 + 13404, 위치가 없거나 그 회차의 위치가 아니면 404 + 13405 다.
+ *
+ * 인코딩이 끝나기 전에는 피드에 잡히지 않는다 — 업로드 직후 화면에 카드를 보여주려면 이 응답으로 낙관적으로 그린다(기존 업로드와 같은 성질).
+ */
+export const upload1 = <ThrowOnError extends boolean = false>(options: Options<Upload1Data, ThrowOnError>): RequestResult<Upload1Responses, unknown, ThrowOnError> => (options.client ?? client).post<Upload1Responses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences/{occurrenceId}/locations/{locationId}/videos',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -502,11 +659,43 @@ export const markAllRead = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * 카테고리 수신 토글
  *
- * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 7종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY, 대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다. MISSION_NEARBY 는 서버 발송이 없어 기기가 발화 전 이 설정을 조회해 로컬로 억제한다.
+ * 카테고리 하나의 수신 여부를 바꾸고 변경 후 전체 상태를 반환한다 — 같은 값 재전환은 멱등. category 가 8종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY·EVENT, 대소문자 무시) 외면 10420 이다. off 는 발송만 막고 off 중 쌓인 알림이 on 복귀 후 재발송되는 일은 없다. MISSION_NEARBY 는 서버 발송이 없어 기기가 발화 전 이 설정을 조회해 로컬로 억제한다.
  */
 export const update = <ThrowOnError extends boolean = false>(options: Options<UpdateData, ThrowOnError>): RequestResult<UpdateResponses, unknown, ThrowOnError> => (options.client ?? client).patch<UpdateResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/notifications/preferences/{category}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 행사 영상 댓글 삭제
+ *
+ * 댓글을 실제로 지운다(복구 없음). 본인 댓글만 지울 수 있고 남의 댓글이면 403 + developCode 13403 이다.
+ *
+ * 이미 지운 댓글을 다시 지우면 404 + 13407 이다 — 없는 댓글의 삭제를 성공으로 돌려주면 화면 상태 불일치가 감춰지기 때문이다(도움돼요 취소는 토글이라 멱등인 것과 다르다).
+ *
+ * 아카이브된 행사(종료 30일 후)에서는 409 + 13422 다.
+ */
+export const deleteComment = <ThrowOnError extends boolean = false>(options: Options<DeleteCommentData, ThrowOnError>): RequestResult<DeleteCommentResponses, unknown, ThrowOnError> => (options.client ?? client).delete<DeleteCommentResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-videos/{videoId}/comments/{commentId}',
+    ...options
+});
+
+/**
+ * 행사 영상 댓글 수정
+ *
+ * 댓글 내용을 통째로 바꾼다. 본인 댓글만 고칠 수 있고 남의 댓글이면 403 + developCode 13403, 없거나 다른 영상의 댓글이면 404 + 13407 이다.
+ *
+ * 작성 시각은 그대로다(수정 이력을 남기지 않는다). 아카이브된 행사에서는 자기 댓글이든 남의 댓글이든 409 + 13422 로 같다 — 잠금이 권한 판정보다 앞이다.
+ */
+export const updateComment = <ThrowOnError extends boolean = false>(options: Options<UpdateCommentData, ThrowOnError>): RequestResult<UpdateCommentResponses, unknown, ThrowOnError> => (options.client ?? client).patch<UpdateCommentResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-videos/{videoId}/comments/{commentId}',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -638,7 +827,7 @@ export const reverseGeocode = <ThrowOnError extends boolean = false>(options: Op
 /**
  * 전체 지역 리스트 조회
  *
- * 전역 공개 콘텐츠가 있는 행정동만 격자 수 내림차순으로 반환한다(검색 무입력 드롭다운). 각 항목의 gridCount 는 그 행정동 격자 카드 조회의 gridCount 와 같은 정의다. 전역 공개 콘텐츠가 하나도 없으면 빈 배열이다.
+ * 전역 공개 콘텐츠가 있는 행정동을 20개씩 반환한다. 로그인 사용자가 직접 최근 업로드한 지역이 먼저 나오고 나머지는 격자 수 내림차순이다. hasNext가 true면 nextCursor를 다음 요청의 cursor에 그대로 전달한다.
  */
 export const getExploreRegions = <ThrowOnError extends boolean = false>(options?: Options<GetExploreRegionsData, ThrowOnError>): RequestResult<GetExploreRegionsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetExploreRegionsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -682,7 +871,7 @@ export const getUnreadCount = <ThrowOnError extends boolean = false>(options?: O
 /**
  * 알림 설정 조회
  *
- * 카테고리 7종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on. MODERATION 은 설정 대상이 아니라 목록에 없다 (수신 거부 불가).
+ * 카테고리 8종(BADGE·HOTZONE·REMIND·VIDEO·WEEKLY·FRIEND·MISSION_NEARBY·EVENT) 전부의 수신 상태를 반환한다. 설정을 만진 적 없는 사용자는 전부 true 다 — opt-out 기본 전부 on. MODERATION 은 설정 대상이 아니라 목록에 없다 (수신 거부 불가).
  */
 export const getPreferences = <ThrowOnError extends boolean = false>(options?: Options<GetPreferencesData, ThrowOnError>): RequestResult<GetPreferencesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetPreferencesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -696,21 +885,12 @@ export const getPreferences = <ThrowOnError extends boolean = false>(options?: O
  * 미션 ID 하나의 상세 — 미션 정보와 렌더 shape(목록과 같은 필드), 내 진행도와 스탬프 보유 여부, 이 미션에 올라온 전체 영상 개수, 코스라면 포토스팟별 방문 여부·영상 개수를 한 번에 반환한다. spotStats 는 shape.spots 와 같은 순서로 오고, 코스가 아니면 null 대신 빈 배열이다.
  *
  * 기간 판정은 하지 않는다 — 기간이 끝난 미션도 행이 남아 있으면 조회되고, 영상 개수는 그 미션이 활성일 때 촬영된 것만 센다(미션 영상 목록 GET /api/missions/{missionId}/videos 의 실제 후보 수와 항상 같다). 존재하지 않는 미션 ID 는 404 + developCode 12404(MISSION_NOT_FOUND)다.
+ *
+ * 비로그인으로도 조회된다(MSG-454). 이때 사용자별 값은 빠진다 — progress 는 키는 있고 값이 null 이며 spotStats[].visited 는 전부 false 다. 미션 정보·전체 영상 수·스팟별 영상 수는 로그인과 같다.
  */
 export const getMissionDetail = <ThrowOnError extends boolean = false>(options: Options<GetMissionDetailData, ThrowOnError>): RequestResult<GetMissionDetailResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionDetailResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/missions/{missionId}',
-    ...options
-});
-
-/**
- * 미션 영상 목록 조회
- *
- * 그 미션의 대상 격자에서 미션 기간에 촬영된 공개(PUBLIC)·READY 영상을 촬영 시각(recordedAt) 최신순으로 페이지 조회한다 — 촬영 시각이 같으면 videoId 내림차순으로 갈린다. 기간이 없는 미션(코스·지속형)은 기간 조건 없이 과거 영상까지 담고, 기간이 끝난 미션도 목록은 그대로 조회된다. 비공개·친구 공개·삭제·블라인드·인코딩 미완 영상은 본인 것이라도 제외되며, 응답은 누가 부르든 같다. 첫 요청은 cursor 없이 부르고, hasNext 가 true 면 응답의 nextCursor 를 다음 요청 cursor 로 넘기면 이어진다. 커서는 발급된 그 미션 전용이라 다른 미션 커서는 400(INVALID_CURSOR)이고, 형식이 깨진 커서도 같다. size 는 1~50 밖이면 클램프된다. 조건에 맞는 영상이 없거나 존재하지 않는 missionId 는 빈 페이지다. 썸네일은 presigned GET URL 로 내려준다.
- */
-export const getMissionVideos = <ThrowOnError extends boolean = false>(options: Options<GetMissionVideosData, ThrowOnError>): RequestResult<GetMissionVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionVideosResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/missions/{missionId}/videos',
     ...options
 });
 
@@ -819,6 +999,21 @@ export const getGridVideos = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
+ * 격자가 대표 격자인 미션 조회
+ *
+ * 지도에서 누른 격자가 어느 축제·팝업 미션의 자리인지 되짚는다. 미션 경유로 올린 영상은 그 미션의 대표 격자 한 칸에만 저장되므로, 영상이 모인 칸을 눌러 무슨 미션이었는지 확인하는 경로다.
+ *
+ * 기간 필터가 없다 — 끝난 축제도 담긴다. 진행 중인지 시작 전인지 끝났는지는 startAt·endAt 을 서버 시각과 견주어 화면이 판정한다. 배열 첫 항목이 화면 진입 기본값이 되도록 진행 중 → 시작 전(임박한 순) → 종료(최근 종료 순)로 정렬한다.
+ *
+ * 판정 범위(축제 9×9)에만 걸친 격자는 나오지 않는다 — 나오는 것은 영상이 모인 자리로 지목된 미션뿐이다. 어떤 미션의 대표 격자도 아닌 격자와 격자 형식이 아닌 문자열은 오류가 아니라 빈 배열이다. videoCount 는 미션 상세의 videoCount 와 같은 술어라 두 화면의 숫자가 어긋나지 않는다. 비로그인으로도 조회할 수 있다.
+ */
+export const getMissionsByGrid = <ThrowOnError extends boolean = false>(options: Options<GetMissionsByGridData, ThrowOnError>): RequestResult<GetMissionsByGridResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionsByGridResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/grids/{gridId}/missions',
+    ...options
+});
+
+/**
  * 격자 전역 시간대 분포 조회
  *
  * 그 격자의 공개(PUBLIC)·READY 영상이 업로드된 시간대 분포를 KST 0시부터 23시까지 24구간 개수로 반환한다. 세는 대상은 전역 영상 목록(/videos)과 같아 카드에 보이는 영상만 세어진다 — 비공개·삭제·인코딩 미완 영상은 본인 것이라도 빠진다. 집계 구간은 전체 누적이며, 응답의 hours 는 항상 24개·hour 오름차순이라 빈 시간대도 count 0 으로 실린다. 공개 영상이 없는 격자·존재하지 않는 gridId 도 전 구간 0 인 정상 응답이다.
@@ -826,6 +1021,21 @@ export const getGridVideos = <ThrowOnError extends boolean = false>(options: Opt
 export const getGridHourlyUploads = <ThrowOnError extends boolean = false>(options: Options<GetGridHourlyUploadsData, ThrowOnError>): RequestResult<GetGridHourlyUploadsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetGridHourlyUploadsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/grids/{gridId}/hourly-uploads',
+    ...options
+});
+
+/**
+ * 격자가 속한 행사 위치 조회
+ *
+ * 지도에서 누른 격자가 어느 행사 위치에 속하는지 해석한다. 영상은 위치의 대표 격자 하나에만 저장되므로, 영역 안 아무 격자나 눌러도 같은 위치가 나오는 이 역조회가 위치별 영상 피드로 들어가는 유일한 경로다.
+ *
+ * 같은 장소에서 행사가 여러 번 열렸으면 회차마다 한 항목씩 배열로 온다. 배열 첫 항목이 화면 진입 기본값이 되도록 진행 중 → 예정 → 업로드 유예 → 아카이브 순으로 정렬하며, 예정끼리는 임박한 순, 나머지는 최근 순이다. 아직 노출 기간 전인 예정 회차는 배열에 담기지 않는다.
+ *
+ * 어떤 행사 위치에도 속하지 않는 격자와 격자 형식이 아닌 문자열은 오류가 아니라 빈 배열이다. 비로그인으로도 조회할 수 있다.
+ */
+export const getEventLocationsByGrid = <ThrowOnError extends boolean = false>(options: Options<GetEventLocationsByGridData, ThrowOnError>): RequestResult<GetEventLocationsByGridResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetEventLocationsByGridResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/grids/{gridId}/event-locations',
     ...options
 });
 
@@ -952,6 +1162,51 @@ export const getMyFriendCode = <ThrowOnError extends boolean = false>(options?: 
 });
 
 /**
+ * 행사 영상 상세 조회
+ *
+ * 영상 하나의 재생본 presigned GET URL 과 표시 재료를 돌려준다. 소속 행사 회차·위치·대표 격자와 그 표시명 재료가 함께 담겨, 상세 화면이 추가 호출 없이 위치줄을 그린다.
+ *
+ * 피드에 보이는 영상만 열린다 — 삭제·블라인드·비공개·처리 미완료 영상은 올린 본인에게도 404 + developCode 13406 이다(본인 영상 확인은 GET /api/videos/{videoId}). 행사 영상이 아닌 영상 id 도 같은 404 다.
+ *
+ * interactionLocked 는 아카이브 전환(행사 종료 + 30일)부터 true 이며 댓글·도움돼요 입력 UI 를 비활성화하는 재료다(기존 수는 계속 표시. 유예 기간에는 반응을 계속 남길 수 있다). 재생 URL 을 발급받은 타인 조회는 조회수를 올린다 — 비로그인 조회도 포함이고 올린 본인은 제외다.
+ */
+export const getVideoDetail = <ThrowOnError extends boolean = false>(options: Options<GetVideoDetailData, ThrowOnError>): RequestResult<GetVideoDetailResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetVideoDetailResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-videos/{videoId}',
+    ...options
+});
+
+/**
+ * 뷰포트 내 행사 회차 목록 조회
+ *
+ * 지도 화면 bbox(남서~북동 좌표) 안에 노출 영역이 걸친 행사 회차를 반환한다. 담기는 것은 진행 중이거나, 시작 2주 전부터의 노출 기간에 든 예정 회차뿐이다 — 종료된 행사(업로드 유예·아카이브)는 칩에 담기지 않고 상세·격자 역조회로만 접근한다. 아직 노출 기간 전인 예정 회차는 존재 자체를 숨긴다.
+ *
+ * 정렬은 시 이름 → 시작일 → 회차 id 오름차순이라, 시 칩 아래에 그 시의 행사 칩을 나열하는 화면이 매 요청 같은 순서를 받는다. 보이는 범위에 행사가 없으면 실패가 아니라 빈 배열이다.
+ *
+ * bbox span 상한은 0.5도로 위도·경도 각 변에 따로 적용된다(정확히 0.5도는 허용). 초과 시 400 + developCode 13401, 좌표가 WGS84 범위를 벗어나거나 bbox 가 뒤집히거나 파라미터가 빠지면 13400 이다. D-day 는 startsAt 을 KST 로 읽어 클라이언트가 계산한다.
+ */
+export const getOccurrencesInViewport = <ThrowOnError extends boolean = false>(options: Options<GetOccurrencesInViewportData, ThrowOnError>): RequestResult<GetOccurrencesInViewportResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetOccurrencesInViewportResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences',
+    ...options
+});
+
+/**
+ * 행사 회차 상세 조회
+ *
+ * 행사방 헤더 재료 — 행사명, 기간, 업로드 마감(종료 30일 후), 서버 시각 기준 상태, 알림 구독 여부, 같은 시리즈의 지난 회차 목록이다. 상태는 저장값이 아니라 요청 시점 계산이며 경계 정각은 다음 상태에 속한다(종료 정각부터 UPLOAD_GRACE).
+ *
+ * 지난 회차는 최신순이고 예정 회차는 담기지 않는다. 그 회차의 위치·영상은 회차 id 로 위치 목록을 다시 부르면 되므로 회차 간 데이터가 섞이지 않는다. 알림 구독 여부는 구독을 켰으면서 회차가 예정이거나 진행 중일 때만 true 다 — 비로그인 열람과 종료된 회차는 false 다.
+ *
+ * 존재하지 않는 회차와 아직 노출 기간 전인 예정 회차는 똑같이 404 + developCode 13404 다 — 노출 전 행사의 존재를 id 대입으로 알아낼 수 없다.
+ */
+export const getOccurrenceDetail = <ThrowOnError extends boolean = false>(options: Options<GetOccurrenceDetailData, ThrowOnError>): RequestResult<GetOccurrenceDetailResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetOccurrenceDetailResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences/{occurrenceId}',
+    ...options
+});
+
+/**
  * 현재 열람 인원 조회
  *
  * viewerCount 0 은 아무도 없음(표시), null 은 캐시 장애(숨김)다. 응답이 사용자 무관이라 인증 없이 호출할 수 있다.
@@ -959,6 +1214,19 @@ export const getMyFriendCode = <ThrowOnError extends boolean = false>(options?: 
 export const getViewerCount = <ThrowOnError extends boolean = false>(options: Options<GetViewerCountData, ThrowOnError>): RequestResult<GetViewerCountResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetViewerCountResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/event-occurrences/{occurrenceId}/viewer-count',
+    ...options
+});
+
+/**
+ * 행사 회차의 위치 목록 조회
+ *
+ * 회차에 속한 행사 위치(팝업·체험존·퍼레이드 등)와 각 위치의 격자 영역, 대표 격자, 표시명 재료, 영상 수를 반환한다. 영상 수는 집계 테이블 없이 조회 시점에 세며, 위치별 영상 피드에 실제로 보이는 영상만 센다(삭제·비공개·처리 미완료 제외).
+ *
+ * gridIds 는 화면에서 영역을 채색하는 재료이고 영상은 그중 representativeGridId 하나에만 붙는다. 표시명은 대표 격자 기준으로 `zoneName + " " + zoneCell`, 구역 밖이면 regionName 을 쓴다. 정렬은 표시 순서 → 위치 id 오름차순이다. 위치가 없으면 빈 배열이고, 존재하지 않는 회차와 노출 기간 전인 예정 회차는 404 + developCode 13404 다.
+ */
+export const getLocations = <ThrowOnError extends boolean = false>(options: Options<GetLocationsData, ThrowOnError>): RequestResult<GetLocationsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetLocationsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/event-occurrences/{occurrenceId}/locations',
     ...options
 });
 

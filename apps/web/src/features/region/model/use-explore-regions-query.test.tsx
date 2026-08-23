@@ -30,13 +30,21 @@ describe("useExploreRegionsQuery — 전체 지역 리스트 (AC 10, PR 리뷰 �
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("로그인 상태면 전체 지역 리스트(행정동명·격자 수)가 언랩되어 도착한다", async () => {
+  it("로그인 상태면 커서 페이지의 items가 언랩되어 도착한다 (MSG-460 계약 변경)", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
-        envelopeResponse([
-          { regionCode: "2644056000", regionName: "부전제1동", gridCount: 12 },
-        ]),
+        envelopeResponse({
+          items: [
+            {
+              regionCode: "2644056000",
+              regionName: "부전제1동",
+              gridCount: 12,
+            },
+          ],
+          hasNext: false,
+          nextCursor: null,
+        }),
       ),
     );
     signInForTest();
