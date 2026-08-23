@@ -5,9 +5,16 @@
  * 화면은 이 모듈의 순수 함수만 호출하는 얇은 층으로 둔다 — apps/mobile에는 RN 렌더
  * 테스트 인프라가 없어(MSG-292 확정 4) 훅·컴포넌트에 남은 로직은 검증할 수단이 없다.
  *
- * 서버에 저장되는 동의는 위치기반 1건뿐이다(승인 Q1) — 나머지 4개는 저장 엔드포인트가
- * 없어 클라이언트 게이트 조건으로만 강제하고 어떤 요청도 발사하지 않는다 (AC 21).
+ * 이 화면이 발사하는 요청은 위치기반 동의 1건뿐이다(AC 21) — 나머지 4개는 클라이언트
+ * 게이트 조건으로만 강제한다.
+ *
+ * [MSG-448] 위 문단의 원문("저장 엔드포인트가 없다")은 더 이상 사실이 아니다 — MSG-451
+ * SDK 재생성으로 `submitConsents`(5항목 일괄)·`updateMarketingConsent`가 생겼다. 가입 시
+ * 마케팅 동의를 저장하도록 배선하는 것은 MSG-448 범위 밖(승인 Q7)이라 동작은 그대로 두고
+ * **사실만 정정**한다 — 정정하지 않으면 다음 티켓이 같은 오판을 승계한다.
  */
+
+import type { TermsDocKey } from "../../../entities/terms/model/terms-documents";
 
 export type ConsentItemId =
   | "age14"
@@ -23,11 +30,15 @@ export interface ConsentItem {
   /** 필수 항목 — 전부 체크돼야 CTA가 활성화된다 (AC 16) */
   required: boolean;
   /**
-   * 약관 전문 뷰의 헤더 제목. null이면 우측 "보기"가 없는 행이다 —
+   * 약관 전문 뷰가 열 문서의 키. null이면 우측 "보기"가 없는 행이다 —
    * 만 14세 확인은 문서가 없으므로 이 행에만 null이다 (AC 8·25).
-   * 동의 라벨 문장 대신 문서명을 두는 이유는 헤더가 한 줄이기 때문이다(라벨은 잘린다).
+   *
+   * [MSG-448] `termsTitle: string`에서 교체됐다. 헤더 제목을 여기 두지 않고 카탈로그
+   * (`entities/terms`)에서 파생하는 이유는, 같은 문서를 프로필 설정·동의 관리 화면도
+   * 열게 되면서 제목이 세 곳에 흩어질 수 있기 때문이다. MSG-422의 결정("보기 유무와
+   * 헤더 제목을 한 필드로")은 유지하고 출처만 약관 카탈로그로 옮겼다.
    */
-  termsTitle: string | null;
+  termsDocKey: TermsDocKey | null;
 }
 
 /** 표시 순서 = Figma consent-list 5행 순서 */
@@ -36,31 +47,31 @@ export const CONSENT_ITEMS: readonly ConsentItem[] = [
     id: "age14",
     label: "만 14세 이상입니다. (필수)",
     required: true,
-    termsTitle: null,
+    termsDocKey: null,
   },
   {
     id: "termsOfService",
     label: "서비스 이용약관에 동의 (필수)",
     required: true,
-    termsTitle: "서비스 이용약관",
+    termsDocKey: "service",
   },
   {
     id: "privacy",
     label: "개인정보 수집 및 이용에 동의 (필수)",
     required: true,
-    termsTitle: "개인정보 수집 및 이용",
+    termsDocKey: "privacy-collection",
   },
   {
     id: "location",
     label: "위치기반서비스 이용약관에 동의 (필수)",
     required: true,
-    termsTitle: "위치기반서비스 이용약관",
+    termsDocKey: "location",
   },
   {
     id: "marketing",
     label: "마케팅 정보 수신에 동의 (선택)",
     required: false,
-    termsTitle: "마케팅 정보 수신",
+    termsDocKey: "marketing",
   },
 ] as const;
 
