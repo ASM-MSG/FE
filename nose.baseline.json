@@ -4371,20 +4371,9 @@
       ]
     },
     {
-      "id": "4ad5798a622aa6f7",
-      "note": "consolidate `pressable` — 5 copies",
+      "id": "4ab013f3059e3b7a",
+      "note": "consolidate `pressable` — 4 copies",
       "members": [
-        {
-          "id": "3d913fbe45d15cae",
-          "source_digest": "fnv1a64:e6e7c2b640120d56",
-          "file": "apps/mobile/src/features/permissions/ui/permission-settings-notice.tsx",
-          "lang": "typescript",
-          "start_line": 33,
-          "end_line": 41,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
         {
           "id": "aa5541873e321857",
           "source_digest": "fnv1a64:7d9b62c48e5f6496",
@@ -5683,67 +5672,6 @@
           "start_line": 98,
           "end_line": 165,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "5cc1c758e38d9be9",
-      "note": "consolidate `pressable` — 5 copies",
-      "members": [
-        {
-          "id": "3a3019122e988040",
-          "source_digest": "fnv1a64:1d18f06639822347",
-          "file": "apps/mobile/src/features/onboarding/ui/onboarding-screen.tsx",
-          "lang": "typescript",
-          "start_line": 87,
-          "end_line": 96,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
-        {
-          "id": "6d209e8e90172720",
-          "source_digest": "fnv1a64:c2d47387f59192df",
-          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
-          "lang": "typescript",
-          "start_line": 99,
-          "end_line": 108,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
-        {
-          "id": "6988343b39609c09",
-          "source_digest": "fnv1a64:536c6e8e19a54ce3",
-          "file": "apps/mobile/src/features/dex/ui/region-gallery-view.tsx",
-          "lang": "typescript",
-          "start_line": 59,
-          "end_line": 66,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
-        {
-          "id": "fcffd6cea9dddcc6",
-          "source_digest": "fnv1a64:b8ed2e12b39cbff4",
-          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
-          "lang": "typescript",
-          "start_line": 207,
-          "end_line": 214,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
-        {
-          "id": "a816f895fed3cd56",
-          "source_digest": "fnv1a64:f9fc34414868bcfa",
-          "file": "apps/mobile/src/features/video-playback/ui/video-player-screen.tsx",
-          "lang": "typescript",
-          "start_line": 97,
-          "end_line": 104,
-          "kind": "Block",
-          "name": "pressable",
           "is_fragment": false
         }
       ]
@@ -7427,6 +7355,78 @@
           "end_line": 23,
           "kind": "Function",
           "name": "setSelectedTheme",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "872c76dadda2423d",
+      "note": "consolidate `pressable` — 6 copies",
+      "members": [
+        {
+          "id": "3a3019122e988040",
+          "source_digest": "fnv1a64:1d18f06639822347",
+          "file": "apps/mobile/src/features/onboarding/ui/onboarding-screen.tsx",
+          "lang": "typescript",
+          "start_line": 87,
+          "end_line": 96,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "a40ce1fbe25e6299",
+          "source_digest": "fnv1a64:3eeaf78de0024a48",
+          "file": "apps/mobile/src/features/permissions/ui/permission-settings-notice.tsx",
+          "lang": "typescript",
+          "start_line": 39,
+          "end_line": 48,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "6d209e8e90172720",
+          "source_digest": "fnv1a64:c2d47387f59192df",
+          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
+          "lang": "typescript",
+          "start_line": 99,
+          "end_line": 108,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "6988343b39609c09",
+          "source_digest": "fnv1a64:536c6e8e19a54ce3",
+          "file": "apps/mobile/src/features/dex/ui/region-gallery-view.tsx",
+          "lang": "typescript",
+          "start_line": 59,
+          "end_line": 66,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "fcffd6cea9dddcc6",
+          "source_digest": "fnv1a64:b8ed2e12b39cbff4",
+          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
+          "lang": "typescript",
+          "start_line": 207,
+          "end_line": 214,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "a816f895fed3cd56",
+          "source_digest": "fnv1a64:f9fc34414868bcfa",
+          "file": "apps/mobile/src/features/video-playback/ui/video-player-screen.tsx",
+          "lang": "typescript",
+          "start_line": 97,
+          "end_line": 104,
+          "kind": "Block",
+          "name": "pressable",
           "is_fragment": false
         }
       ]
