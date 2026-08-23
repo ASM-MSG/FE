@@ -35,3 +35,16 @@ export const goToVideoPlayback = (videoId: number, mine: boolean): void => {
     params: { videoId: String(videoId), mine: mine ? "1" : "0" },
   });
 };
+
+/**
+ * 약관 전문 화면으로 (MSG-448 기준 5·17) — 진입점 3곳(프로필 설정 2행 + 동의 관리 화면의
+ * "보기")이 같은 목적지로 들어가도록 라우트 리터럴을 여기 하나에 가둔다.
+ * 회원가입 동의 게이트는 이 경로를 쓰지 않는다 — 게이트가 `Stack` 자체를 대체해 라우터가
+ * 없고, 이동 경로를 만들면 그것이 곧 잠금이 새는 구멍이기 때문이다(전면 뷰로 직접 렌더).
+ *
+ * 문서 키는 `entities/terms`의 `TermsDocKey`지만 여기서는 `string`으로 받는다 — shared는
+ * 최하위 레이어라 상위(entities) 타입을 참조하면 의존 방향이 뒤집힌다.
+ */
+export const goToTermsDocument = (docKey: string): void => {
+  router.navigate({ pathname: "/terms/[docKey]", params: { docKey } });
+};

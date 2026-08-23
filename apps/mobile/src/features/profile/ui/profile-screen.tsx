@@ -7,7 +7,7 @@ import { User } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader, Avatar, Button, ModalCard } from "@fillmap/ui-native";
 import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
-import { goToLogin } from "../../../shared/navigation";
+import { goToLogin, goToTermsDocument } from "../../../shared/navigation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
 import { usePushRegistration } from "../../notifications/api/use-push-registration";
@@ -142,9 +142,12 @@ export const ProfileScreen = () => {
             </View>
           </ProfileSection>
 
-          {/* 설정 (기준 1~6) — 상세 화면 2종은 후속 티켓이라 "준비 중" 비활성 행 */}
+          {/* 설정 (기준 1~6) — [MSG-448] "준비 중" 2행이 실제 목적지로 배선됐다 */}
           <ProfileSection title="설정">
-            <SettingRow label="위치정보 동의 관리" hint="준비 중" />
+            <SettingRow
+              label="위치정보 동의 관리"
+              onPress={() => router.navigate("/profile/consent")}
+            />
             {/*
               MSG-429 기준 14·15 — 이 스위치 하나가 두 축을 움직인다: 서버 preferences
               5종 일괄 저장(MSG-426)과 OS 알림 권한 + FCM 토큰 등록/해제(MSG-429).
@@ -165,18 +168,28 @@ export const ProfileScreen = () => {
                 preferencesFailed: notifications.isError,
               })}
             />
-            <SettingRow label="신고 관리" hint="준비 중" />
+            <SettingRow
+              label="신고 관리"
+              onPress={() => router.navigate("/profile/reports")}
+            />
           </ProfileSection>
 
-          {/* 계정 (기준 7~10) — 앱 버전은 정보 행(› 없음), 계정 삭제만 동작 행 */}
+          {/* 계정 (기준 7~10) — 앱 버전은 정보 행(› 없음). [MSG-448] 약관 2행도 동작 행 */}
           <ProfileSection title="계정">
             <SettingInfoRow
               label="앱 버전"
               // 하드코딩 mock은 행의 의미 자체를 거짓으로 만든다 — 빌드 주입값 (결정 Q4)
               value={Constants.expoConfig?.version ?? "1.0.0"}
             />
-            <SettingRow label="서비스 이용약관" hint="준비 중" />
-            <SettingRow label="개인정보 처리방침" hint="준비 중" />
+            {/* 같은 약관 뷰어를 문서 키로 공유한다 (MSG-448 기준 5) */}
+            <SettingRow
+              label="서비스 이용약관"
+              onPress={() => goToTermsDocument("service")}
+            />
+            <SettingRow
+              label="개인정보 처리방침"
+              onPress={() => goToTermsDocument("privacy-policy")}
+            />
             <SettingRow
               label="계정 삭제"
               tone="danger"
