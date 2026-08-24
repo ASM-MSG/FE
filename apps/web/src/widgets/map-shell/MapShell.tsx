@@ -140,8 +140,12 @@ export const MapShell = () => {
         occupiedIds,
         openGridDetail,
         sectionHandler: onOverlayCellClick,
+        // 축제·팝업 칩 활성 중에는 점령 여부와 무관하게 섹션 핸들러(미션 라우팅)로 —
+        // 점령 우선 라우팅(MSG-329)의 칩 한정 예외 (MSG-462 AC 12)
+        missionChipActive:
+          activeTheme === "festival" || activeTheme === "popup",
       }),
-    [occupiedIds, openGridDetail, onOverlayCellClick],
+    [occupiedIds, openGridDetail, onOverlayCellClick, activeTheme],
   );
   // 확정 지역·영역 최초 채택 — 지도 데이터 조회 전체의 bbox 근원 (AC 9)
   useCommittedRegionBootstrap();

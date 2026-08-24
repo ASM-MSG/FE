@@ -24,6 +24,13 @@ import {
   type AggregationUnit,
 } from "@/features/map-home/model/aggregation-unit";
 import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
+import {
+  applyButton,
+  applyWheel,
+  initialZoomStepState,
+  type ZoomStep,
+  type ZoomStepState,
+} from "@/features/map-home/model/zoom-step-policy";
 import type { MissionMarkerTheme } from "@/features/map-home/model/region-cluster-overlay";
 import { THEME_META } from "@/features/map-home/model/theme";
 import { buildHatchLines } from "@/features/map-home/model/theme-overlay";
@@ -153,6 +160,18 @@ const NAVER_SUBMODULES = ["geocoder"];
 // 첫 화면이 클러스터로 열리지 않게 유지) — viewport-store 초기값과 동일
 const DEFAULT_ZOOM = 16;
 // 네이버 지도 zoom 유효 범위(A2)는 map-scale 단일 정의를 공유한다 — SDK 내부 클램핑에 기대지 않고 명시한다
+
+/**
+ * 스텝 판정 결과를 지도에 적용 (MSG-462 AC 1·2) — 버튼·휠이 같은 경로를 쓴다.
+ * 클램프는 map-scale 단일 정의 그대로다 (AC 5). step 0(쿨다운·임계 미달)이면 무동작.
+ */
+const applyZoomStepToMap = (map: naver.maps.Map, step: ZoomStep): void => {
+  if (step === 0) return;
+  map.setZoom(
+    Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, map.getZoom() + step)),
+    true,
+  );
+};
 
 /** 네이버 지도 Map → 플랫폼 중립 Viewport 추출 */
 const toViewport = (map: naver.maps.Map): Viewport => {
@@ -406,6 +425,10 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       "loading",
     );
     const mapRef = useRef<naver.maps.Map | null>(null);
+    // 줌 스텝 리미터 상태 (MSG-462 AC 1·2) — 휠·트랙패드·줌 버튼이 이 하나를 공유한다
+    const zoomStepRef = useRef<ZoomStepState>(initialZoomStepState);
+    // 자체 휠 리스너를 붙일 호스트 — SDK 휠 줌(scrollWheel)은 꺼져 있다 (AC 3)
+    const wheelHostRef = useRef<HTMLDivElement | null>(null);
 
     // 프리플라이트 로드: 라이브러리 promise 캐시는 거부 promise를 퇴거하지 않아 remount
     // 재시도가 즉시 재실패한다. 경계가 직접 스크립트를 로드해 성공 후에만 SDK를 마운트하면
@@ -452,16 +475,29 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
         moveTo: (coords) => {
           mapRef.current?.panTo({ lat: coords.lat, lng: coords.lng });
         },
+        // 네이버 zoom은 클수록 확대 — 카카오 level과 방향 반대 (AC 4).
+        // 버튼도 휠과 같은 리미터를 거친다 — 연타가 쿨다운 간격으로만 진행 (MSG-462 AC 2)
         zoomIn: () => {
           const map = mapRef.current;
           if (!map) return;
-          // 네이버 zoom은 클수록 확대 — 카카오 level과 방향 반대 (AC 4)
-          map.setZoom(Math.min(MAX_ZOOM, map.getZoom() + 1), true);
+          const { state, step } = applyButton(
+            zoomStepRef.current,
+            1,
+            performance.now(),
+          );
+          zoomStepRef.current = state;
+          applyZoomStepToMap(map, step);
         },
         zoomOut: () => {
           const map = mapRef.current;
           if (!map) return;
-          map.setZoom(Math.max(MIN_ZOOM, map.getZoom() - 1), true);
+          const { state, step } = applyButton(
+            zoomStepRef.current,
+            -1,
+            performance.now(),
+          );
+          zoomStepRef.current = state;
+          applyZoomStepToMap(map, step);
         },
         zoomTo: (zoom) => {
           mapRef.current?.setZoom(
@@ -481,6 +517,32 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       }),
       [],
     );
+
+    // 자체 휠 줌 (MSG-462 AC 1·3) — SDK 휠 줌을 끄고(scrollWheel=false) 스텝 정책을
+    // 거쳐 ±1단씩만 줌한다. 트랙패드 핀치는 브라우저가 ctrl+wheel로 주므로 같은 경로에
+    // 잡히고, 터치스크린 핀치(pinchZoom)는 SDK 기본 유지(스펙 추정 6). preventDefault로
+    // 페이지 스크롤·브라우저 페이지 줌(ctrl+wheel)을 막아야 해서 passive: false가 필수다.
+    // 호스트 div는 SDK ready + 비실패 분기에서만 렌더된다 — 그 상태 전환에 맞춰 재부착
+    useEffect(() => {
+      const host = wheelHostRef.current;
+      if (host === null) return;
+      const handleWheel = (event: WheelEvent) => {
+        event.preventDefault();
+        const map = mapRef.current;
+        if (!map) return;
+        const { state, step } = applyWheel(
+          zoomStepRef.current,
+          event.deltaY,
+          performance.now(),
+        );
+        zoomStepRef.current = state;
+        applyZoomStepToMap(map, step);
+      };
+      host.addEventListener("wheel", handleWheel, { passive: false });
+      return () => host.removeEventListener("wheel", handleWheel);
+      // 핸들러는 ref만 참조한다 — 호스트 존재가 갈리는 분기 상태만 의존한다
+      // (failed 파생은 아래 선언이라 원시 상태 둘을 직접 본다)
+    }, [authFailed, sdkStatus]);
 
     const pushViewport = () => {
       const map = mapRef.current;
@@ -523,131 +585,138 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
         ) : sdkStatus === "loading" ? (
           <div className="h-full w-full" aria-busy="true" />
         ) : (
-          <NavermapsProvider
-            ncpKeyId={ncpKeyId}
-            submodules={providerSubmodules}
-          >
-            <Container
-              className="h-full w-full"
-              fallback={<div className="h-full w-full" aria-busy="true" />}
+          <div ref={wheelHostRef} className="h-full w-full">
+            <NavermapsProvider
+              ncpKeyId={ncpKeyId}
+              submodules={providerSubmodules}
             >
-              <NaverMap
-                ref={mapRef}
-                defaultCenter={center}
-                defaultZoom={DEFAULT_ZOOM}
-                // SDK 내장 축척 컨트롤 비활성 — 커스텀 축척 바(MSG-123)와 값이 다른 두 축척이
-                // 동시 표시되는 중복 제거. 다른 내장 컨트롤 기본값은 유지(수술적 변경)
-                scaleControl={false}
-                onInit={pushViewport}
-                onIdle={pushViewport}
+              <Container
+                className="h-full w-full"
+                fallback={<div className="h-full w-full" aria-busy="true" />}
               >
-                {/* 미점령 격자선(MSG-263 AC 9·12) — 경계 절단·컬링·줌 게이트는 파생(grid-overlay) 몫,
+                <NaverMap
+                  ref={mapRef}
+                  defaultCenter={center}
+                  defaultZoom={DEFAULT_ZOOM}
+                  // SDK 내장 축척 컨트롤 비활성 — 커스텀 축척 바(MSG-123)와 값이 다른 두 축척이
+                  // 동시 표시되는 중복 제거. 다른 내장 컨트롤 기본값은 유지(수술적 변경)
+                  scaleControl={false}
+                  // SDK 휠 줌 비활성 (MSG-462 AC 3) — 속도 옵션이 없는 SDK 기본 줌 대신
+                  // 위 자체 휠 리스너 + 스텝 정책이 줌을 담당한다. 터치 핀치는 기본 유지
+                  scrollWheel={false}
+                  onInit={pushViewport}
+                  onIdle={pushViewport}
+                >
+                  {/* 미점령 격자선(MSG-263 AC 9·12) — 경계 절단·컬링·줌 게이트는 파생(grid-overlay) 몫,
                     여기는 점선 Polyline 렌더만. 클릭 불요(Polyline 기본 비클릭) */}
-                {gridLines?.map((line) => (
-                  <Polyline
-                    key={line.id}
-                    path={line.path}
-                    strokeWeight={GRID_LINE_STROKE_WEIGHT}
-                    strokeColor={semantic.primary}
-                    strokeStyle="shortdash"
-                  />
-                ))}
-                {overlayCells?.map((cell) => (
-                  <Polygon
-                    key={cell.id}
-                    // MSG-357: 꼭짓점 4점(남서→남동→북동→북서 반시계 링)을 그대로 쓴다
-                    paths={[cell.corners]}
-                    // 재생 중 격자(emphasized — MSG-328)는 진한 실선 테두리로 강조한다
-                    strokeWeight={cell.emphasized ? EMPHASIS_STROKE_WEIGHT : 1}
-                    // 스타일 미지정 셀은 현행 primary 그대로 — 도감 오버레이·스모크 불변 (MSG-252 AC 13).
-                    // occupied 셀은 Figma 점령 스타일(채움 18% + 실선 테두리 40% — MSG-263 AC 10)
-                    strokeColor={cell.color ?? semantic.primary}
-                    strokeOpacity={
-                      cell.emphasized
-                        ? EMPHASIS_STROKE_OPACITY
-                        : cell.occupied
-                          ? OCCUPIED_STROKE_OPACITY
-                          : OVERLAY_STROKE_OPACITY
-                    }
-                    fillColor={cell.color ?? semantic.primary}
-                    fillOpacity={
-                      cell.occupied
-                        ? OCCUPIED_FILL_OPACITY
-                        : // 강조 전용 셀(테마 색 없음)은 테두리만 — 채움을 더하지 않는다
-                          cell.emphasized && cell.color === undefined
-                          ? 0
-                          : OVERLAY_FILL_OPACITY
-                    }
-                    // 네이버 Polygon은 clickable=false가 기본 — 핸들러가 있을 때만 클릭을 받는다.
-                    // 핸들러 미등록이면 onClick도 없음 — 표시 전용 기존 동작 유지 (MSG-122, R3)
-                    clickable={onOverlayCellClick != null}
-                    onClick={
-                      onOverlayCellClick
-                        ? () => onOverlayCellClick(cell.id)
-                        : undefined
-                    }
-                  />
-                ))}
-                {/* 빗금(테마 셀 ∩ 내 점령 — MSG-252 AC 7): 네이버 Polygon은 패턴 채움 미지원이라
+                  {gridLines?.map((line) => (
+                    <Polyline
+                      key={line.id}
+                      path={line.path}
+                      strokeWeight={GRID_LINE_STROKE_WEIGHT}
+                      strokeColor={semantic.primary}
+                      strokeStyle="shortdash"
+                    />
+                  ))}
+                  {overlayCells?.map((cell) => (
+                    <Polygon
+                      key={cell.id}
+                      // MSG-357: 꼭짓점 4점(남서→남동→북동→북서 반시계 링)을 그대로 쓴다
+                      paths={[cell.corners]}
+                      // 재생 중 격자(emphasized — MSG-328)는 진한 실선 테두리로 강조한다
+                      strokeWeight={
+                        cell.emphasized ? EMPHASIS_STROKE_WEIGHT : 1
+                      }
+                      // 스타일 미지정 셀은 현행 primary 그대로 — 도감 오버레이·스모크 불변 (MSG-252 AC 13).
+                      // occupied 셀은 Figma 점령 스타일(채움 18% + 실선 테두리 40% — MSG-263 AC 10)
+                      strokeColor={cell.color ?? semantic.primary}
+                      strokeOpacity={
+                        cell.emphasized
+                          ? EMPHASIS_STROKE_OPACITY
+                          : cell.occupied
+                            ? OCCUPIED_STROKE_OPACITY
+                            : OVERLAY_STROKE_OPACITY
+                      }
+                      fillColor={cell.color ?? semantic.primary}
+                      fillOpacity={
+                        cell.occupied
+                          ? OCCUPIED_FILL_OPACITY
+                          : // 강조 전용 셀(테마 색 없음)은 테두리만 — 채움을 더하지 않는다
+                            cell.emphasized && cell.color === undefined
+                            ? 0
+                            : OVERLAY_FILL_OPACITY
+                      }
+                      // 네이버 Polygon은 clickable=false가 기본 — 핸들러가 있을 때만 클릭을 받는다.
+                      // 핸들러 미등록이면 onClick도 없음 — 표시 전용 기존 동작 유지 (MSG-122, R3)
+                      clickable={onOverlayCellClick != null}
+                      onClick={
+                        onOverlayCellClick
+                          ? () => onOverlayCellClick(cell.id)
+                          : undefined
+                      }
+                    />
+                  ))}
+                  {/* 빗금(테마 셀 ∩ 내 점령 — MSG-252 AC 7): 네이버 Polygon은 패턴 채움 미지원이라
                     사선 Polyline 묶음으로 근사한다 (R1). 클릭은 폴리곤이 받는다(Polyline 기본 비클릭) */}
-                {overlayCells
-                  ?.filter((cell) => cell.hatched)
-                  .map((cell) =>
-                    buildHatchLines(cell.corners).map((line, i) => (
-                      <Polyline
-                        key={`${cell.id}-hatch-${i}`}
-                        path={line}
-                        strokeWeight={HATCH_STROKE_WEIGHT}
-                        strokeColor={cell.color ?? semantic.primary}
-                        strokeOpacity={HATCH_STROKE_OPACITY}
-                      />
-                    )),
-                  )}
-                {/* 지역 집계 마커 (MSG-410 AC 4·8) — zoom < GRID_MIN_ZOOM에서 셸이
-                    서버 집계를 채움 대신 게시한다. title은 스크린리더 대체 텍스트(a11y) */}
-                {clusters?.map((cluster) => (
-                  <Marker
-                    key={cluster.id}
-                    position={cluster.position}
-                    title={clusterMarkerTitle(cluster)}
-                    icon={{ content: clusterMarkerContent(cluster) }}
-                    onClick={() => zoomToCluster(cluster)}
-                  />
-                ))}
-                {/* 경로추천 오버레이 (MSG-252 AC 8 → MSG-395: 코스 목록만큼 다중) —
-                    연결선 + 번호 경유지 마커. 라인이 빈 코스는 마커만 남는다 (AC 21) */}
-                {routes?.map((route) => (
-                  <Fragment key={route.id}>
-                    {route.path.length > 1 && (
-                      <Polyline
-                        path={route.path}
-                        strokeWeight={ROUTE_STROKE_WEIGHT}
-                        strokeColor={route.color}
-                        strokeOpacity={ROUTE_STROKE_OPACITY}
-                      />
+                  {overlayCells
+                    ?.filter((cell) => cell.hatched)
+                    .map((cell) =>
+                      buildHatchLines(cell.corners).map((line, i) => (
+                        <Polyline
+                          key={`${cell.id}-hatch-${i}`}
+                          path={line}
+                          strokeWeight={HATCH_STROKE_WEIGHT}
+                          strokeColor={cell.color ?? semantic.primary}
+                          strokeOpacity={HATCH_STROKE_OPACITY}
+                        />
+                      )),
                     )}
-                    {route.waypoints.map((waypoint) => (
-                      <Marker
-                        key={waypoint.seq}
-                        position={waypoint.position}
-                        title={`경유지 ${waypoint.seq}`}
-                        icon={{ content: routeMarkerContent(waypoint.seq) }}
-                      />
-                    ))}
-                  </Fragment>
-                ))}
-                {/* 미션·코스 이름표 마커 (MSG-395 AC 16·18·21) */}
-                {labels?.map((label) => (
-                  <Marker
-                    key={label.id}
-                    position={label.position}
-                    title={label.text}
-                    icon={{ content: labelMarkerContent(label) }}
-                  />
-                ))}
-              </NaverMap>
-            </Container>
-          </NavermapsProvider>
+                  {/* 지역 집계 마커 (MSG-410 AC 4·8) — zoom < GRID_MIN_ZOOM에서 셸이
+                    서버 집계를 채움 대신 게시한다. title은 스크린리더 대체 텍스트(a11y) */}
+                  {clusters?.map((cluster) => (
+                    <Marker
+                      key={cluster.id}
+                      position={cluster.position}
+                      title={clusterMarkerTitle(cluster)}
+                      icon={{ content: clusterMarkerContent(cluster) }}
+                      onClick={() => zoomToCluster(cluster)}
+                    />
+                  ))}
+                  {/* 경로추천 오버레이 (MSG-252 AC 8 → MSG-395: 코스 목록만큼 다중) —
+                    연결선 + 번호 경유지 마커. 라인이 빈 코스는 마커만 남는다 (AC 21) */}
+                  {routes?.map((route) => (
+                    <Fragment key={route.id}>
+                      {route.path.length > 1 && (
+                        <Polyline
+                          path={route.path}
+                          strokeWeight={ROUTE_STROKE_WEIGHT}
+                          strokeColor={route.color}
+                          strokeOpacity={ROUTE_STROKE_OPACITY}
+                        />
+                      )}
+                      {route.waypoints.map((waypoint) => (
+                        <Marker
+                          key={waypoint.seq}
+                          position={waypoint.position}
+                          title={`경유지 ${waypoint.seq}`}
+                          icon={{ content: routeMarkerContent(waypoint.seq) }}
+                        />
+                      ))}
+                    </Fragment>
+                  ))}
+                  {/* 미션·코스 이름표 마커 (MSG-395 AC 16·18·21) */}
+                  {labels?.map((label) => (
+                    <Marker
+                      key={label.id}
+                      position={label.position}
+                      title={label.text}
+                      icon={{ content: labelMarkerContent(label) }}
+                    />
+                  ))}
+                </NaverMap>
+              </Container>
+            </NavermapsProvider>
+          </div>
         )}
       </MapLoadErrorBoundary>
     );

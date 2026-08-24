@@ -24,7 +24,8 @@ import {
   it,
   vi,
 } from "vitest";
-import type { MapCanvas as MapCanvasType } from "./MapCanvas";
+import { createRef } from "react";
+import type { MapCanvas as MapCanvasType, MapCanvasHandle } from "./MapCanvas";
 import { resetNaverMapsPreflight } from "./naver-sdk-loader";
 
 /** 라이브러리(NaverMap)가 생성하는 지도 인스턴스의 최소 대역 */
@@ -40,6 +41,11 @@ class FakeMap {
   get(key: string) {
     return this.options[key];
   }
+  // 줌 버튼 리미터 배선 스모크(MSG-462 AC 2)용 — 스텝 적용 경로가 부르는 최소 대역
+  getZoom() {
+    return (this.options.zoom as number | undefined) ?? 16;
+  }
+  setZoom(_zoom: number, _useEffects?: boolean) {}
 }
 
 const fakeEvent = {
@@ -133,6 +139,38 @@ describe("MapCanvas 스모크 — 인증 실패·내장 컨트롤", () => {
     expect(FakeMap.instances[0].options.zoomControl).toBeUndefined();
     expect(FakeMap.instances[0].options.logoControl).toBeUndefined();
     expect(FakeMap.instances[0].options.mapDataControl).toBeUndefined();
+  });
+
+  it("SDK 휠 줌을 비활성한다 (scrollWheel: false — 자체 스텝 정책이 줌을 담당, MSG-462 AC 3)", async () => {
+    await mountUntilMapReady();
+
+    expect(FakeMap.instances[0].options.scrollWheel).toBe(false);
+    // 터치스크린 핀치는 SDK 기본 유지 (MSG-462 추정 6 — 생성 옵션 미지정)
+    expect(FakeMap.instances[0].options.pinchZoom).toBeUndefined();
+  });
+
+  it("줌 버튼 연타는 쿨다운 간격으로만 줌 단이 진행된다 — 리미터 배선 (MSG-462 AC 2)", async () => {
+    const ref = createRef<MapCanvasHandle>();
+    await act(async () => {
+      render(
+        <MapCanvas
+          ref={ref}
+          center={{ lat: 35.1579, lng: 129.0594 }}
+          onViewportChange={() => {}}
+        />,
+      );
+    });
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const setZoom = vi.spyOn(FakeMap.instances[0], "setZoom");
+
+    // 쿨다운(200ms) 안의 동기 연타 — 두 번째 탭은 스텝이 나가지 않아야 한다
+    act(() => {
+      ref.current?.zoomIn();
+      ref.current?.zoomIn();
+    });
+
+    expect(setZoom).toHaveBeenCalledTimes(1);
+    expect(setZoom).toHaveBeenCalledWith(17, true);
   });
 
   it("인증 실패 후 재시도의 지도 생성은 재구축된 새 네임스페이스를 통해 일어난다 (라이브러리 캐시의 오염 promise 미사용)", async () => {
