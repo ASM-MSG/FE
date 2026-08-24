@@ -11,6 +11,8 @@ import { entityQueryPolicy } from "./map-query-policy";
  * 지도 SDK를 import하지 않는다(RN 경계).
  *
  * 익명 게이트 없음 (MSG-462 AC 13) — 서버 MSG-454가 익명 조회를 허용해 해제했다.
+ * 익명 응답은 progress가 null, spotStats[].visited가 전부 false다 — 소비처가 로그인
+ * 유도로 분기한다 (MSG-463 AC 9).
  * 상세 화면이 필요로 하던 세 값(진행도·영상 수·스팟별 방문/영상 수)을 서버가 한 번에 준다.
  * MSG-395는 이것들을 격자 단위 조회 여러 개로 조합했다 — 코스 스팟이 늘어날수록 요청이
  * 비례해 늘던 구조가 사라진다.

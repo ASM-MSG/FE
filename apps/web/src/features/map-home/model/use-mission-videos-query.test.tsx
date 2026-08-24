@@ -45,6 +45,22 @@ describe("useMissionVideosQuery — 미션 영상 피드 (AC 22)", () => {
     expect(result.current.items[0].uploaderHandle).toBe("@규호");
   });
 
+  it("비로그인에서도 조회해 영상 피드를 준다 — MSG-454로 익명 조회 허용 (AC 8·9)", async () => {
+    signOutForTest();
+    stubFetch(async () =>
+      envelopeResponse({
+        videos: [video(7, "2026-08-14T10:00:00Z")],
+        hasNext: false,
+        nextCursor: null,
+      }),
+    );
+
+    const { result } = renderHook(() => useMissionVideosQuery(12), { wrapper });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.items.map((v) => v.videoId)).toEqual([7]);
+  });
+
   it("선택된 미션이 없으면 조회하지 않는다 (AC 22)", async () => {
     const fetchSpy = vi.fn(async () =>
       envelopeResponse({ videos: [], hasNext: false, nextCursor: null }),

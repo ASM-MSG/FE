@@ -70,6 +70,17 @@ describe("useMissionDetailQuery — 미션 상세(진행도·스팟 통계) (AC 
     expect(result.current.videoCount).toBe(5);
   });
 
+  it("비로그인에서도 조회하고, 익명 응답의 progress null을 그대로 준다 — MSG-454로 익명 조회 허용 (AC 8·9)", async () => {
+    signOutForTest();
+    stubFetch(async () => envelopeResponse({ ...DETAIL, progress: null }));
+
+    const { result } = renderHook(() => useMissionDetailQuery(12), { wrapper });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.progress).toBeNull();
+    expect(result.current.spotStats.get("16858_11420")?.visited).toBe(true);
+  });
+
   it("선택된 미션이 없으면 조회하지 않는다 (AC 21)", async () => {
     const fetchSpy = vi.fn(async () => envelopeResponse(DETAIL));
     stubFetch(fetchSpy);

@@ -1,6 +1,11 @@
 interface StatItem {
   label: string;
   value: string;
+  /**
+   * 값 클릭 액션 (MSG-463 AC 9) — 비로그인 "내 진행" 칸의 로그인 유도처럼 값 자리가
+   * 행동을 여는 경우만. 없으면 종전처럼 정적 텍스트다
+   */
+  onClick?: () => void;
 }
 
 interface StatTrioProps {
@@ -28,7 +33,17 @@ export const StatTrio = ({ items }: StatTrioProps) => (
             드러난다(운영시간 사용자 보고). break-keep: `수-일`·`09:30` 같은 토큰
             중간에서 끊지 않고 공백에서만 줄바꿈 */}
         <dd className="break-keep text-center text-fm-body-strong text-foreground">
-          {item.value}
+          {item.onClick ? (
+            <button
+              type="button"
+              onClick={item.onClick}
+              className="text-primary transition-opacity active:opacity-60"
+            >
+              {item.value}
+            </button>
+          ) : (
+            item.value
+          )}
         </dd>
       </div>
     ))}

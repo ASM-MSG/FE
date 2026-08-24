@@ -103,13 +103,14 @@ describe("경로추천 목록 카드 — 진행도 실패 표기 (리뷰 반영)
     spots: [],
   } as unknown as CourseView;
 
-  const renderCourseList = (progressFailed: boolean) =>
+  const renderCourseList = (progressFailed: boolean, progressLocked = false) =>
     render(
       <CourseListPanel
         views={[courseView]}
         isPending={false}
         isError={false}
         progressFailed={progressFailed}
+        progressLocked={progressLocked}
         onRetry={vi.fn()}
         onSelect={vi.fn()}
         onHover={vi.fn()}
