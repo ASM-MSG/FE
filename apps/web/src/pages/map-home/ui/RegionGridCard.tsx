@@ -1,3 +1,4 @@
+import { Thumbnail } from "@fillmap/ui-web";
 import { Play } from "lucide-react";
 import { gridCardLabel } from "@/features/region/model/grid-card";
 import type { ExploreGridResponseDto } from "@/shared/api/generated/types.gen";
@@ -17,8 +18,8 @@ interface RegionGridCardProps {
 /**
  * 지역 격자 카드 (MSG-328 AC 5~7, Figma 14357-18972 thumb-card) — 풀폭 썸네일
  * (중앙 재생 아이콘 + 우하단 m:ss 배지) + 격자명 + "N개 영상".
- * coverThumbnailUrl이 null이면 회색 폴백 + 재생 아이콘만 남는다 (Figma 오탐 방지 —
- * 회색은 placeholder, 실구현은 presigned 썸네일).
+ * coverThumbnailUrl이 null이거나 로드에 실패하면 기본 이미지(격자 로고 플레이스홀더,
+ * MSG-464) + 재생 아이콘만 남는다 — 실구현은 presigned 썸네일.
  */
 export const RegionGridCard = ({
   grid,
@@ -35,14 +36,8 @@ export const RegionGridCard = ({
       className="flex w-full flex-col gap-xs text-left transition-opacity active:opacity-80"
     >
       <span className="relative flex aspect-[340/196] w-full items-center justify-center overflow-hidden rounded-md bg-surface">
-        {grid.coverThumbnailUrl !== null && (
-          <img
-            src={grid.coverThumbnailUrl}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 size-full object-cover"
-          />
-        )}
+        {/* MSG-464: null·로드 에러 모두 ui-web Thumbnail의 기본 이미지 폴백 (기준 4·6) */}
+        <Thumbnail src={grid.coverThumbnailUrl} loading="lazy" />
         <span className="relative flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Play className="size-3 fill-current" />
         </span>

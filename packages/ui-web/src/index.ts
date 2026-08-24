@@ -18,6 +18,7 @@ export { MapIconButton } from "./map-icon-button";
 export { ZoomControl } from "./zoom-control";
 export { GridCell } from "./grid-cell";
 export { VideoRow } from "./video-row";
+export { Thumbnail } from "./thumbnail";
 export { BottomNav, type BottomNavItem } from "./bottom-nav";
 export { SideRail, type SideRailItem } from "./side-rail";
 export { cn } from "./lib/utils";
