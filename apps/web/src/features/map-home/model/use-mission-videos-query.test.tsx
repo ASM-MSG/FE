@@ -72,3 +72,21 @@ describe("useMissionVideosQuery — 미션 영상 피드 (AC 22)", () => {
     expect(result.current.isError).toBe(false);
   });
 });
+
+describe("useMissionVideosQuery — 익명 게이트 해제 (MSG-462 AC 13)", () => {
+  it("비로그인 상태에서도 조회한다 — 서버 MSG-454 익명 허용 (AC 13)", async () => {
+    signOutForTest();
+    stubFetch(async () =>
+      envelopeResponse({
+        videos: [video(1, "2026-08-13T10:00:00Z")],
+        hasNext: false,
+        nextCursor: null,
+      }),
+    );
+
+    const { result } = renderHook(() => useMissionVideosQuery(12), { wrapper });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.items.map((v) => v.videoId)).toEqual([1]);
+  });
+});

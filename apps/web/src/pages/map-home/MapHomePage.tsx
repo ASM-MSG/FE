@@ -7,6 +7,7 @@ import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-stor
 import { useGridCardPlay } from "@/features/map-home/model/use-grid-card-play";
 import { useHomeMissions } from "@/features/map-home/model/use-home-missions";
 import { useHomeGridDetail } from "@/features/map-home/model/use-home-grid-detail";
+import { buildMissionGridMembership } from "@/features/map-home/model/mission-overlay";
 import { useHomeOverlays } from "@/features/map-home/model/use-home-overlays";
 import { useHotRegionSummary } from "@/features/map-home/model/use-hot-region-summary";
 import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
@@ -143,6 +144,16 @@ export const MapHomePage = () => {
     [moveTo, zoomTo, viewportZoom],
   );
 
+  // 격자 → 소속 미션 맵 (MSG-462 AC 6ⓑ) — 칩 활성 격자 탭의 FE 도형 폴백 판정 입력.
+  // 오버레이 목록 파생과 같은 확정 영역으로 잘라 클릭 가능한 격자와 판정 집합을 맞춘다
+  const gridMembership = useMemo(
+    () =>
+      committedBounds === null || eventChip === null
+        ? new Map<string, number>()
+        : buildMissionGridMembership(missionViews, committedBounds),
+    [missionViews, committedBounds, eventChip],
+  );
+
   // 게시 셀 파생·탭 판정·게시/해제 배선 (리뷰 반영 — 300줄 초과 분할)
   useHomeOverlayPublish({
     activeTheme,
@@ -151,6 +162,8 @@ export const MapHomePage = () => {
     occupiedIds,
     playingGridId: cardPlay.playingGridId,
     searchGridId,
+    eventChip,
+    gridMembership,
   });
 
   // 상세 패널의 "전체 보기" — 상세를 닫고 패널 안 전체 지역 리스트를 연다 (MSG-328)

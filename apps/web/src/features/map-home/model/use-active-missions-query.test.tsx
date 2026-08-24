@@ -106,10 +106,11 @@ describe("useActiveMissionsQuery — 칩별·확정 영역 조회 (AC 19)", () =
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("비로그인 상태에서는 조회하지 않는다 — 미션 API는 인증 필요(익명 401) (AC 19·23)", async () => {
+  // MSG-462 AC 13: 서버 MSG-454가 익명 조회를 허용해 MSG-403의 익명 게이트를 해제했다 —
+  // "조회하지 않는다" 단정을 반대로 갱신한다 (비로그인 + 칩 활성에서 영역이 그려져야 한다)
+  it("비로그인 상태에서도 조회한다 — 익명 게이트 해제 (MSG-462 AC 13)", async () => {
     signOutForTest();
-    const fetchSpy = vi.fn(async () => envelopeResponse([]));
-    stubFetch(fetchSpy);
+    stubByType();
 
     const { result } = renderHook(
       () => useActiveMissionsQuery("festival", SEOMYEON),
@@ -117,7 +118,7 @@ describe("useActiveMissionsQuery — 칩별·확정 영역 조회 (AC 19)", () =
     );
 
     await waitFor(() => expect(result.current.isPending).toBe(false));
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.current.missions.map((m) => m.missionId)).toEqual([1]);
   });
 
   it("조회가 실패하면 빈 목록과 함께 실패로 알린다 (AC 19)", async () => {

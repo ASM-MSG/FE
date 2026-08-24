@@ -83,3 +83,15 @@ describe("useMissionDetailQuery — 미션 상세(진행도·스팟 통계) (AC 
     expect(result.current.spotStats.size).toBe(0);
   });
 });
+
+describe("useMissionDetailQuery — 익명 게이트 해제 (MSG-462 AC 13)", () => {
+  it("비로그인 상태에서도 조회한다 — 서버 MSG-454 익명 허용 (AC 13)", async () => {
+    signOutForTest();
+    stubFetch(async () => envelopeResponse(DETAIL));
+
+    const { result } = renderHook(() => useMissionDetailQuery(12), { wrapper });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.videoCount).toBe(5);
+  });
+});

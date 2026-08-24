@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Bounds } from "@/entities/cell";
-import { useAuthStore } from "@/features/auth/model/auth-store";
 import { gatedQueryStatus } from "@/features/region/model/gated-query-status";
 import type { MissionResponseDto } from "@/shared/api/generated";
 import { getActiveMissionsInViewportOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
@@ -17,9 +16,9 @@ import { viewportQueryArgs } from "./viewport-query";
  * type으로 나누던 방식이 사라지고 칩당 한 번씩 조회한다. bbox는 뷰포트가 아니라
  * **확정 영역**이다(AC 12): 뷰포트를 쓰면 지도를 미는 동안 요청이 계속 나간다.
  *
- * 인증 게이트를 건다 — MSG-395는 "공개 정보"를 전제로 게이트가 없었으나 익명 호출이
- * 401(developCode 2403)로 실측됐다(2026-08-15). 게이트가 없으면 비로그인 홈에서 칩을
- * 누를 때마다 401 + auth-pipeline 재발급이 돈다(핫구역·지역 훅과 같은 이유).
+ * 익명 게이트 없음 (MSG-462 AC 13) — MSG-403이 익명 401 실측(2026-08-15)으로 걸었던
+ * 인증 게이트를 서버 MSG-454(익명 조회 허용)에 맞춰 해제했다. 비로그인 + 칩 활성에서도
+ * 영역이 그려지고 격자 클릭 → 미션 상세가 열려야 한다.
  */
 export interface ActiveMissionsResult {
   missions: MissionResponseDto[];
@@ -41,9 +40,8 @@ export const useActiveMissionsQuery = (
   chip: MissionChip | null,
   bounds: Bounds | null,
 ): ActiveMissionsResult => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { query: viewport, enabled: boundsReady } = viewportQueryArgs(bounds);
-  const active = boundsReady && isAuthenticated && chip !== null;
+  const active = boundsReady && chip !== null;
 
   const query = useQuery({
     ...getActiveMissionsInViewportOptions({
