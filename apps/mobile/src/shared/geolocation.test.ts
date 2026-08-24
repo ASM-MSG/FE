@@ -3,6 +3,7 @@ import {
   SEOMYEON_CENTER,
   resetInFlightPositionForTest,
   resolveMapCenter,
+  resolveMapCenterWithPermission,
   type GeoCoords,
 } from "./geolocation";
 
@@ -13,6 +14,8 @@ import {
  */
 const control = vi.hoisted(() => ({
   granted: true,
+  /** MSG-447 — 안드로이드 "다시 묻지 않음" 재현: false면 영구 거부(denied) */
+  canAskAgain: true,
   coords: { latitude: 35.2001, longitude: 129.1002 },
   permissionError: false,
   positionError: false,
@@ -27,7 +30,7 @@ const control = vi.hoisted(() => ({
 vi.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: async () => {
     if (control.permissionError) throw new Error("permission unavailable");
-    return { granted: control.granted };
+    return { granted: control.granted, canAskAgain: control.canAskAgain };
   },
   getCurrentPositionAsync: async () => {
     control.positionCalls += 1;
@@ -195,5 +198,65 @@ describe("resolveMapCenter — 진행 중 신규 조회 single-flight 공유 (MS
       lng: 129.1002,
     });
     expect(control.positionCalls).toBe(2);
+  });
+});
+
+/**
+ * 템플릿 ① 순수 로직 — MSG-447 기준 2·3·4. `resolveMapCenter()`는 총함수라 **거부를 서면
+ * 좌표로 흡수**해 호출부가 "거부"와 "측위 실패"를 구분할 수 없었다. 내 위치 버튼이 조용히
+ * 서면으로 튀던 원인이고, 이 형제 함수가 그 구분을 되살린다(결정 D1).
+ */
+describe("resolveMapCenterWithPermission — 좌표 + 권한 상태 (MSG-447 기준 2·3·4)", () => {
+  beforeEach(() => {
+    control.granted = true;
+    control.canAskAgain = true;
+    control.coords = { latitude: 35.2001, longitude: 129.1002 };
+    control.permissionError = false;
+    control.positionError = false;
+    control.lastKnown = null;
+  });
+
+  it("허용되면 현재 위치와 granted를 함께 돌려준다 (기준 1)", async () => {
+    await expect(resolveMapCenterWithPermission()).resolves.toEqual({
+      center: { lat: 35.2001, lng: 129.1002 },
+      permission: "granted",
+    });
+  });
+
+  it("거부했지만 다시 물을 수 있으면 서면 중심 + undetermined다 — 재요청 CTA가 붙는다 (기준 3, R3)", async () => {
+    control.granted = false;
+
+    await expect(resolveMapCenterWithPermission()).resolves.toEqual({
+      center: SEOMYEON_CENTER,
+      permission: "undetermined",
+    });
+  });
+
+  it("'다시 묻지 않음' 영구 거부면 서면 중심 + denied다 — 설정 이동 CTA가 붙는다 (기준 3)", async () => {
+    control.granted = false;
+    control.canAskAgain = false;
+
+    await expect(resolveMapCenterWithPermission()).resolves.toEqual({
+      center: SEOMYEON_CENTER,
+      permission: "denied",
+    });
+  });
+
+  it("권한은 있는데 측위만 실패하면 granted를 유지한다 — 권한 문제가 아닌 것을 권한 문제로 안내하지 않는다 (기준 4)", async () => {
+    control.positionError = true;
+
+    await expect(resolveMapCenterWithPermission()).resolves.toEqual({
+      center: SEOMYEON_CENTER,
+      permission: "granted",
+    });
+  });
+
+  it("권한 판독 자체가 실패해도 안내를 띄우지 않는다 — 네이티브 접점 장애를 사용자 거부로 오인하지 않는다 (기준 4)", async () => {
+    control.permissionError = true;
+
+    await expect(resolveMapCenterWithPermission()).resolves.toEqual({
+      center: SEOMYEON_CENTER,
+      permission: "granted",
+    });
   });
 });

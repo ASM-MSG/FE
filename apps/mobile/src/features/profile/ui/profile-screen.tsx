@@ -10,10 +10,11 @@ import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
 import { goToLogin, goToTermsDocument } from "../../../shared/navigation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
+import { PermissionSettingsNotice } from "../../permissions/ui/permission-settings-notice";
 import { usePushRegistration } from "../../notifications/api/use-push-registration";
 import { useNotificationToggle } from "../api/use-notification-toggle";
 import { useProfileQuery } from "../api/use-profile-query";
-import { resolveNotificationErrorText } from "../model/notification-toggle";
+import { resolveNotificationNotice } from "../model/notification-toggle";
 import { formatJoinedDate } from "../model/profile-format";
 import { DeleteAccountModal } from "./delete-account-modal";
 import { SettingInfoRow, SettingRow, SettingToggleRow } from "./setting-rows";
@@ -69,6 +70,11 @@ export const ProfileScreen = () => {
   const identity = profile ?? MOCK_PROFILE;
   const notifications = useNotificationToggle();
   const push = usePushRegistration();
+  const notificationNotice = resolveNotificationNotice({
+    permission: push.permission,
+    pushError: push.error,
+    preferencesFailed: notifications.isError,
+  });
   const logout = useLogout({
     onSettled: () => {
       setLogoutOpen(false);
@@ -163,11 +169,24 @@ export const ProfileScreen = () => {
                 void push.setEnabled(next);
               }}
               busy={notifications.isPending || push.busy}
-              errorText={resolveNotificationErrorText({
-                pushError: push.error,
-                preferencesFailed: notifications.isError,
-              })}
+              // 재시도로 풀리는 실패만 행 안 캡션으로 (MSG-447 기준 12)
+              errorText={
+                notificationNotice?.kind === "text"
+                  ? notificationNotice.text
+                  : undefined
+              }
             />
+            {/*
+              MSG-447 기준 11·14 — OS 권한 거부는 앱 안에서 고칠 수 없어 **탭 가능한** 설정
+              진입점이 필요하다. `SettingToggleRow`의 `errorText`는 탭할 수 없는 `Text`라
+              사용자가 문구를 읽고도 갈 곳이 없었다. 행 컴포넌트를 고치지 않고 형제로 붙인다
+              (결정 D4 — `setting-rows.tsx`는 MSG-448 소유).
+              토글을 한 번도 건드리지 않아도 보인다 — 판정이 `push.permission`(기기 실상태)을
+              함께 보기 때문이다. 설정에서 켜고 돌아오면 포그라운드 재판독으로 사라진다(기준 13).
+            */}
+            {notificationNotice?.kind === "settings" && (
+              <PermissionSettingsNotice message={notificationNotice.text} />
+            )}
             <SettingRow
               label="신고 관리"
               onPress={() => router.navigate("/profile/reports")}
