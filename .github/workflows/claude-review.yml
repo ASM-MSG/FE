@@ -28,6 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude Code Review
+        id: review
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -55,7 +56,7 @@ jobs:
             - 심각도를 표시해줘 (🔴 반드시 수정 / 🟡 권장 / 🟢 사소한 제안)
             - 문제 지적 시 가능하면 수정 예시 코드를 함께 제시해줘
             - 마지막에 전체 요약 코멘트를 반드시 `gh pr comment` 명령으로 게시해줘 (잘한 점 + 주요 이슈 정리). 최종 응답 텍스트로만 쓰고 끝내면 아무도 못 본다
-            - 요약 코멘트 본문 맨 첫 줄에 `<!-- claude-review:summary ${{ github.event.pull_request.head.sha }} -->` 마커를 그대로 포함해줘 — 아래 검증 스텝이 이 마커로 리뷰 완주를 판정한다 (SHA가 있어야 이전 푸시의 요약과 구분된다)
+            - 요약을 어느 코멘트에 쓰든(새 코멘트든 진행 코멘트 이어 붙이기든) 본문 맨 첫 줄에 `<!-- claude-review:summary ${{ github.event.pull_request.head.sha }} -->` 마커를 그대로 포함해줘 — 사람이 이전 푸시의 요약과 구분하는 표식이다 (SHA가 있어야 어느 커밋의 요약인지 알 수 있다)
             - 확실하지 않은 부분은 추측이라고 명시해줘
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git diff:*),Bash(git log:*)"
@@ -74,19 +75,68 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # 리뷰 완주 검증 — 에이전트 프로세스가 정상 종료해도 요약 코멘트가 없으면 실패시킨다.
+      # 리뷰 완주 검증 — 에이전트 프로세스가 정상 종료해도 요약 산출물이 없으면 실패시킨다.
       # 2026-08-16 사고: 리뷰가 중간에 끝났는데 체크는 pass로 남아 "All checks have passed"가
-      # 미완 리뷰를 가렸다. 이 스텝이 있어야 claude-review 체크 = 리뷰 산출물 존재가 된다
+      # 미완 리뷰를 가렸다. 이 스텝이 있어야 claude-review 체크 = 리뷰 산출물 존재가 된다.
+      # 2026-08-23 사고: PR #89 af67beb — 리뷰가 정상 완주했는데 봇이 진행 코멘트에 요약을
+      # 이어 붙이며 SHA 마커를 생략, PR 코멘트 마커 grep 판정이 완주를 실패로 오탐했다.
+      # 판정 근거를 봇의 코멘트 작성 방식(마커)에서 액션의 execution output(전사)으로 교체 —
+      # ① 파일 존재 → ② 마지막 result 성공(is_error=false && subtype=success) → ③ 게시 도구
+      # 호출 증거(gh pr comment Bash 또는 update_claude_comment). 마커 부재는 warning만
       - name: Verify review summary was posted
         if: steps.selfmod.outputs.changed == 'false'
         env:
-          GH_TOKEN: ${{ github.token }}
+          EXECUTION_FILE: ${{ steps.review.outputs.execution_file }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if gh pr view ${{ github.event.pull_request.number }} \
-            --repo ${{ github.repository }} --json comments \
-            --jq '.comments[].body' | grep -q 'claude-review:summary ${{ github.event.pull_request.head.sha }}'; then
-            echo "리뷰 요약 코멘트 확인"
-          else
-            echo "::error::리뷰 요약 코멘트가 게시되지 않았다 — 리뷰가 미완으로 종료된 것"
+          set -euo pipefail
+
+          # ① 파일 존재 — output이 비었거나 파일이 없으면 액션이 산출물을 남기지 못한 것
+          if [ -z "${EXECUTION_FILE:-}" ] || [ ! -f "${EXECUTION_FILE:-}" ]; then
+            echo "::error::execution output 파일 없음 — 액션이 산출물을 남기지 못함 (execution_file='${EXECUTION_FILE:-}')"
             exit 1
+          fi
+
+          # 형태 방어 — SDK 메시지 배열이 아니면 진단용으로 파일 상위 일부를 덤프
+          if ! jq -e 'type == "array"' "$EXECUTION_FILE" > /dev/null 2>&1; then
+            echo "::error::execution output이 예상 형태(JSON 배열)가 아님 — 파일 상위 일부를 덤프한다"
+            head -c 2000 "$EXECUTION_FILE" || true
+            echo ""
+            exit 1
+          fi
+
+          # ② 실행 완주 — 마지막 result 메시지가 is_error=false && subtype=success
+          result_json=$(jq -c '[.[] | select(.type == "result")] | last // empty' "$EXECUTION_FILE")
+          if [ -z "$result_json" ]; then
+            echo "::error::result 메시지 없음 — 실행이 결과를 남기지 못하고 종료됨. 파일 상위 일부를 덤프한다"
+            head -c 2000 "$EXECUTION_FILE" || true
+            echo ""
+            exit 1
+          fi
+          # 주의: jq의 `//`는 false를 falsy로 삼켜 is_error=false가 대체값이 된다 — tostring으로 추출
+          is_error=$(jq -r '.is_error | if . == null then "null" else tostring end' <<< "$result_json")
+          subtype=$(jq -r '.subtype | if . == null then "null" else tostring end' <<< "$result_json")
+          num_turns=$(jq -r '.num_turns | if . == null then "null" else tostring end' <<< "$result_json")
+          echo "result 실측: is_error=$is_error subtype=$subtype num_turns=$num_turns"
+          if [ "$is_error" != "false" ] || [ "$subtype" != "success" ]; then
+            echo "::error::실행 비정상 종료 — is_error=$is_error subtype=$subtype num_turns=$num_turns"
+            exit 1
+          fi
+
+          # ③ 요약 게시 증거 — 전사에 게시 도구 호출(gh pr comment Bash 또는 update_claude_comment)이 존재
+          if ! jq -e '
+            [ .[] | select(.type == "assistant") | .message.content[]? | select(.type == "tool_use")
+              | select(
+                  (.name == "Bash" and ((.input.command // "") | startswith("gh pr comment")))
+                  or (.name == "mcp__github_comment__update_claude_comment")
+                ) ] | length > 0
+          ' "$EXECUTION_FILE" > /dev/null; then
+            echo "::error::요약 게시 도구 호출 없음 — 리뷰가 결과를 PR에 남기지 않고 종료 (검사 도구: gh pr comment, update_claude_comment)"
+            exit 1
+          fi
+          echo "리뷰 완주 확인 — result 성공 + 게시 도구 호출 존재"
+
+          # 마커는 판정 아님 — 사람 가독용. 전사에 현재 SHA 마커가 없으면 warning만 남긴다
+          if ! grep -q "claude-review:summary ${HEAD_SHA:-}" "$EXECUTION_FILE"; then
+            echo "::warning::현재 SHA 마커(claude-review:summary ${HEAD_SHA:-})가 전사에 없음 — 이전 push 요약과의 구분 가독성만 영향 (실패 아님)"
           fi
