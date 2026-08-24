@@ -1,4 +1,5 @@
 import { DotsLoader, cn } from "@fillmap/ui-web";
+import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import {
   formatMissionPeriod,
@@ -25,6 +26,11 @@ interface MissionDetailPanelProps {
    * 실패 시 분자가 0으로 폴백해 "아직 안 채웠다"로 잘못 읽힌다
    */
   progressFailed: boolean;
+  /**
+   * 비로그인 진행도 잠금 (MSG-463 AC 9) — 진행도는 사용자별 값이라 익명 응답에 없다.
+   * `내 진행`을 수치 대신 로그인 유도로 바꾼다 (클릭 시 로그인 모달)
+   */
+  progressLocked: boolean;
   /** 뒤로 — 칩은 유지한 채 목록으로 (AC 6) */
   onBack: () => void;
   /** 닫기 — Escape 배선 */
@@ -43,11 +49,14 @@ export const MissionDetailPanel = ({
   theme,
   videos,
   progressFailed,
+  progressLocked,
   onVideoSelect,
   onBack,
   onClose,
 }: MissionDetailPanelProps) => {
   useEscapeClose(onClose);
+  // 리프에서 직접 구독한다 — RegionPanel의 로그인 유도 선례 (페이지 상태와 무관한 전역 모달)
+  const openLoginModal = useLoginModalStore((s) => s.openModal);
 
   // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지)
   if (videos.isPending && !videos.isError)
@@ -106,12 +115,19 @@ export const MissionDetailPanel = ({
 
           <StatTrio
             items={[
-              {
-                label: "내 진행",
-                value: progressFailed
-                  ? "확인 불가"
-                  : `${progress.done}/${progress.total}칸`,
-              },
+              // 비로그인이 실패 표기보다 먼저다 — 익명은 진행도 조회 자체가 없다 (AC 9)
+              progressLocked
+                ? {
+                    label: "내 진행",
+                    value: "로그인 후 확인",
+                    onClick: openLoginModal,
+                  }
+                : {
+                    label: "내 진행",
+                    value: progressFailed
+                      ? "확인 불가"
+                      : `${progress.done}/${progress.total}칸`,
+                  },
               {
                 label: theme === "popup" ? "운영시간" : "축제 기간",
                 value: period,

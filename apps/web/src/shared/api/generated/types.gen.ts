@@ -1544,7 +1544,7 @@ export type MissionDetailResponseDto = {
     /**
      * 내 진행도 — 목록 진행도(GET /api/missions/progress)와 같은 계산 (MSG-398 D8). 비로그인 조회면 키는 그대로 있고 값이 null 이다 (MSG-454)
      */
-    progress: MissionProgressResponseDto;
+    progress: MissionProgressResponseDto | null;
     /**
      * 미션 기간 안에 촬영된 전역 공개(ACTIVE·PUBLIC·READY) 영상 수 — 미션 영상 목록(MSG-390)의 실제 후보 수와 같다
      */
@@ -2159,7 +2159,7 @@ export type GridAggregationResponseDto = {
     /**
      * 뷰포트 중심이 속한 행정동. 해상이나 서비스 범위 밖이면 null
      */
-    currentRegion: CurrentRegionResponseDto;
+    currentRegion: CurrentRegionResponseDto | null;
     /**
      * 뷰포트 안에서 행정 단위로 묶은 내 점령 격자 목록
      */

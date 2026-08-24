@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { encodeGridId, type Bounds } from "@/entities/cell";
 import { signInForTest, signOutForTest } from "@/test/auth-session";
@@ -6,7 +6,7 @@ import { envelopeResponse } from "@/test/envelope-response";
 import { occupiedGridOf } from "@/test/occupied-grids";
 import { queryWrapper as wrapper } from "@/test/query-wrapper";
 import { stubFetch } from "@/test/stub-fetch";
-import { useHotZoneCells } from "./use-hotzones-query";
+import { useHotZoneCells, useHotZones } from "./use-hotzones-query";
 
 /**
  * 핫구역 훅 (MSG-325 기준 14) — 응답 격자를 테마 셀 형태로 옮긴다.
@@ -30,7 +30,8 @@ const stubHotZones = (gridIds: string[]) =>
     }),
   );
 
-// 핫구역 조회는 보호 API다 (MSG-328 익명 401 실측) — 기존 성공 경로는 로그인 전제로 고정
+// 기존 성공 경로는 로그인 전제로 고정 — 비로그인 경로는 아래 익명 케이스가 따로 단정한다
+// (MSG-454로 익명 조회 허용 — MSG-463에서 게이트 해제)
 beforeEach(signInForTest);
 
 afterEach(() => {
@@ -94,18 +95,29 @@ describe("useHotZoneCells", () => {
     expect(received).toHaveLength(0);
   });
 
-  it("비로그인이면 조회하지 않고(401 재발사 방지), 로그인 전환 시 다시 활성화된다 (사용자 버그 리포트 + 오버레이 복귀 회귀 가드)", async () => {
-    const received = stubHotZones(SEOMYEON_GRID_IDS);
+  it("비로그인에서도 조회해 지도 위 핫구역 셀을 준다 — MSG-454로 익명 조회 허용 (AC 8)", async () => {
+    stubHotZones(SEOMYEON_GRID_IDS);
     signOutForTest();
+
     const { result } = renderHook(() => useHotZoneCells(SEOMYEON_VIEWPORT), {
       wrapper,
     });
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(result.current).toEqual([]);
-    expect(received).toHaveLength(0);
-
-    act(signInForTest);
 
     await waitFor(() => expect(result.current).toHaveLength(2));
+    expect(result.current.map((c) => c.id)).toEqual(SEOMYEON_GRID_IDS);
+  });
+});
+
+describe("useHotZones", () => {
+  it("비로그인에서도 조회해 동 요약 소재(핫구역 원본)를 준다 — MSG-454로 익명 조회 허용 (AC 8)", async () => {
+    stubHotZones(SEOMYEON_GRID_IDS);
+    signOutForTest();
+
+    const { result } = renderHook(() => useHotZones(SEOMYEON_VIEWPORT), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(result.current.zones).toHaveLength(2));
+    expect(result.current.isPending).toBe(false);
   });
 });

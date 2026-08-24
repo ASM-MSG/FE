@@ -13,6 +13,11 @@ interface CourseCardProps {
    * 목록 위 안내 배너를 놓친 사용자는 "아직 하나도 안 갔다"로 읽는다
    */
   progressFailed: boolean;
+  /**
+   * 비로그인 진행도 잠금 (MSG-463 확정 2) — 진행 바·방문 수를 그리지 않는다.
+   * 익명은 조회 실패가 아니라 조회 대상이 아니므로 "확인 불가" 문구도 쓰지 않는다
+   */
+  progressLocked: boolean;
   onSelect: (missionId: number) => void;
   onHover: (missionId: number | null) => void;
 }
@@ -26,6 +31,7 @@ interface CourseCardProps {
 export const CourseCard = ({
   view,
   progressFailed,
+  progressLocked,
   onSelect,
   onHover,
 }: CourseCardProps) => {
@@ -63,8 +69,8 @@ export const CourseCard = ({
         </span>
 
         {/* 진행 바 — 폭은 n/N 비율(progressRatio). % 는 스케일로 표현 불가라 인라인 스타일.
-            진행도를 모르면 바 자체를 그리지 않는다 — 빈 바는 "0% 진행"이라는 주장이다 */}
-        {!progressFailed && (
+            진행도를 모르면(실패·비로그인) 바 자체를 그리지 않는다 — 빈 바는 "0% 진행"이라는 주장이다 */}
+        {!progressFailed && !progressLocked && (
           <span
             aria-hidden
             className="h-1 w-full overflow-hidden rounded-full bg-surface"
@@ -88,9 +94,12 @@ export const CourseCard = ({
                 : "text-foreground-muted",
             )}
           >
-            {progressFailed
-              ? "방문 확인 불가"
-              : `${progress.done}/${progress.total}곳 방문`}
+            {/* 비로그인은 방문 수를 숨긴다 (확정 2) — 빈 span은 영상 수의 우측 정렬 유지용 */}
+            {progressLocked
+              ? null
+              : progressFailed
+                ? "방문 확인 불가"
+                : `${progress.done}/${progress.total}곳 방문`}
           </span>
           {videoCount > 0 && (
             <span className="shrink-0 text-fm-label font-normal text-foreground-muted">

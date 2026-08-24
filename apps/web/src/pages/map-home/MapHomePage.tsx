@@ -271,6 +271,8 @@ export const MapHomePage = () => {
           listPending={missionsPending}
           listFailed={missionListFailed}
           progressFailed={progressFailed}
+          // 비로그인 진행도 잠금 (MSG-463 AC 9) — use-home-panel-state는 수정 금지라 props 경로만 쓴다
+          progressLocked={!isAuthenticated}
           onListRetry={retryMissionList}
           onSelectMission={handleSelectMission}
           onHoverMission={hoverMission}
