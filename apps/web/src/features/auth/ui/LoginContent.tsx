@@ -1,4 +1,6 @@
 import type { ElementType } from "react";
+// MSG-464: 자산을 투명 배경 416px 알파 PNG로 교체(파일 내용만 갱신 — 렌더 104px의 4배,
+// Figma 15166-2928 래스터에서 흰 배경 제거). 소비자가 이 파일 유일이라 이름은 유지한다.
 import appIcon from "../assets/fillmap-app-icon.png";
 import { DevLoginPanel } from "./DevLoginPanel";
 import { KakaoLoginButton } from "./KakaoLoginButton";
