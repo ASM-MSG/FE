@@ -123,18 +123,30 @@ jobs:
             exit 1
           fi
 
-          # ③ 요약 게시 증거 — 전사에 게시 도구 호출(gh pr comment Bash 또는 update_claude_comment)이 존재
-          if ! jq -e '
+          # ③ 요약 게시 증거 — 게시 도구 호출(gh pr comment Bash 또는 update_claude_comment)이 존재하고,
+          #    그중 최소 1건이 성공한 tool_result(is_error != true — 필드 부재가 성공의 기본형)와 상관돼야 한다.
+          #    tool_use(요청)만 보면 권한·API 오류로 게시가 실패해도 통과시킨다 (codex 리뷰 지적)
+          post_ids=$(jq -c '
             [ .[] | select(.type == "assistant") | .message.content[]? | select(.type == "tool_use")
               | select(
                   (.name == "Bash" and ((.input.command // "") | startswith("gh pr comment")))
                   or (.name == "mcp__github_comment__update_claude_comment")
-                ) ] | length > 0
-          ' "$EXECUTION_FILE" > /dev/null; then
+                ) | .id ]
+          ' "$EXECUTION_FILE")
+          post_count=$(jq 'length' <<< "$post_ids")
+          if [ "$post_count" -eq 0 ]; then
             echo "::error::요약 게시 도구 호출 없음 — 리뷰가 결과를 PR에 남기지 않고 종료 (검사 도구: gh pr comment, update_claude_comment)"
             exit 1
           fi
-          echo "리뷰 완주 확인 — result 성공 + 게시 도구 호출 존재"
+          if ! jq -e --argjson ids "$post_ids" '
+            [ .[] | select(.type == "user") | .message.content[]? | select(.type == "tool_result")
+              | select(.tool_use_id | IN($ids[]))
+              | select(.is_error != true) ] | length > 0
+          ' "$EXECUTION_FILE" > /dev/null; then
+            echo "::error::게시 도구 호출은 있었으나 성공한 tool_result 없음 — 게시 시도(${post_count}건)가 전부 실패 또는 결과 누락으로 종료 (검사 도구: gh pr comment, update_claude_comment)"
+            exit 1
+          fi
+          echo "리뷰 완주 확인 — result 성공 + 게시 도구 호출 성공(tool_result) 존재"
 
           # 마커는 판정 아님 — 사람 가독용. 전사에 현재 SHA 마커가 없으면 warning만 남긴다
           if ! grep -q "claude-review:summary ${HEAD_SHA:-}" "$EXECUTION_FILE"; then
