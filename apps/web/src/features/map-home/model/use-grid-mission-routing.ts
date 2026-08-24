@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import type { GridMissionResponseDto } from "@/shared/api/generated";
@@ -14,6 +14,11 @@ import { MAP_QUERY_STALE_TIME } from "./map-query-policy";
  * MSG-454 허용, AC 13)해 판정(grid-mission-resolve)에 따라 미션 상세 또는 격자 상세를
  * 연다. 조회 실패도 판정 함수로 흘려 화면을 막는 오류 없이 폴백한다 (AC 10).
  * `fetchQuery`라 격자별 캐시가 남는다 — 같은 격자 재탭은 staleTime 안에서 재요청이 없다.
+ *
+ * **스테일 응답 폐기 (리뷰 P1)** — 최신 요청 토큰으로 obsolete 완료를 선택 콜백 호출 전에
+ * 버린다: ① 격자 연타 시 느린 이전 요청의 응답이 나중 선택을 덮어쓰지 않고, ② 응답 대기
+ * 중 칩이 바뀌거나 꺼지면(판정 전제인 칩 type·도형 소속이 무효) 그 응답으로 아무것도
+ * 선택하지 않는다.
  */
 interface GridMissionRoutingInput {
   /** 활성 축제·팝업 칩 — null이면 조회 없이 격자 상세 직행(기존 경로 보존) */
@@ -31,6 +36,12 @@ export const useGridMissionRouting = ({
   selectCell,
 }: GridMissionRoutingInput): ((gridId: string) => void) => {
   const queryClient = useQueryClient();
+  // 최신 요청 토큰 (리뷰 P1) — 새 탭마다 증가시키고, 완료 시점에 자기 토큰이 아직
+  // 최신일 때만 선택 콜백을 부른다. 칩 전환·해제도 아래 effect로 토큰을 올려 무효화한다
+  const latestRequestRef = useRef(0);
+  useEffect(() => {
+    latestRequestRef.current += 1;
+  }, [chip]);
 
   return useCallback(
     (gridId: string) => {
@@ -38,6 +49,7 @@ export const useGridMissionRouting = ({
         selectCell(gridId);
         return;
       }
+      const token = ++latestRequestRef.current;
       void (async () => {
         let responses: GridMissionResponseDto[] | null;
         try {
@@ -53,6 +65,8 @@ export const useGridMissionRouting = ({
         } catch {
           responses = null;
         }
+        // obsolete 완료 폐기 (리뷰 P1) — 더 새 탭이 있었거나 칩이 바뀌었다
+        if (token !== latestRequestRef.current) return;
         const missionId = resolveGridMission({
           gridId,
           chip,

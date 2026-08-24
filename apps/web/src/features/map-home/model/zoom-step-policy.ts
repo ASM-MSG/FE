@@ -21,6 +21,32 @@ export const ZOOM_STEP_COOLDOWN_MS = 200;
  */
 export const WHEEL_STEP_THRESHOLD = 80;
 
+/**
+ * deltaMode 정규화 계수 (리뷰 P2) — `WheelEvent.deltaY`는 브라우저에 따라 픽셀(0)이
+ * 아니라 라인(1, Firefox 휠)·페이지(2) 단위로 온다. 원시값을 그대로 누적하면 라인 모드의
+ * 틱당 ~3이 픽셀 임계(80)에 닿지 못해 휠 줌이 사실상 불능이다. 계수도 이 파일 단일 정의.
+ *
+ * 라인 33px: Firefox 휠 1노치 = 3라인 → 약 99px로 Chrome 1노치(~100px)와 등가 —
+ * 브라우저 간 "1노치 = 1스텝" 체감을 맞춘다. 페이지 800px: 일반 뷰포트 높이 근사로,
+ * 한 페이지 스크롤이면 임계를 확실히 넘는다.
+ */
+export const WHEEL_LINE_HEIGHT_PX = 33;
+export const WHEEL_PAGE_HEIGHT_PX = 800;
+
+// WheelEvent.DOM_DELTA_* 등가 — 순수 모듈이라 DOM 전역을 참조하지 않는다 (RN 경계)
+const DOM_DELTA_LINE = 1;
+const DOM_DELTA_PAGE = 2;
+
+/** 휠 델타를 픽셀 등가로 정규화 — `applyWheel` 호출 전에 거친다. [리뷰 P2] */
+export const normalizeWheelDelta = (
+  deltaY: number,
+  deltaMode: number,
+): number => {
+  if (deltaMode === DOM_DELTA_LINE) return deltaY * WHEEL_LINE_HEIGHT_PX;
+  if (deltaMode === DOM_DELTA_PAGE) return deltaY * WHEEL_PAGE_HEIGHT_PX;
+  return deltaY;
+};
+
 export interface ZoomStepState {
   /** 진행 중인 델타 누적 — 부호가 방향(음수=확대 의도) */
   readonly accum: number;

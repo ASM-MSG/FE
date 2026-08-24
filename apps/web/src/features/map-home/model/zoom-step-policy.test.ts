@@ -3,6 +3,7 @@ import {
   applyButton,
   applyWheel,
   initialZoomStepState,
+  normalizeWheelDelta,
   WHEEL_STEP_THRESHOLD,
   ZOOM_STEP_COOLDOWN_MS,
 } from "./zoom-step-policy";
@@ -105,5 +106,26 @@ describe("applyButton — 줌 버튼도 같은 리미터를 거친다 (AC 2)", (
 
     expect(button.step).toBe(-1);
     expect(wheeled.step).toBe(0);
+  });
+});
+
+describe("normalizeWheelDelta — deltaMode 정규화 (리뷰 P2)", () => {
+  it("픽셀 모드(0)의 델타는 그대로 통과한다 (리뷰 P2)", () => {
+    expect(normalizeWheelDelta(-100, 0)).toBe(-100);
+  });
+
+  it("라인 모드(1, Firefox)의 휠 1노치(3라인)가 픽셀 등가로 환산되어 1스텝에 닿는다 (리뷰 P2)", () => {
+    const normalized = normalizeWheelDelta(-3, 1);
+
+    const { step } = applyWheel(initialZoomStepState, normalized, 1_000);
+
+    expect(step).toBe(1);
+  });
+
+  it("페이지 모드(2)는 페이지 높이 근사로 환산한다 — 한 페이지에 임계 도달, 방향 보존 (리뷰 P2)", () => {
+    const normalized = normalizeWheelDelta(-1, 2);
+
+    expect(normalized).toBeLessThan(0);
+    expect(Math.abs(normalized)).toBeGreaterThanOrEqual(WHEEL_STEP_THRESHOLD);
   });
 });

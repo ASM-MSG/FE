@@ -32,7 +32,10 @@ import { resetNaverMapsPreflight } from "./naver-sdk-loader";
 class FakeMap {
   static instances: FakeMap[] = [];
   options: Record<string, unknown>;
-  constructor(_el: HTMLElement, options: Record<string, unknown>) {
+  /** 지도 컨테이너 — 휠 이벤트 버블 경로 재현용 (리뷰 P2) */
+  el: HTMLElement;
+  constructor(el: HTMLElement, options: Record<string, unknown>) {
+    this.el = el;
     this.options = options;
     FakeMap.instances.push(this);
   }
@@ -170,6 +173,26 @@ describe("MapCanvas 스모크 — 인증 실패·내장 컨트롤", () => {
     });
 
     expect(setZoom).toHaveBeenCalledTimes(1);
+    expect(setZoom).toHaveBeenCalledWith(17, true);
+  });
+
+  it("라인 단위 휠(deltaMode=1, Firefox)도 정규화되어 줌 스텝이 나간다 (리뷰 P2)", async () => {
+    await mountUntilMapReady();
+    const map = FakeMap.instances[0];
+    const setZoom = vi.spyOn(map, "setZoom");
+
+    // Firefox 휠 1노치 = 3라인 — 픽셀 임계(80) 미만의 원시 델타라 정규화 없이는 줌 불능
+    act(() => {
+      map.el.dispatchEvent(
+        new WheelEvent("wheel", {
+          deltaY: -3,
+          deltaMode: WheelEvent.DOM_DELTA_LINE,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+
     expect(setZoom).toHaveBeenCalledWith(17, true);
   });
 

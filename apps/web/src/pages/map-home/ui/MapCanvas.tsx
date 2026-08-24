@@ -28,6 +28,7 @@ import {
   applyButton,
   applyWheel,
   initialZoomStepState,
+  normalizeWheelDelta,
   type ZoomStep,
   type ZoomStepState,
 } from "@/features/map-home/model/zoom-step-policy";
@@ -532,7 +533,8 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
         if (!map) return;
         const { state, step } = applyWheel(
           zoomStepRef.current,
-          event.deltaY,
+          // 라인·페이지 단위 델타(Firefox 등)를 픽셀 등가로 환산 — 리뷰 P2
+          normalizeWheelDelta(event.deltaY, event.deltaMode),
           performance.now(),
         );
         zoomStepRef.current = state;

@@ -96,3 +96,61 @@ describe("useGridMissionRouting — 칩 활성 격자 탭의 미션 라우팅 (A
     expect(received).toHaveLength(0);
   });
 });
+
+/** 지연 제어용 deferred — 느린 응답의 도착 시점을 테스트가 쥔다 (리뷰 P1 재현) */
+const deferred = () => {
+  let resolve!: (value: Response) => void;
+  const promise = new Promise<Response>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+};
+
+const GRID_B = "16846_11429";
+
+describe("useGridMissionRouting — 스테일 응답 폐기 (리뷰 P1)", () => {
+  it("격자 연타 시 느린 이전 요청의 응답은 나중 선택을 덮지 않는다 (리뷰 P1)", async () => {
+    const slow = deferred();
+    stubFetch((request) => {
+      const gridId = new URL(request.url).pathname.split("/")[3];
+      return gridId === GRID
+        ? slow.promise
+        : envelopeResponse([gridMission(2, "EVENT")]);
+    });
+    const { selectMission, handle } = setup({ chip: "festival" });
+
+    handle(GRID); // 느린 요청 (미션 1로 응답 예정)
+    handle(GRID_B); // 빠른 요청 (미션 2)
+    await waitFor(() => expect(selectMission).toHaveBeenCalledWith(2));
+    slow.resolve(envelopeResponse([gridMission(1, "EVENT")]));
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect(selectMission).not.toHaveBeenCalledWith(1);
+    expect(selectMission).toHaveBeenCalledTimes(1);
+  });
+
+  it("요청 대기 중 칩이 꺼지면 그 응답은 폐기된다 — 유효하지 않은 칩의 미션 선택 금지 (리뷰 P1)", async () => {
+    const slow = deferred();
+    stubFetch(() => slow.promise);
+    const selectMission = vi.fn();
+    const selectCell = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ chip }: { chip: "festival" | null }) =>
+        useGridMissionRouting({
+          chip,
+          membership: new Map(),
+          selectMission,
+          selectCell,
+        }),
+      { wrapper, initialProps: { chip: "festival" as "festival" | null } },
+    );
+
+    result.current(GRID);
+    rerender({ chip: null }); // 응답 대기 중 칩 해제
+    slow.resolve(envelopeResponse([gridMission(7, "EVENT")]));
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect(selectMission).not.toHaveBeenCalled();
+    expect(selectCell).not.toHaveBeenCalled();
+  });
+});
