@@ -37,6 +37,9 @@ export const Thumbnail = ({
 }: ThumbnailProps) => {
   const [errored, setErrored] = useState(false);
   const [prevSrc, setPrevSrc] = useState(src);
+  // 렌더 중 state 조정(React 공식 패턴 — "Adjusting state when a prop changes").
+  // useEffect로 바꾸면 커밋 후 리셋까지 한 프레임 동안 stale 폴백이 노출된다 —
+  // src 변경 시 페인트 전(동기) 초기화가 목적이라 effect로 옮기지 말 것.
   if (src !== prevSrc) {
     setPrevSrc(src);
     setErrored(false);
