@@ -1,18 +1,10 @@
 import {
-  cellCenterAt,
-  cellIndexAt,
   gridNodeAt,
   viewportGridRange,
   type Bounds,
   type LatLng,
 } from "@/entities/cell";
-import {
-  BUSAN_BBOX,
-  BUSAN_BOUNDARY,
-  clipLineToBoundary,
-  pointInPolygon,
-  type BoundarySegment,
-} from "@/entities/region";
+import type { BoundarySegment } from "@/entities/region";
 import type { StyledCellOverlay } from "./theme-overlay";
 
 /**
@@ -41,23 +33,10 @@ export interface GridLineOverlay {
   path: [LatLng, LatLng];
 }
 
-/** 두 Bounds의 교집합 — 겹치지 않으면 null */
-const intersectBounds = (a: Bounds, b: Bounds): Bounds | null => {
-  const sw = {
-    lat: Math.max(a.sw.lat, b.sw.lat),
-    lng: Math.max(a.sw.lng, b.sw.lng),
-  };
-  const ne = {
-    lat: Math.min(a.ne.lat, b.ne.lat),
-    lng: Math.min(a.ne.lng, b.ne.lng),
-  };
-  return sw.lat < ne.lat && sw.lng < ne.lng ? { sw, ne } : null;
-};
-
 /**
  * 선분을 위경도 bbox 안 구간으로 자른다 (Liang-Barsky) — 전부 밖이면 null.
  * 5179 정렬 선분은 위경도 bbox보다 살짝 비어져 나오므로(기울어짐) 뷰포트 컬링을 정확히
- * 지키려면 경계 절단과 별도로 bbox 절단이 필요하다.
+ * 지키려면 bbox 절단이 필요하다.
  */
 const clampSegmentToBounds = (
   [a, b]: BoundarySegment,
@@ -95,13 +74,15 @@ const clampSegmentToBounds = (
 };
 
 /**
- * 뷰포트 → 부산 행정경계로 절단된 점선 격자선 선분 목록. [AC 2·3·5·6]
+ * 뷰포트 → 점선 격자선 선분 목록. [AC 2·5·6 · MSG-477 ③ 전국 확장]
  * - 줌 게이트: GRID_MIN_ZOOM 미만이면 빈 배열 — 채움·클러스터 전환 게이트(MSG-264, cluster-overlay)와 임계 공유
  * - 뷰포트 컬링 + 한 화면 버퍼: 드래그 중 빈 영역 노출을 줄이기 위해 각 방향 1화면 여유(R3)
- * - 부산 bbox 교집합 밖이면 빈 배열, 경계 절단은 clipLineToBoundary(파라메트릭) [D7]
+ * - MSG-477: 부산 행정경계 절단(구 MSG-263 AC 3 — bbox 교집합 + clipLineToBoundary)을
+ *   제거했다. 서버 격자 인코딩(EPSG:5179)이 전국 좌표계라 격자는 전국에서 그려지고,
+ *   성능은 줌 게이트·컬링·선 규모(열+행)가 그대로 지킨다. 해상·국경 밖 노출은 수용된 부작용.
  * - MSG-357: 셀 범위는 꼭짓점 4점 min/max(viewportGridRange) — 2점 변환이면 기울어진
- *   격자의 가장자리 셀이 빠진다. 선분 id는 `{h|v}-{경계 인덱스}-{분절}`로 5179 경계 좌표
- *   (인덱스×100m)를 드러낸다
+ *   격자의 가장자리 셀이 빠진다. 선분 id는 `{h|v}-{경계 인덱스}`로 5179 경계 좌표
+ *   (인덱스×100m)를 드러낸다 (경계 절단 분절이 사라져 분절 접미사도 제거)
  */
 export const buildGridLines = (
   viewport: Bounds,
@@ -116,23 +97,17 @@ export const buildGridLines = (
     ne: { lat: viewport.ne.lat + latSpan, lng: viewport.ne.lng + lngSpan },
   };
 
-  const region = intersectBounds(buffered, BUSAN_BBOX);
-  if (!region) return [];
-
-  const range = viewportGridRange(region);
+  const range = viewportGridRange(buffered);
   const lines: GridLineOverlay[] = [];
 
-  const pushClipped = (id: string, segment: BoundarySegment) => {
-    const clamped = clampSegmentToBounds(segment, region);
-    if (!clamped) return;
-    clipLineToBoundary(clamped, BUSAN_BOUNDARY).forEach((path, i) =>
-      lines.push({ id: `${id}-${i}`, path }),
-    );
+  const pushClamped = (id: string, segment: BoundarySegment) => {
+    const clamped = clampSegmentToBounds(segment, buffered);
+    if (clamped) lines.push({ id, path: clamped });
   };
 
   // 수평선: gridY 경계(y = gridY×100)마다 x 범위 양끝 교점을 역변환한 선분
   for (let gridY = range.minGridY; gridY <= range.maxGridY + 1; gridY++) {
-    pushClipped(`h-${gridY}`, [
+    pushClamped(`h-${gridY}`, [
       gridNodeAt({ gridX: range.minGridX, gridY }),
       gridNodeAt({ gridX: range.maxGridX + 1, gridY }),
     ]);
@@ -140,7 +115,7 @@ export const buildGridLines = (
 
   // 수직선: gridX 경계(x = gridX×100)마다 y 범위 양끝 교점을 역변환한 선분
   for (let gridX = range.minGridX; gridX <= range.maxGridX + 1; gridX++) {
-    pushClipped(`v-${gridX}`, [
+    pushClamped(`v-${gridX}`, [
       gridNodeAt({ gridX, gridY: range.minGridY }),
       gridNodeAt({ gridX, gridY: range.maxGridY + 1 }),
     ]);
@@ -148,13 +123,6 @@ export const buildGridLines = (
 
   return lines;
 };
-
-/**
- * 좌표가 속한 격자 셀의 중심이 부산 행정경계 내부인지 — 점령·테마 오버레이 대상 판정 [AC 4].
- * 셀 중심은 5179 중심((gridX+0.5)·100, (gridY+0.5)·100)의 역변환이다 (BE `center` 대응).
- */
-export const isGridCellCenterInBusan = (point: LatLng): boolean =>
-  pointInPolygon(cellCenterAt(cellIndexAt(point)), BUSAN_BOUNDARY);
 
 /**
  * 셸 상시 점령 셀 중 섹션 게시 셀과 id가 겹치는 셀을 렌더 대상에서 제외한다. [개정 2 AC 8, R6]

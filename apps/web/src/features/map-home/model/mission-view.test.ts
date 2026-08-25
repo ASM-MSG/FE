@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MissionResponseDto } from "@/shared/api/generated";
+import type { MissionResponseDto, PathShape } from "@/shared/api/generated";
 import { toCourseView, toMissionView } from "./mission-view";
 
 const NOW = new Date("2026-08-14T10:00:00+09:00");
@@ -73,13 +73,15 @@ describe("toCourseView — 코스 전용 파생을 얹는다 (AC 21~22)", () => 
     distanceMeters: 14000,
     durationMinutes: 330,
     shape: {
+      // BE가 MSG-473에서 line을 문자열이 아닌 GeoJSON 객체로 내리기 시작했다(DTO 타입 변경).
+      // FE 파싱 대응은 MSG-473 소관 — 여기서는 기존 문자열 계약 픽스처를 좁은 캐스트로 유지한다.
       line: JSON.stringify({
         type: "LineString",
         coordinates: [
           [129.05, 35.15],
           [129.06, 35.16],
         ],
-      }),
+      }) as unknown as PathShape["line"],
       spots: [
         { gridId: "s2", lat: 35.16, lng: 129.06, seq: 2 },
         { gridId: "s1", lat: 35.15, lng: 129.05, seq: 1 },

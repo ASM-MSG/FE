@@ -2,15 +2,10 @@ import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/app/layouts/AppLayout";
 import { RequireAuth } from "@/app/RequireAuth";
 import { RouteErrorBoundary } from "@/app/RouteErrorBoundary";
-import {
-  KAKAO_CALLBACK_PATH,
-  NOTIFICATION_SETTINGS_PATH,
-  ROUTES,
-} from "@/app/routes";
+import { KAKAO_CALLBACK_PATH, ROUTES } from "@/app/routes";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
 import { KakaoCallbackPage } from "@/pages/oauth-callback/KakaoCallbackPage";
-import { NotificationSettingsPanel } from "@/pages/profile/NotificationSettingsPanel";
 import { ProfilePanel } from "@/pages/profile/ProfilePanel";
 import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
@@ -51,16 +46,8 @@ export const router = createBrowserRouter([
               </RequireAuth>
             ),
           },
-          // 알림 설정 상세(MSG-409) — /profile 하위 설정 상세 패널, /profile와 같은 층.
-          // 비로그인 직접 진입은 프로필 관례대로 홈+로그인 모달 (AC 3)
-          {
-            path: NOTIFICATION_SETTINGS_PATH,
-            element: (
-              <RequireAuth>
-                <NotificationSettingsPanel />
-              </RequireAuth>
-            ),
-          },
+          // 알림 설정 상세(MSG-409)는 MSG-477 ①에서 제거 — /profile/notifications 직접
+          // 진입은 무매칭(404)으로 errorElement에 수렴한다
         ],
       },
       // 카카오 OAuth 콜백 — 지도 셸 밖이다. 인가 직후 잠깐 머무는 화면이라 지도를

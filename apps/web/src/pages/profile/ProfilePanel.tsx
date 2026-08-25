@@ -1,12 +1,11 @@
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, DotsLoader } from "@fillmap/ui-web";
-import { NOTIFICATION_SETTINGS_PATH, ROUTES } from "@/app/routes";
+import { ROUTES } from "@/app/routes";
 import { DEFAULT_PROFILE_IMAGE } from "@/entities/profile";
 import { useLogout } from "@/features/auth/api/use-auth-mutations";
 import { featuredBadgesOf } from "@/features/dex/model/badge-showcase";
 import { useBadgesQuery } from "@/features/dex/model/use-collection-query";
-import { usePushToggle } from "@/features/notifications/api/use-push-toggle";
 import { formatJoinedDate } from "@/features/profile/model/profile-format";
 import { useActivityQuery } from "@/features/profile/model/use-activity-query";
 import { useProfileModalStore } from "@/features/profile/model/profile-modal-store";
@@ -16,7 +15,6 @@ import { ProfileEditModal } from "@/features/profile/ui/ProfileEditModal";
 import { ActivityCard } from "./ui/ActivityCard";
 import { ProfileHeader } from "./ui/ProfileHeader";
 import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
-import { SettingToggleRow } from "./ui/SettingToggleRow";
 
 /**
  * 프로필 패널 (MSG-124 → MSG-329 실 API 전환) — 지속 셸(MapShell) 지도 위 좌측 오버레이.
@@ -55,11 +53,6 @@ export const ProfilePanel = () => {
   const { mutate: logout, isPending: isLoggingOut } = useLogout({
     onFinished: () => navigate(ROUTES.home),
   });
-  // "알림 받기" 토글 (MSG-408 결정 1) — 신규 푸시 등록의 유일한 진입점.
-  // 표시 정본 = 권한 granted && 보관 토큰 존재, 미지원 브라우저는 행 비활성 (AC 4·8).
-  // denied/error 안내는 훅이 push-notice-store로 push — 렌더는 PushNoticeHost 단일
-  // 스택 몫 (PR #60 리뷰 3: 자체 토스트가 호스트와 같은 fixed 좌표에 겹치던 문제 해소)
-  const pushToggle = usePushToggle();
 
   return (
     <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col bg-background shadow-raised">
@@ -86,28 +79,14 @@ export const ProfilePanel = () => {
               <ActivityCard activity={activity} />
             </ProfileSection>
 
-            {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 3행 → 약관 → 처리방침 → [계정 삭제] → [로그아웃] */}
+            {/* 포커스 순서는 DOM 순서 그대로 — [편집] → 설정 2행 → 약관 → 처리방침 → [계정 삭제] → [로그아웃] */}
             <ProfileSection title="설정">
               {/* "위치정보 동의 관리"는 비활성(준비 중) 유지 — MSG-407 v3 결정 1로
                   인앱 동의 접점 제거, 동의는 온보딩 게이트 전용 (기준 12) */}
               <SettingRow label="위치정보 동의 관리" />
-              {/* "알림 받기" 토글 (MSG-408 AC 4~8) — 구 "알림 설정" 준비 중 행 대체.
-                  ON = 제스처 컨텍스트 권한 요청 → 토큰 등록, OFF = 해제 */}
-              <SettingToggleRow
-                label="알림 받기"
-                checked={pushToggle.checked}
-                onCheckedChange={pushToggle.setEnabled}
-                disabled={!pushToggle.supported}
-                disabledCaption="미지원 브라우저"
-                busy={pushToggle.isPending}
-              />
-              {/* "알림 설정" 활성 행 (MSG-409 AC 1·결정 2) — 카테고리 수신 설정
-                  상세로 이동. "알림 받기" 토글은 존치 — 푸시 등록 진입점은 이 토글과
-                  상세 화면 배너 CTA 2곳이 된다 (408 결정 1의 완화, 사용자 승인) */}
-              <SettingRow
-                label="알림 설정"
-                onClick={() => navigate(NOTIFICATION_SETTINGS_PATH)}
-              />
+              {/* "알림 받기" 토글(MSG-408)·"알림 설정" 행(MSG-409)은 MSG-477 ①에서 삭제 —
+                  웹 설정 UI의 알림 진입점을 제거했다(웹 푸시 신규 등록 진입점 소멸, 승인됨).
+                  기존 등록자 토큰 동기화·포그라운드 수신 표시(PushNoticeHost)는 유지 */}
               <SettingRow label="신고 관리" />
             </ProfileSection>
 

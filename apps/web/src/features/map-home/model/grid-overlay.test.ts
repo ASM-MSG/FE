@@ -7,7 +7,6 @@ import {
   viewportGridRange,
   type Bounds,
 } from "@/entities/cell";
-import { pointInPolygon, BUSAN_BOUNDARY } from "@/entities/region";
 import { MOCK_OCCUPIED_GRIDS } from "@/test/occupied-grids";
 import {
   GRID_MIN_ZOOM,
@@ -28,6 +27,12 @@ const OPEN_SEA_VIEWPORT: Bounds = {
   ne: { lat: 34.55, lng: 129.06 },
 };
 
+/** 수도권 원거리 뷰포트 — 부산에서 300km급, 전국 확장 확인용 (MVP 기본 지역은 서면 그대로) */
+const FAR_NORTH_VIEWPORT: Bounds = {
+  sw: { lat: 37.56, lng: 126.97 },
+  ne: { lat: 37.57, lng: 126.982 },
+};
+
 /** 검증용 독립 변환기 — 구현과 같은 정본 정의 문자열로 만든 교차 대조 기준 */
 const verify5179 = proj4("WGS84", CRS_DEF_EPSG5179);
 
@@ -42,17 +47,15 @@ const bufferedOf = ({ sw, ne }: Bounds): Bounds => {
 };
 
 describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6 · MSG-357 EPSG:5179)", () => {
-  it("뷰포트∩부산 범위의 선분만 반환한다 — 선분 중점이 모두 행정경계 내부다 (AC 2·3)", () => {
-    const lines = buildGridLines(SEOMYEON_VIEWPORT, GRID_MIN_ZOOM);
-
-    expect(lines.length).toBeGreaterThan(0);
-    for (const { path } of lines) {
-      const mid = {
-        lat: (path[0].lat + path[1].lat) / 2,
-        lng: (path[0].lng + path[1].lng) / 2,
-      };
-      expect(pointInPolygon(mid, BUSAN_BOUNDARY)).toBe(true);
-    }
+  // MSG-477 ③: 부산 행정경계 절단(MSG-263 AC 3) 제거 — 격자는 전국이다.
+  // 종전 "선분 중점이 모두 부산 경계 내부" 단정은 절단 규칙과 함께 폐기했다.
+  it("부산 밖 뷰포트(남해 해상·수도권 원거리)에서도 줌 16 이상이면 선분을 반환한다 — 경계 절단 제거 (MSG-477 C1)", () => {
+    expect(
+      buildGridLines(OPEN_SEA_VIEWPORT, GRID_MIN_ZOOM).length,
+    ).toBeGreaterThan(0);
+    expect(
+      buildGridLines(FAR_NORTH_VIEWPORT, GRID_MIN_ZOOM).length,
+    ).toBeGreaterThan(0);
   });
 
   it("격자선 선분이 5179 셀 경계의 역변환 좌표와 일치한다 — 끝점을 5179로 변환하면 id의 경계 좌표(×100m)다 (MSG-357 기준 5)", () => {
@@ -80,7 +83,7 @@ describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6 · M
   it("격자선 경계 좌표가 셀 꼭짓점 계산과 교차 대조된다 — 뷰포트 내 셀의 꼭짓점이 대응 격자선 위에 있다 (MSG-357 기준 5)", () => {
     const lines = buildGridLines(SEOMYEON_VIEWPORT, GRID_MIN_ZOOM);
     const range = viewportGridRange(SEOMYEON_VIEWPORT);
-    // 뷰포트 중앙부 셀 — 부산 내부라 사방 격자선이 절단 없이 존재한다
+    // 뷰포트 중앙부 셀 — 버퍼 안이라 사방 격자선이 존재한다
     const cell = {
       gridX: Math.round((range.minGridX + range.maxGridX) / 2),
       gridY: Math.round((range.minGridY + range.maxGridY) / 2),
@@ -91,12 +94,8 @@ describe("buildGridLines — 뷰포트 격자선 파생 (MSG-263 AC 2·5·6 · M
     // 남서 꼭짓점의 5179 좌표 = 대응 수직·수평 격자선의 경계 좌표
     expect(x).toBeCloseTo(cell.gridX * CELL_SIZE_METERS, 6);
     expect(y).toBeCloseTo(cell.gridY * CELL_SIZE_METERS, 6);
-    expect(lines.some((l) => l.id.startsWith(`v-${cell.gridX}-`))).toBe(true);
-    expect(lines.some((l) => l.id.startsWith(`h-${cell.gridY}-`))).toBe(true);
-  });
-
-  it("부산 밖 전용 뷰포트면 빈 배열이다 (AC 2)", () => {
-    expect(buildGridLines(OPEN_SEA_VIEWPORT, GRID_MIN_ZOOM)).toEqual([]);
+    expect(lines.some((l) => l.id === `v-${cell.gridX}`)).toBe(true);
+    expect(lines.some((l) => l.id === `h-${cell.gridY}`)).toBe(true);
   });
 
   it("줌 16 미만이면 빈 결과, 16 이상이면 반환한다 — 축척 100m부터 격자, 250m부터 클러스터 (AC 6, D4, MSG-357 후속)", () => {

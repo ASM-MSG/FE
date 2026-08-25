@@ -603,6 +603,44 @@ export type ApiResponseDtoRouteRecommendResponseDto = {
 };
 
 /**
+ * 언급 지역 신호 — 지도 이동(MOVE)·축소(ZOOM_OUT) 제안의 이름·중심·범위 재료
+ */
+export type MentionedAreaDto = {
+    /**
+     * 지역의 정식 표기 — 행정구역 매칭 단위 토큰 또는 구역 통칭(zones.name)
+     */
+    name: string;
+    /**
+     * 지역 중심 위도 (WGS84) — 행정구역은 경계 무게중심, 구역은 외접 사각형 중점
+     */
+    centerLat: number;
+    /**
+     * 지역 중심 경도 (WGS84)
+     */
+    centerLng: number;
+    /**
+     * 외접 사각형 남단 위도 (WGS84)
+     */
+    minLat: number;
+    /**
+     * 외접 사각형 서단 경도 (WGS84)
+     */
+    minLng: number;
+    /**
+     * 외접 사각형 북단 위도 (WGS84)
+     */
+    maxLat: number;
+    /**
+     * 외접 사각형 동단 경도 (WGS84)
+     */
+    maxLng: number;
+    /**
+     * 신호 종류 — MOVE(뷰포트와 안 겹침, 이동 제안)·ZOOM_OUT(겹치지만 뚜렷이 좁음, 축소 제안)
+     */
+    kind: string;
+};
+
+/**
  * 추천 지점
  */
 export type RoutePointDto = {
@@ -668,6 +706,10 @@ export type RouteRecommendResponseDto = {
      * 후보 부족 안내 — 지점 3개 이상이면 null, 0~2개면 안내 문구
      */
     notice: string | null;
+    /**
+     * 언급 지역 신호 (MSG-468) — 문장이 화면 밖 지역을 말했으면 이동·축소 제안 재료가 실린다. 무신호(지역 무언급·동명 다수·대조 실패·충분히 담김)가 기본값
+     */
+    mentionedArea: MentionedAreaDto | null;
 };
 
 /**
@@ -1783,7 +1825,9 @@ export type PathShape = MissionShape & {
     /**
      * 코스 라인 GeoJSON LineString 원문 — missions.path 는 NULL 허용 컬럼이라 없을 수 있다
      */
-    line: string | null;
+    line: {
+        [key: string]: unknown;
+    } | null;
     spots: Array<Spot>;
 };
 
@@ -4266,6 +4310,9 @@ export type GetTrendingKeywordsResponse = GetTrendingKeywordsResponses[keyof Get
 
 export type SearchPlacesData = {
     body?: never;
+    headers?: {
+        'X-Viewer-Session'?: string;
+    };
     path?: never;
     query: {
         /**

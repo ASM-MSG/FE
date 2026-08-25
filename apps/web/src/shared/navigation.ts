@@ -1,7 +1,9 @@
 /**
  * 외부 이동 어댑터 (MSG-325) — RN 경계 규칙의 지정 경유지.
- * 앱 내부 이동은 라우터(useNavigate)가 담당하고, 여기는 **앱 밖(외부 출처)으로 나가는**
- * 이동만 다룬다. RN 확장 시 이 파일만 Linking.openURL 구현으로 교체한다.
+ * 앱 내부 이동은 라우터(useNavigate)가 담당하고, 여기는 **라우터 밖 문서 이동** —
+ * 외부 출처로 나가는 이동과, 의도적 문서 리로드가 필요한 내부 하드 이동
+ * (RouteErrorBoundary, MSG-477 ②) — 만 다룬다. RN 확장 시 이 파일만 Linking.openURL
+ * 구현으로 교체한다.
  * `shared/geolocation.ts`와 같은 층위의 플랫폼 어댑터다.
  */
 

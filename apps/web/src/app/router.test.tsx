@@ -2,7 +2,7 @@ import { isValidElement } from "react";
 import { describe, expect, it } from "vitest";
 import { RequireAuth } from "./RequireAuth";
 import { router } from "./router";
-import { NOTIFICATION_SETTINGS_PATH, ROUTES } from "./routes";
+import { ROUTES } from "./routes";
 
 /**
  * 보호 라우트 구성 테스트 — 어떤 라우트가 RequireAuth로 감싸였는지를 실제 라우터
@@ -46,13 +46,11 @@ describe("보호 라우트 구성 — 비로그인 직접 진입은 RequireAuth�
     expect(elementType(profileRoute)).toBe(RequireAuth);
   });
 
-  it("/profile/notifications 라우트가 등록되고 RequireAuth로 감싸여 있다 (MSG-409 AC 3)", () => {
-    const notificationsRoute = findByPath(
-      router.routes as RouteNode[],
-      NOTIFICATION_SETTINGS_PATH,
-    );
-
-    expect(notificationsRoute).toBeDefined();
-    expect(elementType(notificationsRoute)).toBe(RequireAuth);
+  // MSG-477 ①: 알림 설정 라우트(MSG-409) 제거 — 미등록 단정으로 교체. 직접 진입은
+  // 무매칭(404)이라 루트 errorElement(RouteErrorBoundary)로 수렴한다 (A3)
+  it("/profile/notifications 라우트가 등록되어 있지 않다 — 직접 진입은 404로 에러 화면에 수렴 (MSG-477 A3)", () => {
+    expect(
+      findByPath(router.routes as RouteNode[], "/profile/notifications"),
+    ).toBeUndefined();
   });
 });
