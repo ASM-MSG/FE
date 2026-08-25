@@ -79,8 +79,8 @@ export const toCourseView = (
 ): CourseView => {
   const view = toMissionView(dto, progressDto, now);
   const spots = courseSpots(view.shape.spots, visitedGridIds);
-  // 라인이 없으면 스팟 번호 순 직선으로 잇는다 (MSG-403 후속)
-  const path = coursePath(view.shape.line, spots);
+  // 라인이 없으면 잇지 않는다 — 번호 마커만 (MSG-473, MSG-403 직선 폴백 번복)
+  const path = coursePath(view.shape.line);
 
   return {
     ...view,

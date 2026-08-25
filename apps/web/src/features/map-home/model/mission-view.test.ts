@@ -4,24 +4,30 @@ import { toCourseView, toMissionView } from "./mission-view";
 
 const NOW = new Date("2026-08-14T10:00:00+09:00");
 
-const dto = (over: Partial<MissionResponseDto>): MissionResponseDto => ({
-  missionId: 1,
-  type: "THEME",
-  title: "물놀이 페스타",
-  targetCount: 1,
-  startAt: "2026-07-16T00:00:00",
-  endAt: "2026-08-17T23:59:59",
-  shape: { cells: [] },
-  description: null,
-  placeName: "서면 A-14",
-  sourceUrl: null,
-  operationTime: null,
-  imageUrl: null,
-  distanceMeters: null,
-  durationMinutes: null,
-  difficulty: null,
-  ...over,
-});
+// shape는 unknown으로 받는다 — 명세(MSG-472 정정: line은 객체)가 뭐라 하든 FE는
+// 문자열 원문·객체·깨진 형태까지 방어 수용하는 것이 계약이라(MSG-473 AC 2·3) 명세 밖
+// 표현도 픽스처로 쓴다.
+const dto = (
+  over: Omit<Partial<MissionResponseDto>, "shape"> & { shape?: unknown },
+): MissionResponseDto =>
+  ({
+    missionId: 1,
+    type: "THEME",
+    title: "물놀이 페스타",
+    targetCount: 1,
+    startAt: "2026-07-16T00:00:00",
+    endAt: "2026-08-17T23:59:59",
+    shape: { cells: [] },
+    description: null,
+    placeName: "서면 A-14",
+    sourceUrl: null,
+    operationTime: null,
+    imageUrl: null,
+    distanceMeters: null,
+    durationMinutes: null,
+    difficulty: null,
+    ...over,
+  }) as MissionResponseDto;
 
 const progressDto = (
   missionId: number,

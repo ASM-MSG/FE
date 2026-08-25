@@ -65,6 +65,22 @@ const PATH_MISSION = baseMission({
     { gridId: "16882_11434", lat: 35.1631, lng: 129.0652, seq: 2 },
   ],
 });
+/** 서버 실응답 형태 — 라인이 GeoJSON 객체이고 스팟 bbox 밖까지 뻗는다 (MSG-473) */
+const PATH_OBJECT_MISSION = baseMission({
+  line: {
+    type: "LineString",
+    coordinates: [
+      [129.055, 35.152], // 스팟 bbox 남서쪽 밖
+      [129.0594, 35.1578],
+      [129.0652, 35.1631],
+      [129.07, 35.168], // 스팟 bbox 북동쪽 밖
+    ],
+  },
+  spots: [
+    { gridId: "16858_11420", lat: 35.1578, lng: 129.0594, seq: 1 },
+    { gridId: "16882_11434", lat: 35.1631, lng: 129.0652, seq: 2 },
+  ],
+});
 const CELLS_MISSION = baseMission({
   cells: [{ gridId: "16858_11420", lat: 35.1578, lng: 129.0594 }],
 });
@@ -74,6 +90,7 @@ const BROKEN_MISSION = baseMission(null);
 const MISSIONS = [
   BOX_MISSION,
   PATH_MISSION,
+  PATH_OBJECT_MISSION,
   CELLS_MISSION,
   REGION_MISSION,
   BROKEN_MISSION,
@@ -99,6 +116,7 @@ describe("mission 웹 원본 동등성 (D1·F-12)", () => {
   it("shape는 type이 아니라 필드 유무로 판별된다 — POPUP도 폴리곤을 받는다", () => {
     expect(missionShapeOf(BOX_MISSION).kind).toBe("box");
     expect(missionShapeOf(PATH_MISSION).kind).toBe("path");
+    expect(missionShapeOf(PATH_OBJECT_MISSION).kind).toBe("path");
     expect(missionShapeOf(CELLS_MISSION).kind).toBe("cells");
     expect(missionShapeOf(REGION_MISSION).kind).toBe("none");
     expect(missionShapeOf(BROKEN_MISSION).kind).toBe("none");

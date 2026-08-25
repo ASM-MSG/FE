@@ -8,9 +8,9 @@ import {
 
 /**
  * E7·E14·E15: 포토스팟이 `seq` 오름차순(NULL은 뒤) 안정 정렬 뒤 1부터 순번을 재부여받고,
- * `parseLineString`이 GeoJSON `[lng, lat]`를 `{lat, lng}`로 뒤집으며 파싱 실패·type
- * 불일치를 빈 배열로 흡수한다. 라인이 없으면 스팟을 번호 순으로 잇는다 (MSG-427) —
- * 웹 원본 동등.
+ * `parseLineString`이 GeoJSON `[lng, lat]`를 `{lat, lng}`로 뒤집으며(문자열 원문·객체 모두 —
+ * MSG-473) 파싱 실패·type 불일치를 빈 배열로 흡수한다. 라인이 없으면 잇지 않는다
+ * (MSG-473 — 스팟 직선 폴백 제거) — 웹 원본 동등.
  */
 const WEB_PATH = new URL(
   "../../../../../web/src/features/map-home/model/course.ts",
@@ -26,13 +26,24 @@ interface WebCourse {
 
 const loadWeb = (): Promise<WebCourse> => import(WEB_PATH);
 
-const LINE_SAMPLES: (string | null)[] = [
+const LINE_SAMPLES: unknown[] = [
   null,
   '{"type":"LineString","coordinates":[[129.0594,35.1578],[129.0652,35.1631]]}',
+  // 같은 라인의 GeoJSON 객체 표현 — 서버 실응답 형태 (MSG-473)
+  {
+    type: "LineString",
+    coordinates: [
+      [129.0594, 35.1578],
+      [129.0652, 35.1631],
+    ],
+  },
   '{"type":"Point","coordinates":[129.0594,35.1578]}',
+  { type: "Point", coordinates: [129.0594, 35.1578] },
   '{"type":"LineString","coordinates":"깨짐"}',
+  { type: "LineString", coordinates: "깨짐" },
   "{깨진 JSON",
   '{"type":"LineString","coordinates":[[129.0594,35.1578],["x",1]]}',
+  42,
 ];
 
 const SPOT_DTOS = [
@@ -57,15 +68,20 @@ describe("course 웹 원본 동등성 (E7·E14·E15)", () => {
       { lat: 35.1631, lng: 129.0652 },
     ]);
     expect(parseLineString(null)).toEqual([]);
-    expect(parseLineString(LINE_SAMPLES[2])).toEqual([]);
+    expect(parseLineString(LINE_SAMPLES[3])).toEqual([]);
     expect(parseLineString("{깨진 JSON")).toEqual([]);
   });
 
-  it("라인이 없으면 포토스팟을 번호 순서대로 잇고, 1점뿐이면 그리지 않는다", () => {
-    const spots = courseSpots(SPOT_DTOS, new Set());
+  it("GeoJSON 객체 입력을 문자열 원문과 같게 파싱한다 (MSG-473)", () => {
+    expect(parseLineString(LINE_SAMPLES[2])).toEqual(
+      parseLineString(LINE_SAMPLES[1]),
+    );
+    expect(parseLineString({ type: "Point", coordinates: [1, 2] })).toEqual([]);
+  });
 
-    expect(coursePath(null, spots)).toEqual(spots.map((s) => s.position));
-    expect(coursePath(null, spots.slice(0, 1))).toEqual([]);
+  it("라인이 없으면 잇지 않는다 — 스팟 직선 폴백 없이 빈 배열 (MSG-473)", () => {
+    expect(coursePath(null)).toEqual([]);
+    expect(coursePath("{깨진 JSON")).toEqual([]);
   });
 
   it("표본 전건에서 웹 원본과 같은 값을 낸다", async () => {
@@ -76,9 +92,9 @@ describe("course 웹 원본 동등성 (E7·E14·E15)", () => {
     expect(spots).toEqual(web.courseSpots(SPOT_DTOS, visited));
     for (const line of LINE_SAMPLES) {
       expect(parseLineString(line)).toEqual(web.parseLineString(line));
-      expect(coursePath(line, spots)).toEqual(web.coursePath(line, spots));
-      expect(isLoopCourse(coursePath(line, spots))).toBe(
-        web.isLoopCourse(web.coursePath(line, spots)),
+      expect(coursePath(line)).toEqual(web.coursePath(line));
+      expect(isLoopCourse(coursePath(line))).toBe(
+        web.isLoopCourse(web.coursePath(line)),
       );
     }
   });
