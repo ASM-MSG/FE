@@ -246,7 +246,6 @@ describe("backToHighlight — 미리보기에서 되돌아가기 (기준 22)", (
 describe("reset — 완료 후 초기화 (기준 29)", () => {
   it("초기 상태로 돌아간다 — 카메라 버튼 재진입 시 잔재 없음 (기준 29)", () => {
     const store = analyzing();
-    store.setTitle("서면 골목");
     store.completeAnalysis([[3, 8]]);
     store.goPreview();
 
@@ -428,11 +427,11 @@ describe("구독 계약", () => {
     const listener = vi.fn();
     const unsubscribe = store.subscribe(listener);
 
-    store.setTitle("한 번");
+    store.beginFlight("analysis");
     expect(listener).toHaveBeenCalledTimes(1);
 
     unsubscribe();
-    store.setTitle("두 번");
+    store.endFlight();
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });

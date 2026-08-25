@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import {
   NaverMapMarkerOverlay,
   NaverMapPolygonOverlay,
@@ -90,6 +90,18 @@ interface GridMapProps {
    * 줌 범위지 카메라 제약이 아니다 — 하한은 반드시 NaverMapView에 건다.
    */
   minZoom?: number;
+  /**
+   * 지도 **타일 첫 표시** 완료 — 진입 스플래시 해제 신호 (MSG-445).
+   *
+   * SDK의 `onLoaded`(네이티브 `NaverMap.OnLoadListener`)에 물린다. `onInitialized`가
+   * 아닌 이유는 실측이다: 초기화는 `getMapAsync` 콜백(지도 **객체** 생성)이라 타일보다
+   * 1.5~2초 먼저 오고, 그 시점에 스플래시를 내리면 지도 자리가 빈 격자 플레이스홀더로
+   * 남는다(2026-08-25 화면 녹화 프레임 분석). `onLoaded`는 래퍼 2.9.0이 노출하지 않아
+   * `patches/@mj-studio__react-native-naver-map@2.9.0.patch`로 추가했다 — **패치는 현재
+   * Android만 덮는다.** iOS에는 대응 네이티브 리스너가 없어 `onInitialized`로 폴백한다
+   * (아래 렌더 참조). iOS도 타일 기준으로 맞추려면 래퍼 iOS 패치가 선행돼야 한다.
+   */
+  onReady?: () => void;
   /** 격자 셀 탭 (MSG-296 AC 1) — 탭 좌표 → cellIndexAt → 인코딩 셀 id */
   onCellTap?: (cellId: string, index: GridCellIndex) => void;
   /**
@@ -195,6 +207,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     missionLabel,
     onViewportChange,
     clusters,
+    onReady,
   },
   ref,
 ) {
@@ -296,6 +309,12 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         longitude: initialCenter.lng,
         zoom: initialZoom,
       }}
+      // 타일 첫 표시(`onLoaded`)는 **패치가 Android에만 있다** — iOS 네이티브에는 대응
+      // 리스너가 없어 이벤트가 영영 오지 않는다. iOS를 `onLoaded`에만 걸어두면 스플래시가
+      // 매번 게이트 상한(2.5초)을 통째로 기다리므로, iOS는 종전 신호(`onInitialized`)로
+      // 폴백해 최소한 지금 동작을 유지한다. iOS 대응은 후속(래퍼 iOS 패치 또는 업스트림).
+      onLoaded={Platform.OS === "android" ? onReady : undefined}
+      onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
       minZoom={minZoom}
       onCameraChanged={(camera) => {
