@@ -117,9 +117,9 @@ describe("useMissionAggregationQuery — 저줌 미션 집계 조회 게이트 (
     expect(received).toHaveLength(0);
   });
 
-  it("비로그인이면 조회하지 않는다 — 익명 401 재발사를 막는다 (추정 6)", async () => {
+  it("비로그인에서도 나머지 활성 조건(칩·저줌·뷰포트) 충족 시 조회한다 — MSG-454로 익명 조회 허용 (AC 8)", async () => {
     signOutForTest();
-    const received = stubMissionAggregation();
+    stubMissionAggregation();
 
     const { result } = renderAggregation(
       "festival",
@@ -127,9 +127,8 @@ describe("useMissionAggregationQuery — 저줌 미션 집계 조회 게이트 (
       MAP_SCALE_500M_ZOOM,
     );
 
-    // 요청이 아예 나가지 않는 것이 이 기준의 주장이다 — 마커가 빈 것은 그 결과다
-    await waitFor(() => expect(received).toHaveLength(0));
-    expect(result.current.markers).toHaveLength(0);
+    await waitFor(() => expect(result.current.markers).toHaveLength(1));
+    expect(result.current.markers[0].name).toBe("부산진구");
   });
 
   it("뷰포트가 없으면(지도 준비 전) 조회하지 않는다 (경계)", async () => {

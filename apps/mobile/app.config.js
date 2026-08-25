@@ -83,10 +83,20 @@ export default (_ctx) => ({
     bundleIdentifier: "kr.fillmap.app",
   },
   android: {
+    /**
+     * 런처 아이콘 — Figma `feelmap-logo`(15166:2928) 원본에서 생성.
+     * 원본은 흰 배경에 마크가 플랫하게 눌러붙은 알파 없는 PNG다. 그대로 foreground에
+     * 넣으면 그 흰 사각형이 런처 마스크에 한 번 더 깎여 이중 라운딩으로 보인다.
+     * 그래서 마크만 알파로 분리해 전경에 두고, 원본의 흰 배경은 backgroundColor로
+     * 재현한다 (backgroundImage는 불필요해져 에셋째 삭제).
+     * 전경 캔버스 1024px = 어댑티브 아이콘 108dp. 마크의 외접원을 66dp 키라인에
+     * 맞춰 중앙 배치했으므로 원·스퀘어클 등 어떤 마스크에서도 잘리지 않는다.
+     * monochrome(안드로이드 13+ 테마 아이콘)은 같은 배치의 흰 실루엣이며 핀만 뚫려 있다.
+     * 에셋을 갈아끼운 뒤에는 `expo prebuild -p android`로 mipmap을 다시 만들어야 반영된다.
+     */
     adaptiveIcon: {
-      backgroundColor: "#E6F4FE",
+      backgroundColor: "#FFFFFF",
       foregroundImage: "./assets/images/android-icon-foreground.png",
-      backgroundImage: "./assets/images/android-icon-background.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: false,

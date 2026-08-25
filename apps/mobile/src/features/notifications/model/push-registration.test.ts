@@ -3,6 +3,7 @@ import {
   PUSH_PERMISSION_DENIED_MESSAGE,
   decideSyncAction,
   derivePushEnabled,
+  reconcilePushError,
   shouldAutoSync,
   type PushSyncAction,
 } from "./push-registration";
@@ -92,5 +93,35 @@ describe("shouldAutoSync — 상주 자동 동기화 발동 조건 (기준 14)",
 describe("권한 거부 안내 (기준 15)", () => {
   it("기기 설정에서 켜라는 안내 문구를 갖는다", () => {
     expect(PUSH_PERMISSION_DENIED_MESSAGE).toContain("설정");
+  });
+});
+
+/**
+ * 템플릿 ① 순수 로직 — MSG-447 기준 13 **실기 회귀**.
+ *
+ * 실기에서 관찰한 결함: 알림 권한을 거부해 설정 안내가 뜬 뒤, 시스템 설정에서 권한을 켜고
+ * 앱으로 돌아와도 **안내가 그대로 남았다**. 포그라운드 재판독이 `permission`은 갱신하지만
+ * 조작 오류(`error="denied"`)를 그대로 둬, 안내 파생이 그 낡은 값을 계속 봤기 때문이다.
+ *
+ * 안내 파생 쪽에서 `pushError`를 무시하도록 고치면 안 된다 — 토글을 막 거부한 직후에는
+ * 재판독이 아직 도착하지 않아 그 값이 **유일한** 근거다. 정리는 새 사실이 도착하는 지점,
+ * 즉 재판독에서 한다.
+ */
+describe("reconcilePushError — 기기 재판독이 도착했을 때 낡은 거부를 정리한다 (MSG-447 기준 13)", () => {
+  it("설정에서 권한을 켜고 돌아오면 거부 오류가 사라진다", () => {
+    expect(reconcilePushError("denied", "granted")).toBeNull();
+  });
+
+  it("여전히 거부돼 있으면 그대로 남는다 — 안내가 조용히 사라지면 사용자가 갈 곳을 잃는다", () => {
+    expect(reconcilePushError("denied", "denied")).toBe("denied");
+    expect(reconcilePushError("denied", "undetermined")).toBe("denied");
+  });
+
+  it("등록 실패는 권한과 무관하므로 건드리지 않는다 — 재시도로 풀리는 다른 축이다", () => {
+    expect(reconcilePushError("failed", "granted")).toBe("failed");
+  });
+
+  it("오류가 없으면 계속 없다", () => {
+    expect(reconcilePushError(null, "granted")).toBeNull();
   });
 });

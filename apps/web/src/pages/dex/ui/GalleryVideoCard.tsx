@@ -1,3 +1,4 @@
+import { Thumbnail } from "@fillmap/ui-web";
 import { MoreHorizontal, Play } from "lucide-react";
 import type { CollectedVideo } from "@/entities/dex";
 import { VideoMoreMenu } from "@/features/video-actions/ui/VideoMoreMenu";
@@ -17,8 +18,8 @@ interface GalleryVideoCardProps {
  * 갤러리 영상 카드 (MSG-327 기준 13·14, Figma node 14599:19418) — 1열 세로 리스트의 단위.
  * 풀폭 썸네일(중앙 재생 아이콘 + 우하단 m:ss 배지) + 하단 "#N · {상대시간} 수집" + NEW 배지.
  * 구 3열 GalleryThumbnail을 대체한다 — 1열이 영상 목록의 정본이다.
- * thumbnailUrl이 null이면(READY 이전·썸네일 없음) 회색 폴백 + 재생 아이콘만 남는다
- * (Figma 회색 타일은 placeholder — 실구현은 presigned 썸네일).
+ * thumbnailUrl이 null이거나(READY 이전·썸네일 없음) 로드에 실패하면 기본 이미지
+ * (격자 로고 플레이스홀더, MSG-464) + 재생 아이콘만 남는다 — 실구현은 presigned 썸네일.
  *
  * MSG-411 (AC 1, Figma 14791:3689): 썸네일 우상단에 더보기(⋯) 버튼을 부착 — 내 영상
  * 메뉴(공개 범위 전환·삭제)를 연다. 루트가 통째로 button이면 더보기가 중첩 버튼이
@@ -41,14 +42,8 @@ export const GalleryVideoCard = ({
         className="flex w-full flex-col gap-xs text-left transition-opacity active:opacity-80"
       >
         <span className="relative flex aspect-[340/196] w-full items-center justify-center overflow-hidden rounded-md bg-surface">
-          {video.thumbnailUrl !== null && (
-            <img
-              src={video.thumbnailUrl}
-              alt=""
-              loading="lazy"
-              className="absolute inset-0 size-full object-cover"
-            />
-          )}
+          {/* MSG-464: null·로드 에러 모두 ui-web Thumbnail의 기본 이미지 폴백 (기준 4·6) */}
+          <Thumbnail src={video.thumbnailUrl} loading="lazy" />
           <span className="relative flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <Play className="size-4 fill-current" />
           </span>

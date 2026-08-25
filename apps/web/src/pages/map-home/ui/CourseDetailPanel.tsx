@@ -1,4 +1,5 @@
 import { DotsLoader, cn } from "@fillmap/ui-web";
+import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import {
   formatCourseDuration,
   formatDistanceKm,
@@ -20,6 +21,11 @@ interface CourseDetailPanelProps {
    * (리뷰 반영). 실패 시 전 스팟이 미방문으로 폴백해 사실처럼 보인다
    */
   progressFailed: boolean;
+  /**
+   * 비로그인 진행도 잠금 (MSG-463 AC 9·확정 2) — `내 진행`은 로그인 유도로, 스팟별
+   * `방문함/미방문`은 방문 여부를 모르므로 라벨을 생략한다 (progressFailed와 동일 처리)
+   */
+  progressLocked: boolean;
   /** 포토스팟 클릭 — 그 격자의 상세로 (AC 24) */
   onSpotSelect: (gridId: string) => void;
   onBack: () => void;
@@ -37,11 +43,14 @@ export const CourseDetailPanel = ({
   view,
   spotNames,
   progressFailed,
+  progressLocked,
   onSpotSelect,
   onBack,
   onClose,
 }: CourseDetailPanelProps) => {
   useEscapeClose(onClose);
+  // 리프에서 직접 구독한다 — RegionPanel의 로그인 유도 선례 (페이지 상태와 무관한 전역 모달)
+  const openLoginModal = useLoginModalStore((s) => s.openModal);
 
   // 요소가 전부 준비되기 전에는 도트 로더만 (MSG-403 후속 — 부분 렌더 금지).
   // 스팟 이름이 도착하기 전의 "이름 없는 경유 지점"은 로딩을 부재로 위장하는 거짓말이다
@@ -86,12 +95,19 @@ export const CourseDetailPanel = ({
 
           <StatTrio
             items={[
-              {
-                label: "내 진행",
-                value: progressFailed
-                  ? "확인 불가"
-                  : `${progress.done}/${progress.total}곳`,
-              },
+              // 비로그인이 실패 표기보다 먼저다 — 익명은 진행도 조회 자체가 없다 (AC 9)
+              progressLocked
+                ? {
+                    label: "내 진행",
+                    value: "로그인 후 확인",
+                    onClick: openLoginModal,
+                  }
+                : {
+                    label: "내 진행",
+                    value: progressFailed
+                      ? "확인 불가"
+                      : `${progress.done}/${progress.total}곳`,
+                  },
               ...(distance ? [{ label: "거리", value: distance }] : []),
               ...(duration ? [{ label: "소요 시간", value: duration }] : []),
             ]}
@@ -115,7 +131,7 @@ export const CourseDetailPanel = ({
                     key={spot.gridId}
                     spot={spot}
                     name={spotNames.names.get(spot.gridId)}
-                    visitedUnknown={progressFailed}
+                    visitedUnknown={progressFailed || progressLocked}
                     onSelect={onSpotSelect}
                   />
                 ))}

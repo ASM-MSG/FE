@@ -2,6 +2,7 @@ import type {
   ApiResponseDtoNotificationPreferenceResponseDto,
   CategoryPreferenceDto,
 } from "../../../shared/api/sdk";
+import type { PermissionState } from "../../../shared/permission-state";
 import { PUSH_PERMISSION_DENIED_MESSAGE } from "../../notifications/model/push-registration";
 
 /**
@@ -74,19 +75,33 @@ export const NOTIFICATION_SAVE_ERROR_TEXT =
   "알림 설정을 저장하지 못했어요. 잠시 후 다시 시도해주세요";
 
 /**
- * `알림 받기` 행의 실패 안내 (MSG-429 기준 15).
+ * `알림 받기` 행의 안내 — 문구와 **복구 수단**을 함께 판정한다 (MSG-429 기준 15, MSG-447 기준 11·12).
  *
- * MSG-429에서 이 스위치 하나가 **서버 preferences 5종**(MSG-426)과 **OS 권한 + FCM 토큰**
- * (MSG-429) 두 축을 함께 움직이게 되면서 실패 사유가 둘로 늘었다. 권한 거부를 최우선으로
- * 보여준다 — "잠시 후 다시 시도"는 사용자가 기기 설정을 열기 전까지 영원히 거짓이기 때문이다.
+ * - `settings`: 앱 안에서 고칠 수 없다. 시스템 설정으로 내보내는 CTA가 필요하다
+ * - `text`: 재시도로 풀린다. 종전대로 행 아래 캡션만 붙인다
+ *
+ * MSG-429가 두 축(서버 preferences 5종 / OS 권한 + FCM 토큰)의 실패 사유를 한 문자열로 합쳤는데,
+ * MSG-447에서 **권한 거부에 실제로 갈 곳이 생기면서** 종류를 나눠야 했다. 종전에는 같은 문구가
+ * 탭할 수 없는 텍스트로만 있어 사용자가 읽고도 갈 곳이 없었다.
+ *
+ * `permission`을 따로 받는 이유(기준 11): 토글을 **한 번도 건드리지 않은** 사용자에게도 거부
+ * 사실이 보여야 한다. `pushError`는 조작 결과라 진입 직후에는 항상 null이다.
  */
-export const resolveNotificationErrorText = (input: {
+export type NotificationNotice =
+  | { kind: "settings"; text: string }
+  | { kind: "text"; text: string };
+
+export const resolveNotificationNotice = (input: {
+  permission: PermissionState;
   pushError: "denied" | "failed" | null;
   preferencesFailed: boolean;
-}): string | undefined => {
-  if (input.pushError === "denied") return PUSH_PERMISSION_DENIED_MESSAGE;
+}): NotificationNotice | undefined => {
+  // 권한 거부가 저장 실패보다 우선한다 — "잠시 후 다시 시도"는 설정을 열기 전까지 영원히 거짓이다
+  if (input.permission === "denied" || input.pushError === "denied") {
+    return { kind: "settings", text: PUSH_PERMISSION_DENIED_MESSAGE };
+  }
   if (input.pushError === "failed" || input.preferencesFailed) {
-    return NOTIFICATION_SAVE_ERROR_TEXT;
+    return { kind: "text", text: NOTIFICATION_SAVE_ERROR_TEXT };
   }
   return undefined;
 };

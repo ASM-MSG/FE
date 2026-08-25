@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import { toPermissionState } from "../../../shared/permission-state";
 import type { PushPermissionStatus } from "../model/push-registration";
 
 /**
@@ -19,12 +20,6 @@ type NotificationsModule = typeof import("expo-notifications");
 let modulePromise: Promise<NotificationsModule> | null = null;
 const loadNotifications = (): Promise<NotificationsModule> =>
   (modulePromise ??= import("expo-notifications"));
-
-const toStatus = (
-  granted: boolean,
-  canAskAgain: boolean,
-): PushPermissionStatus =>
-  granted ? "granted" : canAskAgain ? "undetermined" : "denied";
 
 /**
  * 포그라운드에서도 알림 배너를 띄운다 — 앱을 보고 있을 때 완료를 놓치지 않게 (기준 16).
@@ -50,7 +45,8 @@ export const readPermissionStatus = async (): Promise<PushPermissionStatus> => {
   const { granted, canAskAgain } = await (
     await loadNotifications()
   ).getPermissionsAsync();
-  return toStatus(granted, canAskAgain);
+  // MSG-447: 3상태 매핑은 위치 축과 공유한다 (결정 D2) — 동작은 종전과 동일
+  return toPermissionState({ granted, canAskAgain });
 };
 
 /**
@@ -61,7 +57,7 @@ export const requestPermission = async (): Promise<PushPermissionStatus> => {
   const { granted, canAskAgain } = await (
     await loadNotifications()
   ).requestPermissionsAsync();
-  return toStatus(granted, canAskAgain);
+  return toPermissionState({ granted, canAskAgain });
 };
 
 /**

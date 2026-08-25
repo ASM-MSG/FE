@@ -1,4 +1,4 @@
-import { DialogShell, ModalCard, Toast } from "@fillmap/ui-web";
+import { DialogShell, ModalCard, Thumbnail, Toast } from "@fillmap/ui-web";
 import { useVideoPlaybackQuery } from "@/features/map-home/model/use-video-playback-query";
 import { useDeleteVideo } from "../api/use-video-mutations";
 import { useAutoDismissToast } from "../model/use-auto-dismiss-toast";
@@ -71,15 +71,10 @@ export const VideoDeleteConfirmDialog = ({
         >
           {/* 대상 영상 카드 — Figma 14792:3610 (예시값이 아닌 실데이터 렌더) */}
           <div className="flex items-center gap-sm rounded-md bg-surface p-sm">
-            {thumbnailUrl !== null ? (
-              <img
-                src={thumbnailUrl}
-                alt=""
-                className="size-16 shrink-0 rounded-sm object-cover"
-              />
-            ) : (
-              <span className="size-16 shrink-0 rounded-sm bg-surface-soft" />
-            )}
+            {/* MSG-464: null·로드 에러 모두 카드 4곳과 동일한 기본 이미지 폴백 (기준 6, 추정 5) */}
+            <span className="relative size-16 shrink-0 overflow-hidden rounded-sm bg-surface">
+              <Thumbnail src={thumbnailUrl} />
+            </span>
             <div className="flex min-w-0 flex-col gap-xxs">
               <p className="truncate text-fm-body-strong text-foreground">
                 {deleteCardTitle(label, target.durationSec)}

@@ -70,6 +70,17 @@ describe("useMissionDetailQuery — 미션 상세(진행도·스팟 통계) (AC 
     expect(result.current.videoCount).toBe(5);
   });
 
+  it("비로그인에서도 조회하고, 익명 응답의 progress null을 그대로 준다 — MSG-454로 익명 조회 허용 (AC 8·9)", async () => {
+    signOutForTest();
+    stubFetch(async () => envelopeResponse({ ...DETAIL, progress: null }));
+
+    const { result } = renderHook(() => useMissionDetailQuery(12), { wrapper });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.progress).toBeNull();
+    expect(result.current.spotStats.get("16858_11420")?.visited).toBe(true);
+  });
+
   it("선택된 미션이 없으면 조회하지 않는다 (AC 21)", async () => {
     const fetchSpy = vi.fn(async () => envelopeResponse(DETAIL));
     stubFetch(fetchSpy);
@@ -81,5 +92,17 @@ describe("useMissionDetailQuery — 미션 상세(진행도·스팟 통계) (AC 
     await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(result.current.spotStats.size).toBe(0);
+  });
+});
+
+describe("useMissionDetailQuery — 익명 게이트 해제 (MSG-462 AC 13)", () => {
+  it("비로그인 상태에서도 조회한다 — 서버 MSG-454 익명 허용 (AC 13)", async () => {
+    signOutForTest();
+    stubFetch(async () => envelopeResponse(DETAIL));
+
+    const { result } = renderHook(() => useMissionDetailQuery(12), { wrapper });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.videoCount).toBe(5);
   });
 });

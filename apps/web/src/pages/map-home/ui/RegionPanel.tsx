@@ -25,9 +25,12 @@ interface RegionPanelProps {
  * 칩 화면과 공유하므로 페이지(MapHomePage)가 소유한다. "전체 보기"는 패널 안 전체 지역
  * 리스트로 전환한다.
  *
- * 5개 지역·검색 엔드포인트 모두 익명 401 실측(2026-08-13, api.fillmap.kr) — 비로그인은
- * 조회를 게이트하고 로그인 유도 UI를 보여준다. 401을 그대로 쏘면 auth-pipeline의
- * 재발급 실패 → 세션 만료 처리(로그인 모달 강제 오픈)가 홈 진입만으로 발동한다.
+ * 기본 패널의 데이터원(역지오코딩·격자 리스트)은 여전히 로그인 전용 API다(익명 401
+ * 실측 2026-08-13, api.fillmap.kr) — 비로그인은 조회를 게이트하고 로그인 유도 UI를
+ * 보여준다(현행 유지 — MSG-463 확정 1). 401을 그대로 쏘면 auth-pipeline의 재발급 실패
+ * → 세션 만료 처리(로그인 모달 강제 오픈)가 홈 진입만으로 발동한다. 전체 지역
+ * 리스트(explore)만 MSG-454로 익명 조회가 허용됐고, 훅 레벨 게이트는 해제했지만
+ * 비로그인 기본 패널에 "전체 보기" 진입로를 새로 열지는 않는다.
  */
 export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);

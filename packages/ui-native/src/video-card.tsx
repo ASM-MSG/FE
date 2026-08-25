@@ -34,6 +34,12 @@ interface VideoCardProps {
    */
   overlay?: ReactNode;
   onPress?: () => void;
+  /**
+   * 버튼으로 낭독될 때의 접근 가능한 이름 (MSG-446 기준 11로 추가된 비파괴 확장).
+   * 미지정 시 렌더·낭독 불변(자식 텍스트가 그대로 읽힌다) — `title`이 순번 칩·NEW 배지
+   * 같은 노드 조합이라 자식 낭독만으로는 어떤 영상인지 식별되지 않을 때 지정한다.
+   */
+  accessibilityLabel?: string;
   className?: string;
 }
 
@@ -74,12 +80,14 @@ export const VideoCard = ({
   thumbnailClassName,
   overlay,
   onPress,
+  accessibilityLabel,
   className,
 }: VideoCardProps) => (
   <Pressable
     // onPress가 없으면 버튼으로 낭독되지 않게 role을 비운다 — 눌러도 아무 일이 없는
     // "버튼"을 스크린리더에 노출하지 않기 위함 (codex 리뷰)
     accessibilityRole={onPress ? "button" : undefined}
+    accessibilityLabel={accessibilityLabel}
     onPress={onPress}
     className={cx("w-full gap-xs active:opacity-80", className)}
   >

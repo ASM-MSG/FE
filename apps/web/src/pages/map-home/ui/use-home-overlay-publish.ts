@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo } from "react";
+import type { EventChip } from "@/features/map-home/model/grid-mission-resolve";
 import { canOpenDetail } from "@/features/map-home/model/home-cell-detail";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
+import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import type { ThemeId, ThemeCell } from "@/features/map-home/model/theme";
+import { useGridMissionRouting } from "@/features/map-home/model/use-grid-mission-routing";
 import {
   emphasizeCell,
   themeCellGridIds,
@@ -28,6 +31,10 @@ interface HomeOverlayPublishInput {
   playingGridId: string | null;
   /** 격자 검색 선택 격자 — 재생 강조와 병존하는 테두리 강조 (MSG-412 AC 6) */
   searchGridId: string | null;
+  /** 활성 축제·팝업 칩 — 활성이면 격자 탭이 미션 라우팅을 경유한다 (MSG-462 AC 7) */
+  eventChip: EventChip | null;
+  /** 활성 미션 격자 → 소속 미션 id — FE 도형 폴백 판정 입력 (MSG-462 AC 6ⓑ) */
+  gridMembership: ReadonlyMap<string, number>;
 }
 
 export const useHomeOverlayPublish = ({
@@ -37,8 +44,12 @@ export const useHomeOverlayPublish = ({
   occupiedIds,
   playingGridId,
   searchGridId,
+  eventChip,
+  gridMembership,
 }: HomeOverlayPublishInput): void => {
   const selectCell = useHomeCellDetailStore((s) => s.select);
+  const closeCellDetail = useHomeCellDetailStore((s) => s.close);
+  const selectMission = useMissionSelectionStore((s) => s.select);
   const expandSidebar = useSidebarStore((s) => s.setCollapsed);
   const setCells = useMapOverlayStore((s) => s.setCells);
   const setRoutes = useMapOverlayStore((s) => s.setRoutes);
@@ -70,14 +81,44 @@ export const useHomeOverlayPublish = ({
           overlays.cells.map((cell) => cell.id),
     [activeTheme, hotCells, overlays.cells],
   );
+  // 미션 상세 열기 (MSG-462 AC 7) — 격자 상세가 열려 있으면 닫는다. panel-branch가
+  // grid-detail을 우선하므로 닫지 않으면 선택한 미션 상세가 격자 상세에 가려진다
+  const openMissionDetail = useCallback(
+    (missionId: number) => {
+      closeCellDetail();
+      selectMission(missionId);
+    },
+    [closeCellDetail, selectMission],
+  );
+  // 축제·팝업 칩 활성 중 격자 탭 → API+도형 하이브리드 판정으로 미션/격자 상세 분기
+  const routeGridTap = useGridMissionRouting({
+    chip: eventChip,
+    membership: gridMembership,
+    selectMission: openMissionDetail,
+    selectCell,
+  });
   const handleCellTap = useCallback(
     (cellId: string) => {
+      // 탭 판정 집합은 종전 그대로 — 게시(클릭 가능) 격자만 반응한다 (AC 11 계약 유지)
       if (!canOpenDetail(activeTheme, cellId, clickableGridIds, occupiedIds))
         return;
-      selectCell(cellId);
+      if (eventChip !== null) {
+        // 격자 상세 대신 그 행사의 미션 상세로 (MSG-462 AC 7) — 판정 실패는 격자 상세 폴백
+        routeGridTap(cellId);
+      } else {
+        selectCell(cellId);
+      }
       expandSidebar(false);
     },
-    [activeTheme, clickableGridIds, occupiedIds, selectCell, expandSidebar],
+    [
+      activeTheme,
+      clickableGridIds,
+      occupiedIds,
+      eventChip,
+      routeGridTap,
+      selectCell,
+      expandSidebar,
+    ],
   );
 
   // 섹션 오버레이 게시 — 홈 마운트 중 유지, 이탈 시 해제. 격자선·기본 점령 셀은 셸 상시 층

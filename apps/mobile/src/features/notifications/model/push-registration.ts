@@ -8,9 +8,15 @@
  * 대응하는 것은 정적 플래그가 아니라 기기 토큰 취득의 실패(Play 서비스 부재 등)라
  * try/catch로 흡수한다.
  */
+import type { PermissionState } from "../../../shared/permission-state";
 
-/** expo-notifications 권한 상태 3종 — `undetermined`는 아직 물어보지 않은 상태다 */
-export type PushPermissionStatus = "granted" | "denied" | "undetermined";
+/**
+ * expo-notifications 권한 상태 3종 — `undetermined`는 아직 물어보지 않은 상태다.
+ *
+ * MSG-447에서 위치 축이 **똑같은** 3상태를 쓰게 돼 정의를 `shared/permission-state`로 올렸다
+ * (결정 D2). 이름은 그대로 남긴다 — 이 모듈의 계약 문서(주석·테스트)가 전부 이 이름을 쓴다.
+ */
+export type PushPermissionStatus = PermissionState;
 
 /**
  * "알림 받기" 토글의 **푸시 축** 표시 정본 = 권한 granted && 보관 토큰 존재.
@@ -55,3 +61,24 @@ export const shouldAutoSync = (input: {
 /** 권한 거부 시 토글 행 아래에 띄우는 안내 (기준 15) */
 export const PUSH_PERMISSION_DENIED_MESSAGE =
   "기기 설정에서 알림 권한을 허용해야 푸시를 받을 수 있어요";
+
+/**
+ * 기기 재판독이 도착했을 때 남아 있는 조작 오류를 정리한다 (MSG-447 기준 13).
+ *
+ * 실기에서 잡힌 결함: 권한을 거부해 설정 안내가 뜬 뒤 시스템 설정에서 권한을 켜고 돌아와도
+ * 안내가 남았다. 포그라운드 재판독이 권한 상태만 갱신하고 조작 오류를 그대로 둔 탓이다 —
+ * 우리가 사용자를 설정으로 내보내 놓고, 시키는 대로 하고 돌아온 화면이 여전히 "권한을
+ * 허용해야 한다"고 말하는 상태였다.
+ *
+ * 정리를 **안내 파생 쪽이 아니라 여기서** 하는 이유: 토글을 막 거부한 직후에는 재판독이 아직
+ * 도착하지 않아 `error`가 유일한 근거다. 파생이 그 값을 무시하면 즉시 피드백이 사라진다.
+ * 낡음을 판정할 수 있는 곳은 **새 사실이 도착하는 지점**뿐이다.
+ *
+ * `failed`는 건드리지 않는다 — 권한이 아니라 토큰 취득·서버 등록의 실패이고, 재시도로 풀리는
+ * 다른 축이다.
+ */
+export const reconcilePushError = (
+  current: "denied" | "failed" | null,
+  devicePermission: PermissionState,
+): "denied" | "failed" | null =>
+  current === "denied" && devicePermission === "granted" ? null : current;

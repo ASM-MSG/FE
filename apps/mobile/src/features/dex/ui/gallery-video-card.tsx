@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { VideoCard } from "@fillmap/ui-native";
 import type { CollectedVideo } from "../../../entities/dex/model/dex";
 import { formatDuration } from "../../../shared/format";
+import { goToVideoPlayback } from "../../../shared/navigation";
 import { VideoActionsMenu } from "../../video-actions/ui/video-actions-menu";
 import { VideoMoreButton } from "../../video-actions/ui/video-more-button";
 import { formatCollectedAt, formatSeqLabel } from "../model/dex-format";
@@ -29,15 +30,13 @@ interface GalleryVideoCardProps {
  * `ui-native`·도감 셸은 무수정이며, 갤러리 뷰는 `gridLabel` 1줄만 늘었다(삭제 카드 제목).
  * 도감 갤러리는 정의상 전부 내 영상이라(`GET /api/collections/videos`) `mine`은 상수 true다.
  *
- * **탭(재생) 미배선은 의도된 범위 밖이다 — 누락이 아니다.** 웹 `GalleryVideoCard`는
- * `onSelect`로 `widgets/video-mini-panel`을 열지만, 모바일에는 **그 위젯도 재생 화면도
- * 라우트도 없다**(`app/`에 플레이어 없음). 티켓 [동작 요구] 10개에 재생이 없고 [제외 범위]가
- * 넘긴 MSG-431도 공개 범위·삭제(⋯ 메뉴)라 재생 목적지를 만들지 않는다. 목적지 없이
- * `onPress`를 붙이면 `VideoCard`가 `accessibilityRole="button"`을 켜(`video-card.tsx`의
- * `onPress ? "button" : undefined`) 아무 일도 안 하는 **가짜 버튼**이 스크린리더에 노출된다 —
- * MSG-421 실기 검증이 잡았고 MSG-423이 같은 이유로 시트 카드의 `onPress`를 기각한 지점이다.
- * 현재처럼 `onPress` 미지정이면 role이 붙지 않아 정적 콘텐츠로 낭독되는 것이 옳다.
- * **재생 화면을 만드는 티켓이 생기면 그때 `onPress`를 여기에 배선한다.**
+ * **[MSG-446 이행 완료] 탭(재생) 배선** — 예고대로다. MSG-425가 `onPress`를 보류한 이유는
+ * "모바일에는 웹의 `widgets/video-mini-panel`도 재생 화면도 라우트도 없다"였고(목적지 없는
+ * `onPress`는 `VideoCard`가 `accessibilityRole="button"`을 켜 아무 일도 안 하는 **가짜 버튼**을
+ * 스크린리더에 노출시킨다 — MSG-421 실기 검증이 잡았고 MSG-423이 같은 이유로 기각한 지점),
+ * MSG-446이 `/video/[videoId]`를 만들어 그 전제를 없앴다. 웹이 미니 패널을 여는 자리에서
+ * 모바일은 **화면을 push**한다 — 뒤로 갔을 때 갤러리 스크롤이 유지되는 경로다.
+ * 도감 갤러리는 정의상 전부 내 영상이라 `mine`은 여기서도 상수 true다.
  *
  * 재생 원은 `VideoCard` 기본값(흰 원 + 파란 삼각)을 유지한다 — Figma는 파란 원 + 흰
  * 삼각이지만 앱 카드 관례를 우선한다(승인 Q2, 오탐 방지 11). 통일은 카드 3종을 함께
@@ -53,22 +52,29 @@ export const GalleryVideoCard = ({
 }: GalleryVideoCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // 길이·순번은 화면 표기와 낭독 라벨이 **같은 값이어야** 한다 — 한 번만 만들어 두 곳에
+  // 넘긴다(각각 호출하면 한쪽만 고쳐져 표기와 낭독이 갈릴 수 있다. feed-video-list 동일)
+  const durationLabel = formatDuration(video.durationSec);
+  const seqLabel = formatSeqLabel(seq);
+
   return (
     <>
       <VideoCard
         src={video.thumbnailUrl ?? undefined}
-        durationLabel={formatDuration(video.durationSec)}
+        durationLabel={durationLabel}
         overlay={
           <VideoMoreButton
             onPress={() => setMenuOpen(true)}
             className="absolute right-xs top-xs"
           />
         }
+        accessibilityLabel={`${gridLabel} ${seqLabel} 영상, ${durationLabel}`}
+        onPress={() => goToVideoPlayback(video.videoId, true)}
         title={
           <View className="flex-row items-center gap-xs">
             <View className="rounded-xs bg-surface px-1.5 py-0.5">
               <Text className="text-fm-caption text-foreground-muted">
-                {formatSeqLabel(seq)}
+                {seqLabel}
               </Text>
             </View>
             <Text

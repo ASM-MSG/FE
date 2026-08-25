@@ -8,6 +8,7 @@ import {
 } from "react";
 import { ActivityIndicator, BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader } from "@fillmap/ui-native";
 import type { RecentRegion } from "../../../entities/dex/model/dex";
@@ -94,7 +95,31 @@ export const DexScreen = () => {
    * Effect Event로 감싸 구독을 마운트 1회로 고정한다 — 본문이 읽는 selected는 매번
    * 최신이지만 의존성이 아니므로 갤러리 진입·복귀가 BackHandler를 재등록시키지 않는다.
    */
+  /*
+   * **포커스 게이트 (MSG-446 실기 환류)** — `BackHandler` 구독은 화면 단위가 아니라 **앱 전역**이라
+   * 이 화면이 배경에 있어도 계속 살아 있다. MSG-446이 갤러리 카드에 재생 화면
+   * (`/video/[videoId]`)을 push하면서 그 누수가 실기로 드러났다: 재생 화면에서 뒤로가기를
+   * 누르면 라우트가 pop되는 것과 **동시에** 아래 핸들러가 `setSelected(null)`을 때려, 보고 있던
+   * 갤러리가 닫히고 동 목록으로 떨어졌다(티켓 요구 "직전 목록으로 돌아간다" 위반).
+   * 이 화면에서 push할 목적지가 없던 때는 드러날 수 없던 결함이다.
+   *
+   * 구독 자체는 마운트 1회로 유지하고(위 주석의 이유 그대로) **포커스 여부만 ref로 읽는다** —
+   * `useFocusEffect`로 구독을 옮기면 그 안의 Effect Event 호출이 react-hooks 규칙 위반이 되고,
+   * 상태로 두면 포커스 전환마다 리렌더가 붙는다. `map-home-screen`은 Effect Event를 쓰지 않아
+   * 구독 자체를 `useFocusEffect`에 넣었다 — 목적은 같고 수단만 다르다.
+   */
+  const focusedRef = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      focusedRef.current = true;
+      return () => {
+        focusedRef.current = false;
+      };
+    }, []),
+  );
+
   const handleHardwareBack = useEffectEvent(() => {
+    if (!focusedRef.current) return false;
     if (selected === null) return false;
     setSelected(null);
     return true;
