@@ -17,10 +17,7 @@ import {
   type CellClassification,
 } from "../model/mission-cells";
 import { toOccupiedCells } from "../model/occupied-grids";
-import {
-  buildRouteWaypoints,
-  type RouteWaypoint,
-} from "../model/route-overlay";
+import { courseRouteOf, type RouteWaypoint } from "../model/route-overlay";
 import type { ThemeId } from "../model/themes";
 
 /**
@@ -130,15 +127,8 @@ export const useHomeOverlays = ({
     [occupiedGridIds, themeGridIds, courseSpotGridIds],
   );
 
-  const route = useMemo(() => {
-    if (!selectedCourse || selectedCourse.path.length === 0) return undefined;
-    return {
-      path: selectedCourse.path,
-      waypoints: buildRouteWaypoints(
-        selectedCourse.spots.map((spot) => spot.position),
-      ),
-    };
-  }, [selectedCourse]);
+  // 라인이 없어도(빈 path) 스팟 번호 마커는 유지한다 (MSG-473 AC 9)
+  const route = useMemo(() => courseRouteOf(selectedCourse), [selectedCourse]);
 
   /** 이름표는 도형 bbox 중심에 하나만 — 지도가 글자로 덮이지 않게 (승인 Q4) */
   const missionLabel = useMemo(() => {

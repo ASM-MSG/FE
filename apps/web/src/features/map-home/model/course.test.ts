@@ -4,7 +4,6 @@ import {
   courseSpots,
   isLoopCourse,
   parseLineString,
-  type CourseSpot,
 } from "./course";
 
 describe("parseLineString — 코스 라인 GeoJSON 파싱 (AC 21)", () => {
@@ -34,6 +33,45 @@ describe("parseLineString — 코스 라인 GeoJSON 파싱 (AC 21)", () => {
   it("LineString이 아닌 도형이면 빈 배열이다 (경계)", () => {
     expect(
       parseLineString(JSON.stringify({ type: "Point", coordinates: [1, 2] })),
+    ).toEqual([]);
+  });
+
+  it("GeoJSON 객체 입력은 파싱 단계 없이 수용한다 (AC 1)", () => {
+    expect(
+      parseLineString({
+        type: "LineString",
+        coordinates: [
+          [129.0596, 35.1578],
+          [129.0614, 35.1596],
+        ],
+      }),
+    ).toEqual([
+      { lat: 35.1578, lng: 129.0596 },
+      { lat: 35.1596, lng: 129.0614 },
+    ]);
+  });
+
+  it("객체·문자열 어느 쪽이 와도 같은 코스는 같은 좌표 배열이다 (AC 2)", () => {
+    const object = {
+      type: "LineString",
+      coordinates: [
+        [129.03597, 35.09656],
+        [129.03528, 35.09823],
+      ],
+    };
+
+    expect(parseLineString(object)).toEqual(
+      parseLineString(JSON.stringify(object)),
+    );
+  });
+
+  it("객체인데 LineString이 아니면 빈 배열이다 (AC 3)", () => {
+    expect(parseLineString({ type: "Point", coordinates: [1, 2] })).toEqual([]);
+  });
+
+  it("객체 coordinates가 배열이 아니면 빈 배열로 흡수한다 (AC 3)", () => {
+    expect(
+      parseLineString({ type: "LineString", coordinates: "깨짐" }),
     ).toEqual([]);
   });
 });
@@ -103,56 +141,33 @@ describe("isLoopCourse — 순환/비순환 판별 (AC 22)", () => {
   });
 });
 
-describe("coursePath — 코스 연결선 좌표 (MSG-403 후속)", () => {
-  const spots: CourseSpot[] = [
-    {
-      gridId: "s1",
-      position: { lat: 35.15, lng: 129.05 },
-      order: 1,
-      visited: false,
-    },
-    {
-      gridId: "s2",
-      position: { lat: 35.16, lng: 129.06 },
-      order: 2,
-      visited: false,
-    },
-    {
-      gridId: "s3",
-      position: { lat: 35.17, lng: 129.07 },
-      order: 3,
-      visited: false,
-    },
-  ];
+describe("coursePath — 코스 연결선 좌표 (MSG-473 — 스팟 직선 폴백 제거)", () => {
+  const LINE_OBJECT = {
+    type: "LineString",
+    coordinates: [
+      [129.0, 35.1],
+      [129.01, 35.11],
+    ],
+  };
 
   it("서버 코스 라인이 있으면 그 라인을 그대로 쓴다", () => {
-    const line = JSON.stringify({
-      type: "LineString",
-      coordinates: [
-        [129.0, 35.1],
-        [129.01, 35.11],
-      ],
-    });
-
-    expect(coursePath(line, spots)).toEqual([
+    expect(coursePath(JSON.stringify(LINE_OBJECT))).toEqual([
       { lat: 35.1, lng: 129.0 },
       { lat: 35.11, lng: 129.01 },
     ]);
   });
 
-  it("라인이 없으면 포토스팟을 번호 순서대로 직선으로 잇는다 (사용자 요청)", () => {
-    expect(coursePath(null, spots)).toEqual([
-      { lat: 35.15, lng: 129.05 },
-      { lat: 35.16, lng: 129.06 },
-      { lat: 35.17, lng: 129.07 },
-    ]);
+  it("GeoJSON 객체 라인도 문자열과 같은 경로를 낸다 (AC 1·2)", () => {
+    expect(coursePath(LINE_OBJECT)).toEqual(
+      coursePath(JSON.stringify(LINE_OBJECT)),
+    );
   });
 
-  it("라인 원문이 깨져도 스팟 순서 직선으로 떨어진다 (경계)", () => {
-    expect(coursePath("{ not json", spots)).toHaveLength(3);
+  it("라인이 없으면 빈 배열 — 스팟 직선으로 잇지 않고 번호 마커만 남긴다 (AC 5)", () => {
+    expect(coursePath(null)).toEqual([]);
   });
 
-  it("스팟이 하나뿐이면 이을 선이 없다 (경계)", () => {
-    expect(coursePath(null, [spots[0]])).toEqual([]);
+  it("라인 원문이 깨져도 빈 배열로 흡수한다 — 스팟 폴백 없음 (AC 5)", () => {
+    expect(coursePath("{ not json")).toEqual([]);
   });
 });
