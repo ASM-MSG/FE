@@ -543,6 +543,134 @@ export type ProfileImagePresignResponseDto = {
 };
 
 /**
+ * 출발 지점 좌표
+ */
+export type OriginDto = {
+    /**
+     * 위도
+     */
+    lat: number;
+    /**
+     * 경도
+     */
+    lng: number;
+};
+
+/**
+ * AI 경로 추천 요청
+ */
+export type RouteRecommendRequestDto = {
+    /**
+     * 하고 싶은 일 자연어 한 문장 (trim 후 1~500자)
+     */
+    text: string;
+    /**
+     * 지금 보고 있는 지도 범위 (WGS84 사각형)
+     */
+    viewport: ViewportDto;
+    /**
+     * 출발 지점 좌표 (선택). 있으면 동선이 여기서 시작한다
+     */
+    origin?: OriginDto;
+};
+
+/**
+ * WGS84 뷰포트 사각형
+ */
+export type ViewportDto = {
+    /**
+     * 남서 위도
+     */
+    minLat: number;
+    /**
+     * 남서 경도
+     */
+    minLng: number;
+    /**
+     * 북동 위도
+     */
+    maxLat: number;
+    /**
+     * 북동 경도
+     */
+    maxLng: number;
+};
+
+export type ApiResponseDtoRouteRecommendResponseDto = {
+    developCode: number;
+    message: string;
+    data: RouteRecommendResponseDto;
+};
+
+/**
+ * 추천 지점
+ */
+export type RoutePointDto = {
+    /**
+     * 방문 순서 (1부터 연속)
+     */
+    order: number;
+    /**
+     * 지점 이름 (원문 그대로 — AI 로 보낼 때만 100자 절단)
+     */
+    name: string;
+    /**
+     * 지점 종류 — MISSION_FESTIVAL·MISSION_POPUP·MISSION_COURSE·EVENT·PLACE. FE 마커 분기용
+     */
+    kind: string;
+    /**
+     * 대표 좌표 위도 (WGS84)
+     */
+    lat: number;
+    /**
+     * 대표 좌표 경도 (WGS84)
+     */
+    lng: number;
+    /**
+     * 격자 ID — 대표 좌표를 GridEncoder 로 즉석 계산
+     */
+    gridId: string;
+    /**
+     * 표시명 구역 이름 (MSG-341). 구역 밖이면 zoneCell 과 쌍으로 null
+     */
+    zoneName: string | null;
+    /**
+     * 표시명 구역 셀
+     */
+    zoneCell: string | null;
+    /**
+     * 행정동 폴백 재료 (MSG-349 정책 동일). 무귀속이면 null
+     */
+    regionName: string | null;
+    /**
+     * 추천 이유 한 줄 — AI explain 응답의 reasons 항목 그대로 (FR-ROUTE-05)
+     */
+    reason: string;
+    /**
+     * 미션 후보면 미션 id — FE 가 미션 상세로 잇는 데 쓴다
+     */
+    missionId: number | null;
+    /**
+     * 행사 후보면 회차 id
+     */
+    occurrenceId: number | null;
+};
+
+/**
+ * AI 경로 추천 응답
+ */
+export type RouteRecommendResponseDto = {
+    /**
+     * 방문 순서대로 정렬된 지점 목록 (최대 8개)
+     */
+    points: Array<RoutePointDto>;
+    /**
+     * 후보 부족 안내 — 지점 3개 이상이면 null, 0~2개면 안내 문구
+     */
+    notice: string | null;
+};
+
+/**
  * FCM 푸시 토큰 등록/갱신 요청 — 같은 토큰 재등록은 충돌 없이 현재 계정으로 갱신된다
  */
 export type PushTokenRequestDto = {
@@ -1850,6 +1978,42 @@ export type HotZoneResponseDto = {
      * 격자 중심점이 속한 행정동 전체 이름. 어느 행정동에도 속하지 않으면(해상 등) null. zoneName 이 null 이면 이 값이 표시 이름 폴백이다(폴백에는 칸 번호를 붙이지 않는다).
      */
     regionName: string | null;
+};
+
+export type ApiResponseDtoListHotZoneRegionAggregateResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<HotZoneRegionAggregateResponseDto>;
+};
+
+/**
+ * 행정 단위로 묶어 센 핫구역 집계 한 항목
+ */
+export type HotZoneRegionAggregateResponseDto = {
+    /**
+     * 묶음 키 — 행정동 코드(10자리)를 단위 길이로 자른 접두(동 10, 구 5, 시 2자리). 행정동이 판정되지 않은 묶음만 null
+     */
+    regionCode: string | null;
+    /**
+     * 단위 표시 이름 (동 "부전2동", 구 "부산진구", 시 "부산광역시"). 무귀속만 null
+     */
+    name: string | null;
+    /**
+     * 마커 대표 좌표 위도 — 묶음에 속한 핫 격자 셀 중심의 평균이라 마커가 실제 데이터 위에 선다
+     */
+    lat: number;
+    /**
+     * 마커 대표 좌표 경도
+     */
+    lng: number;
+    /**
+     * 그 단위 안의 핫 격자 수 — 핫스코어 합산이 아니다
+     */
+    count: number;
+    /**
+     * 그 묶음에 속한 핫 격자 id 오름차순 — 줌인 후 개별 조회 결과와 교집합으로 목록을 좁힌다(D4). 크기는 count 와 같다
+     */
+    gridIds: Array<string>;
 };
 
 export type ApiResponseDtoOccupiedGridPageResponseDto = {
@@ -3408,6 +3572,22 @@ export type IssueProfileImagePresignedUrlResponses = {
 
 export type IssueProfileImagePresignedUrlResponse = IssueProfileImagePresignedUrlResponses[keyof IssueProfileImagePresignedUrlResponses];
 
+export type RecommendData = {
+    body: RouteRecommendRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/routes/recommend';
+};
+
+export type RecommendResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoRouteRecommendResponseDto;
+};
+
+export type RecommendResponse = RecommendResponses[keyof RecommendResponses];
+
 export type UnregisterData = {
     body?: never;
     path?: never;
@@ -4493,6 +4673,43 @@ export type GetHotZonesResponses = {
 };
 
 export type GetHotZonesResponse = GetHotZonesResponses[keyof GetHotZonesResponses];
+
+export type GetHotZoneAggregatesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * 집계 단위 — DONG(동), SIGUNGU(시군구), SIDO(시도). 대소문자 무관
+         */
+        unit: string;
+        /**
+         * 남서 모서리 위도
+         */
+        swLat: number;
+        /**
+         * 남서 모서리 경도
+         */
+        swLng: number;
+        /**
+         * 북동 모서리 위도
+         */
+        neLat: number;
+        /**
+         * 북동 모서리 경도
+         */
+        neLng: number;
+    };
+    url: '/api/hotzones/aggregation';
+};
+
+export type GetHotZoneAggregatesResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListHotZoneRegionAggregateResponseDto;
+};
+
+export type GetHotZoneAggregatesResponse = GetHotZoneAggregatesResponses[keyof GetHotZoneAggregatesResponses];
 
 export type GetOccupiedInViewportData = {
     body?: never;

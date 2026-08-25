@@ -56,8 +56,6 @@ export interface UploadFlowState {
   step: UploadStep;
   /** 갤러리/카메라로 확보한 영상 */
   video: UploadVideo | null;
-  /** 제목 입력 (302 AC 3) — 서버 계약에 필드가 없어 표시 전용이다 */
-  title: string;
   /** 서버 선분석 추천 (최대 3개, 배열 순서 = 우선순위) */
   suggestions: HighlightSuggestion[];
   /** 선택 상태 — 분석 완료 전에는 null */
@@ -83,7 +81,6 @@ export interface UploadFlowState {
 export interface PersistedUploadFlow {
   step: UploadStep;
   video: UploadVideo | null;
-  title: string;
   suggestions: HighlightSuggestion[];
   selection: HighlightSelectionState | null;
   manualFallback: boolean;
@@ -94,7 +91,6 @@ export interface PersistedUploadFlow {
 const initialState = (): UploadFlowState => ({
   step: "select",
   video: null,
-  title: "",
   suggestions: [],
   selection: null,
   manualFallback: false,
@@ -112,8 +108,6 @@ const durationOf = (state: UploadFlowState): number =>
 export interface UploadFlowStore {
   getState: () => UploadFlowState;
   subscribe: (listener: () => void) => () => void;
-  /** 제목 입력 반영 (302 AC 3) */
-  setTitle: (title: string) => void;
   /** 영상 확보 → 분석 스텝. 이전 흐름 산출물(추천·선택·presign·PUT)을 전부 버린다 (기준 1) */
   startAnalysis: (video: UploadVideo) => void;
   /** 분석 성공 — 추천 파생·초기 선택·다음 스텝 판정을 한 번에 (기준 6·8·9) */
@@ -180,8 +174,6 @@ export const createUploadFlowStore = (): UploadFlowStore => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    setTitle: (title) => setState({ title }),
-
     startAnalysis: (video) =>
       setState({
         ...clearedFlow(),
@@ -282,7 +274,6 @@ export const createUploadFlowStore = (): UploadFlowStore => {
     toPersisted: () => ({
       step: state.step,
       video: state.video,
-      title: state.title,
       suggestions: state.suggestions,
       selection: state.selection,
       manualFallback: state.manualFallback,

@@ -1,0 +1,154 @@
+diff --git a/android/src/main/java/com/mjstudio/reactnativenavermap/event/NaverMapLoadedEvent.kt b/android/src/main/java/com/mjstudio/reactnativenavermap/event/NaverMapLoadedEvent.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..e431bc71d712c2619ca9135f451a88f656061077
+--- /dev/null
++++ b/android/src/main/java/com/mjstudio/reactnativenavermap/event/NaverMapLoadedEvent.kt
+@@ -0,0 +1,27 @@
++package com.mjstudio.reactnativenavermap.event
++
++import com.facebook.react.bridge.Arguments
++import com.facebook.react.bridge.WritableMap
++import com.facebook.react.uimanager.events.Event
++
++/**
++ * 지도 최초 로딩 완료 (NaverMap.OnLoadListener) — "지도의 데이터가 모두 로딩되어 최초로
++ * 화면에 나타나면" 1회 발화한다. 기존 `topInitialized`(= getMapAsync 콜백 = 지도 객체 생성)와
++ * 다르다: 초기화는 타일이 그려지기 훨씬 전에 온다.
++ */
++class NaverMapLoadedEvent(
++  surfaceId: Int,
++  viewId: Int,
++) : Event<NaverMapLoadedEvent>(surfaceId, viewId) {
++  override fun getEventName(): String = EVENT_NAME
++
++  override fun canCoalesce(): Boolean = false
++
++  override fun getCoalescingKey(): Short = 0
++
++  override fun getEventData(): WritableMap = Arguments.createMap()
++
++  companion object {
++    const val EVENT_NAME = "topLoaded"
++  }
++}
+diff --git a/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapView.kt b/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapView.kt
+index 40f757193bc417d4789268ec44c332612ae3236b..92b29ccbaeb2580ffa02f684a80893eaa1754a17 100644
+--- a/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapView.kt
++++ b/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapView.kt
+@@ -9,6 +9,7 @@ import com.facebook.react.uimanager.ThemedReactContext
+ import com.mjstudio.reactnativenavermap.event.NaverMapCameraChangeEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapCameraIdleEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapInitializeEvent
++import com.mjstudio.reactnativenavermap.event.NaverMapLoadedEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapOptionChangeEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapTapEvent
+ import com.mjstudio.reactnativenavermap.overlay.RNCNaverMapOverlay
+@@ -54,6 +55,13 @@ class RNCNaverMapView(
+         NaverMapInitializeEvent(surfaceId, reactTag)
+       }
+ 
++      // 지도 최초 로딩 완료(타일이 실제로 화면에 나타난 시점) — 위 initialize와 다르다.
++      it.addOnLoadListener {
++        reactContext.emitEvent(reactTag) { surfaceId, reactTag ->
++          NaverMapLoadedEvent(surfaceId, reactTag)
++        }
++      }
++
+       it.addOnOptionChangeListener {
+         reactContext.emitEvent(reactTag) { surfaceId, reactTag ->
+           val modeString =
+diff --git a/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapViewManager.kt b/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapViewManager.kt
+index c92093f93ff92013db5574361eb0a21853f356cd..7dacb623e928c3bfedc973775f7b70ae2c66c0fe 100644
+--- a/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapViewManager.kt
++++ b/android/src/main/java/com/mjstudio/reactnativenavermap/mapview/RNCNaverMapViewManager.kt
+@@ -18,6 +18,7 @@ import com.mjstudio.reactnativenavermap.event.NaverMapCoordinateToScreenEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapCustomStyleLoadFailedEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapCustomStyleLoadedEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapInitializeEvent
++import com.mjstudio.reactnativenavermap.event.NaverMapLoadedEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapOptionChangeEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapScreenToCoordinateEvent
+ import com.mjstudio.reactnativenavermap.event.NaverMapTapEvent
+@@ -120,6 +121,7 @@ class RNCNaverMapViewManager(
+   override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> =
+     (super.getExportedCustomDirectEventTypeConstants() ?: mutableMapOf()).apply {
+       registerDirectEvent(this, NaverMapInitializeEvent.EVENT_NAME)
++      registerDirectEvent(this, NaverMapLoadedEvent.EVENT_NAME)
+       registerDirectEvent(this, NaverMapOptionChangeEvent.EVENT_NAME)
+       registerDirectEvent(this, NaverMapCameraChangeEvent.EVENT_NAME)
+       registerDirectEvent(this, NaverMapCameraIdleEvent.EVENT_NAME)
+diff --git a/lib/typescript/commonjs/src/component/NaverMapView.d.ts b/lib/typescript/commonjs/src/component/NaverMapView.d.ts
+index 83f41067be85014cf8c43f5d970c9b361e12cf12..f6e7e8041b27b25ea1100095dbe16e342b4a105d 100644
+--- a/lib/typescript/commonjs/src/component/NaverMapView.d.ts
++++ b/lib/typescript/commonjs/src/component/NaverMapView.d.ts
+@@ -476,6 +476,8 @@ export interface NaverMapViewProps extends ViewProps {
+      * @group Events
+      */
+     onInitialized?: () => void;
++    /** 지도 최초 로딩 완료(타일 첫 표시) — NaverMap.OnLoadListener */
++    onLoaded?: () => void;
+     /**
+      * 지도 유형, 디스플레이 옵션 등 지도와 관련된 옵션이 변경되면 이벤트가 발생합니다.
+      * 지도의 옵션이 변경되면 콜백 메서드가 호출됩니다.
+diff --git a/lib/typescript/module/src/component/NaverMapView.d.ts b/lib/typescript/module/src/component/NaverMapView.d.ts
+index 83f41067be85014cf8c43f5d970c9b361e12cf12..f6e7e8041b27b25ea1100095dbe16e342b4a105d 100644
+--- a/lib/typescript/module/src/component/NaverMapView.d.ts
++++ b/lib/typescript/module/src/component/NaverMapView.d.ts
+@@ -476,6 +476,8 @@ export interface NaverMapViewProps extends ViewProps {
+      * @group Events
+      */
+     onInitialized?: () => void;
++    /** 지도 최초 로딩 완료(타일 첫 표시) — NaverMap.OnLoadListener */
++    onLoaded?: () => void;
+     /**
+      * 지도 유형, 디스플레이 옵션 등 지도와 관련된 옵션이 변경되면 이벤트가 발생합니다.
+      * 지도의 옵션이 변경되면 콜백 메서드가 호출됩니다.
+diff --git a/src/component/NaverMapView.tsx b/src/component/NaverMapView.tsx
+index 44da42acb30d2cf12b7f67a675b3c056a1f4434c..f7c12099773b70e9c8c01b379035adfb8b6b192a 100644
+--- a/src/component/NaverMapView.tsx
++++ b/src/component/NaverMapView.tsx
+@@ -518,6 +518,16 @@ export interface NaverMapViewProps extends ViewProps {
+    * @group Events
+    */
+   onInitialized?: () => void;
++  /**
++   * 지도의 데이터가 모두 로딩되어 **최초로 화면에 나타나면** 호출됩니다
++   * (`NaverMap.OnLoadListener`). 한 번만 발생합니다.
++   *
++   * `onInitialized`(지도 객체 생성 = getMapAsync)와 다릅니다 — 초기화는 타일이 그려지기
++   * 훨씬 전에 오므로, 첫 화면 표시 시점을 알아야 한다면 이 이벤트를 써야 합니다.
++   *
++   * @group Events
++   */
++  onLoaded?: () => void;
+   /**
+    * 지도 유형, 디스플레이 옵션 등 지도와 관련된 옵션이 변경되면 이벤트가 발생합니다.
+    * 지도의 옵션이 변경되면 콜백 메서드가 호출됩니다.
+@@ -733,6 +743,7 @@ export const NaverMapView = forwardRef(
+       onCameraIdle: onCameraIdleProp,
+       onTapMap: onTapMapProp,
+       onInitialized,
++      onLoaded,
+       onOptionChanged: onOptionChangedProp,
+       customStyleId,
+       onCustomStyleLoaded: onCustomStyleLoadedProp,
+@@ -1192,6 +1203,7 @@ export const NaverMapView = forwardRef(
+         symbolScale={clamp(symbolScale, 0, 2)}
+         symbolPerspectiveRatio={clamp(symbolPerspectiveRatio, 0, 1)}
+         onInitialized={onInitialized}
++        onLoaded={onLoaded}
+         onCameraChanged={onCameraChangedProp ? onCameraChanged : undefined}
+         onCameraIdle={onCameraIdleProp ? onCameraIdle : undefined}
+         onTapMap={onTapMapProp ? onTapMap : undefined}
+diff --git a/src/spec/RNCNaverMapViewNativeComponent.ts b/src/spec/RNCNaverMapViewNativeComponent.ts
+index 74c0ab99035d9d59e5fb42ceafe93f6066efe67c..b94edf3692ef4e44937ac45967ae69444ba4b508 100644
+--- a/src/spec/RNCNaverMapViewNativeComponent.ts
++++ b/src/spec/RNCNaverMapViewNativeComponent.ts
+@@ -153,6 +153,7 @@ interface Props extends ViewProps {
+   customStyleId?: string;
+ 
+   onInitialized?: DirectEventHandler<Readonly<{}>>;
++  onLoaded?: DirectEventHandler<Readonly<{}>>;
+   onOptionChanged?: DirectEventHandler<
+     Readonly<{
+       locationTrackingMode: string;

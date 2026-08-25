@@ -6,6 +6,7 @@ import { OnboardingScreen } from "../features/onboarding/ui/onboarding-screen";
 import { resolveUploadResumeRoute } from "../features/upload/model/upload-flow-persistence";
 import type { UploadResumeRoute } from "../features/upload/model/upload-flow-resume";
 import { goToLogin } from "../shared/navigation";
+import { splashGate } from "../shared/splash";
 import StorybookUI from "../../.rnstorybook";
 
 /** EXPO_PUBLIC_STORYBOOK=1 이면 Storybook UI로 진입 (metro withStorybook과 동일 조건, 스펙 A4) */
@@ -32,7 +33,11 @@ export default function Index() {
     ]).then(([done, resumeRoute]) => {
       setCompleted(done);
       setResume(resumeRoute);
-      void SplashScreen.hideAsync();
+      // 지도 홈이 목적지일 때만 지도 첫 렌더까지 붙잡는다 (MSG-445) — 여기서 바로 내리면
+      // 앱 UI는 다 그려졌는데 지도 자리만 SDK 빈 격자 플레이스홀더로 약 1초 남는다.
+      // 지도가 없는 목적지(온보딩·업로드 이어가기)는 기다릴 대상이 없으므로 즉시 내린다.
+      if (done && resumeRoute === null) splashGate.holdUntilMapReady();
+      else splashGate.release();
     });
   }, []);
 
