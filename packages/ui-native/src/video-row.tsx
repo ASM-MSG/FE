@@ -24,7 +24,10 @@ export const VideoRow = ({
   className,
 }: VideoRowProps) => (
   <Pressable
-    accessibilityRole="button"
+    // onPress가 없으면 role을 비운다 — 눌러도 아무 일이 없는 "버튼"을 스크린리더에
+    // 노출하지 않기 위함. `video-card`와 같은 규칙이다 (MSG-446 기준 11: 이 파일만
+    // 무조건 button이라 목적지 없는 목록에서도 버튼으로 낭독되고 있었다)
+    accessibilityRole={onPress ? "button" : undefined}
     onPress={onPress}
     className={cx(
       "w-full flex-row items-center gap-sm active:bg-surface",

@@ -87,7 +87,6 @@ const isOrchestration = (value: unknown): boolean =>
 const isPersistedUploadFlow = (value: unknown): value is PersistedUploadFlow =>
   isRecord(value) &&
   VALID_STEPS.has(value.step as string) &&
-  typeof value.title === "string" &&
   typeof value.manualFallback === "boolean" &&
   isNullOr(value.video, isVideo) &&
   Array.isArray(value.suggestions) &&

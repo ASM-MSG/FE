@@ -1,3 +1,4 @@
+import { Thumbnail } from "@fillmap/ui-web";
 import { Play } from "lucide-react";
 import {
   type FeedVideo,
@@ -24,9 +25,9 @@ interface FeedVideoCardProps {
 /**
  * 세로 1열 피드 영상 카드 (MSG-277 AC 5 → 3차 AC 4 button화 → MSG-326 실 썸네일) —
  * 테마 피드·격자 상세 공용.
- * MSG-326 기준 8·11: 응답 thumbnailUrl 이미지를 렌더한다 — 회색 placeholder는 null
- * (내 영상 non-READY) 폴백으로 강등되고, 이때 처리 상태 라벨을 함께 보여 깨진 이미지가
- * 없다(스펙 "의도적 차이 ①" — MSG-277 placeholder 관례 갱신). 카드 자체는 non-READY도
+ * MSG-326 기준 8·11: 응답 thumbnailUrl 이미지를 렌더한다 — null(내 영상 non-READY)은
+ * 기본 이미지 폴백 + 처리 상태 라벨, 로드 에러는 라벨 없이 기본 이미지만(MSG-464 기준
+ * 4·9 — 폴백은 ui-web Thumbnail이 담당). 카드 자체는 non-READY도
  * 탭 가능 — 재생 불가 안내는 미니 패널이 담당한다 (추정 6).
  * 메타 한 줄: 좌측 소유 구분 문구, 우측 "조회 {한국어 축약}"(viewCount 부재 시 생략 — 추정 3).
  * 루트는 button — 접근성 이름은 aria-label "{title} 재생"(실 API는 제목 부재라 "영상" 폴백).
@@ -56,13 +57,8 @@ export const FeedVideoCard = ({
       className="flex w-full flex-col gap-xxs text-left"
     >
       <span className="relative flex aspect-video w-full flex-col items-center justify-center gap-xs overflow-hidden rounded-sm bg-surface">
-        {video.thumbnailUrl !== null && (
-          <img
-            src={video.thumbnailUrl}
-            alt=""
-            className="absolute inset-0 size-full object-cover"
-          />
-        )}
+        {/* MSG-464: null·로드 에러 모두 ui-web Thumbnail의 기본 이미지 폴백 (기준 4·6) */}
+        <Thumbnail src={video.thumbnailUrl} />
         <span className="relative flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Play className="size-3 fill-current" />
         </span>

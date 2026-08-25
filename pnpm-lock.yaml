@@ -10,6 +10,11 @@ catalogs:
       specifier: ~7.0.2
       version: 7.0.2
 
+patchedDependencies:
+  '@mj-studio/react-native-naver-map@2.9.0':
+    hash: 43772e87fd9f6c5873a79c59dab05568f4b56897bcea457c3c91beaf7334d759
+    path: patches/@mj-studio__react-native-naver-map@2.9.0.patch
+
 importers:
 
   .:
@@ -46,7 +51,7 @@ importers:
         version: link:../../packages/ui-native
       '@mj-studio/react-native-naver-map':
         specifier: ^2.9.0
-        version: 2.9.0(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
+        version: 2.9.0(patch_hash=43772e87fd9f6c5873a79c59dab05568f4b56897bcea457c3c91beaf7334d759)(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))
@@ -9385,7 +9390,7 @@ snapshots:
 
   '@mj-studio/js-util@1.1.3': {}
 
-  '@mj-studio/react-native-naver-map@2.9.0(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)':
+  '@mj-studio/react-native-naver-map@2.9.0(patch_hash=43772e87fd9f6c5873a79c59dab05568f4b56897bcea457c3c91beaf7334d759)(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)':
     dependencies:
       object-hash: 3.0.0
       react: 19.2.3

@@ -6,6 +6,7 @@ import {
   buildCourseLabels,
   buildCourseRoutes,
   buildMissionCells,
+  buildMissionGridMembership,
   buildMissionLabels,
 } from "./mission-overlay";
 import type { CourseView, MissionView } from "./mission-view";
@@ -252,5 +253,35 @@ describe("buildCourseLabels — 긴 코스의 앵커 (리뷰 반영)", () => {
     };
 
     expect(buildCourseLabels([LONG_COURSE], COLOR, MIDWAY)).toEqual([]);
+  });
+});
+
+describe("buildMissionGridMembership — 격자 → 소속 미션 맵 (MSG-462 AC 6ⓑ)", () => {
+  it("뷰포트 안 미션 격자마다 소속 미션 id를 준다 (AC 6ⓑ)", () => {
+    const membership = buildMissionGridMembership(
+      [cellsView(1, [G1]), cellsView(2, [G2])],
+      VIEWPORT,
+    );
+
+    expect(membership.get(G1)).toBe(1);
+    expect(membership.get(G2)).toBe(2);
+  });
+
+  it("두 미션이 같은 격자를 덮으면 활성 목록 순서의 첫 미션이 이긴다 (AC 6ⓑ)", () => {
+    const membership = buildMissionGridMembership(
+      [cellsView(1, [G1]), cellsView(2, [G1, G2])],
+      VIEWPORT,
+    );
+
+    expect(membership.get(G1)).toBe(1);
+  });
+
+  it("뷰포트 밖 격자는 맵에 담지 않는다 — 오버레이와 같은 클리핑 (AC 6ⓑ)", () => {
+    const membership = buildMissionGridMembership(
+      [cellsView(1, [G1])],
+      FAR_VIEWPORT,
+    );
+
+    expect(membership.has(G1)).toBe(false);
   });
 });

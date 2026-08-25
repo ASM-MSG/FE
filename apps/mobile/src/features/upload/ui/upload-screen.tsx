@@ -10,7 +10,7 @@ import {
   requestMediaLibraryPermissionsAsync,
 } from "expo-image-picker";
 import { palette } from "@fillmap/design-tokens";
-import { AppHeader, Button, Chip, Input, Toast } from "@fillmap/ui-native";
+import { AppHeader, Button, Chip, Toast } from "@fillmap/ui-native";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useUploadLocation } from "../api/use-upload-location";
 import { resolvePickOutcome, type PickOutcome } from "../model/pick-result";
@@ -40,7 +40,7 @@ export const UploadScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const hydrated = useUploadFlowHydrated();
-  const { title, selectFailureMessage } = useUploadFlow();
+  const { selectFailureMessage } = useUploadFlow();
   const location = useUploadLocation();
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -82,7 +82,7 @@ export const UploadScreen = () => {
     applyOutcome(resolvePickOutcome(permission.granted, result), "camera");
   };
 
-  // 재수화 전에는 렌더하지 않는다 — 복원된 제목·실패 사유가 뒤늦게 튀지 않게 (기준 38).
+  // 재수화 전에는 렌더하지 않는다 — 복원된 실패 사유가 뒤늦게 튀지 않게 (기준 38).
   // 진행 중이던 업로드를 그 스텝으로 되돌리는 것은 앱 진입점이 한다
   // (`app/index.tsx` ← `resolveUploadResumeRoute`, 기준 36)
   if (!hydrated) return <View className="flex-1 bg-background" />;
@@ -125,17 +125,6 @@ export const UploadScreen = () => {
           <Text className="mt-sm text-fm-caption text-foreground-muted">
             {FILE_CONSTRAINT_TEXT}
           </Text>
-
-          {/* 제목 입력 (AC 3) — 서버 계약에 필드가 없어 표시 전용이다 */}
-          <Text className="mt-lg text-fm-body-strong text-foreground">
-            제목
-          </Text>
-          <Input
-            className="mt-sm border-border"
-            placeholder="영상 제목을 입력해주세요"
-            value={title}
-            onChangeText={(next) => uploadFlowStore.setTitle(next)}
-          />
 
           {/* 위치 태그 (AC 4) — 역지오코딩 실데이터 (기준 20) */}
           <View className="mt-lg flex-row items-center gap-sm">

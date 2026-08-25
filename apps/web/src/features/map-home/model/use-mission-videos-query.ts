@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuthStore } from "@/features/auth/model/auth-store";
 import { gatedQueryStatus } from "@/features/region/model/gated-query-status";
 import { getMissionVideosOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
@@ -14,6 +13,7 @@ import { entityQueryPolicy } from "./map-query-policy";
  * MSG-395는 미션 영역의 격자를 표본으로 뽑아 격자별 영상 API를 여러 번 부르고 합쳤다
  * (표본 상한 때문에 영역 일부만 보이는 근사였다). 미션 단위 API가 열려 그 조합을 걷어낸다.
  * 첫 페이지만 쓴다 — 커서 페이지네이션(무한 스크롤)은 이번 범위 밖이다(스펙 제외 범위).
+ * 익명 게이트 없음 (MSG-462 AC 13) — 서버 MSG-454가 익명 조회를 허용해 해제했다.
  */
 export interface MissionVideosResult {
   items: GridFeedItem[];
@@ -27,8 +27,7 @@ const EMPTY_ITEMS: GridFeedItem[] = [];
 export const useMissionVideosQuery = (
   missionId: number | null,
 ): MissionVideosResult => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const active = isAuthenticated && missionId !== null;
+  const active = missionId !== null;
 
   const query = useQuery({
     ...getMissionVideosOptions({ path: { missionId: missionId ?? 0 } }),

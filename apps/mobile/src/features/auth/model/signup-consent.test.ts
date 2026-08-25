@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolveTermsDocument } from "../../../entities/terms/model/terms-documents";
 import {
   CONSENT_ITEMS,
   INITIAL_CONSENT_STATE,
@@ -34,13 +35,26 @@ describe("동의 항목 카탈로그 (AC 8·9)", () => {
     ]);
   });
 
-  it("만 14세 행에만 '보기'(약관 전문)가 없고 나머지 4행은 전문 제목을 갖는다 (AC 8·25)", () => {
-    expect(CONSENT_ITEMS.map((item) => [item.id, item.termsTitle])).toEqual([
+  it("만 14세 행에만 '보기'(약관 전문)가 없고 나머지 4행은 약관 문서 키를 갖는다 (AC 8·25, MSG-448 기준 3)", () => {
+    expect(CONSENT_ITEMS.map((item) => [item.id, item.termsDocKey])).toEqual([
       ["age14", null],
-      ["termsOfService", "서비스 이용약관"],
-      ["privacy", "개인정보 수집 및 이용"],
-      ["location", "위치기반서비스 이용약관"],
-      ["marketing", "마케팅 정보 수신"],
+      ["termsOfService", "service"],
+      ["privacy", "privacy-collection"],
+      ["location", "location"],
+      ["marketing", "marketing"],
+    ]);
+  });
+
+  it("각 행의 문서 키가 약관 카탈로그에서 실제 문서로 해석된다 — 헤더 제목의 출처 (MSG-448 기준 3)", () => {
+    expect(
+      CONSENT_ITEMS.filter((item) => item.termsDocKey !== null).map(
+        (item) => resolveTermsDocument(item.termsDocKey!)?.title,
+      ),
+    ).toEqual([
+      "서비스 이용약관",
+      "개인정보 수집 및 이용",
+      "위치기반서비스 이용약관",
+      "마케팅 정보 수신",
     ]);
   });
 

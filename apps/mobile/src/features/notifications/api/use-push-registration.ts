@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { register, unregister } from "../../../shared/api/sdk";
 import { fcmTokenStorage } from "../../../shared/fcm-token-storage";
-import { derivePushEnabled } from "../model/push-registration";
+import type { PermissionState } from "../../../shared/permission-state";
+import { useAppForeground } from "../../../shared/use-app-foreground";
+import {
+  derivePushEnabled,
+  reconcilePushError,
+} from "../model/push-registration";
 import {
   appVersion,
   devicePlatform,
@@ -42,6 +47,11 @@ export const pushDeps: PushDeps = {
 export interface PushRegistration {
   /** 푸시 축의 ON/OFF — 권한 granted && 보관 토큰 존재 */
   enabled: boolean;
+  /**
+   * 현재 OS 알림 권한 (MSG-447 기준 11·13) — 토글을 한 번도 건드리지 않은 사용자에게도
+   * 거부 사실을 보여주기 위해 노출한다. `error`는 조작 결과라 진입 직후에는 항상 null이다.
+   */
+  permission: PermissionState;
   busy: boolean;
   /** 권한 거부·등록 실패 안내. 정상이면 null */
   error: "denied" | "failed" | null;
@@ -56,26 +66,60 @@ export interface PushRegistration {
  */
 export const usePushRegistration = (): PushRegistration => {
   const [enabled, setEnabledState] = useState(false);
+  const [permission, setPermission] = useState<PermissionState>("undetermined");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<"denied" | "failed" | null>(null);
 
-  /** 진입 시 현재 상태 판독 — 기기 설정에서 권한을 바꿨을 수 있다 */
+  /** 마운트 생존 플래그 — StrictMode 재마운트에서 되살아나야 하므로 마운트 훅에서 true로 세운다 */
+  const aliveRef = useRef(true);
   useEffect(() => {
-    let alive = true;
-    void (async () => {
-      const [permission, storedToken] = await Promise.all([
-        readPermissionStatus(),
-        fcmTokenStorage.read(),
-      ]);
-      if (!alive) return;
-      setEnabledState(
-        derivePushEnabled({ permission, hasStoredToken: storedToken !== null }),
-      );
-    })();
+    aliveRef.current = true;
     return () => {
-      alive = false;
+      aliveRef.current = false;
     };
   }, []);
+
+  /**
+   * 기기 실상태 판독 — 권한 + 보관 토큰.
+   *
+   * 판독을 함수로 뺀 이유(MSG-447 기준 13): 진입 시 1회로는 부족해졌다. 이 티켓이 사용자를
+   * **시스템 설정으로 내보내기** 때문에, 권한을 켜고 돌아온 그 화면이 낡은 상태로 남으면
+   * 우리가 안내한 복구 동선이 헛것이 된다.
+   *
+   * 실패를 삼키는 이유: 어댑터는 네이티브 모듈이 빠진 빌드에서 던지도록 설계돼 있고
+   * (`notifications-adapter` 지연 로드 계약), 포그라운드 복귀마다 도는 경로에서 새어 나가면
+   * 미처리 거부가 반복된다. 판독 실패는 표시를 바꾸지 않는다.
+   */
+  const syncFromDevice = useCallback(() => {
+    void (async () => {
+      try {
+        const [devicePermission, storedToken] = await Promise.all([
+          readPermissionStatus(),
+          fcmTokenStorage.read(),
+        ]);
+        if (!aliveRef.current) return;
+        setPermission(devicePermission);
+        setEnabledState(
+          derivePushEnabled({
+            permission: devicePermission,
+            hasStoredToken: storedToken !== null,
+          }),
+        );
+        // 설정에서 권한을 켜고 돌아온 경우 직전 거부는 낡은 사실이다 (기준 13)
+        setError((current) => reconcilePushError(current, devicePermission));
+      } catch {
+        // 네이티브 모듈 부재 — 푸시 없음까지만 퇴화시키고 화면은 그대로 둔다
+      }
+    })();
+  }, []);
+
+  /** 진입 시 현재 상태 판독 — 기기 설정에서 권한을 바꿨을 수 있다 */
+  useEffect(() => {
+    syncFromDevice();
+  }, [syncFromDevice]);
+
+  /** 설정 왕복 복귀 반영 (기준 13) — 우리가 내보낸 사용자가 돌아오는 유일한 신호다 */
+  useAppForeground(syncFromDevice);
 
   const setEnabled = useCallback(async (next: boolean) => {
     setBusy(true);
@@ -104,7 +148,7 @@ export const usePushRegistration = (): PushRegistration => {
     }
   }, []);
 
-  return { enabled, busy, error, setEnabled };
+  return { enabled, permission, busy, error, setEnabled };
 };
 
 /**

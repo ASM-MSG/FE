@@ -103,13 +103,14 @@ describe("경로추천 목록 카드 — 진행도 실패 표기 (리뷰 반영)
     spots: [],
   } as unknown as CourseView;
 
-  const renderCourseList = (progressFailed: boolean) =>
+  const renderCourseList = (progressFailed: boolean, progressLocked = false) =>
     render(
       <CourseListPanel
         views={[courseView]}
         isPending={false}
         isError={false}
         progressFailed={progressFailed}
+        progressLocked={progressLocked}
         onRetry={vi.fn()}
         onSelect={vi.fn()}
         onHover={vi.fn()}
@@ -130,6 +131,16 @@ describe("경로추천 목록 카드 — 진행도 실패 표기 (리뷰 반영)
     renderCourseList(false);
 
     expect(screen.getByText("0/3곳 방문")).toBeTruthy();
+    expect(screen.queryByText("방문 확인 불가")).toBeNull();
+  });
+
+  it("비로그인이면 카드의 방문 수를 숨긴다 — 실패 문구도 쓰지 않는다 (MSG-463 확정 2)", () => {
+    renderCourseList(false, true);
+
+    // 목록·카드는 그대로 보인다 (숨기는 건 개인 진행 표기뿐)
+    expect(screen.getByRole("button", { name: /남파랑길 3코스/ })).toBeTruthy();
+    expect(screen.queryByText("0/3곳 방문")).toBeNull();
+    // 익명은 조회 실패가 아니라 조회 대상이 아님 — "확인 불가" 문구 금지 (기각 대안의 회귀 방지)
     expect(screen.queryByText("방문 확인 불가")).toBeNull();
   });
 });

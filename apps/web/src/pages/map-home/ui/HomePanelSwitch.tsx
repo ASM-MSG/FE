@@ -56,6 +56,11 @@ interface HomePanelSwitchProps {
   listFailed: boolean;
   /** 진행도 부재료(내 수집 격자) 실패 — 목록은 유지하고 안내만 얹는다 */
   progressFailed: boolean;
+  /**
+   * 비로그인 진행도 잠금 (MSG-463 AC 9) — 페이지가 `!isAuthenticated`를 내린다.
+   * 상세의 `내 진행`은 로그인 유도, 코스 카드의 진행 바·방문 수는 숨김 (확정 2·3)
+   */
+  progressLocked: boolean;
   onListRetry: () => void;
   onSelectMission: (missionId: number) => void;
   onHoverMission: (missionId: number | null) => void;
@@ -102,6 +107,7 @@ export const HomePanelSwitch = ({
   listPending,
   listFailed,
   progressFailed,
+  progressLocked,
   onListRetry,
   onSelectMission,
   onHoverMission,
@@ -160,6 +166,7 @@ export const HomePanelSwitch = ({
         theme={eventChip}
         videos={missionFeed}
         progressFailed={progressFailed}
+        progressLocked={progressLocked}
         onVideoSelect={onVideoSelect}
         onBack={onBackToList}
         onClose={onCloseTheme}
@@ -172,6 +179,7 @@ export const HomePanelSwitch = ({
         view={selectedCourse}
         spotNames={spotNames}
         progressFailed={progressFailed}
+        progressLocked={progressLocked}
         onSpotSelect={onSelectSpot}
         onBack={onBackToList}
         onClose={onCloseTheme}
@@ -200,6 +208,7 @@ export const HomePanelSwitch = ({
         isPending={listPending}
         isError={listFailed}
         progressFailed={progressFailed}
+        progressLocked={progressLocked}
         onRetry={onListRetry}
         onSelect={onSelectMission}
         onHover={onHoverMission}

@@ -5,8 +5,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { MapIconButton } from "@fillmap/ui-native";
 import type { GridCellIndex } from "../../../entities/cell/model/grid";
-import { SEOMYEON_CENTER, resolveMapCenter } from "../../../shared/geolocation";
+import {
+  SEOMYEON_CENTER,
+  resolveMapCenter,
+  resolveMapCenterWithPermission,
+} from "../../../shared/geolocation";
+import type { PermissionState } from "../../../shared/permission-state";
+import { splashGate } from "../../../shared/splash";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
+import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
 import { useCollectedGridsQuery } from "../api/use-collected-grids-query";
 import { useGridAggregationQuery } from "../api/use-grid-aggregation-query";
 import { useHomeGridDetail } from "../api/use-home-grid-detail";
@@ -84,8 +91,22 @@ export const MapHomeScreen = () => {
   /** 검색 목적지 이동이 발생하면 초기 현재 위치 이동을 건너뛴다 — 카메라 경합 방지 */
   const movedToSearchTargetRef = useRef(false);
 
+  /**
+   * 지도 타일 첫 표시 완료 (MSG-445) — 진입 스플래시 해제 조건의 한 축.
+   * 이것만으로 내리면 타일 위에 오버레이(점령 채움)가 뒤늦게 얹히는 팝인이 보이므로
+   * (실측: 오버레이 데이터가 +176ms) 아래 효과가 점령 조회까지 함께 기다린다.
+   */
+  const [mapReady, setMapReady] = useState(false);
+
   /** 확장점 ① — 지도 이동이 끝날 때마다 갱신되는 현재 뷰포트 (지도 준비 전 null) */
   const [viewport, setViewport] = useState<Viewport | null>(null);
+  /**
+   * 내 위치 권한 안내 (MSG-447 기준 2·3) — null이면 닫힘. 초기 진입 거부에는 세우지 않는다:
+   * 방금 사용자가 내린 결정을 되묻는 꼴이 된다 (기준 1).
+   */
+  const [locationNotice, setLocationNotice] = useState<PermissionState | null>(
+    null,
+  );
   /** 확장점 ① — 시트 단계·컨테이너 높이 (내 위치 버튼 오프셋 계산용) */
   const [sheetLayout, setSheetLayout] = useState<{
     stage: SheetStage;
@@ -136,6 +157,16 @@ export const MapHomeScreen = () => {
     missions,
     occupiedGrids: occupied.grids,
   });
+
+  /**
+   * 진입 스플래시 해제 (MSG-445) — **타일 첫 표시 + 점령 조회 완료**가 모두 충족될 때
+   * 내린다. 첫 화면이 "지도 타일 + 격자 + 점령 채움"이 다 있는 상태로 뜨게 하려는 것이다.
+   * 둘 중 하나라도 오지 않으면(오프라인·조회 실패·지도 로딩 실패) 게이트의 상한 타이머가
+   * 대신 내린다 — 스플래시에 갇히지 않는다.
+   */
+  useEffect(() => {
+    if (mapReady && occupied.isResolved) splashGate.release();
+  }, [mapReady, occupied.isResolved]);
 
   /** 격자 상세 조립 (C) — 선택 격자가 없으면 조회가 열리지 않는다 */
   const gridDetail = useHomeGridDetail({
@@ -249,9 +280,22 @@ export const MapHomeScreen = () => {
     });
   }, []);
 
-  /** 내 위치 버튼 — 현재 위치(폴백: 서면)로 카메라 이동, 조회는 이동 종료가 갱신 */
+  /**
+   * 내 위치 버튼 — 현재 위치로 카메라 이동. 조회는 이동 종료가 갱신한다.
+   *
+   * [MSG-447 기준 2·4] 권한이 없으면 **카메라를 움직이지 않고** 안내를 띄운다. 종전에는
+   * 폴백 좌표(서면)로 그냥 이동해, 사용자가 보고 있던 위치를 권한 거부의 부작용으로 잃고도
+   * 왜 그랬는지 알 수 없었다. 측위만 실패한 경우(권한 있음)는 종전대로 폴백 좌표로 이동한다 —
+   * 권한 문제가 아닌 것을 권한 문제로 안내하지 않는다.
+   */
   const handleLocate = () => {
-    void resolveMapCenter().then((center) => mapRef.current?.moveTo(center));
+    void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      if (permission !== "granted") {
+        setLocationNotice(permission);
+        return;
+      }
+      mapRef.current?.moveTo(center);
+    });
   };
 
   /**
@@ -287,6 +331,9 @@ export const MapHomeScreen = () => {
             ref={mapRef}
             initialCenter={SEOMYEON_CENTER}
             minZoom={MAP_MIN_ZOOM}
+            // 지도 첫 렌더 = 진입 스플래시 해제 시점 (MSG-445) — 그 전까지는 진입점이
+            // 스플래시를 붙잡고 있다. 상한 타이머가 있어 이 신호가 안 와도 갇히지 않는다
+            onReady={() => setMapReady(true)}
             onCellTap={handleCellTap}
             occupiedCells={overlays.occupiedCells}
             themeCells={overlays.classification?.themeOnly}
@@ -357,6 +404,15 @@ export const MapHomeScreen = () => {
             />
           )}
         </HomeSheet>
+
+        {/* 권한 안내 (MSG-447 기준 2·3) — [권한 요청]은 같은 핸들러를 다시 태워
+            OS 프롬프트 → 성공 시 이동까지 한 번에 간다 */}
+        <PermissionNoticeModal
+          axis="location"
+          state={locationNotice}
+          onDismiss={() => setLocationNotice(null)}
+          onRequest={handleLocate}
+        />
 
         {/* 하단 인셋 배경 채움은 AppBottomNav가 소유 */}
         <View className="absolute inset-x-0 bottom-0">

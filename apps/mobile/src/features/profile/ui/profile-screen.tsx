@@ -7,13 +7,14 @@ import { User } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader, Avatar, Button, ModalCard } from "@fillmap/ui-native";
 import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
-import { goToLogin } from "../../../shared/navigation";
+import { goToLogin, goToTermsDocument } from "../../../shared/navigation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
+import { PermissionSettingsNotice } from "../../permissions/ui/permission-settings-notice";
 import { usePushRegistration } from "../../notifications/api/use-push-registration";
 import { useNotificationToggle } from "../api/use-notification-toggle";
 import { useProfileQuery } from "../api/use-profile-query";
-import { resolveNotificationErrorText } from "../model/notification-toggle";
+import { resolveNotificationNotice } from "../model/notification-toggle";
 import { formatJoinedDate } from "../model/profile-format";
 import { DeleteAccountModal } from "./delete-account-modal";
 import { SettingInfoRow, SettingRow, SettingToggleRow } from "./setting-rows";
@@ -69,6 +70,11 @@ export const ProfileScreen = () => {
   const identity = profile ?? MOCK_PROFILE;
   const notifications = useNotificationToggle();
   const push = usePushRegistration();
+  const notificationNotice = resolveNotificationNotice({
+    permission: push.permission,
+    pushError: push.error,
+    preferencesFailed: notifications.isError,
+  });
   const logout = useLogout({
     onSettled: () => {
       setLogoutOpen(false);
@@ -142,9 +148,12 @@ export const ProfileScreen = () => {
             </View>
           </ProfileSection>
 
-          {/* 설정 (기준 1~6) — 상세 화면 2종은 후속 티켓이라 "준비 중" 비활성 행 */}
+          {/* 설정 (기준 1~6) — [MSG-448] "준비 중" 2행이 실제 목적지로 배선됐다 */}
           <ProfileSection title="설정">
-            <SettingRow label="위치정보 동의 관리" hint="준비 중" />
+            <SettingRow
+              label="위치정보 동의 관리"
+              onPress={() => router.navigate("/profile/consent")}
+            />
             {/*
               MSG-429 기준 14·15 — 이 스위치 하나가 두 축을 움직인다: 서버 preferences
               5종 일괄 저장(MSG-426)과 OS 알림 권한 + FCM 토큰 등록/해제(MSG-429).
@@ -160,23 +169,46 @@ export const ProfileScreen = () => {
                 void push.setEnabled(next);
               }}
               busy={notifications.isPending || push.busy}
-              errorText={resolveNotificationErrorText({
-                pushError: push.error,
-                preferencesFailed: notifications.isError,
-              })}
+              // 재시도로 풀리는 실패만 행 안 캡션으로 (MSG-447 기준 12)
+              errorText={
+                notificationNotice?.kind === "text"
+                  ? notificationNotice.text
+                  : undefined
+              }
             />
-            <SettingRow label="신고 관리" hint="준비 중" />
+            {/*
+              MSG-447 기준 11·14 — OS 권한 거부는 앱 안에서 고칠 수 없어 **탭 가능한** 설정
+              진입점이 필요하다. `SettingToggleRow`의 `errorText`는 탭할 수 없는 `Text`라
+              사용자가 문구를 읽고도 갈 곳이 없었다. 행 컴포넌트를 고치지 않고 형제로 붙인다
+              (결정 D4 — `setting-rows.tsx`는 MSG-448 소유).
+              토글을 한 번도 건드리지 않아도 보인다 — 판정이 `push.permission`(기기 실상태)을
+              함께 보기 때문이다. 설정에서 켜고 돌아오면 포그라운드 재판독으로 사라진다(기준 13).
+            */}
+            {notificationNotice?.kind === "settings" && (
+              <PermissionSettingsNotice message={notificationNotice.text} />
+            )}
+            <SettingRow
+              label="신고 관리"
+              onPress={() => router.navigate("/profile/reports")}
+            />
           </ProfileSection>
 
-          {/* 계정 (기준 7~10) — 앱 버전은 정보 행(› 없음), 계정 삭제만 동작 행 */}
+          {/* 계정 (기준 7~10) — 앱 버전은 정보 행(› 없음). [MSG-448] 약관 2행도 동작 행 */}
           <ProfileSection title="계정">
             <SettingInfoRow
               label="앱 버전"
               // 하드코딩 mock은 행의 의미 자체를 거짓으로 만든다 — 빌드 주입값 (결정 Q4)
               value={Constants.expoConfig?.version ?? "1.0.0"}
             />
-            <SettingRow label="서비스 이용약관" hint="준비 중" />
-            <SettingRow label="개인정보 처리방침" hint="준비 중" />
+            {/* 같은 약관 뷰어를 문서 키로 공유한다 (MSG-448 기준 5) */}
+            <SettingRow
+              label="서비스 이용약관"
+              onPress={() => goToTermsDocument("service")}
+            />
+            <SettingRow
+              label="개인정보 처리방침"
+              onPress={() => goToTermsDocument("privacy-policy")}
+            />
             <SettingRow
               label="계정 삭제"
               tone="danger"

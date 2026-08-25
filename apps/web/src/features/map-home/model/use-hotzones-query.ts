@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { decodeGridCenter, type Bounds } from "@/entities/cell";
-import { useAuthStore } from "@/features/auth/model/auth-store";
 import { gatedQueryStatus } from "@/features/region/model/gated-query-status";
 import type { HotZoneResponseDto } from "@/shared/api/generated";
 import { getHotZonesOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
@@ -28,22 +27,19 @@ export interface HotZonesResult {
 }
 
 export const useHotZones = (bounds: Bounds | null): HotZonesResult => {
-  // 보호 API(익명 401 실측 — MSG-328 사용자 버그 리포트): 비로그인은 조회하지 않는다.
-  // 게이트 없이는 홈 (재)마운트마다 401 + auth-pipeline reissue가 재발사된다
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // 인증 게이트 없음 — MSG-454로 익명 조회 허용 (MSG-463에서 해제, 종전엔 익명 401 실측)
   const { query: viewport, enabled } = viewportQueryArgs(bounds);
-  const active = enabled && isAuthenticated;
   const query = useQuery({
     ...getHotZonesOptions({ query: viewport }),
     select: unwrapEnvelope,
-    enabled: active,
+    enabled,
     ...mapQueryPolicy,
   });
 
   return {
     zones: query.data?.hotZones ?? EMPTY_HOT_ZONES,
     // 비활성 쿼리는 영원히 pending이라 게이트로 눌러준다 (region 훅 관례)
-    ...gatedQueryStatus(query, active),
+    ...gatedQueryStatus(query, enabled),
   };
 };
 
@@ -55,14 +51,12 @@ export const useHotZones = (bounds: Bounds | null): HotZonesResult => {
  * 목을 유지하므로(결정 3), 두 소스가 같은 오버레이 파이프라인(buildHomeOverlayCells)을 탄다.
  */
 export const useHotZoneCells = (bounds: Bounds | null): ThemeCell[] => {
-  // 보호 API(익명 401 실측 — MSG-328 사용자 버그 리포트): 비로그인은 조회하지 않는다.
-  // 게이트 없이는 홈 (재)마운트마다 401 + auth-pipeline reissue가 재발사된다
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // 인증 게이트 없음 — MSG-454로 익명 조회 허용 (MSG-463에서 해제, 종전엔 익명 401 실측)
   const { query: viewport, enabled } = viewportQueryArgs(bounds);
   const { data } = useQuery({
     ...getHotZonesOptions({ query: viewport }),
     select: unwrapEnvelope,
-    enabled: enabled && isAuthenticated,
+    enabled,
     ...mapQueryPolicy,
   });
 

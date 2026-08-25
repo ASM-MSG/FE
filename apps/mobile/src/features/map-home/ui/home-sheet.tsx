@@ -200,10 +200,26 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
               ]}
             >
               <View className="flex-1 gap-sm rounded-t-xl bg-surface-elevated px-md pt-2.5 shadow-sheet">
-                {/* 핸들 바 — 시각 전용. 탭 동작은 하단의 48px 오버레이 Pressable이 담당 */}
-                <View className="items-center">
+                {/* 핸들 바 — 시각 전용 + 탭으로 확장/축소하는 비제스처 대체 수단(a11y,
+                    구 AC 19 "전체 보기" 폐기 보완). 터치 영역은 hitSlop으로 위 여백(pt-2.5=10)과
+                    아래 gap(12)까지 넓혀 핸들 밴드 전체(0~26dp)를 받는다 — 시각·레이아웃 불변.
+
+                    종전에는 같은 목적의 투명 오버레이 Pressable을 최상위(마지막 자식)에
+                    48dp 높이로 깔았는데, 콘텐츠는 26dp(10+4+gap 12)부터 시작해 헤더 행과
+                    겹쳤다("y≈57부터"라는 주석의 가정이 실측과 어긋났다). 그 결과 헤더의
+                    ‹·✕·전체 보기가 전부 오버레이에 먹혀 탭 불가였고, 격자 상세를 열면
+                    닫을 수단이 사라졌다 (MSG-445 실기 점검 결함 C1, 4회 재현).
+                    콘텐츠 위를 덮지 않는 것이 이 수정의 핵심이다 — 높이를 26dp로 줄이는 대신
+                    hitSlop을 쓴 이유는 핸들 바(4dp)의 시각 크기를 유지하기 위해서다. */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={stage === 1 ? "시트 접기" : "시트 펼치기"}
+                  onPress={() => goToStage(stage === 1 ? 3 : 1)}
+                  hitSlop={{ top: 10, bottom: 12 }}
+                  className="items-center"
+                >
                   <View className="h-1 w-9 rounded-full bg-hairline-strong" />
-                </View>
+                </Pressable>
 
                 {/* 콘텐츠 슬롯 — 3단계는 PEEK_HEIGHT가 콘텐츠 상단(헤더 행)까지만 노출 */}
                 {children({
@@ -211,16 +227,6 @@ export const HomeSheet = forwardRef<HomeSheetRef, HomeSheetProps>(
                   scrollEnabled: stage === 1,
                   onScrollOffsetChange: handleScrollOffsetChange,
                 })}
-                {/* 핸들 탭 = 비제스처 확장/축소 대체 수단 (a11y — 구 AC 19 "전체 보기" 폐기 보완).
-                    최상위(마지막 자식) 투명 오버레이로 터치 목표 48px 확보 — 시각·레이아웃 불변.
-                    콘텐츠 행은 y≈57부터라 48px 오버레이와 겹치지 않는다 */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={stage === 1 ? "시트 접기" : "시트 펼치기"}
-                  onPress={() => goToStage(stage === 1 ? 3 : 1)}
-                  className="absolute inset-x-0 top-0"
-                  style={{ height: 48 }}
-                />
               </View>
             </Animated.View>
           </GestureDetector>

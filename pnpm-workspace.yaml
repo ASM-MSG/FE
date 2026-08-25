@@ -11,3 +11,14 @@ catalog:
 # 각 패키지의 tsc는 catalog(7.x)를 쓴다. hey-api가 TS 7을 지원하면 루트 것을
 # 제거하고 apps/web devDep + catalog로 되돌릴 것. (scoped overrides·packageExtensions로는
 # peer 재지정이 안 되는 것을 클린 설치로 확증함)
+
+# MSG-445 — @mj-studio/react-native-naver-map 2.9.0이 네이버 SDK의
+# `NaverMap.OnLoadListener`(지도 타일 첫 표시)를 JS로 노출하지 않아 직접 얹었다.
+# 노출돼 있는 `onInitialized`는 `getMapAsync`(지도 **객체** 생성)라 타일보다 1.5~2초
+# 이르고, 그 시점에 진입 스플래시를 내리면 지도 자리가 빈 격자 플레이스홀더로 남는다.
+# 패치 내용: 이벤트 클래스(topLoaded) · addOnLoadListener 등록 · 매니저 registerDirectEvent
+# · codegen 스펙과 JS 래퍼의 `onLoaded` prop.
+# **네이티브 변경이라 값 갱신 시 `expo prebuild -p android` + APK 재빌드가 필요하고,
+# 래퍼 버전을 올릴 때 패치를 다시 맞춰야 한다.** 업스트림이 이 이벤트를 노출하면 제거할 것.
+patchedDependencies:
+  "@mj-studio/react-native-naver-map@2.9.0": patches/@mj-studio__react-native-naver-map@2.9.0.patch

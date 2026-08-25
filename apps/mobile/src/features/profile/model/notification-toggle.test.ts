@@ -6,7 +6,7 @@ import {
   applyMasterToggle,
   deriveMasterToggle,
   readPreferences,
-  resolveNotificationErrorText,
+  resolveNotificationNotice,
   type PreferencesEnvelope,
 } from "./notification-toggle";
 
@@ -116,44 +116,80 @@ describe("applyMasterToggle — 낙관 전환 값을 봉투에 기록한다 (기
 });
 
 /**
- * MSG-429 기준 14·15 — 토글 하나가 서버 preferences(MSG-426)와 OS 권한·FCM 토큰(MSG-429)
- * 두 축을 동시에 움직이면서 실패 사유가 둘로 늘었다. 어느 사유를 보여줄지의 우선순위를
- * 화면에 두면 회귀를 잡을 자산이 실기밖에 남지 않아 순수 파생으로 뺀다.
+ * 템플릿 ① 순수 로직 — 토글 하나가 서버 preferences(MSG-426)와 OS 권한·FCM 토큰(MSG-429)
+ * 두 축을 동시에 움직이면서 실패 사유가 둘로 늘었고(MSG-429 기준 15), MSG-447이 여기에
+ * **복구 수단의 차이**를 더한다: 권한 거부는 앱 안에서 고칠 수 없어 시스템 설정으로 내보내야
+ * 하고, 저장 실패는 재시도로 풀린다. 어느 쪽인지의 판정을 화면에 두면 회귀를 잡을 자산이
+ * 실기밖에 남지 않아 순수 파생으로 뺀다.
  */
-describe("resolveNotificationErrorText — 실패 안내 우선순위 (MSG-429 기준 15)", () => {
+describe("resolveNotificationNotice — 안내 종류·우선순위 (MSG-447 기준 11·12)", () => {
   it("정상이면 안내가 없다", () => {
     expect(
-      resolveNotificationErrorText({
+      resolveNotificationNotice({
+        permission: "granted",
         pushError: null,
         preferencesFailed: false,
       }),
     ).toBeUndefined();
   });
 
-  it("권한 거부는 기기 설정 안내를 보여준다 — 재시도 문구보다 우선한다", () => {
+  it("아직 물어본 적 없는 상태에는 안내가 없다 — 토글 탭이 곧 요청이라 미리 겁줄 이유가 없다", () => {
     expect(
-      resolveNotificationErrorText({
+      resolveNotificationNotice({
+        permission: "undetermined",
+        pushError: null,
+        preferencesFailed: false,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("OS 권한이 거부돼 있으면 토글을 건드리지 않아도 설정 안내가 보인다 (기준 11)", () => {
+    expect(
+      resolveNotificationNotice({
+        permission: "denied",
+        pushError: null,
+        preferencesFailed: false,
+      }),
+    ).toEqual({ kind: "settings", text: PUSH_PERMISSION_DENIED_MESSAGE });
+  });
+
+  it("권한 거부는 저장 실패보다 우선한다 — '잠시 후 다시 시도'는 설정을 열기 전까지 영원히 거짓이다 (기준 12)", () => {
+    expect(
+      resolveNotificationNotice({
+        permission: "denied",
         pushError: "denied",
         preferencesFailed: true,
       }),
-    ).toBe(PUSH_PERMISSION_DENIED_MESSAGE);
+    ).toEqual({ kind: "settings", text: PUSH_PERMISSION_DENIED_MESSAGE });
   });
 
-  it("푸시 등록 실패는 재시도 안내를 보여준다", () => {
+  it("권한 판독이 아직 granted여도 토글 시도가 거부로 끝났으면 설정 안내다 — 재판독을 기다리지 않는다", () => {
     expect(
-      resolveNotificationErrorText({
+      resolveNotificationNotice({
+        permission: "granted",
+        pushError: "denied",
+        preferencesFailed: false,
+      }),
+    ).toEqual({ kind: "settings", text: PUSH_PERMISSION_DENIED_MESSAGE });
+  });
+
+  it("푸시 등록 실패는 재시도 안내다 — 설정으로 보내지 않는다 (기준 12)", () => {
+    expect(
+      resolveNotificationNotice({
+        permission: "granted",
         pushError: "failed",
         preferencesFailed: false,
       }),
-    ).toBe(NOTIFICATION_SAVE_ERROR_TEXT);
+    ).toEqual({ kind: "text", text: NOTIFICATION_SAVE_ERROR_TEXT });
   });
 
-  it("푸시는 멀쩡한데 preferences 저장만 실패해도 재시도 안내를 보여준다", () => {
+  it("푸시는 멀쩡한데 preferences 저장만 실패해도 재시도 안내다 (기준 12)", () => {
     expect(
-      resolveNotificationErrorText({
+      resolveNotificationNotice({
+        permission: "granted",
         pushError: null,
         preferencesFailed: true,
       }),
-    ).toBe(NOTIFICATION_SAVE_ERROR_TEXT);
+    ).toEqual({ kind: "text", text: NOTIFICATION_SAVE_ERROR_TEXT });
   });
 });

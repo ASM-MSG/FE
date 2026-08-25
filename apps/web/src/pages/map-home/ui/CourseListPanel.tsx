@@ -10,6 +10,8 @@ interface CourseListPanelProps {
   onRetry: () => void;
   /** 진행도(내 수집 격자) 조회 실패 — 목록은 그대로 두고 위에 안내만 얹는다 */
   progressFailed: boolean;
+  /** 비로그인 진행도 잠금 (MSG-463 확정 2) — 카드의 진행 바·방문 수를 숨긴다 */
+  progressLocked: boolean;
   onSelect: (missionId: number) => void;
   onHover: (missionId: number | null) => void;
   onClose: () => void;
@@ -25,6 +27,7 @@ export const CourseListPanel = ({
   isError,
   onRetry,
   progressFailed,
+  progressLocked,
   onSelect,
   onHover,
   onClose,
@@ -50,6 +53,7 @@ export const CourseListPanel = ({
           key={view.missionId}
           view={view}
           progressFailed={progressFailed}
+          progressLocked={progressLocked}
           onSelect={onSelect}
           onHover={onHover}
         />

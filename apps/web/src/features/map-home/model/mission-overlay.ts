@@ -62,6 +62,25 @@ export const buildMissionCells = (
 };
 
 /**
+ * 미션 격자 → 소속 미션 id 맵 (MSG-462 AC 6ⓑ) — 격자 클릭의 FE 도형 폴백 판정 입력.
+ * `buildMissionCells`와 같은 뷰포트 클리핑·격자 전개를 쓴다 — 클릭 가능한(게시된) 격자와
+ * 판정 격자가 같은 집합이 되게 하기 위함이다. 겹치는 격자는 활성 목록 순서의 첫 미션이
+ * 이긴다 (스펙 승인 — API 폴백에서는 목록 순 첫 미션).
+ */
+export const buildMissionGridMembership = (
+  views: MissionView[],
+  bounds: Bounds,
+): ReadonlyMap<string, number> => {
+  const byGridId = new Map<string, number>();
+  for (const view of missionsInBounds(views, bounds)) {
+    for (const gridId of missionGridIdsInBounds(view.shape, bounds)) {
+      if (!byGridId.has(gridId)) byGridId.set(gridId, view.missionId);
+    }
+  }
+  return byGridId;
+};
+
+/**
  * 포커스된 미션의 이름표. [AC 16·18]
  * 목록만 보고 있을 때 모든 미션에 이름표를 띄우면 지도가 글자로 덮인다 — Figma도
  * 호버·선택 상태에서만 이름표를 그린다.

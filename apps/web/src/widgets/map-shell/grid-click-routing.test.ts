@@ -50,3 +50,39 @@ describe("buildCellClickHandler — 점령 격자 우선 라우팅", () => {
     expect(openGridDetail).not.toHaveBeenCalled();
   });
 });
+
+describe("buildCellClickHandler — 축제·팝업 칩 활성 예외 (MSG-462 AC 12)", () => {
+  const OCCUPIED = ["16846_11428"];
+
+  it("칩 활성 중에는 점령 격자 클릭도 섹션 핸들러로 위임한다 — 미션 상세 경로 (AC 12)", () => {
+    const openGridDetail = vi.fn();
+    const sectionHandler = vi.fn();
+    const handle = buildCellClickHandler({
+      occupiedIds: OCCUPIED,
+      openGridDetail,
+      sectionHandler,
+      missionChipActive: true,
+    });
+
+    handle("16846_11428");
+
+    expect(openGridDetail).not.toHaveBeenCalled();
+    expect(sectionHandler).toHaveBeenCalledWith("16846_11428");
+  });
+
+  it("칩 비활성이면 점령 우선 라우팅 그대로다 — MSG-329 회귀 (AC 11)", () => {
+    const openGridDetail = vi.fn();
+    const sectionHandler = vi.fn();
+    const handle = buildCellClickHandler({
+      occupiedIds: OCCUPIED,
+      openGridDetail,
+      sectionHandler,
+      missionChipActive: false,
+    });
+
+    handle("16846_11428");
+
+    expect(openGridDetail).toHaveBeenCalledWith("16846_11428");
+    expect(sectionHandler).not.toHaveBeenCalled();
+  });
+});

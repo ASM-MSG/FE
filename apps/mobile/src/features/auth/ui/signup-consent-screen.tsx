@@ -9,6 +9,9 @@ import { BackHandler, Pressable, ScrollView, Text, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader, Button, Checkbox } from "@fillmap/ui-native";
+import { resolveTermsDocument } from "../../../entities/terms/model/terms-documents";
+import type { TermsDocKey } from "../../../entities/terms/model/terms-documents";
+import { TermsDocumentView } from "../../../entities/terms/ui/terms-document-view";
 import { useLogout } from "../api/use-logout";
 import { useUpdateLocationConsent } from "../api/use-update-location-consent";
 import {
@@ -19,7 +22,6 @@ import {
   toggleAll,
   toggleItem,
 } from "../model/signup-consent";
-import { ConsentTermsView } from "./consent-terms-view";
 
 /**
  * SOURCE: Figma 회원가입 — 약관 동의 14870:430(미동의) / 14870:467(전체 동의) — 390×844.
@@ -31,8 +33,10 @@ import { ConsentTermsView } from "./consent-terms-view";
  * - 초기 5개 전부 미체크 + CTA 비활성 = Figma 미동의 프레임 (AC 9). 웹과 의도적으로 다르다
  * - CTA = `PUT location-consent {consented:true}` 1회 → getMe invalidate 경유로 게이트가
  *   스스로 풀린다 (AC 18). 별도 화면 이동 없음
- * - 만14세·이용약관·개인정보·마케팅 체크는 요청을 만들지 않는다 — 저장할 서버 필드가
- *   없다(승인 Q1, AC 21). 법적 이력 저장 API는 BE 환류 대상
+ * - 만14세·이용약관·개인정보·마케팅 체크는 요청을 만들지 않는다 (AC 21).
+ *   [MSG-448] 원문의 "저장할 서버 필드가 없다"는 더 이상 사실이 아니다 — MSG-451 SDK
+ *   재생성으로 `submitConsents`·`updateMarketingConsent`가 생겼다. 배선은 MSG-448 범위
+ *   밖(승인 Q7)이라 동작은 그대로 두고 사실만 정정한다
  * - 헤더 `‹`·하드웨어 뒤로가기 = 로그인 중단(로그아웃) — 1회 가드로 두 트리거가 요청을
  *   한 번만 만든다 (AC 22·23, 웹 logoutRequestedRef 선례)
  * - 하단 캡션("선택 항목 동의는 나중에 프로필 편집에서 바꿀 수 있어요.")은 렌더하지 않는다 —
@@ -41,8 +45,11 @@ import { ConsentTermsView } from "./consent-terms-view";
  */
 export const SignupConsentScreen = () => {
   const [consent, setConsent] = useState(INITIAL_CONSENT_STATE);
-  /** 열려 있는 약관 전문의 문서명 — null이면 동의 화면 (AC 25, 게이트 내부 상태) */
-  const [openedTerms, setOpenedTerms] = useState<string | null>(null);
+  /**
+   * 열려 있는 약관 전문의 문서 키 — null이면 동의 화면 (AC 25, 게이트 내부 상태).
+   * [MSG-448] 제목이 아니라 문서 키를 든다 — 제목의 출처가 약관 카탈로그로 옮겨졌다.
+   */
+  const [openedTerms, setOpenedTerms] = useState<TermsDocKey | null>(null);
   const {
     mutate: saveConsent,
     isPending: isSaving,
@@ -96,8 +103,8 @@ export const SignupConsentScreen = () => {
   // 게이트 내부 전면 뷰 — 체크 상태(consent)는 이 컴포넌트가 계속 보유하므로 유지된다 (AC 25)
   if (openedTerms !== null) {
     return (
-      <ConsentTermsView
-        title={openedTerms}
+      <TermsDocumentView
+        docKey={openedTerms}
         onClose={() => setOpenedTerms(null)}
       />
     );
@@ -139,30 +146,42 @@ export const SignupConsentScreen = () => {
         <View className="h-px w-full bg-border" />
 
         <View className="gap-xxs">
-          {CONSENT_ITEMS.map((item) => (
-            <View key={item.id} className="flex-row items-center gap-sm py-sm">
-              <Checkbox
-                variant="glyph"
-                checked={consent[item.id]}
-                onChange={() => setConsent((prev) => toggleItem(prev, item.id))}
-                label={item.label}
-                className="flex-1"
-              />
-              {/* 만 14세 행에는 전문이 없어 "보기"도 없다 (AC 8) */}
-              {item.termsTitle !== null && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.termsTitle} 전문 보기`}
-                  hitSlop={12}
-                  onPress={() => setOpenedTerms(item.termsTitle)}
-                >
-                  <Text className="text-fm-label text-foreground-muted">
-                    보기
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          ))}
+          {CONSENT_ITEMS.map((item) => {
+            const docKey = item.termsDocKey;
+            // 헤더 제목의 출처는 약관 카탈로그다 (MSG-448 기준 3)
+            const document =
+              docKey === null ? null : resolveTermsDocument(docKey);
+
+            return (
+              <View
+                key={item.id}
+                className="flex-row items-center gap-sm py-sm"
+              >
+                <Checkbox
+                  variant="glyph"
+                  checked={consent[item.id]}
+                  onChange={() =>
+                    setConsent((prev) => toggleItem(prev, item.id))
+                  }
+                  label={item.label}
+                  className="flex-1"
+                />
+                {/* 만 14세 행에는 전문이 없어 "보기"도 없다 (AC 8) */}
+                {docKey !== null && document !== null && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${document.title} 전문 보기`}
+                    hitSlop={12}
+                    onPress={() => setOpenedTerms(docKey)}
+                  >
+                    <Text className="text-fm-label text-foreground-muted">
+                      보기
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
 

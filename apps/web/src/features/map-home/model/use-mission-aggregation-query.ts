@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { Bounds } from "@/entities/cell";
-import { useAuthStore } from "@/features/auth/model/auth-store";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { getMissionAggregatesOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import {
@@ -26,8 +25,8 @@ import {
  * 크기와 묶음 단위가 튄다. bbox가 확정 영역이 아니라 뷰포트인 이유도 같다(스펙 추정 8) —
  * 저줌에서는 "장소 불러오기"가 노출되지 않아 확정 영역으로 묶으면 갱신 수단이 없다.
  *
- * 게이트: 로그인(개별 조회가 익명 401로 실측된 선례 — 추정 6) && 축제·팝업 칩 && unit
- * 판정됨(zoom < GRID_MIN_ZOOM) && 뷰포트 존재.
+ * 게이트: 축제·팝업 칩 && unit 판정됨(zoom < GRID_MIN_ZOOM) && 뷰포트 존재.
+ * 인증 게이트 없음 — MSG-454로 익명 조회 허용 (MSG-463에서 해제).
  */
 const EMPTY_MARKERS: RegionClusterMarker[] = [];
 
@@ -36,10 +35,8 @@ export const useMissionAggregationQuery = (
   bounds: Bounds | null,
   zoom: number,
 ): { markers: RegionClusterMarker[] } => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const unit = aggregationUnitForZoom(zoom);
-  const enabled =
-    isAuthenticated && theme !== null && unit !== null && bounds !== null;
+  const enabled = theme !== null && unit !== null && bounds !== null;
 
   // 미요청 상태에서도 생성 옵션 타입이 값을 요구해 0으로 채운다 (viewportQueryArgs 관례)
   const requestBounds =
