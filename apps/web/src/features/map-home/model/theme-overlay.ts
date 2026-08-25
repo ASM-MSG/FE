@@ -7,7 +7,6 @@ import {
   type CellOverlay,
   type LatLng,
 } from "@/entities/cell";
-import { isGridCellCenterInBusan } from "./grid-overlay";
 import { THEME_META, type ThemeCell, type ThemeId } from "./theme";
 
 /**
@@ -15,7 +14,8 @@ import { THEME_META, type ThemeCell, type ThemeId } from "./theme";
  * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
  * 렌더링(naver Polygon·Polyline·Marker)은 MapCanvas 경계 안에서 하고, 여기는 데이터만 만든다.
  * MSG-263 개정(D5) → MSG-357: 셀 기하는 100m 격자 스냅 꼭짓점 4점
- * (cellCornersAt∘cellIndexAt — EPSG:5179)이고, 셀 중심이 부산 행정경계 밖인 셀은 대상에서 제외한다(AC 4).
+ * (cellCornersAt∘cellIndexAt — EPSG:5179)이다. 부산 행정경계 필터(구 AC 4)는 MSG-477 ③
+ * 격자 전국 확장으로 제거됐다 — 전국 셀이 그대로 게시 대상이다.
  * MSG-263 개정 2(D9): 기본 점령 셀은 셸 상시 층(MapShell → toOccupiedOverlays)으로 분리 —
  * 여기서는 테마 셀(빗금 포함)만 게시한다. 교집합 1회 렌더는 셸의 excludeSectionCells가 맡는다(AC 8).
  */
@@ -32,14 +32,9 @@ export interface StyledCellOverlay extends CellOverlay {
   emphasized?: boolean;
 }
 
-/**
- * 게시 대상 테마 셀 — 중심이 부산 행정경계 밖인 셀은 제외한다 (MSG-263 AC 4).
- * 게시 목록(`buildHomeOverlayCells`)과 탭 판정 id(`themeCellGridIds`)가 **이 하나의
- * 필터된 소스**에서 파생돼야 한다 — 한쪽만 필터하면 게시되지 않은 셀이 판정 집합에 남아
- * "강조된 테마 셀만 상세를 연다"(AC 9)가 깨진다.
- */
-const renderableThemeCells = (themeCells: ThemeCell[]): ThemeCell[] =>
-  themeCells.filter((c) => isGridCellCenterInBusan(c.center));
+// MSG-477 ③: 부산 경계 필터(renderableThemeCells — 구 MSG-263 AC 4)는 격자 전국 확장으로
+// 제거됐다. "판정 집합 ≡ 게시 집합"(AC 9)은 게시 목록(`buildHomeOverlayCells`)과 탭 판정
+// id(`themeCellGridIds`)가 같은 소스·같은 인코딩(encodeGridId)에서 파생되는 것으로 유지된다.
 
 /**
  * 활성 테마 + 테마 셀 + 내 점령 격자 id → 지도 게시용 테마 오버레이 목록. [AC 2·6·7·8]
@@ -60,7 +55,7 @@ export const buildHomeOverlayCells = (
   if (activeTheme === null) return [];
 
   const occupiedIds = new Set(occupiedGridIds);
-  return renderableThemeCells(themeCells).map((c) => {
+  return themeCells.map((c) => {
     const gridId = encodeGridId(c.center);
     return {
       id: gridId,
@@ -73,13 +68,13 @@ export const buildHomeOverlayCells = (
 
 /**
  * 게시된 테마 셀의 격자 id 목록 — 셀 탭 상세 열림 판정(`canOpenDetail`)의 입력.
- * `buildHomeOverlayCells`와 같은 필터·같은 인코딩(`renderableThemeCells` → `encodeGridId`)을
- * 거치므로 **판정 집합 ≡ 게시 집합**이 구성상 보장된다. 두 축의 어긋남이 각각 결함이었다:
- * ① 목 소스 테마의 `ThemeCell.id`는 목 라벨("A-14")이라 그대로 쓰면 상세가 영영 안 열리고,
- * ② 경계 필터를 한쪽만 적용하면 게시되지 않은 셀이 판정에 남는다.
+ * `buildHomeOverlayCells`와 같은 소스·같은 인코딩(`encodeGridId`)을 거치므로
+ * **판정 집합 ≡ 게시 집합**이 구성상 보장된다 (MSG-477 ③에서 부산 경계 필터 제거 —
+ * 필터가 없어도 목 소스 테마의 `ThemeCell.id`가 목 라벨("A-14")이라 그대로 쓰면 상세가
+ * 영영 안 열리는 결함(①)은 여전해, 인코딩 일원화는 유지한다).
  */
 export const themeCellGridIds = (themeCells: ThemeCell[]): string[] =>
-  renderableThemeCells(themeCells).map((c) => encodeGridId(c.center));
+  themeCells.map((c) => encodeGridId(c.center));
 
 /**
  * 재생 중 격자 테두리 강조 (MSG-328 사용자 피드백) — 게시 목록에 강조 표시를 얹는다.

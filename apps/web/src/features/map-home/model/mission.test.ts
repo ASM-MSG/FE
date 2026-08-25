@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cellCenterAt, cellIndexAt, encodeGridId } from "@/entities/cell";
-import type { MissionResponseDto } from "@/shared/api/generated";
+import type { MissionResponseDto, PathShape } from "@/shared/api/generated";
 import {
   missionChipOfTheme,
   missionCoversGrid,
@@ -77,7 +77,9 @@ describe("missionShapeOf — shape를 런타임 판별한다 (AC 2)", () => {
       mission({
         type: "COURSE",
         shape: {
-          line: '{"type":"LineString","coordinates":[]}',
+          // BE가 MSG-473에서 line을 문자열이 아닌 GeoJSON 객체로 내리기 시작했다(DTO 타입 변경).
+          // FE 파싱 대응은 MSG-473 소관 — 여기서는 기존 문자열 계약 픽스처를 좁은 캐스트로 유지한다.
+          line: '{"type":"LineString","coordinates":[]}' as unknown as PathShape["line"],
           spots: [
             { gridId: "g1", lat: 35.15, lng: 129.05, seq: 1 },
             { gridId: "g2", lat: 35.16, lng: 129.06, seq: 2 },

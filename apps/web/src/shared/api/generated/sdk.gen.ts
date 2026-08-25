@@ -769,7 +769,7 @@ export const getTrendingKeywords = <ThrowOnError extends boolean = false>(option
 /**
  * 장소 검색 (장소명 → 좌표·격자)
  *
- * 카카오 로컬 키워드 검색 결과(정확도순 ≤15건)에 각 좌표의 격자 ID 를 얹어 반환한다. 선택 즉시 lat/lng 지도 이동 + gridId 격자 하이라이트. q 누락 400 / trim 후 빈 q·무매치 200 [] / 카카오 장애·타임아웃 502(developCode 5502).
+ * 카카오 로컬 키워드 검색 결과(정확도순 ≤15건)에 각 좌표의 격자 ID 를 얹어 반환한다. 선택 즉시 lat/lng 지도 이동 + gridId 격자 하이라이트. q 누락 400 / trim 후 빈 q·무매치 200 [] / 카카오 장애·타임아웃 502(developCode 5502). 비로그인도 호출할 수 있고 결과는 로그인 때와 같다 — 비로그인 호출은 X-Viewer-Session 헤더(공백 아님·최대 64자·콜론 불가)를 실으면 인기 검색어 집계에 잡히고, 안 실어도 검색은 정상 200 이다.
  */
 export const searchPlaces = <ThrowOnError extends boolean = false>(options: Options<SearchPlacesData, ThrowOnError>): RequestResult<SearchPlacesResponses, unknown, ThrowOnError> => (options.client ?? client).get<SearchPlacesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
