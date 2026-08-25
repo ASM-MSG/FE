@@ -311,8 +311,9 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       }}
       // 타일 첫 표시(`onLoaded`)는 **패치가 Android에만 있다** — iOS 네이티브에는 대응
       // 리스너가 없어 이벤트가 영영 오지 않는다. iOS를 `onLoaded`에만 걸어두면 스플래시가
-      // 매번 게이트 상한(2.5초)을 통째로 기다리므로, iOS는 종전 신호(`onInitialized`)로
-      // 폴백해 최소한 지금 동작을 유지한다. iOS 대응은 후속(래퍼 iOS 패치 또는 업스트림).
+      // 매번 게이트 상한(`SPLASH_MAP_TIMEOUT_MS`)을 통째로 기다리므로, iOS는 종전
+      // 신호(`onInitialized`)로 폴백해 최소한 지금 동작을 유지한다.
+      // iOS 대응은 후속(래퍼 iOS 패치 또는 업스트림).
       onLoaded={Platform.OS === "android" ? onReady : undefined}
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
