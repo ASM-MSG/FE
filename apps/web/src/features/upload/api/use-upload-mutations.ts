@@ -167,8 +167,9 @@ export const useReplaceVideo = () => {
       // READY 재무효화 책임만 남았다 (MSG-476 AC 7)
       invalidateUploadSurfaces(queryClient, { videoId, gridId });
 
-      // 교체본도 새 인코딩을 거친다 — READY 전이에서 같은 집합을 다시 싣는다
-      startReadyRefresh(queryClient, videoId, gridId);
+      // 교체본도 새 인코딩을 거친다 — READY 전이에서 같은 집합을 다시 싣는다.
+      // restart: 원본이 아직 인코딩 중이었다면 그 폴링을 끊고 상한 기산점을 새로 잡는다
+      startReadyRefresh(queryClient, videoId, gridId, { restart: true });
     },
   });
   const resetFlow = () => {

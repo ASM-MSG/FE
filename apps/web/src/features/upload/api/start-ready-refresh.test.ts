@@ -98,6 +98,38 @@ describe("startReadyRefresh — 세션 경계", () => {
     expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(true);
   });
 
+  it("교체는 진행 중이던 폴링을 갈아끼운다 — 원본 확정 시각이 아니라 교체 시각부터 15분을 준다 (PR #99 리뷰)", async () => {
+    const queryClient = new QueryClient();
+    startReadyRefresh(queryClient, 7, "grid-9"); // 원본 확정 — 기산점 t=0
+
+    // 원본이 아직 인코딩 중인 채로 14분 경과 (상한까지 1분 남음)
+    await vi.advanceTimersByTimeAsync(14 * 60_000);
+    const beforeRestart = fetchMock.mock.calls.length;
+    expect(beforeRestart).toBeGreaterThan(0);
+
+    // 이 시점에 교체 — 새 인코딩이므로 기산점을 다시 잡아야 한다
+    startReadyRefresh(queryClient, 7, "grid-9", { restart: true });
+
+    // 원본 기산점이면 여기서 이미 만료다. 갈아끼웠으므로 계속 조회한다
+    await vi.advanceTimersByTimeAsync(2 * 60_000);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeRestart);
+  });
+
+  it("restart 없이는 진행 중이던 폴링의 상한이 그대로다 — 반복 호출이 폴링을 재시작시키지 않는다", async () => {
+    const queryClient = new QueryClient();
+    startReadyRefresh(queryClient, 7, "grid-9");
+
+    await vi.advanceTimersByTimeAsync(14 * 60_000);
+    startReadyRefresh(queryClient, 7, "grid-9"); // 확정 경로 — 갈아끼우지 않는다
+    const atRestartAttempt = fetchMock.mock.calls.length;
+
+    await vi.advanceTimersByTimeAsync(5 * 60_000); // 원본 기산점 기준 15분 초과
+    // 만료로 멈췄으므로 더 늘지 않는다
+    expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(
+      atRestartAttempt + 2,
+    );
+  });
+
   it("같은 영상에 폴링을 두 번 걸지 않는다 — 중복 확정·재마운트 방어", async () => {
     const queryClient = new QueryClient();
     startReadyRefresh(queryClient, 7, "grid-9");

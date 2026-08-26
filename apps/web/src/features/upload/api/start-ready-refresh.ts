@@ -55,14 +55,31 @@ const watchSession = (): void => {
   });
 };
 
+export interface ReadyRefreshOptions {
+  /**
+   * 새 인코딩 작업이라 진행 중이던 폴링을 갈아끼운다 — 상한(15분) 기산점을 다시 잡는다.
+   *
+   * 교체(`useReplaceVideo`)에서만 켠다. 원본이 아직 인코딩 중인 영상을 곧바로 교체하면
+   * 진행 중인 폴링이 남아 있는데, 그 폴링의 기산점은 **원본 확정 시각**이라 새 작업의
+   * 상한이 이미 깎여 있다. 확정 경로는 끄고 둔다 — 같은 영상에 대한 반복 호출을
+   * 그대로 재시작하면 호출이 잦을 때 폴링이 영영 발화하지 못한다 (PR #99 리뷰).
+   */
+  restart?: boolean;
+}
+
 export const startReadyRefresh = (
   queryClient: QueryClient,
   videoId: number,
   gridId: string | null,
+  options?: ReadyRefreshOptions,
 ): void => {
   // 세션이 이미 끝났다 — 확정 응답이 로그아웃 뒤에 도착한 경우 (codex 2차 리뷰)
   if (!useAuthStore.getState().isAuthenticated) return;
-  if (activePolls.has(videoId)) return;
+  const running = activePolls.get(videoId);
+  if (running !== undefined) {
+    if (options?.restart !== true) return;
+    running.stop(); // onStop이 등록을 지운다 — 아래에서 새 핸들로 덮는다
+  }
   watchSession();
 
   const handle = startReadyPoll({
