@@ -10,6 +10,7 @@ import {
   toRegionClusterMarkers,
 } from "@/features/map-home/model/region-cluster-overlay";
 import { useGridAggregationQuery } from "@/features/map-home/model/use-grid-aggregation-query";
+import { useHotZoneAggregationQuery } from "@/features/map-home/model/use-hotzone-aggregation-query";
 import { useMissionAggregationQuery } from "@/features/map-home/model/use-mission-aggregation-query";
 import {
   buildGridLines,
@@ -103,16 +104,35 @@ export const MapShell = () => {
     viewportBounds,
     viewportZoom,
   );
+  // 저줌 핫구역 집계 마커 (MSG-475 AC 12, 서버 MSG-466) — 핫 칩이 켜졌을 때 핫 격자
+  // 낱개(전국 상위 50)를 대신하는 층. 격자 쪽은 use-home-overlays의 hotCellsVisible이 걷는다
+  const { markers: hotClusters } = useHotZoneAggregationQuery(
+    activeTheme === "hot",
+    viewportBounds,
+    viewportZoom,
+  );
+  // 집계 소스는 칩 기준 **택일** (MSG-475 AC 14) — 한 지도에 두 종류의 집계 마커가
+  // 서지 않는다. 경로추천 칩은 집계 층이 없고, 도감 집계는 훅이 로그인·칩 없음을 게이트한다
   const clusters = useMemo(() => {
-    if (missionClusters.length > 0)
+    if (activeTheme === "hot")
+      return mergeOverlappingMarkers(hotClusters, viewportZoom);
+    if (activeTheme === "festival" || activeTheme === "popup")
       return mergeOverlappingMarkers(missionClusters, viewportZoom);
+    if (activeTheme !== null) return [];
     return aggregationUnit !== null
       ? mergeOverlappingMarkers(
           toRegionClusterMarkers(aggregationItems, aggregationUnit),
           viewportZoom,
         )
       : [];
-  }, [missionClusters, aggregationItems, aggregationUnit, viewportZoom]);
+  }, [
+    activeTheme,
+    hotClusters,
+    missionClusters,
+    aggregationItems,
+    aggregationUnit,
+    viewportZoom,
+  ]);
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
 
