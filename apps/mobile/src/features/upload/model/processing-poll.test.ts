@@ -9,24 +9,13 @@ import {
 } from "./processing-poll";
 
 /**
- * 기준 44: 블러 처리 폴링 모델을 웹 MSG-329 원본과 동등하게 포팅한다.
- * **모델만** 포팅한다(D9) — 소비 워처·대기 저장소·완료 통지 UI는 MSG-429 소관이라
- * 이 티켓에는 호출부가 없다. 웹 원본은 변수 경로 동적 import
- * (upload-wizard.parity.test.ts 주석 참조).
+ * 기준 44(MSG-424): 블러 처리 폴링 모델 — 원래 웹 MSG-329 원본을 동적 import해
+ * 동등성을 고정하던 패리티 테스트였으나, 웹 원본은 MSG-476에서 삭제됐다
+ * (웹 블러 파이프라인 제거). 패리티 앵커가 소멸해 **로컬 단위 테스트로 전환**하고,
+ * 기존 패리티 케이스의 기대값(30초 간격 · 15분 상한 · READY/FAILED 전이)은
+ * 고정 리터럴로 동결해 같은 동작을 계속 검증한다. 모바일 블러 경로는 티켓 범위
+ * 밖의 살아 있는 구현이므로 판정 규칙의 정본은 이제 이 파일과 processing-poll.ts다.
  */
-interface WebProcessingPollModule {
-  PROCESSING_POLL_INTERVAL_MS: number;
-  PROCESSING_POLL_TIMEOUT_MS: number;
-  resolveProcessingTransition: typeof resolveProcessingTransition;
-  isPollExpired: typeof isPollExpired;
-  startProcessingPoll: typeof startProcessingPoll;
-}
-const WEB_PROCESSING_POLL_PATH = new URL(
-  "../../../../../web/src/features/upload/model/processing-poll.ts",
-  import.meta.url,
-).pathname;
-const loadWebProcessingPoll = (): Promise<WebProcessingPollModule> =>
-  import(WEB_PROCESSING_POLL_PATH);
 
 const STATUSES = [
   "READY",
@@ -105,35 +94,39 @@ describe("startProcessingPoll — 폴링 시작·중지", () => {
   });
 });
 
-describe("웹 원본 동등성 (기준 44)", () => {
-  it("폴링 간격·상한 상수가 웹과 같다 (30초 · 15분)", async () => {
-    const web = await loadWebProcessingPoll();
-
-    expect(PROCESSING_POLL_INTERVAL_MS).toBe(web.PROCESSING_POLL_INTERVAL_MS);
-    expect(PROCESSING_POLL_TIMEOUT_MS).toBe(web.PROCESSING_POLL_TIMEOUT_MS);
+describe("판정 규칙 동결 (구 웹 패리티 케이스 — 기대값 리터럴 고정)", () => {
+  it("폴링 간격·상한 상수는 30초 · 15분이다 (티켓 19 확정)", () => {
+    expect(PROCESSING_POLL_INTERVAL_MS).toBe(30_000);
+    expect(PROCESSING_POLL_TIMEOUT_MS).toBe(900_000);
   });
 
-  it("상태 문자열 전 조합에서 웹 전이 판정과 동일하다", async () => {
-    const web = await loadWebProcessingPoll();
+  it("상태 문자열 전 조합의 전이 판정이 동결값과 같다", () => {
+    const expected: Record<string, ProcessingTransition> = {
+      READY: "ready",
+      FAILED: "failed",
+      UPLOADED: "pending",
+      ENCODING: "pending",
+      BLURRING: "pending",
+      "": "pending",
+      ready: "pending",
+    };
 
     for (const status of STATUSES) {
-      expect(resolveProcessingTransition(status)).toBe(
-        web.resolveProcessingTransition(status),
-      );
+      expect(resolveProcessingTransition(status)).toBe(expected[status]);
     }
   });
 
-  it("만료 판정 경계에서 웹과 동일하다", async () => {
-    const web = await loadWebProcessingPoll();
+  it("만료 판정 경계가 동결값과 같다", () => {
+    const cases: Array<[now: number, expired: boolean]> = [
+      [0, false],
+      [1, false],
+      [PROCESSING_POLL_TIMEOUT_MS - 1, false],
+      [PROCESSING_POLL_TIMEOUT_MS, true],
+      [10 ** 9, true],
+    ];
 
-    for (const now of [
-      0,
-      1,
-      PROCESSING_POLL_TIMEOUT_MS - 1,
-      PROCESSING_POLL_TIMEOUT_MS,
-      10 ** 9,
-    ]) {
-      expect(isPollExpired(0, now)).toBe(web.isPollExpired(0, now));
+    for (const [now, expired] of cases) {
+      expect(isPollExpired(0, now)).toBe(expired);
     }
   });
 });

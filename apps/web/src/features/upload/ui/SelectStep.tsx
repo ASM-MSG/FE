@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { MapPin } from "lucide-react";
-import { cn, ModalCard } from "@fillmap/ui-web";
+import { ModalCard } from "@fillmap/ui-web";
 import {
   MAX_DURATION_SEC,
   type UploadCandidate,
@@ -9,40 +9,11 @@ import { UploadDropzone } from "./UploadDropzone";
 
 const MODAL_SUBTITLE = "지금 위치의 격자에 순간을 기록하세요";
 
-/** 안내 박스 — 정적 프레젠테이션 */
-const InfoBox = ({
-  title,
-  body,
-  tone,
-}: {
-  title: string;
-  body: ReactNode;
-  tone: "soft" | "dark";
-}) => (
-  <div
-    className={cn(
-      "flex w-full flex-col gap-xxs rounded-md px-md py-sm text-left",
-      tone === "dark" ? "bg-foreground" : "bg-surface-soft",
-    )}
-  >
-    <span
-      className={cn(
-        "text-fm-body-strong",
-        tone === "dark" ? "text-foreground-inverse" : "text-foreground",
-      )}
-    >
-      {title}
-    </span>
-    <span
-      className={cn(
-        "text-fm-label",
-        tone === "dark"
-          ? "text-foreground-inverse/70"
-          : "text-foreground-muted",
-      )}
-    >
-      {body}
-    </span>
+/** 안내 박스 — 정적 프레젠테이션. 구 dark tone은 블러 안내 박스 삭제(MSG-476 AC 6)로 소멸 */
+const InfoBox = ({ title, body }: { title: string; body: ReactNode }) => (
+  <div className="flex w-full flex-col gap-xxs rounded-md bg-surface-soft px-md py-sm text-left">
+    <span className="text-fm-body-strong text-foreground">{title}</span>
+    <span className="text-fm-label text-foreground-muted">{body}</span>
   </div>
 );
 
@@ -119,20 +90,15 @@ export const SelectStep = ({
       </div>
     )}
 
-    {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다 */}
+    {/* 메타데이터 로드 실패 시 duration이 영구히 null로 남지 않고 원인을 안내한다.
+        구 "업로드 후 AI 자동 블러" 다크 박스는 서버 블러 중단으로 제거 (MSG-476 AC 6) */}
     <InfoBox
-      tone="soft"
       title="AI 하이라이트 자동 추천"
       body={
         videoLoadError
           ? "영상을 불러오지 못했어요. 다른 파일로 다시 시도해주세요"
           : "다음 단계에서 AI가 영상을 분석해 최적 하이라이트 구간을 추천해요"
       }
-    />
-    <InfoBox
-      tone="dark"
-      title="업로드 후 AI 자동 블러"
-      body="게시 후 얼굴과 번호판을 자동으로 가려요. 처리가 끝나면 알려드릴게요"
     />
   </ModalCard>
 );

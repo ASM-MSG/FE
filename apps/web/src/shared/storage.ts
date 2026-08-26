@@ -129,51 +129,5 @@ export const fcmTokenStorage = {
 /** 1회성 state 토큰 생성 — 웹 crypto 의존이라 어댑터 층에 둔다 */
 export const createOauthState = (): string => crypto.randomUUID();
 
-// 키에 스키마 버전을 박는다 — 항목 형태가 바뀌면 새 버전 키로 갈아타 구 데이터를
-// 파싱 시도 없이 자연 폐기한다 (리뷰 반영. 구 무버전 키는 미출시 상태라 마이그레이션 불요)
-const PENDING_VIDEO_KEY = "fillmap.upload.pending:v1";
-
-/** 블러 처리 대기 영상 — 확정된 videoId와 폴링 기산점(확정 시각) */
-export interface PendingVideo {
-  videoId: number;
-  startedAtMs: number;
-}
-
-const isPendingVideo = (value: unknown): value is PendingVideo =>
-  typeof value === "object" &&
-  value !== null &&
-  typeof (value as PendingVideo).videoId === "number" &&
-  typeof (value as PendingVideo).startedAtMs === "number";
-
-/**
- * 처리 대기 영상 보관소 (MSG-329 B15) — 확정 후 서버 블러 처리를 기다리는 videoId를
- * 기록해 앱 재진입·탭 포커스 복귀 시 상태를 이어 조회한다(탭 닫은 사용자 커버).
- * 기기 재방문에 걸쳐 남아야 하므로 localStorage를 쓴다. 손상 값은 빈 목록으로 폴백.
- */
-export const pendingVideoStorage = {
-  list: (): PendingVideo[] => {
-    const raw = localStorage.getItem(PENDING_VIDEO_KEY);
-    if (raw === null) return [];
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (!Array.isArray(parsed) || !parsed.every(isPendingVideo)) return [];
-      return parsed;
-    } catch {
-      return [];
-    }
-  },
-  /** 추가 — 같은 videoId가 있으면 갱신(중복 없음) */
-  add: (entry: PendingVideo): void => {
-    const rest = pendingVideoStorage
-      .list()
-      .filter((item) => item.videoId !== entry.videoId);
-    localStorage.setItem(PENDING_VIDEO_KEY, JSON.stringify([...rest, entry]));
-  },
-  /** READY/FAILED/만료 처리 후 목록에서 제거 */
-  remove: (videoId: number): void => {
-    const rest = pendingVideoStorage
-      .list()
-      .filter((item) => item.videoId !== videoId);
-    localStorage.setItem(PENDING_VIDEO_KEY, JSON.stringify(rest));
-  },
-};
+// 구 pendingVideoStorage("fillmap.upload.pending:v1")는 블러 파이프라인과 함께 삭제
+// (MSG-476) — 실사용자 브라우저의 고아 키는 읽는 코드가 없어 무해, 정리 코드도 두지 않는다.

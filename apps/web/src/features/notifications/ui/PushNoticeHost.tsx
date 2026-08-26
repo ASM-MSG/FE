@@ -41,7 +41,7 @@ const NoticeToastItem = ({
 
 /**
  * 푸시 상주 호스트 (MSG-408 AC 1·3·10) — AppLayout **셸 분기 내부** 마운트
- * (UploadProcessingNotices 상주 관례 미러). 위치동의 게이트 표시 중에는 셸 분기가
+ * (LoginModal 상주 관례 미러). 위치동의 게이트 표시 중에는 셸 분기가
  * 렌더되지 않아 자동 동기화도 함께 무발동이다 — AC 3의 구조적 근거.
  * 포그라운드 onMessage 수신과 토글 안내(denied/error — push-notice-store)를 우하단
  * **단일 스택**으로 표시한다 (PR #60 리뷰 3 — ProfilePanel 자체 토스트가 같은 fixed

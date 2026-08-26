@@ -18,7 +18,7 @@ interface VideoPreviewProps {
    * 미지정이면 아무것도 얹지 않는다(하위 호환).
    */
   overlay?: ReactNode;
-  /** 네이티브 재생 컨트롤 표시 — 미리보기 최종 확인·블러 확인 모달용 (MSG-329 B8·B16) */
+  /** 네이티브 재생 컨트롤 표시 — 미리보기 최종 확인용 (MSG-329 B8) */
   controls?: boolean;
   className?: string;
 }

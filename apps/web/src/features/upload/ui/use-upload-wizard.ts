@@ -37,6 +37,7 @@ import {
   replaceGridLabel,
   wizardModeCopy,
 } from "@/features/upload/model/wizard-mode";
+import type { VideoVisibility } from "@/features/video-actions/model/video-menu";
 import type { TrimState } from "./PreviewStep";
 import { useVideoDuration } from "./use-video-duration";
 
@@ -91,6 +92,8 @@ export const useUploadWizard = () => {
   const [trim, setTrim] = useState<TrimState>({ status: "idle" });
   // 확정 성공 → 완료 모달 (B13)
   const [completed, setCompleted] = useState(false);
+  // 공개 범위 (MSG-476 AC 1~4) — 기본 PUBLIC, 스텝 왕복으로는 유지되고 close에서만 초기화
+  const [visibility, setVisibility] = useState<VideoVisibility>("PUBLIC");
 
   const {
     duration,
@@ -141,6 +144,7 @@ export const useUploadWizard = () => {
     setAnalyzingFailure(null);
     setSegment(null);
     setCompleted(false);
+    setVisibility("PUBLIC"); // 다음 업로드가 이전 선택을 상속하지 않는다 (MSG-476 AC 4)
     analyze.reset();
     analyze.resetFlow();
     confirm.reset();
@@ -272,6 +276,8 @@ export const useUploadWizard = () => {
           lat: location.center.lat,
           lng: location.center.lng,
           durationSec,
+          // 선택 UI의 공개 범위 — PUBLIC도 명시 전송 (MSG-476 AC 2, 추정 2)
+          visibility,
         });
       }
       setCompleted(true);
@@ -331,6 +337,9 @@ export const useUploadWizard = () => {
         : location.label,
     /** 모드별 확정 버튼·완료 모달 문구 (AC 2, 추정 3) */
     copy: wizardModeCopy(replaceMode),
+    // 공개 범위 — 교체 모드는 DTO에 필드가 없어 선택 미노출(null) (MSG-476 AC 11)
+    visibility: replaceMode ? null : visibility,
+    setVisibility,
     durationTooLong,
     canProceed,
     busy,
