@@ -11,12 +11,28 @@
  * 전역 타이머(setTimeout)만 사용 — window·document 무의존(RN 재사용 대상).
  */
 
-/** 첫 조회까지의 선행 지연 — 확정 직후 반영을 앞당긴다 (간격보다 짧게) */
+/** 첫 조회까지의 선행 지연 — 확정 직후 반영을 앞당긴다 */
 export const READY_POLL_FIRST_DELAY_MS = 5_000;
-/** 이후 조회 간격 — 30초 (구 블러 폴링과 동일 부하) */
-export const READY_POLL_INTERVAL_MS = 30_000;
+/** 간격 상한 — 여기까지만 벌어진다 */
+export const READY_POLL_MAX_INTERVAL_MS = 30_000;
 /** 폴링 상한 — 15분. 넘기면 포기하고 자연 재조회에 맡긴다 */
 export const READY_POLL_TIMEOUT_MS = 15 * 60_000;
+
+/**
+ * n번째 조회까지의 대기(ms) — 5·5·10·20초로 벌어지다 30초에서 멈춘다.
+ *
+ * 고정 간격(구 30초)은 "인코딩이 끝나기 직전에 조회하면 다음 주기를 통째로 기다린다"는
+ * 대가가 크다. 인코딩은 대개 초반에 끝나므로 앞을 촘촘히 덮고 뒤로 갈수록 벌린다 —
+ * 첫 100초에 5회(고정 30초는 3회)면서 장기 대기 시 부하는 오히려 낮다.
+ * 업계 표준은 웹훅/푸시고 폴링은 폴백이라, 폴백답게 초반 체감만 챙긴다 (2026-08-26 결정).
+ */
+export const readyPollDelayMs = (attempt: number): number =>
+  attempt <= 1
+    ? READY_POLL_FIRST_DELAY_MS
+    : Math.min(
+        READY_POLL_FIRST_DELAY_MS * 2 ** (attempt - 2),
+        READY_POLL_MAX_INTERVAL_MS,
+      );
 
 /** 상태 전이 — READY/FAILED만 종단, 그 외(UPLOADED·ENCODING 등)는 대기 */
 export type ReadyTransition = "ready" | "failed" | "pending";
@@ -55,13 +71,15 @@ export interface ReadyPollOptions {
 
 /**
  * READY 감지 폴링 시작 — READY/FAILED/만료 시 스스로 멈춘다.
- * 첫 조회는 5초 뒤, 이후 30초 간격.
+ * 첫 조회는 5초 뒤, 이후 5·10·20초로 벌어지다 30초 상한.
  */
 export const startReadyPoll = (options: ReadyPollOptions): ReadyPollHandle => {
   const now = options.now ?? Date.now;
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let inFlight = false;
+  /** 다음 조회가 몇 번째인지 — 대기 스케줄(readyPollDelayMs)의 입력 */
+  let attempt = 1;
 
   const stop = () => {
     if (stopped) return;
@@ -106,10 +124,11 @@ export const startReadyPoll = (options: ReadyPollOptions): ReadyPollHandle => {
     } finally {
       inFlight = false;
     }
-    schedule(READY_POLL_INTERVAL_MS);
+    attempt += 1;
+    schedule(readyPollDelayMs(attempt));
   };
 
-  schedule(READY_POLL_FIRST_DELAY_MS);
+  schedule(readyPollDelayMs(attempt));
 
   return { stop };
 };

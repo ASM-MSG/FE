@@ -14,7 +14,7 @@ import { useAuthStore } from "@/features/auth/model/auth-store";
 import { envelopeResponse } from "@/test/envelope-response";
 import {
   READY_POLL_FIRST_DELAY_MS,
-  READY_POLL_INTERVAL_MS,
+  READY_POLL_MAX_INTERVAL_MS,
 } from "../model/ready-poll";
 import { __resetReadyRefreshForTest } from "./start-ready-refresh";
 import {
@@ -341,7 +341,7 @@ describe("useConfirmUpload — 확정 흐름 (B9·B13)", () => {
       // 서버가 READY로 전이하면 다음 조회에서 무효화된다
       processingStatus = "READY";
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(READY_POLL_INTERVAL_MS);
+        await vi.advanceTimersByTimeAsync(READY_POLL_MAX_INTERVAL_MS);
       });
       expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(true);
       expect(queryClient.getQueryState(regionKey)?.isInvalidated).toBe(true);

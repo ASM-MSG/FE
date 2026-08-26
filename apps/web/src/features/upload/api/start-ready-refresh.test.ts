@@ -5,7 +5,7 @@ import { getCellQueryKey } from "@/shared/api/generated/@tanstack/react-query.ge
 import { envelopeResponse } from "@/test/envelope-response";
 import {
   READY_POLL_FIRST_DELAY_MS,
-  READY_POLL_INTERVAL_MS,
+  READY_POLL_MAX_INTERVAL_MS,
 } from "../model/ready-poll";
 import {
   __resetReadyRefreshForTest,
@@ -52,7 +52,7 @@ describe("startReadyRefresh — 세션 경계", () => {
 
     useAuthStore.getState().logout();
 
-    await vi.advanceTimersByTimeAsync(READY_POLL_INTERVAL_MS * 3);
+    await vi.advanceTimersByTimeAsync(READY_POLL_MAX_INTERVAL_MS * 3);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -67,7 +67,7 @@ describe("startReadyRefresh — 세션 경계", () => {
     queryClient.setQueryData(cellKey, { cached: true });
     fetchMock.mockResolvedValue(envelopeResponse(PLAYBACK("READY")));
 
-    await vi.advanceTimersByTimeAsync(READY_POLL_INTERVAL_MS * 3);
+    await vi.advanceTimersByTimeAsync(READY_POLL_MAX_INTERVAL_MS * 3);
 
     expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(false);
   });
@@ -78,23 +78,24 @@ describe("startReadyRefresh — 세션 경계", () => {
 
     startReadyRefresh(new QueryClient(), 7, "grid-9");
 
-    await vi.advanceTimersByTimeAsync(READY_POLL_INTERVAL_MS * 3);
+    await vi.advanceTimersByTimeAsync(READY_POLL_MAX_INTERVAL_MS * 3);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("확정 도중 계정이 바뀌면 이전 세션 폴링이 새 세션 캐시를 건드리지 않는다", async () => {
+  it("401 재발급으로 액세스 토큰이 갈려도 폴링은 계속된다 — 정상 회전을 세션 종료로 오인하지 않는다 (codex 3차 리뷰)", async () => {
     const queryClient = new QueryClient();
     const cellKey = getCellQueryKey({ path: { gridId: "grid-9" } });
+    queryClient.setQueryData(cellKey, { cached: true });
     startReadyRefresh(queryClient, 7, "grid-9");
 
-    // 다른 계정으로 재로그인 — 로그아웃 전이 없이 토큰만 갈리는 경로
-    useAuthStore.setState({ accessToken: "token-b", isAuthenticated: true });
-    queryClient.setQueryData(cellKey, { cached: true });
+    // auth-pipeline의 재발급 — 같은 세션에서 토큰만 교체된다
+    useAuthStore.getState().setAccessToken("token-rotated");
     fetchMock.mockResolvedValue(envelopeResponse(PLAYBACK("READY")));
 
-    await vi.advanceTimersByTimeAsync(READY_POLL_INTERVAL_MS * 3);
+    await vi.advanceTimersByTimeAsync(READY_POLL_MAX_INTERVAL_MS);
 
-    expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(false);
+    expect(fetchMock).toHaveBeenCalled();
+    expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(true);
   });
 
   it("같은 영상에 폴링을 두 번 걸지 않는다 — 중복 확정·재마운트 방어", async () => {
