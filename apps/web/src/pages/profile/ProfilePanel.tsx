@@ -12,6 +12,8 @@ import { useProfileModalStore } from "@/features/profile/model/profile-modal-sto
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
 import { DeleteAccountModal } from "@/features/profile/ui/DeleteAccountModal";
 import { ProfileEditModal } from "@/features/profile/ui/ProfileEditModal";
+import { formatDocumentTitle } from "@/shared/document-title";
+import { useDocumentTitle } from "@/shared/use-document-title";
 import { ActivityCard } from "./ui/ActivityCard";
 import { ProfileHeader } from "./ui/ProfileHeader";
 import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
@@ -28,6 +30,7 @@ import { SettingInfoRow, SettingRow } from "./ui/SettingRow";
  * [로그아웃]은 기존 배선(logout API + 로컬 우선 종료 + 홈 이동) 그대로 (A12 — 코드 불변).
  */
 export const ProfilePanel = () => {
+  useDocumentTitle(formatDocumentTitle("프로필"));
   const { data, isLoading, isError, refetch } = useProfileQuery();
   // "내 활동" 두 축 (MSG-395) — 프로필 조회와 독립: 활동 조회가 늦거나 실패해도
   // 닉네임·설정은 그대로 뜨고 카드만 `—`로 남는다

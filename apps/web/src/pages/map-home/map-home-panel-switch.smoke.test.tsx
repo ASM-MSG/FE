@@ -14,6 +14,7 @@ import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-pan
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { useCommittedRegionBootstrap } from "@/features/region/model/use-committed-region";
+import { SITE_TITLE } from "@/shared/document-title";
 import { SEOMYEON_CENTER } from "@/shared/geolocation";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
@@ -248,6 +249,17 @@ describe("홈 좌측 패널 분기", () => {
     await renderRegionHome();
 
     expect(screen.getByText("138개 영상")).toBeTruthy();
+  });
+
+  // MSG-478 D1·C3: 홈에는 sr-only h1 하나뿐이고(패널 제목은 전부 h2), 탭 제목은 정적 셸의
+  // SITE_TITLE 그대로다("홈 | 필맵" 아님 — 첫 탭·검색 결과에 브랜드 문구가 보이는 쪽)
+  it("홈에 h1이 정확히 1개 렌더되고 탭 제목은 SITE_TITLE이다 — 지역 패널이 열려도 h1은 늘지 않는다 (MSG-478 D1·C3)", async () => {
+    stubDetail("ready");
+
+    await renderRegionHome();
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(document.title).toBe(SITE_TITLE);
   });
 
   it("상세를 닫으면 지역 격자 리스트로 복귀한다 (AC 18)", async () => {

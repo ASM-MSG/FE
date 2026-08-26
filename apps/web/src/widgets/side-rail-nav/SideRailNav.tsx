@@ -89,6 +89,7 @@ export const SideRailNav = () => {
 
   return (
     <SideRail
+      aria-label="주요 메뉴"
       logo={
         <span className="flex size-full items-center justify-center bg-primary text-primary-foreground">
           <MapPin className="size-5" />
