@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- FillMap 웹 (MSG-478) — 비로그인 공개 라우트만 등재한다(현재 홈 하나).
+     lastmod는 갱신 주체가 없어 넣지 않는다. 약관 등 공개 라우트가 생기면 그 티켓이 추가한다. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://fillmap.kr/</loc>
+  </url>
+</urlset>

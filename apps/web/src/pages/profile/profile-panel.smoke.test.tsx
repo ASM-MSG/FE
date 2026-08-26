@@ -113,6 +113,14 @@ afterEach(() => {
 });
 
 describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
+  it("프로필 패널이 떠 있는 동안 탭 제목은 '프로필 | 필맵'이다 (MSG-478 C3)", async () => {
+    stubApi();
+    renderPanel();
+    await screen.findByText(PROFILE.nickname);
+
+    expect(document.title).toBe("프로필 | 필맵");
+  });
+
   it("실 API 응답의 닉네임·가입일(KST)·이메일이 표시되고, mock 활동 수치는 없다 (A1·A4·MSG-378)", async () => {
     stubApi();
     renderPanel();

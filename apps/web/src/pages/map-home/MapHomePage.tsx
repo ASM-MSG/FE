@@ -17,6 +17,8 @@ import { useRegionPanelStore } from "@/features/region/model/region-panel-store"
 import { useReverseGeocodeQuery } from "@/features/region/model/use-reverse-geocode-query";
 import { zoomForGridFocus } from "@/features/search/model/zone-search";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
+import { SITE_TITLE } from "@/shared/document-title";
+import { useDocumentTitle } from "@/shared/use-document-title";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
 import { CardPlayNotice } from "./ui/CardPlayNotice";
@@ -42,6 +44,8 @@ import { useHomePanelState } from "./ui/use-home-panel-state";
  */
 export const MapHomePage = () => {
   const { moveTo, zoomTo, fitBounds } = useMapShell();
+  // 홈 탭 제목은 정적 셸(index.html)과 같은 SITE_TITLE — 직접 진입·복귀 모두 같은 값 (MSG-478 C3)
+  useDocumentTitle(SITE_TITLE);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
@@ -239,6 +243,7 @@ export const MapHomePage = () => {
   return (
     <>
       <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 flex-col gap-sm bg-background p-md shadow-raised">
+        <h1 className="sr-only">우리 동네를 영상으로 채워가는 지도</h1>
         {/* 검색은 드롭다운으로 그 자리에서 — 결과 선택 시 지도 이동 (MSG-328 AC 16).
             격자 결과는 이동+줌 보장+하이라이트, 구역 결과는 fitBounds (MSG-412 AC 5·7) */}
         <HomeSearchBox

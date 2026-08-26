@@ -37,6 +37,15 @@ const renderNav = (initialPath: string) =>
 
 afterEach(cleanup);
 
+describe("사이드레일 랜드마크 (MSG-478 D3)", () => {
+  it("사이드레일 nav에 접근 가능한 이름 '주요 메뉴'가 있다 — 스크린리더 랜드마크 목록에서 구분된다 (D3)", () => {
+    useAuthStore.setState({ isAuthenticated: true });
+    renderNav("/");
+
+    expect(screen.getByRole("navigation", { name: "주요 메뉴" })).toBeTruthy();
+  });
+});
+
 describe("SideRail 프로필 분기", () => {
   beforeEach(() => {
     useAuthStore.setState({ isAuthenticated: true });

@@ -1,6 +1,9 @@
 import { Button } from "@fillmap/ui-web";
 import { ROUTES } from "@/app/routes";
+import { useRobotsNoindex } from "@/shared/document-meta";
+import { formatDocumentTitle } from "@/shared/document-title";
 import { redirectTo } from "@/shared/navigation";
+import { useDocumentTitle } from "@/shared/use-document-title";
 
 /**
  * 루트 라우트 에러 바운더리 (MSG-325).
@@ -16,13 +19,22 @@ import { redirectTo } from "@/shared/navigation";
  *
  * 오류 내용은 표시하지 않는다: 사용자가 할 수 있는 일이 없고, 내부 정보 노출만 는다.
  * 진단은 콘솔·리포팅 도구 몫이다.
+ *
+ * SEO·시맨틱 (MSG-478 E1·E2): CSR 404는 HTTP 200으로 응답하므로 화면이 robots 메타를
+ * `noindex`로 바꿔 색인을 막고(언마운트 시 복원), AppLayout을 대체해 렌더되는 화면이라
+ * `<main>`·`<h1>` 랜드마크를 스스로 갖춘다(클래스는 그대로 — 시각 결과 불변).
  */
-export const RouteErrorBoundary = () => (
-  <div className="flex h-dvh flex-col items-center justify-center gap-md bg-background p-lg">
-    <p className="text-fm-title text-foreground">문제가 생겼어요</p>
-    <p className="text-fm-body text-foreground-muted">
-      잠시 후 다시 시도해 주세요
-    </p>
-    <Button text="홈으로" onClick={() => redirectTo(ROUTES.home)} />
-  </div>
-);
+export const RouteErrorBoundary = () => {
+  useDocumentTitle(formatDocumentTitle("문제가 생겼어요"));
+  useRobotsNoindex();
+
+  return (
+    <main className="flex h-dvh flex-col items-center justify-center gap-md bg-background p-lg">
+      <h1 className="text-fm-title text-foreground">문제가 생겼어요</h1>
+      <p className="text-fm-body text-foreground-muted">
+        잠시 후 다시 시도해 주세요
+      </p>
+      <Button text="홈으로" onClick={() => redirectTo(ROUTES.home)} />
+    </main>
+  );
+};
