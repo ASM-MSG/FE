@@ -1,6 +1,4 @@
-import { Button, DotsLoader } from "@fillmap/ui-web";
-import { useAuthStore } from "@/features/auth/model/auth-store";
-import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
+import { DotsLoader } from "@fillmap/ui-web";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { useRegionGridsQuery } from "@/features/region/model/use-region-grids-query";
@@ -25,16 +23,13 @@ interface RegionPanelProps {
  * 칩 화면과 공유하므로 페이지(MapHomePage)가 소유한다. "전체 보기"는 패널 안 전체 지역
  * 리스트로 전환한다.
  *
- * 기본 패널의 데이터원(역지오코딩·격자 리스트)은 여전히 로그인 전용 API다(익명 401
- * 실측 2026-08-13, api.fillmap.kr) — 비로그인은 조회를 게이트하고 로그인 유도 UI를
- * 보여준다(현행 유지 — MSG-463 확정 1). 401을 그대로 쏘면 auth-pipeline의 재발급 실패
- * → 세션 만료 처리(로그인 모달 강제 오픈)가 홈 진입만으로 발동한다. 전체 지역
- * 리스트(explore)만 MSG-454로 익명 조회가 허용됐고, 훅 레벨 게이트는 해제했지만
- * 비로그인 기본 패널에 "전체 보기" 진입로를 새로 열지는 않는다.
+ * 기본 패널의 데이터원(역지오코딩·격자 리스트·전체 지역 explore)은 서버가 익명 조회를
+ * 허용한다(MSG-467·469·454, 실측 2026-08-26) — MSG-474에서 비로그인 게이트·로그인 유도
+ * UI를 걷어내 비로그인도 로그인과 같은 구성(헤더·격자 카드·전체 보기)으로 열린다
+ * (MSG-463 확정 1을 이 티켓이 뒤집음). 사용자별 값(내 점령·내 영상 수)은 이 패널이
+ * 원래 표시하지 않아 추가 분기가 없다.
  */
 export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const openLoginModal = useLoginModalStore((s) => s.openModal);
   const center = useViewportStore((s) => s.center);
 
   const displayed = useRegionPanelStore((s) => s.displayedRegion);
@@ -42,26 +37,8 @@ export const RegionPanel = ({ onGridSelect }: RegionPanelProps) => {
   const selectRegion = useRegionPanelStore((s) => s.selectRegion);
   const openRegionList = useRegionPanelStore((s) => s.openRegionList);
 
-  const reverse = useReverseGeocodeQuery(isAuthenticated ? center : null);
-  const grids = useRegionGridsQuery(
-    isAuthenticated ? (displayed?.regionCode ?? null) : null,
-  );
-
-  if (!isAuthenticated) {
-    return (
-      <section className="flex flex-col items-center gap-md py-lg text-center">
-        <p className="text-fm-body text-foreground-muted">
-          로그인하면 이 지역의 격자와 영상을 볼 수 있어요.
-        </p>
-        <Button
-          text="로그인"
-          variant="primary"
-          size="sm"
-          onClick={openLoginModal}
-        />
-      </section>
-    );
-  }
+  const reverse = useReverseGeocodeQuery(center);
+  const grids = useRegionGridsQuery(displayed?.regionCode ?? null);
 
   return (
     <>

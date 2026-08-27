@@ -49,6 +49,24 @@ test("게이트 앞으로가기는 무시되고, 이후 뒤로가기는 로그�
       body: JSON.stringify({ developCode: 0, message: "성공", data: null }),
     });
   });
+  // 익명 렌더 확증 재료 (MSG-474) — 비로그인 홈의 기본 패널이 확정 행정동 헤더를
+  // 그리므로, 그 재료인 역지오코딩만 목으로 공급한다 (e2e API 베이스는 리스닝 없는
+  // 센티널이라 목 없이는 실패 표면만 뜬다). 나머지 지도 데이터 실패는 이 스펙 무관.
+  await page.route("**/api/regions/reverse-geocode**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        developCode: 0,
+        message: "성공",
+        data: {
+          regionCode: "2623052000",
+          regionName: "부산광역시 부산진구 부전2동",
+          parentCode: "2623000000",
+        },
+      }),
+    }),
+  );
 
   const gateHeading = page.getByRole("heading", { name: "위치정보 이용 동의" });
 
@@ -88,7 +106,12 @@ test("게이트 앞으로가기는 무시되고, 이후 뒤로가기는 로그�
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);
   await expect(gateHeading).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "로그인" })).toBeVisible();
+  // 익명 렌더 확증 — MSG-474가 RegionPanel 로그인 유도 버튼을 삭제해(비로그인도 기본
+  // 패널 개방) 앱에 인라인 "로그인" 버튼이 없다. 대신 비로그인에서 안정적으로 뜨는
+  // 확정 행정동 헤더로 단정한다 (지도 SDK 마운트 후 뜨므로 map-load.spec과 같은 상한)
+  await expect(
+    page.getByRole("heading", { name: "부산광역시 부산진구 부전2동" }),
+  ).toBeVisible({ timeout: 15_000 });
   await expect
     .poll(() => logoutCalls, { timeout: 3000 })
     .toBe(1);

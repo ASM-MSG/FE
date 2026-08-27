@@ -79,10 +79,9 @@ export const MapHomePage = () => {
   );
 
   // 현재 지도 중심 행정동 — "장소 불러오기" 버튼의 대상이자 칩 진입 확정 대상.
-  // 화면 표시(헤더·핫구역 요약)는 확정 지역을 쓴다 (AC 13)
-  const reverse = useReverseGeocodeQuery(
-    isAuthenticated ? viewportCenter : null,
-  );
+  // 화면 표시(헤더·핫구역 요약)는 확정 지역을 쓴다 (AC 13).
+  // MSG-474: 역지오코딩이 익명 허용(MSG-467, 실측 2026-08-26)돼 비로그인 게이트를 걷어냈다
+  const reverse = useReverseGeocodeQuery(viewportCenter);
   const currentRegion = reverse.region;
 
   // 미션 목록·선택·상세 부재료 — 파생은 훅이 소유한다 (리뷰 반영: 페이지 분할)
@@ -196,7 +195,8 @@ export const MapHomePage = () => {
 
   useHomeEntryLifecycle();
 
-  // 격자 상세 (MSG-325·326) — 쿼리 3종 + 맥락 줄 파생은 훅이 소유한다 (리뷰 반영: 페이지 분할)
+  // 격자 상세 (MSG-325·326) — 쿼리 3종 + 맥락 줄 파생은 훅이 소유한다 (리뷰 반영: 페이지 분할).
+  // MSG-474: 비로그인은 grids/{gridId} 미발사 — 핫구역 응답의 이름 재료로 조립한다
   const gridDetail = useHomeGridDetail({
     selectedGridId: selectedCellId,
     activeTheme,
@@ -204,6 +204,7 @@ export const MapHomePage = () => {
     collectedGrids,
     hotGridCount: hotSummary.hotGridIds.length,
     progressFailed,
+    entryNamingSources: hotSummary.zones,
   });
 
   // 코스를 고르면 그 코스가 다 보이게 지도를 옮긴다 (사용자 요청) — 라인·번호 마커가

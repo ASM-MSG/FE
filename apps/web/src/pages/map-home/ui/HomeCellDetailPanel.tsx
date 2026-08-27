@@ -177,9 +177,12 @@ export const HomeCellDetailPanel = ({
         {contextLine && (
           <p className="text-fm-caption text-foreground-muted">{contextLine}</p>
         )}
-        <p className="text-fm-caption text-foreground-muted">
-          {detail.subtitle}
-        </p>
+        {/* 비로그인은 서브타이틀("내 영상 N개")이 null — 줄 자체를 그리지 않는다 (MSG-474 AC 4) */}
+        {detail.subtitle !== null && (
+          <p className="text-fm-caption text-foreground-muted">
+            {detail.subtitle}
+          </p>
+        )}
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">

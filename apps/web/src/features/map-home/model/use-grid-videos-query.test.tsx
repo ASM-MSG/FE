@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { envelopeResponse } from "@/test/envelope-response";
 import { useGridVideosQuery } from "./use-grid-videos-query";
 
@@ -61,8 +62,13 @@ const mineDto = (videoId: number) => ({
   createdAt: "2026-08-10T09:12:00",
 });
 
+// 내 영상(`/my-videos`)은 사용자별 API다 (익명 401 실측 2026-08-26 MSG-474) —
+// 기존 병합 단정은 로그인 전제로 고정한다
+beforeEach(signInForTest);
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  signOutForTest();
 });
 
 describe("useGridVideosQuery", () => {
@@ -95,6 +101,41 @@ describe("useGridVideosQuery", () => {
   });
 
   it("둘 다 0건이면 빈 목록 판정(isEmpty)이 나온다 (기준 7)", async () => {
+    stubGridVideos({ global: [], mine: [] });
+
+    const { result } = renderHook(() => useGridVideosQuery(SEOMYEON_GRID_ID), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.items).toEqual([]);
+    expect(result.current.isEmpty).toBe(true);
+  });
+});
+
+describe("useGridVideosQuery — 비로그인 (MSG-474 AC 3)", () => {
+  it("비로그인이면 my-videos를 발사하지 않고 전역 목록만으로 성립한다", async () => {
+    signOutForTest();
+    const fetchMock = stubGridVideos({ global: [globalDto(2001)], mine: [] });
+
+    const { result } = renderHook(() => useGridVideosQuery(SEOMYEON_GRID_ID), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(
+      fetchMock.mock.calls.filter(([request]) =>
+        new URL(request.url).pathname.endsWith("/my-videos"),
+      ),
+    ).toHaveLength(0);
+    expect(result.current.items.map((v) => v.videoId)).toEqual([2001]);
+    expect(result.current.items.map((v) => v.mine)).toEqual([false]);
+    expect(result.current.isEmpty).toBe(false);
+    expect(result.current.isError).toBe(false);
+  });
+
+  it("비로그인 전역 0건이면 내 영상 응답 없이도 빈 목록 판정(isEmpty)이 나온다", async () => {
+    signOutForTest();
     stubGridVideos({ global: [], mine: [] });
 
     const { result } = renderHook(() => useGridVideosQuery(SEOMYEON_GRID_ID), {

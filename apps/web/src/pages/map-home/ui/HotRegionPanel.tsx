@@ -15,6 +15,11 @@ interface HotRegionPanelProps {
   summary: HotRegionSummaryResult;
   /** 헤더 표시명 — 현재 행정동. 미판별이면 null이라 안내로 대체한다 */
   regionName: string | null;
+  /**
+   * 비로그인 잠금 (MSG-474) — 내 수집 영상(`collections/videos`)을 발사하지 않으므로
+   * "내 영상 N개"를 0으로 위장하지 않고 줄에서 뺀다 (MSG-463 progressLocked 결)
+   */
+  progressLocked: boolean;
   onVideoSelect: (video: FeedVideo, mine: boolean) => void;
   /** "전체 보기" — 칩을 풀고 패널 안 전체 지역 리스트로 (기존 홈 관례) */
   onViewAll: () => void;
@@ -36,6 +41,7 @@ interface HotRegionPanelProps {
 export const HotRegionPanel = ({
   summary,
   regionName,
+  progressLocked,
   onVideoSelect,
   onViewAll,
   onClose,
@@ -87,8 +93,10 @@ export const HotRegionPanel = ({
           </button>
         </div>
         <p className="text-fm-caption text-foreground-muted">
-          내 영상 {stats.myVideoCount}개 · 최근 24시간 영상 +{stats.recentCount}
-          개
+          {/* 비로그인은 내 영상 수를 만들지 않는다 — 미발사 값을 0으로 위장 금지 (MSG-474) */}
+          {progressLocked
+            ? `최근 24시간 영상 +${stats.recentCount}개`
+            : `내 영상 ${stats.myVideoCount}개 · 최근 24시간 영상 +${stats.recentCount}개`}
         </p>
         <p className="text-fm-caption text-foreground-muted">
           영상 {stats.videoCount}개 · 조회 {formatViewCountKo(stats.viewCount)}
