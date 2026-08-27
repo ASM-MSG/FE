@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/features/auth/model/auth-store";
 import {
   getCellOptions,
   getStatByGridOptions,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
-import { deriveHomeCellDetail, type HomeCellDetail } from "./home-cell-detail";
+import {
+  deriveHomeCellDetail,
+  type CellNameSource,
+  type HomeCellDetail,
+} from "./home-cell-detail";
 import { entityQueryPolicy } from "./map-query-policy";
 import type { ThemeId } from "./theme";
 
@@ -14,6 +19,10 @@ import type { ThemeId } from "./theme";
  * 지도 SDK를 import하지 않는다(RN 경계).
  * MSG-326: 대표 영상(getGridCover) 조회를 영상 목록(use-grid-videos-query)으로 대체해
  * 제거했다 — 복원 판단 시 home-cell-detail.ts 상단 주석 참조.
+ *
+ * MSG-474: 두 쿼리(`grids/{gridId}`·`regions/stats/by-grid`)는 사용자별 API라 익명 401이
+ * 설계상 정상이다(실측 2026-08-26) — 비로그인은 미발사하고(401 + reissue 스팸 방지),
+ * 진입점 응답이 싣고 온 이름 재료(entryNaming)로 즉시 조립한다 (승인 결정 1).
  *
  * 명세는 `by-grid`가 무귀속일 때 `200 + data: null`을 준다고 규정하는데
  * OpenAPI 스키마에는 nullable 표기가 없어 생성 타입이 non-null이다 — 런타임 null을
@@ -38,8 +47,12 @@ const OPTIONAL_SETTLE_GRACE_MS = 3000;
 export const useGridDetailQuery = (
   gridId: string | null,
   activeTheme: ThemeId | null,
+  /** 비로그인 이름 재료 — 진입점(핫구역 등) 응답의 부분집합. 없으면 gridId 폴백 (MSG-474) */
+  entryNaming: CellNameSource | null = null,
 ): GridDetailResult => {
-  const enabled = gridId !== null;
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // 두 쿼리 다 사용자별 API — 비로그인 미발사 (MSG-474 AC 3, 익명 401 실측 2026-08-26)
+  const enabled = gridId !== null && isAuthenticated;
   const path = { gridId: gridId ?? "" };
 
   // 유예 타이머 — 격자 선택마다 리셋. 경과하면 선택 정보를 기다리지 않는다.
@@ -77,6 +90,28 @@ export const useGridDetailQuery = (
     void stat.refetch();
   };
 
+  // 비로그인 — 조회 없이 진입점 이름 재료만으로 즉시 조립한다 (MSG-474 승인 결정 1).
+  // 재료가 없는 진입점(코스 스팟 — 좌표뿐)은 gridId 폴백으로 상세 골격만 성립한다
+  if (!isAuthenticated) {
+    if (gridId === null) return { detail: null, isError: false, retry };
+    const naming = entryNaming ?? {
+      gridId,
+      zoneName: null,
+      zoneCell: null,
+      regionName: null,
+    };
+    return {
+      detail: deriveHomeCellDetail({
+        viewerAuthenticated: false,
+        entryNaming: naming,
+        regionName: naming.regionName,
+        activeTheme,
+      }),
+      isError: false,
+      retry,
+    };
+  }
+
   // 격자 조회만 필수다 — 행정동은 없어도 상세가 성립한다(빈 분기)
   if (!cell.data) return { detail: null, isError: cell.isError, retry };
 
@@ -91,6 +126,7 @@ export const useGridDetailQuery = (
 
   return {
     detail: deriveHomeCellDetail({
+      viewerAuthenticated: true,
       cell: cell.data,
       regionName: stat.data?.regionName ?? null,
       activeTheme,

@@ -1,5 +1,5 @@
 import type { GridCellResponseDto } from "@/shared/api/generated";
-import { gridDisplayName } from "./grid-label";
+import { gridDisplayName, type GridNaming } from "./grid-label";
 import { THEME_META, type ThemeId } from "./theme";
 
 /**
@@ -41,8 +41,11 @@ export interface HomeCellDetail {
   gridId: string;
   /** 제목 — 구역 라벨 > 행정동명 > gridId (기준 6) */
   label: string;
-  /** 헤더 서브타이틀 "내 영상 N개" — `GridCellResponseDto.videoCount`는 내 영상 수다 */
-  subtitle: string;
+  /**
+   * 헤더 서브타이틀 "내 영상 N개" — `GridCellResponseDto.videoCount`는 내 영상 수다.
+   * 비로그인은 사용자별 값이라 만들지 않는다(null) — 패널이 줄을 그리지 않는다 (MSG-474)
+   */
+  subtitle: string | null;
   badges: HomeCellBadge[];
   /** 위치 줄 — 행정동명. `by-grid`가 data null(무귀속·미판정)이면 null이라 줄을 그리지 않는다 */
   regionLabel: string | null;
@@ -50,34 +53,63 @@ export interface HomeCellDetail {
   accent: ThemeId | "primary";
 }
 
-interface DeriveHomeCellDetailInput {
-  cell: GridCellResponseDto;
-  /** `getStatByGrid`의 행정동명 — 무귀속·미판정이면 null */
+/**
+ * 비로그인 상세의 이름 재료 (MSG-474 승인 결정 1) — `grids/{gridId}`가 사용자별 API
+ * (익명 401)라 미발사하고, 진입점 응답(핫구역 `HotZoneResponseDto`·동 카드
+ * `ExploreGridResponseDto`+부모 regionName)이 이미 싣고 있는 부분집합으로 조립한다.
+ */
+export interface CellNameSource extends GridNaming {
+  /** 행정동 이름 — 무귀속(해상 등)이면 null */
+  regionName: string | null;
+}
+
+type DeriveHomeCellDetailInput = {
+  /** `getStatByGrid`(로그인) 또는 진입점 재료(비로그인)의 행정동명 — 무귀속·미판정이면 null */
   regionName: string | null;
   /** 상세를 연 시점의 활성 테마 — 경로추천 포함 (MSG-277 AC 13) */
   activeTheme: ThemeId | null;
-}
+} & (
+  | {
+      /** 로그인 뷰어 — `grids/{gridId}` 응답이 정본, 사용자별 값(서브타이틀·점령 배지) 생성 */
+      viewerAuthenticated: true;
+      cell: GridCellResponseDto;
+    }
+  | {
+      /** 비로그인 뷰어 — 진입점 이름 재료만으로 조립, 사용자별 값은 만들지 않는다 (MSG-474) */
+      viewerAuthenticated: false;
+      entryNaming: CellNameSource;
+    }
+);
 
 /**
  * API 응답 → 상세 패널 표시 모델.
  * 배지는 내 점령(점령 시) → 활성 테마(테마 상세 시) 순이고, 행정동은 독립으로 없을 수 있다.
  * 영상 목록 피드는 별도 훅(use-grid-videos-query)이 담당한다 — 목록 로딩·실패가
  * 상세 성립을 막지 않게 모델을 분리 유지한다 (MSG-326).
+ * MSG-474: 뷰어 인증 여부로 입력 경로가 갈린다 — 비로그인은 `grids/{gridId}` 미발사라
+ * 진입점 이름 재료(entryNaming)로 조립하고 서브타이틀·"내 점령" 배지를 만들지 않는다.
  */
-export const deriveHomeCellDetail = ({
-  cell,
-  regionName,
-  activeTheme,
-}: DeriveHomeCellDetailInput): HomeCellDetail => ({
-  gridId: cell.gridId,
-  label: gridDisplayName(cell, regionName),
-  subtitle: `내 영상 ${cell.videoCount}개`,
-  badges: [
-    ...(cell.occupied ? [{ id: "occupied" as const, label: "내 점령" }] : []),
-    ...(activeTheme
-      ? [{ id: activeTheme, label: THEME_META[activeTheme].label }]
-      : []),
-  ],
-  regionLabel: regionName,
-  accent: activeTheme ?? "primary",
-});
+export const deriveHomeCellDetail = (
+  input: DeriveHomeCellDetailInput,
+): HomeCellDetail => {
+  const { regionName, activeTheme } = input;
+  const naming = input.viewerAuthenticated ? input.cell : input.entryNaming;
+
+  return {
+    gridId: naming.gridId,
+    label: gridDisplayName(naming, regionName),
+    subtitle: input.viewerAuthenticated
+      ? `내 영상 ${input.cell.videoCount}개`
+      : null,
+    badges: [
+      ...(input.viewerAuthenticated && input.cell.occupied
+        ? [{ id: "occupied" as const, label: "내 점령" }]
+        : []),
+      ...(activeTheme
+        ? [{ id: activeTheme, label: THEME_META[activeTheme].label }]
+        : []),
+    ],
+    regionLabel: regionName,
+    accent: activeTheme ?? "primary",
+  };
+};
