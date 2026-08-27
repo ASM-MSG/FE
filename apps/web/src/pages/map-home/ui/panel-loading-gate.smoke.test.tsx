@@ -11,6 +11,7 @@ afterEach(cleanup);
 
 const emptySummary = {
   hotGridIds: [],
+  zones: [],
   cells: [],
   videos: [],
   stats: { myVideoCount: 0, recentCount: 0, videoCount: 0, viewCount: 0 },
@@ -47,6 +48,7 @@ describe("좌측 패널 로딩 게이트 (MSG-403 후속)", () => {
       <HotRegionPanel
         summary={emptySummary}
         regionName="부전제1동"
+        progressLocked={false}
         onVideoSelect={vi.fn()}
         onViewAll={vi.fn()}
         onClose={vi.fn()}
@@ -65,6 +67,7 @@ describe("좌측 패널 로딩 게이트 (MSG-403 후속)", () => {
       <HotRegionPanel
         summary={{ ...emptySummary, isPending: false }}
         regionName="부전제1동"
+        progressLocked={false}
         onVideoSelect={vi.fn()}
         onViewAll={vi.fn()}
         onClose={vi.fn()}
@@ -74,5 +77,22 @@ describe("좌측 패널 로딩 게이트 (MSG-403 후속)", () => {
 
     expect(screen.queryByRole("status")).toBeNull();
     expect(screen.getByText(/내 영상 0개/)).toBeTruthy();
+  });
+
+  it("비로그인(progressLocked)이면 내 영상 카운트를 표시하지 않는다 — 사용자별 값 미발사·미표시 (MSG-474)", () => {
+    render(
+      <HotRegionPanel
+        summary={{ ...emptySummary, isPending: false }}
+        regionName="부전제1동"
+        progressLocked
+        onVideoSelect={vi.fn()}
+        onViewAll={vi.fn()}
+        onClose={vi.fn()}
+        onUpload={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/내 영상/)).toBeNull();
+    expect(screen.getByText(/최근 24시간 영상 \+0개/)).toBeTruthy();
   });
 });

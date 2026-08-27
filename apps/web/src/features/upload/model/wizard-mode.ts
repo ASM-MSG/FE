@@ -12,12 +12,12 @@ export interface WizardModeCopy {
   submittingLabel: string;
   /** 완료 모달 제목 — "업로드 완료!" / "교체 완료!" */
   completedTitle: string;
-  /** 완료 안내 — 두 모드 동일(교체 직후도 UPLOADED라 블러 안내가 그대로 유효, 추정 3) */
+  /** 완료 안내 — 두 모드 동일. 블러 안내는 서버 블러 중단으로 폐기 (MSG-476 AC 5) */
   completedDescription: string;
 }
 
 const COMPLETED_DESCRIPTION =
-  "잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요";
+  "영상이 지도에 등록됐어요. 내 격자에서 확인해보세요";
 
 /** 모드별 확정·완료 문구 세트 (AC 2, 추정 3) */
 export const wizardModeCopy = (replace: boolean): WizardModeCopy =>

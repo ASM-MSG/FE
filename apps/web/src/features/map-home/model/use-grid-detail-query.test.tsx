@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { envelopeResponse } from "@/test/envelope-response";
 import { useGridDetailQuery } from "./use-grid-detail-query";
 
@@ -47,8 +48,13 @@ const stubDetail = () => {
   return fetchMock;
 };
 
+// 격자 상세 쿼리 2종(grids/{id}·stats/by-grid)은 사용자별 API다 (익명 401 실측 2026-08-26
+// MSG-474) — 기존 조합 단정은 로그인 전제로 고정한다
+beforeEach(signInForTest);
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  signOutForTest();
 });
 
 /** 공통 렌더 — 서면 격자 선택 고정 (시나리오별 차이는 스텁·단정에만 둔다) */
@@ -214,5 +220,55 @@ describe("useGridDetailQuery — 선택 정보 유예 상한 (영구 로딩 방�
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("useGridDetailQuery — 비로그인 (MSG-474 AC 3)", () => {
+  /** 진입점(핫구역 응답)이 싣고 온 이름 재료 — grids/{id}·by-grid는 미발사여야 한다 */
+  const ENTRY_NAMING = {
+    gridId: SEOMYEON,
+    zoneName: "서면",
+    zoneCell: "A-14",
+    regionName: "부산광역시 부산진구 부전1동",
+  };
+
+  it("비로그인이면 grids/{id}·stats/by-grid를 발사하지 않고 진입점 이름 재료로 즉시 조립한다", async () => {
+    signOutForTest();
+    const fetchMock = vi.fn<(input: Request) => Promise<Response>>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(
+      () => useGridDetailQuery(SEOMYEON, "hot", ENTRY_NAMING),
+      { wrapper },
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.current.detail?.label).toBe("서면 A-14");
+    expect(result.current.detail?.regionLabel).toBe(
+      "부산광역시 부산진구 부전1동",
+    );
+    // 사용자별 값은 만들지 않는다 — 서브타이틀 없음, 내 점령 배지 없음
+    expect(result.current.detail?.subtitle).toBeNull();
+    expect(result.current.detail?.badges).toEqual([
+      { id: "hot", label: "핫구역" },
+    ]);
+    expect(result.current.isError).toBe(false);
+  });
+
+  it("비로그인 + 이름 재료 없음(코스 스팟)이어도 gridId 폴백으로 상세가 성립한다", async () => {
+    signOutForTest();
+    const fetchMock = vi.fn<(input: Request) => Promise<Response>>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(
+      () => useGridDetailQuery(SEOMYEON, "route", null),
+      { wrapper },
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.current.detail?.label).toBe(SEOMYEON);
+    expect(result.current.detail?.subtitle).toBeNull();
   });
 });

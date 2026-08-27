@@ -1,5 +1,6 @@
 import type { LatLng } from "@/entities/cell";
 import type {
+  HotZoneRegionAggregateResponseDto,
   MissionRegionAggregateResponseDto,
   RegionAggregateResponseDto,
 } from "@/shared/api/generated";
@@ -23,13 +24,16 @@ export interface RegionClusterMarker {
   position: LatLng;
   unit: AggregationUnit;
   /**
-   * 미션 집계 마커의 소속 칩 (MSG-451 AC 6) — 채움색과 접근성 문구의 근거.
-   * 없으면 도감 점령 집계 마커다(기존 primary 렌더 유지 — MapCanvas 계약).
+   * 집계 마커의 소속 칩 (MSG-451 AC 6 → MSG-475 hot 합류) — 채움색과 접근성 문구의
+   * 근거. 없으면 도감 점령 집계 마커다(기본형 렌더 — MapCanvas 계약).
    */
-  theme?: MissionMarkerTheme;
+  theme?: ClusterMarkerTheme;
 }
 
-/** 집계 마커를 갖는 칩 — 축제·팝업. 핫구역은 격자, 코스는 라인이라 대상이 아니다 */
+/** 집계 마커를 갖는 칩 — 축제·팝업·핫구역 (MSG-475 AC 5). 코스는 라인이라 대상이 아니다 */
+export type ClusterMarkerTheme = Extract<ThemeId, "hot" | "festival" | "popup">;
+
+/** 미션 집계 칩(축제·팝업) — ClusterMarkerTheme의 부분집합. 미션 훅·테스트가 그대로 쓴다 */
 export type MissionMarkerTheme = Extract<ThemeId, "festival" | "popup">;
 
 /** 파생에 필요한 집계 항목의 최소 형태 — 점령·미션 두 응답의 공통부 */
@@ -73,7 +77,7 @@ const toClusterMarkers = (
   items: ClusterAggregateItem[],
   unit: AggregationUnit,
   keyPrefix: string,
-  theme?: MissionMarkerTheme,
+  theme?: ClusterMarkerTheme,
 ): RegionClusterMarker[] => {
   let nullBucketSeq = 0;
   return items.map((item) => ({
@@ -114,11 +118,28 @@ export const toMissionClusterMarkers = (
   toClusterMarkers(items, unit, `mission-${theme}`, theme);
 
 /**
+ * 핫구역 집계 항목 → 마커 파생 (MSG-475 AC 10) — `GET /api/hotzones/aggregation`.
+ * 표시 규칙(키 안정성·시도명 축약·미판정 버킷)은 도감·미션과 같은 산술을 공유하고,
+ * 키 접두 `hot`으로 다른 층과 렌더 키가 겹치지 않게 한다. 응답의 `gridIds`는 싣지
+ * 않는다 — 묶음 클릭 후 교집합 좁힘(서버 D4)은 미션 `missionIds` 선례처럼 후속 몫
+ * (스펙 승인 결정 ③).
+ */
+export const toHotZoneClusterMarkers = (
+  items: HotZoneRegionAggregateResponseDto[],
+  unit: AggregationUnit,
+): RegionClusterMarker[] => toClusterMarkers(items, unit, "hot", "hot");
+
+/**
  * 겹침 병합 임계(px) — 마커 중심 간 화면 거리가 이보다 가까우면 하나로 합친다.
- * 임계 = 해당 단위의 마커 지름(MapCanvas 크기 3단, Figma 14599:7041 1x 실측 68/80/92 —
- * 흰 링 포함 전체 지름): 중심 거리가 지름 미만이면 두 원이 실제로 겹치고, 이상이면
- * 시각적으로 분리된다. 단일 임계(최대 92 일괄)는 동 단위에서 분리된 마커까지 합쳐
- * 기각 — 한 병합 입력은 단일 unit이므로 단위별 조회로 충분하다 (재작업 1).
+ * 임계 = 구 원형 마커 지름(Figma 14599:7041 1x 실측 68/80/92 — 흰 링 포함 전체 지름):
+ * 중심 거리가 지름 미만이면 두 원이 실제로 겹치고, 이상이면 시각적으로 분리된다.
+ * 단일 임계(최대 92 일괄)는 동 단위에서 분리된 마커까지 합쳐 기각 — 한 병합 입력은
+ * 단일 unit이므로 단위별 조회로 충분하다 (재작업 1).
+ *
+ * MSG-475에서 웹 렌더가 말풍선(15221:20097, 크기 hug 가변)으로 바뀐 뒤에도 값은
+ * 유지한다 — 병합 규칙은 "기존 그대로"(티켓 ④)가 정본이고, 모바일 parity 테스트가
+ * 이 리터럴을 앵커로 대조하며 RN 렌더(cluster-marker.tsx)가 이 값을 원 지름으로
+ * 소비한다. 재보정은 RN 렌더 교체 티켓과 함께 한다 (스펙 추정 6).
  */
 export const MARKER_MERGE_PX: Record<AggregationUnit, number> = {
   DONG: 68,

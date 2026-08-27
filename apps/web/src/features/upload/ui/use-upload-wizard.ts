@@ -37,6 +37,7 @@ import {
   replaceGridLabel,
   wizardModeCopy,
 } from "@/features/upload/model/wizard-mode";
+import type { VideoVisibility } from "@/features/video-actions/model/video-menu";
 import type { TrimState } from "./PreviewStep";
 import { useVideoDuration } from "./use-video-duration";
 
@@ -91,6 +92,8 @@ export const useUploadWizard = () => {
   const [trim, setTrim] = useState<TrimState>({ status: "idle" });
   // 확정 성공 → 완료 모달 (B13)
   const [completed, setCompleted] = useState(false);
+  // 공개 범위 (MSG-476 AC 1~4) — 기본 PUBLIC, 스텝 왕복으로는 유지되고 close에서만 초기화
+  const [visibility, setVisibility] = useState<VideoVisibility>("PUBLIC");
 
   const {
     duration,
@@ -141,6 +144,7 @@ export const useUploadWizard = () => {
     setAnalyzingFailure(null);
     setSegment(null);
     setCompleted(false);
+    setVisibility("PUBLIC"); // 다음 업로드가 이전 선택을 상속하지 않는다 (MSG-476 AC 4)
     analyze.reset();
     analyze.resetFlow();
     confirm.reset();
@@ -164,6 +168,11 @@ export const useUploadWizard = () => {
     // 다른 파일 = 새 흐름 — 이전 presign·PUT 산출물 재사용 방지
     analyze.reset();
     analyze.resetFlow();
+    // visibility는 **일부러 건드리지 않는다** (PR #99 리뷰 확인). 선분석 산출물 초기화는
+    // 파일에 묶인 값이 새 파일에 재사용되는 것을 막는 정합성 조치인 반면, 공개 범위는
+    // 파일이 아니라 "이번에 무엇을 공개할지"에 대한 사용자 결정이다. 파일을 바꿨다고
+    // 조용히 PUBLIC으로 되돌리면 나만 보기로 올리려던 영상이 전체 공개가 된다 —
+    // 초기화는 모달을 닫을 때(close)만 한다 (MSG-476 AC 4).
   };
 
   /** 선분석 실행 (B3) — 성공 시 highlights 유무로 하이라이트/미리보기 분기 (B4) */
@@ -272,6 +281,8 @@ export const useUploadWizard = () => {
           lat: location.center.lat,
           lng: location.center.lng,
           durationSec,
+          // 선택 UI의 공개 범위 — PUBLIC도 명시 전송 (MSG-476 AC 2, 추정 2)
+          visibility,
         });
       }
       setCompleted(true);
@@ -331,6 +342,9 @@ export const useUploadWizard = () => {
         : location.label,
     /** 모드별 확정 버튼·완료 모달 문구 (AC 2, 추정 3) */
     copy: wizardModeCopy(replaceMode),
+    // 공개 범위 — 교체 모드는 DTO에 필드가 없어 선택 미노출(null) (MSG-476 AC 11)
+    visibility: replaceMode ? null : visibility,
+    setVisibility,
     durationTooLong,
     canProceed,
     busy,

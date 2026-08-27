@@ -6,6 +6,7 @@ import {
   type LatLng,
 } from "@/entities/cell";
 import { pointInPolygon } from "@/entities/region";
+import { parseLineString } from "./course";
 import type { MissionResponseDto } from "@/shared/api/generated";
 import type { ThemeId } from "./theme";
 
@@ -82,8 +83,8 @@ export interface MissionShape {
   gridIds: ReadonlySet<string>;
   /** PATH 전용 — 순번 포함 원본 */
   spots: CourseSpotDto[];
-  /** PATH 전용 — 코스 라인 GeoJSON 원문 */
-  line: string | null;
+  /** PATH 전용 — 코스 라인 GeoJSON: 문자열 원문 또는 객체(서버 실응답 — MSG-473). 없으면 null */
+  line: unknown;
   /** BOX 전용 — 경계 폴리곤 */
   polygon: LatLng[];
   /** 도형 경계 상자 — 뷰포트 교차 판정용. 좌표가 없으면 null */
@@ -131,9 +132,17 @@ export const missionShapeOf = (mission: MissionResponseDto): MissionShape => {
 
   if (Array.isArray(shape.spots)) {
     const spots = shape.spots as CourseSpotDto[];
+    // 라인은 문자열 원문·GeoJSON 객체 모두 보존한다 — 실서버는 객체를 준다 (MSG-473 AC 4)
+    const line =
+      typeof shape.line === "string" || isRecord(shape.line)
+        ? shape.line
+        : null;
     return fromGridPoints("path", spots, {
       spots,
-      line: typeof shape.line === "string" ? shape.line : null,
+      line,
+      // fitBounds·뷰포트 필터가 이 bbox를 읽는다 — 라인이 스팟 bbox를 최대 1.33km
+      // 벗어나므로(실측) 스팟 ∪ 라인으로 확장해야 실경로 끝단이 잘리지 않는다 (AC 6)
+      bbox: boundsOf([...spots, ...parseLineString(line)]),
     });
   }
 

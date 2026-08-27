@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import type { Bounds } from "@/entities/cell";
-import { BUSAN_BBOX } from "@/entities/region";
 import {
   MAX_VIEWPORT_SPAN_DEG,
   canQueryGrids,
@@ -51,10 +50,9 @@ describe("뷰포트 → /api/grids 요청 판정 (MSG-325 기준 3)", () => {
     ).toBe(false);
   });
 
-  it("부산 전역이 한 화면에 들어오는 뷰포트는 요청 대상이 아니다 — 경도 span 0.51도로 상한 초과(실측)", () => {
-    expect(BUSAN_BBOX.ne.lng - BUSAN_BBOX.sw.lng).toBeGreaterThan(
-      MAX_VIEWPORT_SPAN_DEG,
-    );
-    expect(canQueryGrids(BUSAN_BBOX)).toBe(false);
+  // MSG-477 ③: BUSAN_BBOX 상수가 경계 절단과 함께 삭제돼, 같은 규모(경도 0.51도)의
+  // 인라인 bounds로 예시를 교체했다 — 단정 자체(상한 초과 = 요청 제외)는 불변 (C5)
+  it("도시 전역급(경도 span 0.51도) 뷰포트는 요청 대상이 아니다 — 상한 초과", () => {
+    expect(canQueryGrids(boundsWithSpan(0.3, 0.51))).toBe(false);
   });
 });

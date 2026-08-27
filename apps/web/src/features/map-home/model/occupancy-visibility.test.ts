@@ -4,6 +4,7 @@ import { toOccupiedOverlays } from "./occupied-grid-overlay";
 import { GRID_MIN_ZOOM } from "./grid-overlay";
 import { MIN_ZOOM } from "./map-scale";
 import {
+  hotCellsVisible,
   missionCellsVisible,
   visibleOccupiedCells,
 } from "./occupancy-visibility";
@@ -48,5 +49,19 @@ describe("missionCellsVisible — 축제·팝업 격자의 저줌 게이트 (MSG
     expect(missionCellsVisible({ zoom: MIN_ZOOM, hasDetailTarget: true })).toBe(
       true,
     );
+  });
+});
+
+describe("hotCellsVisible — 핫구역 격자의 저줌 게이트 (MSG-475 AC 11)", () => {
+  it("축척 100m 이내(개별 격자 구간)에서는 핫구역 격자를 그린다 (AC 11)", () => {
+    expect(hotCellsVisible({ zoom: GRID_MIN_ZOOM })).toBe(true);
+  });
+
+  it("축척 250m 이상으로 줌아웃하면 핫구역 격자는 그리지 않는다 — 행정 단위 집계 마커가 대신한다 (AC 11)", () => {
+    expect(hotCellsVisible({ zoom: GRID_MIN_ZOOM - 1 })).toBe(false);
+  });
+
+  it("최소 줌(전국 화면)에서도 그리지 않는다 — 미션과 달리 상세 예외가 없다 (AC 11, 추정 8)", () => {
+    expect(hotCellsVisible({ zoom: MIN_ZOOM })).toBe(false);
   });
 });

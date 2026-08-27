@@ -8,21 +8,17 @@ import {
   upload,
 } from "@/shared/api/generated/sdk.gen";
 import type { PresignedUrlRequestDto } from "@/shared/api/generated";
-import {
-  getPlaybackQueryKey,
-  getRegionVideosQueryKey,
-  getUploadHistoryQueryKey,
-} from "@/shared/api/generated/@tanstack/react-query.gen";
 import { httpClient } from "@/shared/api/http-client";
+import type { VideoVisibility } from "@/features/video-actions/model/video-menu";
 import { PRESIGN_PURPOSE } from "../model/presign-purpose";
-import { useProcessingStore } from "../model/processing-store";
 import {
   createOrchestration,
   type OrchestrationState,
   runUploadFlow,
   UploadFlowError,
 } from "../model/upload-orchestration";
-import { invalidateGridQueries } from "./invalidate-grid-queries";
+import { invalidateUploadSurfaces } from "./invalidate-upload-surfaces";
+import { startReadyRefresh } from "./start-ready-refresh";
 import { uploadToS3 } from "./s3-upload";
 
 /**
@@ -122,14 +118,13 @@ export interface ReplaceVideoInput {
 /**
  * 영상 교체 확정 (MSG-415 AC 3·4·5) — useConfirmUpload 미러. presign(purpose
  * 미전송=UPLOAD) → 새 영상 S3 PUT → `PUT /api/videos/{videoId}`(s3Key·durationSec·
- * recordedAt만 — 좌표 생략=격자 유지, 추정 1). 성공 시 처리 대기 등록(교체 직후
- * UPLOADED — 기존 블러 폴링 워처가 그대로 소화) + playback(썸네일·상태 최신화)·
+ * recordedAt만 — 좌표 생략=격자 유지, 추정 1. visibility는 교체 DTO에 없어
+ * 미전송=기존 공개 범위 유지, MSG-476 AC 11). 성공 시 playback(썸네일·상태 최신화)·
  * 도감 동 영상 목록(부분 키)·격자 쿼리 무효화. 실패 시 진행 상태를 보존해
  * 재시도가 성공 단계를 건너뛴다(B11 재사용).
  */
 export const useReplaceVideo = () => {
   const queryClient = useQueryClient();
-  const track = useProcessingStore((s) => s.track);
   const flowState = useRef<OrchestrationState | null>(null);
   const mutation = useMutation({
     mutationFn: async (input: ReplaceVideoInput) => {
@@ -167,32 +162,14 @@ export const useReplaceVideo = () => {
         throw error;
       }
     },
-    onSuccess: (video, { videoId, gridId }) => {
-      // ① 재인코딩 대기 등록 — UPLOADED→READY 폴링·READY 통지는 기존 워처 재사용 (AC 4)
-      track(video.videoId, Date.now());
+    onSuccess: (_video, { videoId, gridId }) => {
+      // 확정이 바꾼 화면 전부 (AC 4·MSG-414 AC 11) — 블러 통지 파이프라인은 삭제됐고
+      // READY 재무효화 책임만 남았다 (MSG-476 AC 7)
+      invalidateUploadSurfaces(queryClient, { videoId, gridId });
 
-      // ② 해당 영상 playback — 썸네일·처리 상태 최신화 (AC 4)
-      void queryClient.invalidateQueries({
-        queryKey: getPlaybackQueryKey({ path: { videoId } }),
-      });
-
-      // ③ 도감 동 영상 목록 — regionCode별로 캐시 키가 갈라져 식별자(_id)만 남긴
-      // 부분 키로 전 파라미터 무효화 (MSG-411 use-video-mutations 관례)
-      const [regionKey] = getRegionVideosQueryKey({
-        query: { regionCode: "" },
-      });
-      void queryClient.invalidateQueries({
-        queryKey: [{ _id: regionKey._id }],
-      });
-
-      // ④ 격자 영상 목록·격자 상세 — gridId 미상이면 광역 무효화 (AC 4)
-      invalidateGridQueries(queryClient, gridId);
-
-      // ⑤ 업로드 잔디 이력 — 교체가 uploadDate 집계를 이동시킬 수 있어 재조회를
-      // 보장한다 (MSG-414 AC 11, A8 — 서버가 이력을 보정하지 않으면 잔디도 그대로다)
-      void queryClient.invalidateQueries({
-        queryKey: getUploadHistoryQueryKey(),
-      });
+      // 교체본도 새 인코딩을 거친다 — READY 전이에서 같은 집합을 다시 싣는다.
+      // restart: 원본이 아직 인코딩 중이었다면 그 폴링을 끊고 상한 기산점을 새로 잡는다
+      startReadyRefresh(queryClient, videoId, gridId, { restart: true });
     },
   });
   const resetFlow = () => {
@@ -209,16 +186,17 @@ export interface ConfirmUploadInput {
   lng: number;
   /** 잘린 영상 실측 길이(초) — 보정 재컷으로 ≤30 보장 (B8) */
   durationSec: number;
+  /** 공개 범위 — 사용자 선택값을 PUBLIC 포함 항상 명시 전송 (MSG-476 AC 2, 추정 2) */
+  visibility: VideoVisibility;
 }
 
 /**
  * 업로드 확정 (B9) — presign(purpose 미전송=UPLOAD) → 잘린 영상 S3 PUT →
- * `POST /api/videos`(s3Key·lat·lng·durationSec·recordedAt=업로드 시각, visibility 미전송).
- * 성공 시 처리 대기 등록(B15) + 점령 격자·격자 상세 invalidate(B13).
+ * `POST /api/videos`(s3Key·lat·lng·durationSec·recordedAt=업로드 시각·visibility).
+ * 성공 시 점령 격자·격자 상세 invalidate(B13).
  */
 export const useConfirmUpload = () => {
   const queryClient = useQueryClient();
-  const track = useProcessingStore((s) => s.track);
   // 지연 초기화 — 렌더마다 초기 상태 객체를 만들었다 버리지 않는다 (리뷰 반영)
   const flowState = useRef<OrchestrationState | null>(null);
   const mutation = useMutation({
@@ -243,6 +221,8 @@ export const useConfirmUpload = () => {
                   durationSec: input.durationSec,
                   // recordedAt = 업로드 시각 (결정 B — 파일 메타 추출은 범위 제외)
                   recordedAt: new Date().toISOString(),
+                  // 공개 범위 — 기본값(PUBLIC)도 생략 없이 선택값 그대로 (MSG-476 AC 2)
+                  visibility: input.visibility,
                 },
                 throwOnError: true,
               });
@@ -258,17 +238,16 @@ export const useConfirmUpload = () => {
       }
     },
     onSuccess: (video) => {
-      // 블러 처리 대기 등록 — AppLayout 상주 워처가 이 스토어 구독으로 폴링을 시작한다 (B14·B15)
-      track(video.videoId, Date.now());
-
-      // B13 — 격자 쿼리 무효화 (invalidate-grid-queries 공용 — READY 전이와 공유)
-      invalidateGridQueries(queryClient, video.gridId);
-
-      // 업로드 잔디 이력 — 오늘 셀 카운트가 늘었다, 스트릭 카드(summary)와
-      // 어긋나는 창을 없앤다 (MSG-414 AC 11, A8)
-      void queryClient.invalidateQueries({
-        queryKey: getUploadHistoryQueryKey(),
+      // 확정이 바꾼 화면 전부 (B13·MSG-414 AC 11). 블러 통지 파이프라인은 삭제됐다
+      invalidateUploadSurfaces(queryClient, {
+        videoId: video.videoId,
+        gridId: video.gridId,
       });
+
+      // 확정 시점 재조회는 서버가 아직 non-READY라 새 영상을 빼고 응답한다.
+      // READY가 되는 순간 같은 집합을 한 번 더 무효화해야 새로고침 없이 보인다
+      // (QA 회귀 실측 2026-08-26)
+      startReadyRefresh(queryClient, video.videoId, video.gridId);
     },
   });
   const resetFlow = () => {

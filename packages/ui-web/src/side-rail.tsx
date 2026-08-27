@@ -14,6 +14,8 @@ interface SideRailProps {
   /** 상단 로고 슬롯 (40×40) */
   logo?: ReactNode;
   className?: string;
+  /** `<nav>`의 접근 가능한 이름 — 랜드마크가 여럿일 때 스크린리더가 구분한다 (MSG-478 D3). 미지정 시 렌더 불변 */
+  "aria-label"?: string;
 }
 
 /**
@@ -34,8 +36,10 @@ export const SideRail = ({
   onSelect,
   logo,
   className,
+  "aria-label": ariaLabel,
 }: SideRailProps) => (
   <nav
+    aria-label={ariaLabel}
     className={cn(
       "flex h-full w-18 flex-col items-center gap-xs border-r border-border bg-background py-md",
       className,

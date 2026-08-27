@@ -96,14 +96,15 @@ describe("buildHomeOverlayCells — 테마 강조 (AC 6·7)", () => {
     }
   });
 
-  it("셀 중심이 부산 행정경계 밖인 테마 셀은 오버레이 대상이 아니다 (MSG-263 AC 4)", () => {
+  // MSG-477 ③: 격자 전국 확장에 맞춰 부산 경계 필터(MSG-263 AC 4)를 제거했다
+  it("셀 중심이 부산 행정경계 밖인 테마 셀도 오버레이 대상이다 — 경계 필터 제거 (MSG-477 C4)", () => {
     const withSeaCell = [
       ...THEME_FIXTURE.hot,
       { id: "SEA-CELL", center: { lat: 34.95, lng: 129.0 } },
     ];
     const result = buildHomeOverlayCells("hot", withSeaCell, OCCUPIED_IDS);
 
-    expect(result.map((o) => o.id)).not.toContain(
+    expect(result.map((o) => o.id)).toContain(
       encodeGridId({ lat: 34.95, lng: 129.0 }),
     );
   });
@@ -159,19 +160,21 @@ describe("themeCellGridIds — 탭 판정 id = 게시 id (MSG-325 회귀 방지)
     }
   });
 
-  it("부산 경계 밖 테마 셀은 판정 집합에도 없다 — 게시되지 않은 셀이 탭으로 열리면 안 된다 (MSG-263 AC 4 정합)", () => {
+  // MSG-477 ③: 경계 필터 제거 후에도 "판정 집합 ≡ 게시 집합" 정합은 유지된다 —
+  // 부산 밖 셀이 게시되면 판정 집합에도 있어 탭으로 상세가 열린다
+  it("부산 경계 밖 테마 셀도 게시·판정 집합에 함께 있다 — 판정 집합 ≡ 게시 집합 유지 (MSG-477 C4)", () => {
     const SEA_CELL = { id: "SEA-CELL", center: { lat: 34.95, lng: 129.0 } };
     const seaGridId = encodeGridId(SEA_CELL.center);
     const cells = [...THEME_FIXTURE.hot, SEA_CELL];
     const overlays = buildHomeOverlayCells("hot", cells, []);
 
-    expect(overlays.map((o) => o.id)).not.toContain(seaGridId);
-    expect(themeCellGridIds(cells)).not.toContain(seaGridId);
+    expect(overlays.map((o) => o.id)).toContain(seaGridId);
+    expect(themeCellGridIds(cells)).toContain(seaGridId);
     expect(themeCellGridIds(cells).sort()).toEqual(
       overlays.map((o) => o.id).sort(),
     );
     expect(canOpenDetail("hot", seaGridId, themeCellGridIds(cells), [])).toBe(
-      false,
+      true,
     );
   });
 });

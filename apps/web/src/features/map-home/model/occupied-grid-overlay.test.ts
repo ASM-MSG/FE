@@ -27,9 +27,12 @@ describe("점령 격자 응답 → 오버레이 셀 (MSG-325 기준 5)", () => {
     ]);
   });
 
-  it("셀 중심이 부산 행정경계 밖인 격자는 제외한다 (MSG-263 AC 4 규칙 유지)", () => {
+  // MSG-477 ③: 격자선 절단 제거로 필터의 유지 근거("격자선 없는 색칠 셀 방지")가 소멸 —
+  // 부산 경계 필터를 제거해 전국 gridId가 그대로 오버레이가 된다 (C4)
+  it("셀 중심이 부산 행정경계 밖인 격자도 변환한다 — 경계 필터 제거 (MSG-477 C4)", () => {
     expect(toOccupiedOverlays([SEOMYEON, OFFSHORE]).map((o) => o.id)).toEqual([
       SEOMYEON.gridId,
+      OFFSHORE.gridId,
     ]);
   });
 

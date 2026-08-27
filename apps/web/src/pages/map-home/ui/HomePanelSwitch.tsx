@@ -152,6 +152,7 @@ export const HomePanelSwitch = ({
       <HotRegionPanel
         summary={hotSummary}
         regionName={regionName}
+        progressLocked={progressLocked}
         onVideoSelect={onVideoSelect}
         onViewAll={onViewAll}
         onClose={onCloseTheme}

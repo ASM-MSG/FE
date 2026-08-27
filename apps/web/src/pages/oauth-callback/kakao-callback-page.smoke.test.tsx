@@ -88,6 +88,15 @@ describe("카카오 콜백 페이지", () => {
     );
   });
 
+  it("콜백 화면이 떠 있는 동안 탭 제목은 '로그인 | 필맵'이다 (MSG-478 C3)", () => {
+    oauthStateStorage.save("STATE_TOKEN");
+    stubExchange({ developCode: 0, message: "ok", data: null });
+
+    renderCallback("?code=AUTH_CODE&state=STATE_TOKEN");
+
+    expect(document.title).toBe("로그인 | 필맵");
+  });
+
   it("서버가 2423을 주면 처음부터 다시 로그인하라고 안내한다", async () => {
     oauthStateStorage.save("STATE_TOKEN");
     stubExchange(

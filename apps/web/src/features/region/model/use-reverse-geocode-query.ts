@@ -24,8 +24,9 @@ export interface ReverseGeocodeResult {
 
 /**
  * 지도 중심 좌표의 행정동 판별 쿼리 (MSG-328 AC 4·12) — `GET /api/regions/reverse-geocode`.
- * center 변경은 디바운스로 눌러 이동이 멈춘 뒤에만 조회한다. center가 null이면(비로그인
- * 게이트 — 익명 401 실측) 조회하지 않는다. 지도 SDK를 import하지 않는다(RN 경계).
+ * center 변경은 디바운스로 눌러 이동이 멈춘 뒤에만 조회한다. center가 null이면(뷰포트
+ * 미준비) 조회하지 않는다 — 익명 조회는 서버가 허용해(MSG-467, 실측 2026-08-26) 호출부의
+ * 비로그인 게이트는 MSG-474에서 제거됐다. 지도 SDK를 import하지 않는다(RN 경계).
  * mapQueryPolicy(keepPreviousData) — 이동 중에도 직전 행정동 라벨이 유지돼 헤더가 깜빡이지 않는다.
  */
 export const useReverseGeocodeQuery = (

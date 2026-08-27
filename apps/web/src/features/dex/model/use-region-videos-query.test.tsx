@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { envelopeResponse } from "@/test/envelope-response";
 import { useRegionVideosQuery } from "./use-region-videos-query";
 
@@ -42,8 +43,12 @@ const stubRegionVideos = () => {
 };
 
 describe("useRegionVideosQuery — 동 단위 내 영상 조회 (기준 11·15)", () => {
+  // 내 수집 영상은 사용자별 API다 (익명 401) — 기존 조회 단정은 로그인 전제로 고정 (MSG-474)
+  beforeEach(signInForTest);
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    signOutForTest();
   });
 
   it("regionCode의 영상 목록이 조회되어 언랩된다 (기준 11)", async () => {
@@ -77,5 +82,19 @@ describe("useRegionVideosQuery — 동 단위 내 영상 조회 (기준 11·15)"
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it("비로그인이면 regionCode가 있어도 발사하지 않는다 — 익명 401 스팸 방지 (MSG-474 AC 14 계열)", async () => {
+    signOutForTest();
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const { result } = renderHook(() => useRegionVideosQuery("2644056000"), {
+      wrapper,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.current.isPending).toBe(false);
   });
 });

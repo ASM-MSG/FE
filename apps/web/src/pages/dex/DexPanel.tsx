@@ -29,6 +29,8 @@ import {
 import { useCurrentRegionStatQuery } from "@/features/dex/model/use-region-stat-query";
 import { useProfileQuery } from "@/features/profile/model/use-profile-query";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
+import { formatDocumentTitle } from "@/shared/document-title";
+import { useDocumentTitle } from "@/shared/use-document-title";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
 import { BadgeTabBody } from "./ui/BadgeTabBody";
@@ -58,6 +60,8 @@ import { RegionProgress } from "./ui/RegionProgress";
  *   도감에서 빠졌다.
  */
 export const DexPanel = () => {
+  // 탭(/dex·/dex/badges·/dex/history)과 무관하게 단일 제목 — 탭 전환 때 제목이 바뀌는 이점이 작다 (MSG-478 Q3)
+  useDocumentTitle(formatDocumentTitle("도감"));
   const { tab: tabParam } = useParams();
   const tab = parseDexTab(tabParam);
   const navigate = useNavigate();

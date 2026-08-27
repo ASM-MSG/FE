@@ -113,6 +113,14 @@ afterEach(() => {
 });
 
 describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
+  it("프로필 패널이 떠 있는 동안 탭 제목은 '프로필 | 필맵'이다 (MSG-478 C3)", async () => {
+    stubApi();
+    renderPanel();
+    await screen.findByText(PROFILE.nickname);
+
+    expect(document.title).toBe("프로필 | 필맵");
+  });
+
   it("실 API 응답의 닉네임·가입일(KST)·이메일이 표시되고, mock 활동 수치는 없다 (A1·A4·MSG-378)", async () => {
     stubApi();
     renderPanel();
@@ -227,35 +235,16 @@ describe("프로필 패널 스모크 (MSG-329·MSG-378)", () => {
     expect(deleteRow.textContent).not.toContain("준비 중");
   });
 
-  it("'알림 받기' 토글 행이 있고, 미지원 환경(jsdom — Notification 부재)에서는 비활성 + 사유 캡션이다 (MSG-408 AC 4·8)", async () => {
+  // MSG-477 ①: "알림 받기" 토글(MSG-408)·"알림 설정" 행(MSG-409)을 삭제했다 —
+  // 웹 설정 UI의 알림 진입점 제거(푸시 수신 표시·모바일 토글은 유지). 부재 단정으로 교체.
+  it("'알림 받기' 토글과 '알림 설정' 행이 렌더되지 않는다 (MSG-477 A1)", async () => {
     stubApi();
     renderPanel();
     await screen.findByText(PROFILE.nickname);
 
-    const toggle = screen.getByRole("switch", {
-      name: "알림 받기",
-    }) as HTMLButtonElement;
-    expect(toggle.disabled).toBe(true);
-    expect(toggle.getAttribute("aria-checked")).toBe("false");
-    expect(screen.getByText("미지원 브라우저")).toBeTruthy();
-  });
-
-  // MSG-408의 "알림 설정 행 부재" 단정은 MSG-409 결정 2로 갱신 — 준비 중 행이 아니라
-  // 활성 행으로 부활했다("알림 받기" 토글은 존치). 상세 화면 진입점이다
-  it("'알림 받기' 아래 '알림 설정' 활성 행이 있고, 클릭 시 /profile/notifications로 이동한다 (MSG-409 AC 1)", async () => {
-    stubApi();
-    renderPanel();
-    await screen.findByText(PROFILE.nickname);
-
-    const settingsRow = screen.getByRole("button", { name: "알림 설정" });
-    expect(settingsRow.getAttribute("aria-disabled")).toBeNull();
-    expect(settingsRow.textContent).not.toContain("준비 중");
-
-    fireEvent.click(settingsRow);
-
-    expect(screen.getByTestId("location").textContent).toBe(
-      "/profile/notifications",
-    );
+    expect(screen.queryByRole("switch", { name: "알림 받기" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "알림 설정" })).toBeNull();
+    expect(screen.queryByText("미지원 브라우저")).toBeNull();
   });
 
   it("[계정 삭제] 클릭 시 비가역 삭제 확인 모달(danger)이 뜬다 — URL 불변 (A10)", async () => {

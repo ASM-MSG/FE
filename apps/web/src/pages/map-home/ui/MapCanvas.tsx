@@ -32,7 +32,7 @@ import {
   type ZoomStep,
   type ZoomStepState,
 } from "@/features/map-home/model/zoom-step-policy";
-import type { MissionMarkerTheme } from "@/features/map-home/model/region-cluster-overlay";
+import type { ClusterMarkerTheme } from "@/features/map-home/model/region-cluster-overlay";
 import { THEME_META } from "@/features/map-home/model/theme";
 import { buildHatchLines } from "@/features/map-home/model/theme-overlay";
 import type { Viewport } from "@/features/map-home/model/viewport-store";
@@ -116,15 +116,14 @@ export interface MapClusterOverlay {
   /** 지역명 — null이면 개수만 표시(미판정 버킷·병합 마커, AC 4·추정 2) */
   name: string | null;
   count: number;
-  /** 집계 단위 — 마커 크기 3단(동<구<시, Figma 14599:7042~7048)과 클릭 목표 줌의 근거 */
+  /** 집계 단위 — 클릭 목표 줌(drillInZoomForUnit)의 근거. 크기 3단은 MSG-475에서 폐기 */
   unit: AggregationUnit;
   /**
-   * 미션 집계 마커의 소속 칩 (MSG-451 AC 6) — 채움색·문구가 갈린다.
-   * 없으면 도감 점령 집계 마커(primary 채움) — 기존 렌더 그대로.
-   * Figma에 미션용 클러스터 노드가 없어, 도감 마커(14599:7041) 형태에 채움만 테마
-   * 토큰으로 바꾼 것이 정본이다 (MSG-437 "색만 미션용으로 구분").
+   * 집계 마커의 소속 칩 (MSG-451 AC 6 → MSG-475 hot 합류) — 채움색·접근명이 갈린다.
+   * 없으면 도감 점령 집계 마커(secondary 채움). Figma에 칩별 색 변형 노드가 없어,
+   * 말풍선(15221:20097) 형태에 채움만 테마 토큰으로 바꾼 것이 정본이다 (MSG-451 ① 규칙).
    */
-  theme?: MissionMarkerTheme;
+  theme?: ClusterMarkerTheme;
 }
 
 interface MapCanvasProps {
@@ -335,33 +334,24 @@ const ROUTE_STROKE_OPACITY = 0.9;
 const routeMarkerContent = (seq: number): string =>
   `<div class="flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-theme-route text-fm-body-strong text-primary-foreground shadow-raised">${seq}</div>`;
 
-// 지역 집계 마커 크기 3단 — 단위 기준 동<구<시 (MSG-410 AC 4, Figma 14599:7042~7048
-// variant `단위=동/구/시`, 1x 실측 68/80/92px — 흰 링 3px 포함 border-box 전체 지름).
-// count 기준 tier 3단은 폐기됐다 (추정 4). 값 변경 시 병합 임계
-// MARKER_MERGE_PX(region-cluster-overlay)도 함께 갱신할 것
-const CLUSTER_UNIT_SIZE_CLASS: Record<AggregationUnit, string> = {
-  DONG: "size-17",
-  SIGUNGU: "size-20",
-  SIDO: "size-23",
-};
-
 /** count 서식 — 천 단위 구분 (구 "99+" 캡 폐기: 디자인이 세 자리 수치를 그대로 보여준다) */
 const formatClusterCount = (count: number): string =>
   count.toLocaleString("ko-KR");
 
 /**
- * 지역 집계 원형 마커 HTML (MSG-410 AC 4) — 이름 위·개수 아래, 파랑은 primary 토큰 클래스
- * (hex 하드코딩 금지). 흰 링은 Figma 정본(14599:7041)의 3px 백색 스트로크 — 지도 타일과
- * 마커를 분리하는 테두리라 지면색 토큰 border-background로 표현한다.
- * name은 서버가 준 지역명이라 이스케이프한다. null이면 개수만 표시.
+ * 지역 집계 말풍선 마커 HTML (MSG-475 AC 1~4, Figma 15221:20097) — 위 지역명·아래 개수,
+ * 라운드 10(radius 비토큰 예외)·패딩 6/12/7, 크기는 지명 길이 hug(단위별 원형 3단·흰 링
+ * 폐기 — 병합 임계 MARKER_MERGE_PX는 불변, region-cluster-overlay 주석). 채움은 기본
+ * secondary(#0071E3 정확 일치), 칩 마커는 THEME_FILL_CLASS로 채움만 갈린다(MSG-451 ①).
+ * 타이포 text-fm-label/text-fm-heading+bold 1px 근사·그림자 shadow-raised 최근접은
+ * 스펙 승인 결정 ④·⑤ — 토큰 신설 없음. name은 서버가 준 지역명이라 이스케이프한다.
  */
 const clusterMarkerContent = ({
   name,
   count,
-  unit,
   theme,
 }: MapClusterOverlay): string =>
-  `<div class="flex ${CLUSTER_UNIT_SIZE_CLASS[unit]} -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-3 border-background ${theme ? THEME_FILL_CLASS[theme] : "bg-primary"} text-primary-foreground shadow-raised">${name !== null ? `<span class="max-w-full truncate px-xxs text-fm-caption">${escapeHtml(name)}</span>` : ""}<span class="text-fm-body-strong">${formatClusterCount(count)}</span></div>`;
+  `<div class="flex -translate-x-1/2 -translate-y-1/2 flex-col items-center whitespace-nowrap rounded-[10px] px-3 pt-1.5 pb-1.75 ${theme ? THEME_FILL_CLASS[theme] : "bg-secondary"} shadow-raised">${name !== null ? `<span class="text-fm-label text-primary-foreground/85">${escapeHtml(name)}</span>` : ""}<span class="text-fm-heading font-bold text-primary-foreground">${formatClusterCount(count)}</span></div>`;
 
 /**
  * 집계 마커 접근성 이름 — 스크린리더 대체 텍스트이자 e2e 셀렉터 계약.
