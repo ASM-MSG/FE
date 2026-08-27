@@ -9,8 +9,10 @@ import {
   toKakaoLoginFailure,
   type KakaoLoginFailure,
 } from "@/features/auth/model/kakao-oauth";
+import { formatDocumentTitle } from "@/shared/document-title";
 import { appOrigin } from "@/shared/navigation";
 import { oauthStateStorage } from "@/shared/storage";
+import { useDocumentTitle } from "@/shared/use-document-title";
 
 /** 인가 결과 판정 — 코드 교환으로 넘어갈지, 바로 안내로 끝낼지 */
 type Verdict =
@@ -57,6 +59,7 @@ const FAILURE_MESSAGE: Record<KakaoLoginFailure, string> = {
  * 서버 진입점이 심은 nonce 쿠키는 httpClient의 `credentials: "include"`로 자동 동봉된다.
  */
 export const KakaoCallbackPage = () => {
+  useDocumentTitle(formatDocumentTitle("로그인"));
   const { search } = useLocation();
   const navigate = useNavigate();
   const [failure, setFailure] = useState<KakaoLoginFailure | null>(null);

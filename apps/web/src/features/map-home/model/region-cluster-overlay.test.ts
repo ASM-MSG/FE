@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type {
+  HotZoneRegionAggregateResponseDto,
   MissionRegionAggregateResponseDto,
   RegionAggregateResponseDto,
 } from "@/shared/api/generated";
 import {
   mergeOverlappingMarkers,
+  toHotZoneClusterMarkers,
   toMissionClusterMarkers,
   toRegionClusterMarkers,
   type RegionClusterMarker,
@@ -357,5 +359,104 @@ describe("toMissionClusterMarkers — 미션 집계 items[] → 마커 파생 (M
 
     expect(marker.name).toBeNull();
     expect(marker.count).toBe(12);
+  });
+});
+
+/** 핫구역 집계 응답 픽스처 — 도감 항목에 gridIds(크기 = count)가 붙는다 (서버 MSG-466) */
+const hotItem = (
+  over: Partial<HotZoneRegionAggregateResponseDto> = {},
+): HotZoneRegionAggregateResponseDto => ({
+  regionCode: "2623051000",
+  name: "부전2동",
+  lat: 35.1579,
+  lng: 129.0594,
+  count: 3,
+  gridIds: ["39064_112221", "39064_112222", "39065_112221"],
+  ...over,
+});
+
+describe("toHotZoneClusterMarkers — 핫구역 집계 items[] → 마커 파생 (MSG-475 AC 5·10)", () => {
+  it("키는 hot-{unit}-{regionCode}, 테마는 hot이고 응답 gridIds는 마커에 싣지 않는다 (AC 10)", () => {
+    const [marker] = toHotZoneClusterMarkers([hotItem()], "DONG");
+
+    expect(marker).toEqual({
+      id: "hot-DONG-2623051000",
+      name: "부전2동",
+      count: 3,
+      position: { lat: 35.1579, lng: 129.0594 },
+      unit: "DONG",
+      theme: "hot",
+    });
+  });
+
+  it("행정동 미판정 묶음(regionCode·name null)은 hot-{unit}-unassigned 순번 키에 개수만 남는다 (AC 10)", () => {
+    const [marker] = toHotZoneClusterMarkers(
+      [hotItem({ regionCode: null, name: null })],
+      "DONG",
+    );
+
+    expect(marker.id).toBe("hot-DONG-unassigned-0");
+    expect(marker.name).toBeNull();
+    expect(marker.count).toBe(3);
+  });
+
+  it("시 단위 이름은 도감·미션 마커와 같은 규칙으로 축약된다 (AC 10)", () => {
+    const [marker] = toHotZoneClusterMarkers(
+      [hotItem({ regionCode: "26", name: "부산광역시" })],
+      "SIDO",
+    );
+
+    expect(marker.name).toBe("부산");
+  });
+
+  it("도감·미션 마커와 키가 겹치지 않는다 — 층이 바뀌어도 렌더가 섞이지 않는다 (AC 10)", () => {
+    const base = {
+      regionCode: "26230",
+      name: "부산진구",
+      lat: 35.1568,
+      lng: 129.0592,
+      count: 12,
+    };
+
+    const [hot] = toHotZoneClusterMarkers(
+      [{ ...base, gridIds: [] }],
+      "SIGUNGU",
+    );
+    const [occupied] = toRegionClusterMarkers([base], "SIGUNGU");
+    const [mission] = toMissionClusterMarkers(
+      [{ ...base, missionIds: [] }],
+      "SIGUNGU",
+      "festival",
+    );
+
+    expect(hot.id).not.toBe(occupied.id);
+    expect(hot.id).not.toBe(mission.id);
+  });
+
+  it("도감 마커에는 theme 키 자체가 없다 — 모바일 parity toEqual 유지 (AC 5)", () => {
+    const [occupied] = toRegionClusterMarkers([dongItem()], "DONG");
+
+    expect(occupied).not.toHaveProperty("theme");
+  });
+
+  it("핫 마커가 병합돼도 theme hot이 유지된다 — 합친 마커도 색을 잃지 않는다 (AC 15)", () => {
+    const hotMarkers = toHotZoneClusterMarkers(
+      [
+        hotItem({ regionCode: "26230", name: "부산진구", count: 9 }),
+        hotItem({
+          regionCode: "26260",
+          name: "동래구",
+          lng: 129.1094,
+          count: 4,
+        }),
+      ],
+      "SIGUNGU",
+    );
+
+    const merged = mergeOverlappingMarkers(hotMarkers, 8);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].theme).toBe("hot");
+    expect(merged[0].count).toBe(13);
   });
 });

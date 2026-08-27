@@ -9,19 +9,21 @@ import type { CourseSpotDto } from "./mission";
  */
 
 /**
- * 코스 라인 GeoJSON LineString 원문 → 좌표 배열. [E15]
+ * 코스 라인 GeoJSON LineString → 좌표 배열. [E15 · MSG-473 AC 1~3]
+ * 서버는 라인을 GeoJSON **객체**로 주고(실측), 명세 이력상 문자열 원문일 수도 있다 —
+ * 문자열이면 먼저 파싱하고, 객체면 파싱 없이 같은 검증 경로로 합류한다.
  * GeoJSON은 `[경도, 위도]` 순서다 — 뒤집으면 라인이 엉뚱한 곳에 그려진다.
- * `missions.path`는 NULL 허용 컬럼이고 원문이 깨져 올 수도 있어, 파싱 실패는 빈 배열로
- * 흡수한다 — 라인 없이 포토스팟 마커만 그리는 것이 스펙의 폴백이다.
+ * `missions.path`는 NULL 허용 컬럼이고 형식이 깨져 올 수도 있어, 실패는 빈 배열로
+ * 흡수한다 — 라인 없이 포토스팟 마커만 그린다.
  */
-export const parseLineString = (line: string | null): LatLng[] => {
-  if (line === null) return [];
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(line);
-  } catch {
-    return [];
+export const parseLineString = (line: unknown): LatLng[] => {
+  let parsed: unknown = line;
+  if (typeof line === "string") {
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      return [];
+    }
   }
 
   if (
@@ -77,19 +79,13 @@ export const courseSpots = (
     }));
 
 /**
- * 지도에 그릴 코스 연결선 좌표. [E14]
- * 서버 라인(`shape.line`)이 있으면 그 경로를 쓰고, **없으면 포토스팟을 번호 순서대로
- * 직선으로 잇는다** — 실 데이터의 코스는 라인이 비어 있어 번호 마커만 흩어져 보였다.
- * 점이 하나뿐이면 이을 선이 없으므로 빈 배열이다.
+ * 지도에 그릴 코스 연결선 좌표. [MSG-473 — 스팟 직선 폴백 제거]
+ * 서버 라인(`shape.line`)만 그린다. 라인이 없거나 깨졌으면 **빈 배열** — 스팟은 촬영
+ * 지점이지 이동 경로가 아니라, 직선으로 이으면 실경로와 다른 길(만 횡단 등)이 그려진다.
+ * MSG-403 당시 넣었던 스팟 순 직선 폴백은 실 데이터 코스가 전부 라인을 갖게 되면서
+ * 번복됐다(사용자 승인) — 라인 없는 코스는 번호 마커만 남는다.
  */
-export const coursePath = (
-  line: string | null,
-  spots: readonly CourseSpot[],
-): LatLng[] => {
-  const parsed = parseLineString(line);
-  if (parsed.length > 0) return parsed;
-  return spots.length > 1 ? spots.map((spot) => spot.position) : [];
-};
+export const coursePath = (line: unknown): LatLng[] => parseLineString(line);
 
 /** 순환형 판정 거리(m) — 격자 한 변과 같은 눈금 */
 const LOOP_THRESHOLD_METERS = 100;

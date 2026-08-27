@@ -30,9 +30,12 @@ describe("wizardModeCopy — 모드별 확정 버튼·완료 문구 (MSG-415 AC 
     expect(copy.completedTitle).toBe("업로드 완료!");
   });
 
-  it("완료 안내는 두 모드 동일 — 교체 직후에도 UPLOADED라 블러 안내가 그대로 유효하다 (추정 3)", () => {
+  it("완료 안내는 두 모드 동일 — 지도 등록 안내 공통 문구다 (MSG-476 AC 5)", () => {
     expect(wizardModeCopy(true).completedDescription).toBe(
       wizardModeCopy(false).completedDescription,
+    );
+    expect(wizardModeCopy(false).completedDescription).toBe(
+      "영상이 지도에 등록됐어요. 내 격자에서 확인해보세요",
     );
   });
 });

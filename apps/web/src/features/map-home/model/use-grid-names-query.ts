@@ -1,4 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
+import { useAuthStore } from "@/features/auth/model/auth-store";
 import type { ApiResponseDtoGridCellResponseDto } from "@/shared/api/generated";
 import { getCellOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { unwrapEnvelope } from "@/shared/api/envelope";
@@ -12,6 +13,10 @@ import { entityQueryPolicy } from "./map-query-policy";
  * 코스 상세의 포토스팟 행이 `자갈치 B-07`처럼 사람이 읽는 이름을 보여야 하는데,
  * 미션 응답의 `spots`에는 좌표와 격자 id뿐이라 격자별로 이름을 받아온다.
  * 코스 하나의 스팟 수(6~8)만큼만 나가고 **코스 상세를 열었을 때만** 발사한다.
+ *
+ * MSG-474: 데이터원 `grids/{gridId}`는 사용자별 API(익명 401 — 실측 2026-08-26)라
+ * 비로그인은 발사하지 않는다(401 + reissue 스팸 방지, AC 14) — 스팟 행은
+ * "이름 없는 경유 지점" 폴백으로 그려진다. 코스 응답에 이름 재료가 실리면 해제 여지.
  */
 export interface GridNamesResult {
   names: ReadonlyMap<string, string>;
@@ -20,8 +25,11 @@ export interface GridNamesResult {
 }
 
 export const useGridNamesQuery = (gridIds: string[]): GridNamesResult => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // 비로그인 — 조회 대상 자체를 비워 발사하지 않는다 (MSG-474). isPending도 자연히 false
+  const activeGridIds = isAuthenticated ? gridIds : [];
   const queries = useQueries({
-    queries: gridIds.map((gridId) => ({
+    queries: activeGridIds.map((gridId) => ({
       ...getCellOptions({ path: { gridId } }),
       select: (envelope: ApiResponseDtoGridCellResponseDto) =>
         unwrapEnvelope(envelope),

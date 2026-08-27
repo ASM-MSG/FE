@@ -131,10 +131,9 @@ export const useSignup = () =>
  * 정리) — 없으면 기존과 동일하게 body 없이 호출한다. 성공·실패 무관(onSettled) 보관을 비운다.
  * features/notifications를 직접 import하지 않는다 — shared/storage의 fcmTokenStorage 매개.
  *
- * 쿼리 캐시는 비우지 않는다: 교차 사용자 노출은 로그인 쪽 clear()가 이미 막고(다음
- * 세션은 항상 빈 캐시에서 시작), 비로그인 상태의 /profile 직접 진입은 RequireAuth가 막는다.
- * (MSG-325로 로그아웃이 홈 이동을 동반하게 되어 "패널에 남아 401 오류로 떨어진다"는
- * 원래의 회귀 근거는 사라졌으나, 결론은 그대로 유지한다 — 비울 이유가 따로 없다.)
+ * 쿼리 캐시 정리는 이 훅이 아니라 QueryProvider의 인증 전이 구독이 맡는다 (MSG-474):
+ * 비로그인도 공개 조회 캐시를 갖게 되면서 "비로그인은 조회 없음" 전제가 깨졌다 —
+ * true → false 전이(로그아웃·세션 만료 공통 경로)에서 clear()가 사용자별 응답 잔존을 막는다.
  */
 export const useLogout = (callbacks?: { onFinished?: () => void }) => {
   const clearLocalSession = useAuthStore((s) => s.logout);

@@ -7,7 +7,7 @@ import {
   buildMissionLabels,
 } from "./mission-overlay";
 import type { CourseView, MissionView } from "./mission-view";
-import { missionCellsVisible } from "./occupancy-visibility";
+import { hotCellsVisible, missionCellsVisible } from "./occupancy-visibility";
 import { THEME_META, type ThemeCell, type ThemeId } from "./theme";
 import {
   buildHomeOverlayCells,
@@ -82,8 +82,12 @@ export const useHomeOverlays = ({
     !missionCellsVisible({ zoom, hasDetailTarget: selectedMission !== null });
 
   const cells = useMemo(() => {
+    // 핫 칩 저줌에서는 핫 격자 낱개 대신 행정 단위 집계 마커가 선다 (MSG-475 AC 11·12) —
+    // 셀을 비우면 MapShell의 useHotZoneAggregationQuery 마커 층이 그 자리를 대신한다
     if (activeTheme === "hot")
-      return buildHomeOverlayCells("hot", hotCells, occupiedIds);
+      return hotCellsVisible({ zoom })
+        ? buildHomeOverlayCells("hot", hotCells, occupiedIds)
+        : [];
     if (viewportBounds === null) return [];
     if (missionLayerHidden) return [];
     if (isRouteChip)
@@ -117,6 +121,7 @@ export const useHomeOverlays = ({
     focusedMissionId,
     viewportBounds,
     missionLayerHidden,
+    zoom,
   ]);
 
   // 코스 라인 — 상세를 열면 그 코스만 남긴다 (AC 18의 코스판)

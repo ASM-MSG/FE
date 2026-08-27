@@ -15,7 +15,17 @@ const WEB_PATH = new URL(
 
 interface WebCellDetail {
   canOpenDetail: typeof canOpenDetail;
-  deriveHomeCellDetail: typeof deriveHomeCellDetail;
+  /**
+   * MSG-474: 웹은 뷰어 인증 여부 판별식 유니언(`viewerAuthenticated`)으로 시그니처가
+   * 갈렸다 — 모바일 홈은 로그인 전용이라 자체 derive는 구 시그니처를 유지하고,
+   * 패리티는 웹의 **인증 경로**(`viewerAuthenticated: true`)와 동등을 단정한다.
+   * (비로그인 경로는 웹 전용 동작이라 모바일 대응물이 없다)
+   */
+  deriveHomeCellDetail: (
+    input: Parameters<typeof deriveHomeCellDetail>[0] & {
+      viewerAuthenticated: true;
+    },
+  ) => ReturnType<typeof deriveHomeCellDetail>;
 }
 
 const loadWeb = (): Promise<WebCellDetail> => import(WEB_PATH);
@@ -80,7 +90,12 @@ describe("home-cell-detail 웹 원본 동등성 (C2·C5)", () => {
           expect(
             deriveHomeCellDetail({ cell, regionName, activeTheme }),
           ).toEqual(
-            web.deriveHomeCellDetail({ cell, regionName, activeTheme }),
+            web.deriveHomeCellDetail({
+              viewerAuthenticated: true,
+              cell,
+              regionName,
+              activeTheme,
+            }),
           );
         }
         expect(

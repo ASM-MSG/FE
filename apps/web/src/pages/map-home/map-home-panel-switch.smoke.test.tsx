@@ -14,6 +14,7 @@ import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-pan
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { useCommittedRegionBootstrap } from "@/features/region/model/use-committed-region";
+import { SITE_TITLE } from "@/shared/document-title";
 import { SEOMYEON_CENTER } from "@/shared/geolocation";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
@@ -92,7 +93,7 @@ const renderHome = () => {
   );
 };
 
-/** 지역 패널은 비로그인 조회 게이트(익명 401 실측)가 있어 로그인 상태로 검증한다 */
+/** 로그인 전용 흐름(격자 상세·점령 판정 등)의 검증용 — 지역 패널 자체는 비로그인도 열린다 (MSG-474) */
 const authenticate = signInForTest;
 
 /**
@@ -209,6 +210,8 @@ describe("홈 좌측 패널 분기", () => {
 
   it("상세 응답이 도착하면 상세 패널로 전환된다", async () => {
     stubDetail("ready");
+    // 격자 상세 쿼리(grids/{id})는 사용자별 API — 로그인 전제 (MSG-474)
+    authenticate();
     useHomeCellDetailStore.setState({ selectedCellId: SEOMYEON });
 
     renderHome();
@@ -219,6 +222,8 @@ describe("홈 좌측 패널 분기", () => {
 
   it("격자 조회가 실패하면 로딩이 아니라 실패로 알리고 재시도를 준다 (리뷰 반영)", async () => {
     stubDetail("error");
+    // 격자 상세 쿼리(grids/{id})는 사용자별 API — 로그인 전제 (MSG-474)
+    authenticate();
     useHomeCellDetailStore.setState({ selectedCellId: SEOMYEON });
 
     renderHome();
@@ -248,6 +253,17 @@ describe("홈 좌측 패널 분기", () => {
     await renderRegionHome();
 
     expect(screen.getByText("138개 영상")).toBeTruthy();
+  });
+
+  // MSG-478 D1·C3: 홈에는 sr-only h1 하나뿐이고(패널 제목은 전부 h2), 탭 제목은 정적 셸의
+  // SITE_TITLE 그대로다("홈 | 필맵" 아님 — 첫 탭·검색 결과에 브랜드 문구가 보이는 쪽)
+  it("홈에 h1이 정확히 1개 렌더되고 탭 제목은 SITE_TITLE이다 — 지역 패널이 열려도 h1은 늘지 않는다 (MSG-478 D1·C3)", async () => {
+    stubDetail("ready");
+
+    await renderRegionHome();
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(document.title).toBe(SITE_TITLE);
   });
 
   it("상세를 닫으면 지역 격자 리스트로 복귀한다 (AC 18)", async () => {
@@ -415,19 +431,31 @@ describe("홈 좌측 패널 분기", () => {
     expect(screen.queryByText("부전제1동")).toBeNull();
   });
 
-  it("비로그인이면 지역 조회 대신 로그인 유도를 보여준다 (익명 401 실측 — 리스크 결정)", async () => {
-    const fetchSpy = vi.fn<(input: Request) => Promise<Response>>();
-    vi.stubGlobal("fetch", fetchSpy);
+  it("비로그인도 확정 행정동 헤더와 격자 카드가 뜬다 — 로그인 유도가 아니다 (MSG-474 AC 1·2)", async () => {
+    // MSG-463까지의 "로그인 유도 + 지역 조회 미발사" 단정을 반전 — 서버가 역지오코딩·동
+    // 격자 카드 익명 조회를 열었다(MSG-467·469, 실측 2026-08-26)
+    stubDetail("ready");
+    // authenticate() 없음 — 비로그인 상태 그대로 진입한다
 
     renderHome();
 
-    expect(await screen.findByRole("button", { name: "로그인" })).toBeTruthy();
-    // 지역·격자 조회가 발사되지 않는다 — 401 → 세션 만료 오작동 방지 게이트
     expect(
-      fetchSpy.mock.calls.filter(([request]) =>
-        new URL(request.url).pathname.startsWith("/api/regions"),
-      ),
-    ).toHaveLength(0);
+      await screen.findByRole("heading", { name: "부전제1동" }),
+    ).toBeTruthy();
+    expect(await screen.findByText("서면 A-14")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "로그인" })).toBeNull();
+    // 사용자별 API는 발사되지 않는다 — 401 + reissue 스팸 방지 (AC 14의 로직 반쪽)
+    const userScopedCalls = vi
+      .mocked(fetch)
+      .mock.calls.map(([request]) => new URL((request as Request).url).pathname)
+      .filter(
+        (pathname) =>
+          pathname === "/api/grids" ||
+          pathname === "/api/missions/progress" ||
+          pathname.startsWith("/api/collections") ||
+          pathname.startsWith("/api/regions/stats"),
+      );
+    expect(userScopedCalls).toEqual([]);
   });
 });
 

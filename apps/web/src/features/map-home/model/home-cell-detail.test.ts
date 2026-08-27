@@ -41,6 +41,7 @@ describe("canOpenDetail — 셀 탭 상세 오픈 판정 (MSG-252 AC 9·10)", ()
 describe("deriveHomeCellDetail — API 응답 → 상세 표시 모델 (MSG-325 기준 8)", () => {
   it("제목은 구역 라벨이고, 내 점령이면 배지가 붙고, 서브타이틀은 내 영상 수다", () => {
     const detail = deriveHomeCellDetail({
+      viewerAuthenticated: true,
       cell: cell(),
       regionName: "부산광역시 부산진구 부전1동",
       activeTheme: null,
@@ -54,6 +55,7 @@ describe("deriveHomeCellDetail — API 응답 → 상세 표시 모델 (MSG-325 
 
   it("미점령 격자는 점령 배지가 없다 — 미점령도 404가 아니라 occupied=false로 온다", () => {
     const detail = deriveHomeCellDetail({
+      viewerAuthenticated: true,
       cell: cell({ occupied: false, videoCount: 0 }),
       regionName: null,
       activeTheme: null,
@@ -65,6 +67,7 @@ describe("deriveHomeCellDetail — API 응답 → 상세 표시 모델 (MSG-325 
 
   it("테마 활성 상세는 점령 배지 뒤에 테마 배지가 붙고 accent가 테마다", () => {
     const detail = deriveHomeCellDetail({
+      viewerAuthenticated: true,
       cell: cell(),
       regionName: null,
       activeTheme: "hot",
@@ -80,6 +83,7 @@ describe("deriveHomeCellDetail — API 응답 → 상세 표시 모델 (MSG-325 
   it("행정동이 있으면 regionLabel에 실리고, 없으면(by-grid null) null이다", () => {
     expect(
       deriveHomeCellDetail({
+        viewerAuthenticated: true,
         cell: cell(),
         regionName: "부산광역시 부산진구 부전1동",
         activeTheme: null,
@@ -88,6 +92,7 @@ describe("deriveHomeCellDetail — API 응답 → 상세 표시 모델 (MSG-325 
 
     expect(
       deriveHomeCellDetail({
+        viewerAuthenticated: true,
         cell: cell(),
         regionName: null,
         activeTheme: null,
@@ -97,11 +102,65 @@ describe("deriveHomeCellDetail — API 응답 → 상세 표시 모델 (MSG-325 
 
   it("구역 밖 격자는 제목이 행정동명으로 폴백한다 (기준 6 연결)", () => {
     const detail = deriveHomeCellDetail({
+      viewerAuthenticated: true,
       cell: cell({ zoneName: null, zoneCell: null }),
       regionName: "부산광역시 부산진구 부전1동",
       activeTheme: null,
     });
 
     expect(detail.label).toBe("부산광역시 부산진구 부전1동");
+  });
+});
+
+describe("deriveHomeCellDetail — 비로그인 진입점 재료 조립 (MSG-474 AC 4)", () => {
+  /** 진입점(핫구역·동 카드) 응답이 싣고 있는 이름 재료 — grids/{id} 미발사 전제 */
+  const naming = {
+    gridId: SEOMYEON_GRID_ID,
+    zoneName: "서면",
+    zoneCell: "A-14",
+    regionName: "부산광역시 부산진구 부전1동",
+  };
+
+  it("비로그인이면 서브타이틀(내 영상 N개)이 만들어지지 않고(null) 내 점령 배지도 없다", () => {
+    const detail = deriveHomeCellDetail({
+      viewerAuthenticated: false,
+      entryNaming: naming,
+      regionName: naming.regionName,
+      activeTheme: "hot",
+    });
+
+    expect(detail.subtitle).toBeNull();
+    expect(detail.badges).toEqual([{ id: "hot", label: "핫구역" }]);
+  });
+
+  it("진입점 이름 재료만으로 제목·행정동 줄이 성립한다 — grids/{id} 응답 없이", () => {
+    const detail = deriveHomeCellDetail({
+      viewerAuthenticated: false,
+      entryNaming: naming,
+      regionName: naming.regionName,
+      activeTheme: null,
+    });
+
+    expect(detail.gridId).toBe(SEOMYEON_GRID_ID);
+    expect(detail.label).toBe("서면 A-14");
+    expect(detail.regionLabel).toBe("부산광역시 부산진구 부전1동");
+    expect(detail.accent).toBe("primary");
+  });
+
+  it("이름 재료가 비면(코스 스팟 — 좌표뿐) gridId로 폴백한다", () => {
+    const detail = deriveHomeCellDetail({
+      viewerAuthenticated: false,
+      entryNaming: {
+        gridId: SEOMYEON_GRID_ID,
+        zoneName: null,
+        zoneCell: null,
+        regionName: null,
+      },
+      regionName: null,
+      activeTheme: "route",
+    });
+
+    expect(detail.label).toBe(SEOMYEON_GRID_ID);
+    expect(detail.regionLabel).toBeNull();
   });
 });

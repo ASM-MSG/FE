@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { decodeGridCenter, type Bounds } from "@/entities/cell";
 import { useRegionVideosQuery } from "@/features/dex/model/use-region-videos-query";
+import type { HotZoneResponseDto } from "@/shared/api/generated/types.gen";
 import type { GridFeedItem } from "./grid-videos";
 import {
   deriveHotRegionStats,
@@ -30,6 +31,11 @@ interface HotRegionSummaryInput {
 export interface HotRegionSummaryResult {
   /** 이 동의 핫구역 격자 id — 지도 강조 대상이자 "핫구역 안 N칸"의 근거 */
   hotGridIds: string[];
+  /**
+   * 이 동의 핫구역 원본 항목 — 비로그인 격자 상세의 이름 재료(zoneName·zoneCell·
+   * regionName)로 쓴다 (MSG-474 승인 결정 1: `grids/{gridId}` 미발사 대체)
+   */
+  zones: HotZoneResponseDto[];
   /** 오버레이 입력 — 기존 테마 셀 파이프라인(buildHomeOverlayCells)이 소비한다 */
   cells: ThemeCell[];
   /** 표본 영상 피드 (상위 격자 합본, 최신순) */
@@ -80,6 +86,7 @@ export const useHotRegionSummary = ({
 
   return {
     hotGridIds,
+    zones: regionZones,
     cells,
     videos: sample.items,
     stats: deriveHotRegionStats({

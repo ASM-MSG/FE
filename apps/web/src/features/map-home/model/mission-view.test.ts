@@ -1,27 +1,33 @@
 import { describe, expect, it } from "vitest";
-import type { MissionResponseDto } from "@/shared/api/generated";
+import type { MissionResponseDto, PathShape } from "@/shared/api/generated";
 import { toCourseView, toMissionView } from "./mission-view";
 
 const NOW = new Date("2026-08-14T10:00:00+09:00");
 
-const dto = (over: Partial<MissionResponseDto>): MissionResponseDto => ({
-  missionId: 1,
-  type: "THEME",
-  title: "물놀이 페스타",
-  targetCount: 1,
-  startAt: "2026-07-16T00:00:00",
-  endAt: "2026-08-17T23:59:59",
-  shape: { cells: [] },
-  description: null,
-  placeName: "서면 A-14",
-  sourceUrl: null,
-  operationTime: null,
-  imageUrl: null,
-  distanceMeters: null,
-  durationMinutes: null,
-  difficulty: null,
-  ...over,
-});
+// shape는 unknown으로 받는다 — 명세(MSG-472 정정: line은 객체)가 뭐라 하든 FE는
+// 문자열 원문·객체·깨진 형태까지 방어 수용하는 것이 계약이라(MSG-473 AC 2·3) 명세 밖
+// 표현도 픽스처로 쓴다.
+const dto = (
+  over: Omit<Partial<MissionResponseDto>, "shape"> & { shape?: unknown },
+): MissionResponseDto =>
+  ({
+    missionId: 1,
+    type: "THEME",
+    title: "물놀이 페스타",
+    targetCount: 1,
+    startAt: "2026-07-16T00:00:00",
+    endAt: "2026-08-17T23:59:59",
+    shape: { cells: [] },
+    description: null,
+    placeName: "서면 A-14",
+    sourceUrl: null,
+    operationTime: null,
+    imageUrl: null,
+    distanceMeters: null,
+    durationMinutes: null,
+    difficulty: null,
+    ...over,
+  }) as MissionResponseDto;
 
 const progressDto = (
   missionId: number,
@@ -73,13 +79,15 @@ describe("toCourseView — 코스 전용 파생을 얹는다 (AC 21~22)", () => 
     distanceMeters: 14000,
     durationMinutes: 330,
     shape: {
+      // BE가 MSG-473에서 line을 문자열이 아닌 GeoJSON 객체로 내리기 시작했다(DTO 타입 변경).
+      // FE 파싱 대응은 MSG-473 소관 — 여기서는 기존 문자열 계약 픽스처를 좁은 캐스트로 유지한다.
       line: JSON.stringify({
         type: "LineString",
         coordinates: [
           [129.05, 35.15],
           [129.06, 35.16],
         ],
-      }),
+      }) as unknown as PathShape["line"],
       spots: [
         { gridId: "s2", lat: 35.16, lng: 129.06, seq: 2 },
         { gridId: "s1", lat: 35.15, lng: 129.05, seq: 1 },

@@ -19,7 +19,8 @@ export interface RegionGridsResult {
 /**
  * 행정동 격자 카드 조회 (MSG-328 AC 4·5) — `GET /api/regions/{regionCode}/grids`.
  * 정렬·상한은 사용자 확정값 sort=LATEST·limit=20을 명시한다. regionCode가 null이면
- * (행정동 밖·표시 지역 미채택·비로그인 게이트) 조회하지 않는다 (AC 12).
+ * (행정동 밖·표시 지역 미채택) 조회하지 않는다 (AC 12) — 익명 조회는 서버가 허용해
+ * (MSG-469, 실측 2026-08-26) 호출부의 비로그인 게이트는 MSG-474에서 제거됐다.
  * 지도 SDK를 import하지 않는다(RN 경계).
  */
 export const useRegionGridsQuery = (

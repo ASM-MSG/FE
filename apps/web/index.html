@@ -8,8 +8,46 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
     <!-- iOS는 투명을 검정으로 합성하므로 이 아이콘만 흰 바탕을 깔아 둔다 -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- 확대 제한(user-scalable·maximum-scale)은 넣지 않는다 — WCAG 1.4.4 위반이자 Lighthouse 감점 (MSG-478) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>필맵</title>
+
+    <!-- 검색·공유 미리보기 메타 (MSG-478). CSR이라 봇이 읽는 것은 이 정적 셸뿐이다 —
+         모든 라우트가 같은 값을 공유한다. 홈 <title>은 shared/document-title.ts의 SITE_TITLE과
+         같은 문자열이어야 한다(테스트가 대조). 문구 정본은 티켓 코멘트(2026-08-25) 추천안 -->
+    <title>필맵 FillMap — 우리 동네를 영상으로 채워가는 지도</title>
+    <meta
+      name="description"
+      content="방문한 곳을 짧은 영상으로 남기면 지도 위 격자가 색으로 채워져요. AI가 골라준 하이라이트로 기록하고, 핫플·축제 미션을 채워 뱃지를 모아보세요."
+    />
+    <link rel="canonical" href="https://fillmap.kr/" />
+    <meta name="robots" content="index, follow" />
+    <!-- 브랜드 색 = design-tokens semantic.primary(blue-500) — 모바일 브라우저 상단바 색 -->
+    <meta name="theme-color" content="#0066CC" />
+
+    <!-- Open Graph — 이미지는 절대 URL이어야 카카오·슬랙 미리보기에 뜬다. 치수·alt를 함께 주면
+         첫 크롤 시 이미지를 내려받기 전에 자리를 잡아 렌더가 안정적이다 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fillmap.kr/" />
+    <meta property="og:title" content="필맵 FillMap — 우리 동네를 영상으로 채워가는 지도" />
+    <meta
+      property="og:description"
+      content="방문한 곳을 짧은 영상으로 남기면 지도 위 격자가 색으로 채워져요. AI가 골라준 하이라이트로 기록하고, 핫플·축제 미션을 채워 뱃지를 모아보세요."
+    />
+    <meta property="og:image" content="https://fillmap.kr/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="우리 동네를 영상으로 한 칸씩 채워가는 지도 — 필맵" />
+    <meta property="og:site_name" content="필맵" />
+    <meta property="og:locale" content="ko_KR" />
+
+    <!-- Twitter 카드 — X 크롤러는 property가 아니라 name 속성을 읽는다 -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="필맵 FillMap — 우리 동네를 영상으로 채워가는 지도" />
+    <meta
+      name="twitter:description"
+      content="방문한 곳을 짧은 영상으로 남기면 지도 위 격자가 색으로 채워져요. AI가 골라준 하이라이트로 기록하고, 핫플·축제 미션을 채워 뱃지를 모아보세요."
+    />
+    <meta name="twitter:image" content="https://fillmap.kr/og-image.png" />
   </head>
   <body>
     <div id="root"></div>

@@ -39,3 +39,15 @@ export const missionCellsVisible = ({
   /** 상세를 연 미션·코스가 있는지 — 있으면 그 하나만 자기 경계로 그린다 */
   hasDetailTarget: boolean;
 }): boolean => hasDetailTarget || zoom >= GRID_MIN_ZOOM;
+
+/**
+ * 핫구역 칩의 핫 격자를 그릴지 (MSG-475 AC 11) — `missionCellsVisible`의 형제.
+ * 순수 함수 — 지도 SDK/플랫폼에 의존하지 않는다(RN 재사용 대상).
+ *
+ * 줌아웃하면 핫 격자 낱개 대신 행정 단위 집계 마커(`useHotZoneAggregationQuery`)가
+ * 그 자리를 대신한다 — 종전에는 전국 상위 50 격자가 저줌에서 점으로 뭉개진 채 남았다.
+ * 임계는 개별 격자 층과 같은 `GRID_MIN_ZOOM`. 미션과 달리 상세 예외가 없다 —
+ * 핫구역엔 상세를 여는 대상이 없다 (스펙 추정 8).
+ */
+export const hotCellsVisible = ({ zoom }: { zoom: number }): boolean =>
+  zoom >= GRID_MIN_ZOOM;

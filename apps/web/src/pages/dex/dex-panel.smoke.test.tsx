@@ -26,6 +26,17 @@ describe("도감 패널 스모크", () => {
     vi.unstubAllGlobals();
   });
 
+  it.each(["/dex", "/dex/badges", "/dex/history"])(
+    "%s 진입 시 탭 제목은 탭과 무관하게 '도감 | 필맵'이다 (MSG-478 C3)",
+    async (path) => {
+      stubDexFetch();
+      renderPanel(path);
+      await screen.findByText("필맵퍼");
+
+      expect(document.title).toBe("도감 | 필맵");
+    },
+  );
+
   it("헤더에 실 프로필 닉네임과 탐험 규모 문구가 표시된다 (기준 1·2)", async () => {
     stubDexFetch();
     renderPanel();

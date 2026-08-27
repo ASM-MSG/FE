@@ -10,7 +10,6 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
-import { useProcessingStore } from "@/features/upload/model/processing-store";
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { envelopeResponse } from "@/test/envelope-response";
 
@@ -207,7 +206,6 @@ const startFlow = (duration: number) => {
 describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
   beforeEach(() => {
     localStorage.clear();
-    useProcessingStore.setState({ pending: [] });
     // C9 게이트(develop 머지) 도입으로 위저드 열림은 로그인 상태가 전제 — 기존 흐름 단정은 불변.
     // 잔존 의도(C10) 초기화를 로그인 전이보다 앞에 둬 스퓨리어스 재개를 막는다
     useUploadModalStore.setState({
@@ -305,7 +303,7 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
     expect(screen.getByText("잠시만 기다려주세요")).toBeTruthy();
   });
 
-  it("highlights 없음(5초 이하): 하이라이트를 스킵하고 미리보기 직행 → 게시 → 완료 모달 + 대기 등록 (B4·B9·B13·B15)", async () => {
+  it("highlights 없음(5초 이하): 미리보기 직행 → 무조작 게시 시 visibility PUBLIC 명시 전송 + 완료 모달, 블러 대기 등록 없음 (B4·B9, MSG-476 AC 2·5·7)", async () => {
     stubApi({ highlights: [] });
     mockMeta.objectUrl = "blob:original";
     startFlow(4);
@@ -316,20 +314,93 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "업로드하기" }));
 
-    // 완료 모달 — 티켓 확정 카피 (B13)
+    // 완료 모달 — 블러 안내 폐기, 확정 카피 (MSG-476 AC 5)
     expect(await screen.findByText("업로드 완료!")).toBeTruthy();
     expect(
-      screen.getByText(
-        "잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요",
-      ),
+      screen.getByText("영상이 지도에 등록됐어요. 내 격자에서 확인해보세요"),
     ).toBeTruthy();
+    expect(screen.queryByText(/블러/)).toBeNull();
     // 확정 body의 좌표는 유한 수여야 한다 (B9) — NaN이면 JSON null로 직렬화돼 서버 400
     expect(Number.isFinite(lastConfirmBody?.lat)).toBe(true);
     expect(Number.isFinite(lastConfirmBody?.lng)).toBe(true);
-    // 처리 대기 등록 (B15) — 워처 폴링의 입력
-    expect(useProcessingStore.getState().pending.map((p) => p.videoId)).toEqual(
-      [42],
-    );
+    // 무조작 게시 = 기본값 PUBLIC 명시 전송 (AC 2, 추정 2)
+    expect(lastConfirmBody?.visibility).toBe("PUBLIC");
+    // 블러 폴링 폐기 — 처리 대기 등록이 일어나지 않는다 (AC 7)
+    expect(localStorage.getItem("fillmap.upload.pending:v1")).toBeNull();
+  });
+
+  it("미리보기 공개 범위는 '전체 공개'가 기본이고, '나만 보기' 선택 후 게시하면 visibility PRIVATE가 실린다 (MSG-476 AC 1·2·9)", async () => {
+    stubApi({ highlights: [] });
+    mockMeta.objectUrl = "blob:original";
+    startFlow(4);
+    await screen.findByText("업로드 미리보기");
+
+    // 라디오 그룹 의미 + 기본 선택 (AC 1·9)
+    expect(screen.getByRole("radiogroup", { name: "공개 범위" })).toBeTruthy();
+    expect(
+      screen
+        .getByRole("radio", { name: "전체 공개" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+
+    fireEvent.click(screen.getByRole("radio", { name: "나만 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "업로드하기" }));
+
+    await screen.findByText("업로드 완료!");
+    expect(lastConfirmBody?.visibility).toBe("PRIVATE");
+  });
+
+  it("'나만 보기' 선택 후 [이전 단계로] 갔다가 다시 미리보기에 오면 선택이 유지된다 (MSG-476 AC 3)", async () => {
+    stubApi({ highlights: [[3, 8]] });
+    mockMeta.objectUrl = "blob:original";
+    startFlow(42);
+    await screen.findByText("AI 하이라이트 추천");
+    await proceedToPreviewReady();
+
+    fireEvent.click(screen.getByRole("radio", { name: "나만 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "이전 단계로" }));
+    await screen.findByText("AI 하이라이트 추천");
+    await proceedToPreviewReady();
+
+    expect(
+      screen
+        .getByRole("radio", { name: "나만 보기" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  it("완료 후 재오픈한 다음 업로드의 공개 범위는 '전체 공개'로 초기화된다 (MSG-476 AC 4)", async () => {
+    stubApi({ highlights: [] });
+    mockMeta.objectUrl = "blob:original";
+    startFlow(4);
+    await screen.findByText("업로드 미리보기");
+    fireEvent.click(screen.getByRole("radio", { name: "나만 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "업로드하기" }));
+    await screen.findByText("업로드 완료!");
+    fireEvent.click(screen.getByRole("button", { name: "확인" }));
+
+    openModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+    await screen.findByText("업로드 미리보기");
+
+    expect(
+      screen
+        .getByRole("radio", { name: "전체 공개" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  it("1/3 선택 스텝에 '업로드 후 AI 자동 블러' 안내 박스가 없다 (MSG-476 AC 6)", () => {
+    stubApi();
+    mockMeta.duration = 42;
+    openModal();
+    selectValidFile();
+
+    expect(screen.queryByText("업로드 후 AI 자동 블러")).toBeNull();
+    expect(screen.queryByText(/게시 후 얼굴과 번호판/)).toBeNull();
+    // 하이라이트 안내는 존치 — 티켓 제외 범위 (추정 5)
+    expect(screen.getByText("AI 하이라이트 자동 추천")).toBeTruthy();
   });
 
   it("하이라이트 경유 게시: 구간 확정 → 트리밍 → 미리보기 → 게시 완료 (B7·B8·B9)", async () => {
@@ -409,13 +480,13 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
 
     // 기존 스텝열 그대로 — 미리보기 도달 (AC 2)
     expect(await screen.findByText("업로드 미리보기")).toBeTruthy();
+    // 교체 모드에는 공개 범위 선택이 없다 (MSG-476 AC 11)
+    expect(screen.queryByRole("radiogroup", { name: "공개 범위" })).toBeNull();
     fireEvent.click(await screen.findByRole("button", { name: "교체하기" }));
 
     expect(await screen.findByText("교체 완료!")).toBeTruthy();
     expect(
-      screen.getByText(
-        "잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요",
-      ),
+      screen.getByText("영상이 지도에 등록됐어요. 내 격자에서 확인해보세요"),
     ).toBeTruthy();
     // 확정은 PUT 교체 1회 — 일반 업로드 POST는 발사되지 않는다 (AC 6 모드 격리)
     expect(countReplacePuts()).toBe(1);
@@ -423,10 +494,10 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
     expect(lastReplaceBody).toMatchObject({ s3Key: PRESIGN_DATA.s3Key });
     expect(lastReplaceBody).not.toHaveProperty("lat");
     expect(lastReplaceBody).not.toHaveProperty("lng");
-    // 처리 대기 등록 — UPLOADED 폴링은 기존 워처 재사용 (AC 4)
-    expect(useProcessingStore.getState().pending.map((p) => p.videoId)).toEqual(
-      [42],
-    );
+    // 교체 body에 visibility 없음 — DTO에 필드가 없다 (MSG-476 AC 11)
+    expect(lastReplaceBody).not.toHaveProperty("visibility");
+    // 블러 폴링 폐기 — 교체도 처리 대기 등록이 없다 (MSG-476 AC 7)
+    expect(localStorage.getItem("fillmap.upload.pending:v1")).toBeNull();
   });
 
   it("교체 모드 위치 라벨은 대상 영상의 격자 라벨('서면 A-02')이다 — 지도 중심 행정동 아님 (MSG-415 추정 1)", async () => {

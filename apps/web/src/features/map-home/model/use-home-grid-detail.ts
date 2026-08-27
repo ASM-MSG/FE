@@ -3,6 +3,7 @@ import type { CollectionGridResponseDto } from "@/shared/api/generated";
 import { formatMonthDay } from "@/shared/format";
 import type { CourseSpot } from "./course";
 import { gridContextLine } from "./grid-context-line";
+import type { CellNameSource } from "./home-cell-detail";
 import type { HourlyChart } from "./hourly-uploads";
 import type { CourseView } from "./mission-view";
 import type { ThemeId } from "./theme";
@@ -34,6 +35,12 @@ interface HomeGridDetailInput {
   hotGridCount: number;
   /** 내 수집 격자 조회 실패 — 방문·점령 여부를 주장하지 않게 한다 (리뷰 반영) */
   progressFailed: boolean;
+  /**
+   * 진입점 응답의 이름 재료 (MSG-474) — 비로그인은 `grids/{gridId}`가 사용자별 API
+   * (익명 401)라 미발사하고, 여기서 선택 격자의 재료를 찾아 상세를 조립한다.
+   * 현재 재료원은 핫구역 목록뿐 — 코스 스팟 응답은 좌표만 실려 gridId 폴백으로 진다
+   */
+  entryNamingSources: readonly CellNameSource[];
 }
 
 export interface HomeGridDetail {
@@ -53,8 +60,15 @@ export const useHomeGridDetail = ({
   collectedGrids,
   hotGridCount,
   progressFailed,
+  entryNamingSources,
 }: HomeGridDetailInput): HomeGridDetail => {
-  const detail = useGridDetailQuery(selectedGridId, activeTheme);
+  const entryNaming = useMemo(
+    () =>
+      entryNamingSources.find((source) => source.gridId === selectedGridId) ??
+      null,
+    [entryNamingSources, selectedGridId],
+  );
+  const detail = useGridDetailQuery(selectedGridId, activeTheme, entryNaming);
   const videos = useGridVideosQuery(selectedGridId);
   const { chart } = useGridHourlyQuery(selectedGridId);
 
