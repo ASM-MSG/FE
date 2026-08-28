@@ -135,6 +135,10 @@ export const MapShell = () => {
   ]);
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
+  // 경로 경유지 마커 클릭(MSG-488 S8) — AI 경로추천 패널이 게시, null이면 코스 마커는 비클릭
+  const onRouteWaypointClick = useMapOverlayStore(
+    (s) => s.onRouteWaypointClick,
+  );
 
   // 점령 격자 클릭 우선 라우팅 (MSG-329 후속) — 어느 탭·어떤 선택 상태에서든 점령 격자
   // 클릭은 격자 상세가 우선한다. select()가 미니 패널까지 체인으로 닫아 이전 선택을
@@ -216,6 +220,7 @@ export const MapShell = () => {
           labels={labelOverlays}
           clusters={clusters}
           onOverlayCellClick={handleCellClick}
+          onRouteWaypointClick={onRouteWaypointClick ?? undefined}
         />
       </div>
 

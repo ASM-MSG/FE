@@ -1,4 +1,4 @@
-import { DotsLoader, cn } from "@fillmap/ui-web";
+import { DotsLoader, RetryNotice, cn } from "@fillmap/ui-web";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import {
@@ -10,7 +10,6 @@ import type { MissionVideosResult } from "@/features/map-home/model/use-mission-
 import type { ThemeId } from "@/features/map-home/model/theme";
 import { ChipDetailHeader } from "./ChipDetailHeader";
 import { FeedVideoList } from "./FeedVideoList";
-import { RetryNotice } from "./RetryNotice";
 import { StatTrio } from "./StatTrio";
 import { THEME_BADGE_CLASS, THEME_PLACEHOLDER_CLASS } from "./theme-classes";
 import { useEscapeClose } from "./use-escape-close";

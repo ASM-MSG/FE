@@ -1,0 +1,115 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { ROUTE_POINTS } from "@/test/route-points";
+import { useAiRouteStore } from "./ai-route-store";
+
+const store = () => useAiRouteStore.getState();
+
+const LOGIN_REQUIRED = {
+  message: null,
+  retryable: false,
+  disablesFeature: false,
+  requiresLogin: true,
+} as const;
+
+const FEATURE_OFF = {
+  message: "지금은 경로 추천을 쓸 수 없어요",
+  retryable: false,
+  disablesFeature: true,
+  requiresLogin: false,
+} as const;
+
+describe("useAiRouteStore — 요청·결과 상태 전이 (L7)", () => {
+  beforeEach(() => {
+    useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
+  });
+
+  it("초기 상태는 입력 대기(idle)이고 입력·결과가 비어 있다 (L7)", () => {
+    expect(store().status).toBe("idle");
+    expect(store().text).toBe("");
+    expect(store().points).toEqual([]);
+  });
+
+  it("요청을 시작하면 loading이 되고, 결과가 도착하면 result가 된다 (L7)", () => {
+    store().setText("서면에서 밥 먹고 저녁 경기까지");
+
+    store().startRequest();
+    expect(store().status).toBe("loading");
+
+    store().succeed(ROUTE_POINTS, null);
+    expect(store().status).toBe("result");
+    expect(store().points.map((p) => p.order)).toEqual([1, 2, 3]);
+    expect(store().text).toBe("서면에서 밥 먹고 저녁 경기까지");
+  });
+
+  it("새 요청을 시작하면 이전 결과·안내·선택이 먼저 비워진다 — 잔상이 남지 않는다 (L7)", () => {
+    store().succeed(ROUTE_POINTS, "부족 안내");
+    store().selectOrder(2);
+
+    store().startRequest();
+
+    expect(store().points).toEqual([]);
+    expect(store().notice).toBeNull();
+    expect(store().selectedOrder).toBeNull();
+  });
+
+  it("요청이 실패하면 error가 되고 안내가 실리며 입력 문장은 유지된다 (L7)", () => {
+    store().setText("서면 동선");
+    store().startRequest();
+
+    store().fail({
+      message: "잠시 후 다시 시도해 주세요",
+      retryable: true,
+      disablesFeature: false,
+      requiresLogin: false,
+    });
+
+    expect(store().status).toBe("error");
+    expect(store().errorNotice?.message).toBe("잠시 후 다시 시도해 주세요");
+    expect(store().text).toBe("서면 동선");
+  });
+
+  it("로그인이 필요한 실패는 에러 문구 없이 입력 대기로 되돌아간다 (L7, §1-4)", () => {
+    store().setText("서면 동선");
+    store().startRequest();
+
+    store().fail(LOGIN_REQUIRED);
+
+    expect(store().status).toBe("idle");
+    expect(store().errorNotice).toBeNull();
+    expect(store().text).toBe("서면 동선");
+  });
+
+  it("기능 꺼짐(14503) 실패는 세션 동안 featureDisabled를 켠 채 유지된다 (L7, §1-4)", () => {
+    store().startRequest();
+    store().fail(FEATURE_OFF);
+
+    expect(store().featureDisabled).toBe(true);
+
+    store().reset();
+    expect(store().featureDisabled).toBe(true);
+  });
+
+  it("selectOrder가 선택 지점을 바꾸고 null로 해제한다 (L7)", () => {
+    store().succeed(ROUTE_POINTS, null);
+
+    store().selectOrder(2);
+    expect(store().selectedOrder).toBe(2);
+
+    store().selectOrder(null);
+    expect(store().selectedOrder).toBeNull();
+  });
+
+  it("reset은 입력 문장까지 비워 입력 대기로 되돌린다 (L7, 레일 재클릭 2단)", () => {
+    store().setText("서면 동선");
+    store().succeed(ROUTE_POINTS, "부족 안내");
+    store().selectOrder(1);
+
+    store().reset();
+
+    expect(store().status).toBe("idle");
+    expect(store().text).toBe("");
+    expect(store().points).toEqual([]);
+    expect(store().notice).toBeNull();
+    expect(store().selectedOrder).toBeNull();
+  });
+});

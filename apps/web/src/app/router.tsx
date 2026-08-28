@@ -3,6 +3,7 @@ import { AppLayout } from "@/app/layouts/AppLayout";
 import { RequireAuth } from "@/app/RequireAuth";
 import { RouteErrorBoundary } from "@/app/RouteErrorBoundary";
 import { KAKAO_CALLBACK_PATH, ROUTES } from "@/app/routes";
+import { AiRoutePage } from "@/pages/ai-route/AiRoutePage";
 import { DexPanel } from "@/pages/dex/DexPanel";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
 import { KakaoCallbackPage } from "@/pages/oauth-callback/KakaoCallbackPage";
@@ -25,6 +26,16 @@ export const router = createBrowserRouter([
         children: [
           { path: ROUTES.home, element: <MapHomePage /> },
           // /explore는 MSG-328에서 제거 — 직접 진입은 무매칭 404로 errorElement에 수렴한다 (AC 2)
+          // AI 경로추천(MSG-488) — 서버가 익명 POST를 401(2403)로 막아 로그인 전용이다.
+          // 레일 클릭은 SideRailNav가 모달로 막고, 이 래핑은 직접 URL 진입 방어다
+          {
+            path: ROUTES.aiRoute,
+            element: (
+              <RequireAuth>
+                <AiRoutePage />
+              </RequireAuth>
+            ),
+          },
           { path: ROUTES.upload, element: <SectionPanel title="업로드" /> },
           // 도감(MSG-121·122) — 탭은 URL 정본(/dex·/dex/badges), 무효 탭("gallery" 포함)은 지도 폴백(AC 2·21).
           // 비로그인 진입은 프로필과 동일하게 홈+로그인 모달 (MSG-328 사용자 피드백)

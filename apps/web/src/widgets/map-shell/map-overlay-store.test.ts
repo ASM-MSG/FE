@@ -179,3 +179,31 @@ describe("useMapOverlayStore — 스타일드 셀·경로 슬롯 (MSG-252 AC 6·
     expect(useMapOverlayStore.getState().labels).toEqual([]);
   });
 });
+
+/**
+ * 경유지 클릭 핸들러 슬롯 (MSG-488) — AI 경로추천이 마커→카드 연동을 배선한다.
+ * 미등록(null)이면 기존 코스 경유지 마커는 종전대로 비클릭이다.
+ */
+describe("useMapOverlayStore — 경유지 클릭 핸들러 슬롯 (MSG-488 S8)", () => {
+  beforeEach(() => {
+    useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
+  });
+
+  it("초기 상태는 핸들러 없음(null)이다 — 코스 경유지 마커는 비클릭 유지", () => {
+    expect(useMapOverlayStore.getState().onRouteWaypointClick).toBeNull();
+  });
+
+  it("setOnRouteWaypointClick으로 경유지 클릭 핸들러를 등록한다 (S8)", () => {
+    const handler = () => undefined;
+    useMapOverlayStore.getState().setOnRouteWaypointClick(handler);
+
+    expect(useMapOverlayStore.getState().onRouteWaypointClick).toBe(handler);
+  });
+
+  it("clear는 경유지 핸들러도 함께 해제한다 — 섹션 이탈 시 마커가 표시 전용으로 복귀", () => {
+    useMapOverlayStore.getState().setOnRouteWaypointClick(() => undefined);
+    useMapOverlayStore.getState().clear();
+
+    expect(useMapOverlayStore.getState().onRouteWaypointClick).toBeNull();
+  });
+});

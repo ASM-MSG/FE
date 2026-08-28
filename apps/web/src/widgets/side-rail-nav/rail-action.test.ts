@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isAiRouteInitial,
   isDexInitial,
   isHomeInitial,
   isProfileInitial,
@@ -65,5 +66,22 @@ describe("railReclickAction — 활성 탭 재클릭 동작 (AC 16)", () => {
 
   it("이미 초기 상태면 패널 접기/펼치기를 토글한다 (AC 16)", () => {
     expect(railReclickAction(true)).toBe("toggle");
+  });
+});
+
+describe("isAiRouteInitial — AI 경로추천 초기 상태 판정 (MSG-488 L10)", () => {
+  it("입력 대기 상태이고 입력이 비어 있으면 초기 상태다 (L10)", () => {
+    expect(isAiRouteInitial({ status: "idle", text: "" })).toBe(true);
+    expect(isAiRouteInitial({ status: "idle", text: "   " })).toBe(true);
+  });
+
+  it("입력 문장이 남아 있으면 초기 상태가 아니다 (L10)", () => {
+    expect(isAiRouteInitial({ status: "idle", text: "서면 동선" })).toBe(false);
+  });
+
+  it("결과·로딩·에러 상태는 입력이 비어 있어도 초기 상태가 아니다 (L10)", () => {
+    expect(isAiRouteInitial({ status: "result", text: "" })).toBe(false);
+    expect(isAiRouteInitial({ status: "loading", text: "" })).toBe(false);
+    expect(isAiRouteInitial({ status: "error", text: "" })).toBe(false);
   });
 });

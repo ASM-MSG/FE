@@ -29,6 +29,31 @@ afterEach(() => {
   signOutForTest();
 });
 
+/**
+ * 참조 안정성 (MSG-488 PR #104 리뷰) — `grids`는 `flatMap`이라 호출마다 새 배열이다.
+ * 그대로 반환하면 소비자의 `useMemo([grids])`가 매 렌더 재계산되고, AI 경로추천처럼
+ * 그 파생을 **전역 오버레이 스토어에 effect로 게시**하는 화면에서는 무관한 리렌더
+ * (예: textarea 타이핑)마다 clear → 재게시가 돌아 naver Marker가 재생성된다.
+ */
+describe("useOccupiedGridsQuery — 참조 안정성", () => {
+  it("데이터가 그대로면 grids 참조가 재렌더 사이에 유지된다", async () => {
+    stubGrids();
+
+    const { result, rerender } = renderHook(
+      () => useOccupiedGridsQuery(SEOMYEON_VIEWPORT),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const first = result.current.grids;
+
+    rerender();
+    rerender();
+
+    expect(result.current.grids).toBe(first);
+  });
+});
+
 describe("useOccupiedGridsQuery — 실요청 형태", () => {
   it("첫 페이지 요청에 cursor 파라미터를 싣지 않는다 — 빈 cursor는 서버가 400으로 거부한다", async () => {
     const received = stubGrids();

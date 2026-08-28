@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
-import { DotsLoader } from "@fillmap/ui-web";
+import { DotsLoader, RetryNotice } from "@fillmap/ui-web";
 import type { DisplayedRegion } from "@/features/region/model/region-panel-store";
 import { useExploreRegionsQuery } from "@/features/region/model/use-explore-regions-query";
-import { RetryNotice } from "./RetryNotice";
 
 interface RegionListViewProps {
   /** 지역 선택 — 그 지역의 격자 리스트로 전환 (AC 10) */

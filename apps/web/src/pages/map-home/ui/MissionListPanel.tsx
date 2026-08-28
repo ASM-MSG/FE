@@ -1,7 +1,7 @@
+import { RetryNotice } from "@fillmap/ui-web";
 import type { MissionView } from "@/features/map-home/model/mission-view";
 import { THEME_META, type ThemeId } from "@/features/map-home/model/theme";
 import { ChipListPanel } from "./ChipListPanel";
-import { RetryNotice } from "./RetryNotice";
 import { MissionCard } from "./MissionCard";
 
 interface MissionListPanelProps {
