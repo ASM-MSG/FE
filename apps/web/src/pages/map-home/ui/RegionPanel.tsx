@@ -1,11 +1,10 @@
-import { DotsLoader } from "@fillmap/ui-web";
+import { DotsLoader, RetryNotice } from "@fillmap/ui-web";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useRegionPanelStore } from "@/features/region/model/region-panel-store";
 import { useRegionGridsQuery } from "@/features/region/model/use-region-grids-query";
 import { useReverseGeocodeQuery } from "@/features/region/model/use-reverse-geocode-query";
 import { RegionGridCard } from "./RegionGridCard";
 import { RegionListView } from "./RegionListView";
-import { RetryNotice } from "./RetryNotice";
 
 interface RegionPanelProps {
   /**

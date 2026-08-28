@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { DotsLoader, cn } from "@fillmap/ui-web";
+import { DotsLoader, RetryNotice, cn } from "@fillmap/ui-web";
 import { THEME_META, type ThemeId } from "@/features/map-home/model/theme";
-import { RetryNotice } from "./RetryNotice";
 import { THEME_BADGE_CLASS } from "./theme-classes";
 import { useEscapeClose } from "./use-escape-close";
 

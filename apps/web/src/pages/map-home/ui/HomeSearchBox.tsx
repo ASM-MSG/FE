@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SearchBar } from "@fillmap/ui-web";
+import { RetryNotice, SearchBar } from "@fillmap/ui-web";
 import type { Bounds, LatLng } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
@@ -7,7 +7,6 @@ import { useGridSearch } from "@/features/search/model/use-grid-search";
 import { usePlaceSearchQuery } from "@/features/search/model/use-place-search-query";
 import { useTrendingQuery } from "@/features/search/model/use-trending-query";
 import type { GridSearchResult } from "@/features/search/model/zone-search";
-import { RetryNotice } from "./RetryNotice";
 
 interface HomeSearchBoxProps {
   /** 검색 결과 선택 — 해당 좌표로 지도 이동 (AC 16) */

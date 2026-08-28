@@ -7,6 +7,8 @@ export { Avatar } from "./avatar";
 export { CellBadge } from "./cell-badge";
 export { Dots } from "./dots";
 export { DotsLoader } from "./dots-loader";
+export { Skeleton } from "./skeleton";
+export { RetryNotice } from "./retry-notice";
 export { Toast } from "./toast";
 export { ModalCard } from "./modal-card";
 export { DialogShell } from "./dialog-shell";

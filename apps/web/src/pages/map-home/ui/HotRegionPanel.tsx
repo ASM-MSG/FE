@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { DotsLoader, cn } from "@fillmap/ui-web";
+import { DotsLoader, RetryNotice, cn } from "@fillmap/ui-web";
 import type { FeedVideo } from "@/features/map-home/model/grid-videos";
 import type { HotRegionSummaryResult } from "@/features/map-home/model/use-hot-region-summary";
 import { THEME_META } from "@/features/map-home/model/theme";
@@ -7,7 +7,6 @@ import { formatViewCountKo } from "@/shared/format";
 import { CellActionRow } from "./CellActionRow";
 import { FeedVideoList } from "./FeedVideoList";
 import { RegionLocationLine } from "./RegionLocationLine";
-import { RetryNotice } from "./RetryNotice";
 import { THEME_BADGE_CLASS } from "./theme-classes";
 import { useEscapeClose } from "./use-escape-close";
 

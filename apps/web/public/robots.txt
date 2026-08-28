@@ -1,10 +1,11 @@
 # FillMap 웹 (MSG-478) — 색인 대상은 비로그인으로 열리는 홈뿐이다.
-# /dex·/profile은 로그인 뒤 화면, /oauth/는 카카오 콜백, /upload는 스텁(실제 업로드는 모달).
+# /dex·/profile·/ai-route는 로그인 뒤 화면, /oauth/는 카카오 콜백, /upload는 스텁(실제 업로드는 모달).
 User-agent: *
 Allow: /
 Disallow: /dex
 Disallow: /profile
 Disallow: /oauth/
 Disallow: /upload
+Disallow: /ai-route
 
 Sitemap: https://fillmap.kr/sitemap.xml

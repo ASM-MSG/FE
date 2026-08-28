@@ -23,10 +23,18 @@ interface MapOverlayState {
    * 게시자는 DexPanel(지도·갤러리 탭)·MapHomePage(MSG-252), 소비자는 MapShell → MapCanvas.
    */
   onCellClick: ((cellId: string) => void) | null;
+  /**
+   * 경로 경유지(번호 마커) 클릭 핸들러 (MSG-488 S8) — null이면 표시 전용(기존 코스 마커 동작).
+   * 게시자는 AI 경로추천 패널, 소비자는 MapShell → MapCanvas.
+   */
+  onRouteWaypointClick: ((routeId: string, seq: number) => void) | null;
   setCells: (cells: StyledCellOverlay[]) => void;
   setRoutes: (routes: RouteOverlay[]) => void;
   setLabels: (labels: LabelOverlay[]) => void;
   setOnCellClick: (handler: ((cellId: string) => void) | null) => void;
+  setOnRouteWaypointClick: (
+    handler: ((routeId: string, seq: number) => void) | null,
+  ) => void;
   clear: () => void;
 }
 
@@ -45,9 +53,18 @@ export const useMapOverlayStore = create<MapOverlayState>((set) => ({
   routes: [],
   labels: [],
   onCellClick: null,
+  onRouteWaypointClick: null,
   setCells: (cells) => set({ cells }),
   setRoutes: (routes) => set({ routes }),
   setLabels: (labels) => set({ labels }),
   setOnCellClick: (handler) => set({ onCellClick: handler }),
-  clear: () => set({ cells: [], routes: [], labels: [], onCellClick: null }),
+  setOnRouteWaypointClick: (handler) => set({ onRouteWaypointClick: handler }),
+  clear: () =>
+    set({
+      cells: [],
+      routes: [],
+      labels: [],
+      onCellClick: null,
+      onRouteWaypointClick: null,
+    }),
 }));
