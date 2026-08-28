@@ -4,6 +4,7 @@
     "files": ["apps/web/src/shared/api/generated/**"]
   },
   "rules": {
-    "react-doctor/js-combine-iterations": "off"
+    "react-doctor/js-combine-iterations": "off",
+    "react-doctor/js-tosorted-immutable": "off"
   }
 }
