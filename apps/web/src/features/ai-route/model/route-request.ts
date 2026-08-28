@@ -39,21 +39,32 @@ export const buildRecommendBody = ({
   return { text: trimmed, viewport: toViewportDto(bounds) };
 };
 
-/** 제출 가능 판정 (L8) — trim 후 1~500자 && 요청 중 아님 && 기능 켜짐 */
+/**
+ * 제출 가능 판정 (L8) — trim 후 1~500자 && 요청 중 아님 && 기능 켜짐 && 지도 준비됨.
+ *
+ * `mapReady`(= 뷰포트 bounds 확보)를 포함하는 이유: 이 판정이 참인데
+ * `buildRecommendBody`가 null을 내면 버튼은 활성인 채 클릭이 아무 일도 하지 않는
+ * "눌러도 안 되는 버튼"이 된다(지도 초기화가 느리거나 실패한 경우 — codex 리뷰 P2).
+ * 두 함수의 성립 조건을 같게 유지한다.
+ */
 export const canSubmit = ({
   text,
   status,
   featureDisabled,
+  mapReady,
 }: {
   text: string;
   status: AiRouteStatus;
   featureDisabled: boolean;
+  /** 요청 뷰포트를 만들 수 있는가 — `viewport-store.bounds !== null` */
+  mapReady: boolean;
 }): boolean => {
   const length = text.trim().length;
   return (
     length > 0 &&
     length <= MAX_ROUTE_TEXT_LENGTH &&
     status !== "loading" &&
-    !featureDisabled
+    !featureDisabled &&
+    mapReady
   );
 };

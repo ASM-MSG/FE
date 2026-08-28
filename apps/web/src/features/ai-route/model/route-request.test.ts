@@ -16,6 +16,7 @@ const SUBMITTABLE = {
   text: "서면에서 밥 먹고 저녁 경기까지 동선 짜 줘",
   status: "idle",
   featureDisabled: false,
+  mapReady: true,
 } as const;
 
 describe("toViewportDto — 뷰포트 변환 (L9)", () => {
@@ -70,5 +71,24 @@ describe("canSubmit — 제출 가능 판정 (L8)", () => {
 
   it("기능이 꺼진 상태(14503)에서는 제출할 수 없다 (L8)", () => {
     expect(canSubmit({ ...SUBMITTABLE, featureDisabled: true })).toBe(false);
+  });
+
+  // codex 리뷰 P2 — 버튼이 활성인데 submit이 조용히 early-return하면 "눌러도 안 되는 버튼"이 된다.
+  // canSubmit의 판정 집합을 buildRecommendBody의 성립 조건과 일치시킨다.
+  it("지도 준비 전(bounds null)에는 제출할 수 없다 (L8, codex P2)", () => {
+    expect(canSubmit({ ...SUBMITTABLE, mapReady: false })).toBe(false);
+  });
+
+  it("canSubmit이 true면 buildRecommendBody가 반드시 요청을 만든다 (L8↔L9 정합)", () => {
+    const submittable = canSubmit({ ...SUBMITTABLE, mapReady: true });
+    expect(submittable).toBe(true);
+    expect(
+      buildRecommendBody({ text: SUBMITTABLE.text, bounds: BOUNDS }),
+    ).not.toBeNull();
+    // 역도 성립 — 지도가 준비되지 않으면 양쪽 다 막힌다
+    expect(canSubmit({ ...SUBMITTABLE, mapReady: false })).toBe(false);
+    expect(
+      buildRecommendBody({ text: SUBMITTABLE.text, bounds: null }),
+    ).toBeNull();
   });
 });

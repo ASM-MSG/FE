@@ -137,7 +137,12 @@ export const AiRoutePage = () => {
           text={text}
           onChange={setText}
           onSubmit={submit}
-          canSubmit={canSubmit({ text, status, featureDisabled })}
+          canSubmit={canSubmit({
+            text,
+            status,
+            featureDisabled,
+            mapReady: bounds !== null,
+          })}
           submitLabel={status === "idle" ? "동선 짜기" : "다시 짜기"}
           loading={loading}
         />
