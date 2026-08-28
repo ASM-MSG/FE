@@ -107,6 +107,7 @@ const renderModal = (profile: ProfileData = PROFILE) => {
       profileImageUrl: profile.profileImageUrl,
       createdAt: profile.joinedAt,
       locationConsent: false,
+      role: "USER",
     },
   });
   render(<Harness queryClient={queryClient} profile={profile} />);

@@ -22,6 +22,7 @@ const SERVER_ME = {
   profileImageUrl: "https://cdn.fillmap.test/profile/me.png",
   createdAt: "2026-05-02T09:00:00",
   locationConsent: false,
+  role: "USER" as const,
 };
 
 const createHarness = () => {

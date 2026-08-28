@@ -145,6 +145,7 @@ describe("mergeProfileImage — 확정 응답 병합 (포팅 parity)", () => {
       profileImageUrl: null,
       createdAt: "2026-01-12T00:00:00",
       locationConsent: true,
+      role: "USER" as const,
     };
     const confirmed = {
       ...prev,
