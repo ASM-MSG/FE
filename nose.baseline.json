@@ -988,34 +988,6 @@
       ]
     },
     {
-      "id": "11c491a8596e83a9",
-      "note": "duplicated across 2 directories — extract a helper",
-      "members": [
-        {
-          "id": "6eced5fab99416d5",
-          "source_digest": "fnv1a64:468a956fbd5dd680",
-          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.ts",
-          "lang": "typescript",
-          "start_line": 36,
-          "end_line": 39,
-          "kind": "Function",
-          "name": "flattenGridPages",
-          "is_fragment": false
-        },
-        {
-          "id": "16f2890e19134319",
-          "source_digest": "fnv1a64:c8ab39b43a33868a",
-          "file": "apps/web/src/features/region/model/use-explore-regions-query.ts",
-          "lang": "typescript",
-          "start_line": 24,
-          "end_line": 27,
-          "kind": "Function",
-          "name": "flattenExploreRegionPages",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "124a86badd4ee76b",
       "note": "local duplication — extract a helper — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -1520,6 +1492,42 @@
       ]
     },
     {
+      "id": "19a2dab062582f3b",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (26 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "bca1b681b16a7234",
+          "source_digest": "fnv1a64:c18fb5071be4db58",
+          "file": "apps/web/src/features/map-home/model/use-grid-aggregation-query.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 256,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "31b0902277bf5915",
+          "source_digest": "fnv1a64:aaf0132858ab58d8",
+          "file": "apps/web/src/features/map-home/model/use-hotzone-aggregation-query.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 249,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "8acd8ea68b24e652",
+          "source_digest": "fnv1a64:b673d768d50cd1d5",
+          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.render.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 90,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "19d6dc6520c7eb67",
       "note": "consolidate `view` — 2 copies",
       "members": [
@@ -1623,6 +1631,34 @@
           "start_line": 15,
           "end_line": 44,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "1caa89e464ffc117",
+      "note": "duplicated across 2 directories — extract a helper",
+      "members": [
+        {
+          "id": "3533e25edaaf24e7",
+          "source_digest": "fnv1a64:468a956fbd5dd680",
+          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.ts",
+          "lang": "typescript",
+          "start_line": 37,
+          "end_line": 40,
+          "kind": "Function",
+          "name": "flattenGridPages",
+          "is_fragment": false
+        },
+        {
+          "id": "16f2890e19134319",
+          "source_digest": "fnv1a64:c8ab39b43a33868a",
+          "file": "apps/web/src/features/region/model/use-explore-regions-query.ts",
+          "lang": "typescript",
+          "start_line": 24,
+          "end_line": 27,
+          "kind": "Function",
+          "name": "flattenExploreRegionPages",
           "is_fragment": false
         }
       ]
@@ -3301,42 +3337,6 @@
           "lang": "typescript",
           "start_line": 19,
           "end_line": 47,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "3ae79ef8f8ae89c2",
-      "note": "local duplication — extract a method from the repeated block — high-parameter (26 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "bca1b681b16a7234",
-          "source_digest": "fnv1a64:c18fb5071be4db58",
-          "file": "apps/web/src/features/map-home/model/use-grid-aggregation-query.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 256,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "31b0902277bf5915",
-          "source_digest": "fnv1a64:aaf0132858ab58d8",
-          "file": "apps/web/src/features/map-home/model/use-hotzone-aggregation-query.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 249,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "1b697621e8bddf2b",
-          "source_digest": "fnv1a64:27d47e995b4c332a",
-          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.render.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 65,
           "kind": "Block",
           "is_fragment": false
         }
@@ -5541,32 +5541,6 @@
           "end_line": 51,
           "kind": "Block",
           "name": "span",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "5e6727586ff4a382",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "01bb20ffcdad00fe",
-          "source_digest": "fnv1a64:e898c107d92158f2",
-          "file": "apps/mobile/src/features/map-home/api/use-occupied-grids-query.ts",
-          "lang": "typescript",
-          "start_line": 16,
-          "end_line": 40,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "df980cf895fe9acf",
-          "source_digest": "fnv1a64:6b2517f0c6dc4a66",
-          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.ts",
-          "lang": "typescript",
-          "start_line": 11,
-          "end_line": 33,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -11572,6 +11546,32 @@
           "end_line": 46,
           "kind": "Function",
           "name": "resolveReadyTransition",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "cf14ff978caf215e",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "01bb20ffcdad00fe",
+          "source_digest": "fnv1a64:e898c107d92158f2",
+          "file": "apps/mobile/src/features/map-home/api/use-occupied-grids-query.ts",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 40,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e6d6eb447671dd13",
+          "source_digest": "fnv1a64:6b2517f0c6dc4a66",
+          "file": "apps/web/src/features/map-home/model/use-occupied-grids-query.ts",
+          "lang": "typescript",
+          "start_line": 12,
+          "end_line": 34,
+          "kind": "Block",
           "is_fragment": false
         }
       ]

@@ -108,9 +108,6 @@ export const AiRoutePage = () => {
           <>
             <RouteResultHeader loading count={0} />
             <RouteLoadingList />
-            <p className="text-fm-caption text-foreground-muted">
-              {RESULT_FOOTNOTE}
-            </p>
           </>
         )}
         {status === "result" && (
@@ -124,10 +121,13 @@ export const AiRoutePage = () => {
                 onSelect={selectFromCard}
               />
             )}
-            <p className="text-fm-caption text-foreground-muted">
-              {RESULT_FOOTNOTE}
-            </p>
           </>
+        )}
+        {/* 각주는 로딩·결과 공통 (Figma 15666:12621·12855) — 두 블록 끝에 같은 위치로 붙는다 */}
+        {(loading || status === "result") && (
+          <p className="text-fm-caption text-foreground-muted">
+            {RESULT_FOOTNOTE}
+          </p>
         )}
       </div>
 
