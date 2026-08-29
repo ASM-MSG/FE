@@ -5,10 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RequireAuth } from "@/app/RequireAuth";
 import { useAiRouteStore } from "@/features/ai-route/model/ai-route-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
+import { MAP_SCALE_1KM_ZOOM } from "@/features/map-home/model/map-scale";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import type { MapShellContext } from "@/widgets/map-shell/use-map-shell";
 import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
+import {
+  allowPositionAt,
+  denyPosition,
+  setGeolocation,
+} from "@/test/geolocation";
 import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { ROUTE_POINTS } from "@/test/route-points";
 import { stubFetch } from "@/test/stub-fetch";
@@ -64,6 +70,11 @@ const submitButton = () =>
 const textarea = () =>
   screen.getByLabelText("하고 싶은 일 한 문장") as HTMLTextAreaElement;
 
+/** 현위치 어댑터 스텁 (MSG-489) — jsdom 기본은 geolocation 부재라 "미확보"가 기본값이다 */
+const originalGeolocation = navigator.geolocation;
+
+const originRow = () => screen.queryByText("현재 위치에서 출발");
+
 /** 문장 입력 → 제출 — 결과·실패 케이스가 공유하는 진입 동작 */
 const submitText = (value: string) => {
   fireEvent.change(textarea(), { target: { value } });
@@ -75,17 +86,20 @@ beforeEach(() => {
   useLoginModalStore.setState({ open: false });
   useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
   useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
-  // 지도 준비 완료 — 요청 뷰포트의 근원 (부산 서면)
+  // 지도 준비 완료 — 요청 뷰포트의 근원 (부산 서면).
+  // 줌은 1km 단으로 둔다: MSG-489 §11 이후 제출은 이 단에서만 즉시 발사된다 (D10)
   useViewportStore.setState({
     bounds: {
       sw: { lat: 35.1521, lng: 129.0537 },
       ne: { lat: 35.1662, lng: 129.0712 },
     },
+    zoom: MAP_SCALE_1KM_ZOOM,
   });
   moveTo.mockClear();
 });
 
 afterEach(() => {
+  setGeolocation(originalGeolocation);
   vi.unstubAllGlobals();
 });
 
@@ -265,5 +279,57 @@ describe("실패 경로 (S10)", () => {
         .getByRole("button", { name: "다시 짜기" })
         .hasAttribute("disabled"),
     ).toBe(false);
+  });
+});
+
+describe("출발지 자동 판정 (S1·S2·S7)", () => {
+  it("현위치가 뷰포트 안이면 입력 카드에 '현재 위치에서 출발' 표시가 뜬다 (S1)", async () => {
+    allowPositionAt({ lat: 35.1579, lng: 129.0594 });
+
+    renderPanel();
+
+    await waitFor(() => expect(originRow()).toBeTruthy());
+  });
+
+  it("현위치가 뷰포트 밖이면 표시가 없고 제출은 그대로 동작한다 (S2)", async () => {
+    // 뷰포트(서면) 밖 — 같은 부산 안의 해운대 일대
+    allowPositionAt({ lat: 35.1631, lng: 129.1635 });
+    stubFetch(() => recommendResponse());
+    renderPanel();
+
+    submitText("서면 동선");
+
+    await waitFor(() => expect(screen.getByText("· 3곳")).toBeTruthy());
+    expect(originRow()).toBeNull();
+  });
+
+  it("권한을 거부하면 표시가 없다 — 서면 폴백 좌표로 오판정하지 않는다 (S2·A1)", async () => {
+    denyPosition();
+    renderPanel();
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "동선 짜기" })).toBeTruthy(),
+    );
+    expect(originRow()).toBeNull();
+  });
+
+  it("출발지를 실어 보낸 결과 화면의 버튼은 '현재 위치에서 다시 짜기'다 (S7)", async () => {
+    allowPositionAt({ lat: 35.1579, lng: 129.0594 });
+    const received = stubFetch(() => recommendResponse());
+    renderPanel();
+    await waitFor(() => expect(originRow()).toBeTruthy());
+
+    submitText("서면 동선");
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "현재 위치에서 다시 짜기" }),
+      ).toBeTruthy(),
+    );
+    expect(received[0].body).toMatchObject({
+      origin: { lat: 35.1579, lng: 129.0594 },
+    });
+    // 결과 화면에서는 표시 행이 사라지고 버튼 문구만 출발지를 알린다 (Figma 15666:13139)
+    expect(originRow()).toBeNull();
   });
 });

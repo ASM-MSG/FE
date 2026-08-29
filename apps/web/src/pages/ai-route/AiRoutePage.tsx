@@ -1,10 +1,9 @@
 import { useCallback, useMemo } from "react";
-import { useRouteRecommend } from "@/features/ai-route/api/use-route-recommend";
 import { useAiRouteStore } from "@/features/ai-route/model/ai-route-store";
 import { partialBannerText } from "@/features/ai-route/model/route-point-view";
 import {
-  buildRecommendBody,
   canSubmit,
+  submitLabel,
 } from "@/features/ai-route/model/route-request";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useOccupiedGridsQuery } from "@/features/map-home/model/use-occupied-grids-query";
@@ -21,6 +20,8 @@ import { RoutePartialBanner } from "./ui/RoutePartialBanner";
 import { RouteResultHeader } from "./ui/RouteResultHeader";
 import { RouteResultList } from "./ui/RouteResultList";
 import { RouteSuggestionChips } from "./ui/RouteSuggestionChips";
+import { RouteToastHost } from "./ui/RouteToastHost";
+import { useAiRouteAutoMove } from "./ui/use-ai-route-auto-move";
 import { useAiRouteOverlayPublish } from "./ui/use-ai-route-overlay-publish";
 
 /**
@@ -48,6 +49,7 @@ export const AiRoutePage = () => {
   const selectedOrder = useAiRouteStore((s) => s.selectedOrder);
   const errorNotice = useAiRouteStore((s) => s.errorNotice);
   const featureDisabled = useAiRouteStore((s) => s.featureDisabled);
+  const originSent = useAiRouteStore((s) => s.originSent);
   const setText = useAiRouteStore((s) => s.setText);
   const selectOrder = useAiRouteStore((s) => s.selectOrder);
 
@@ -61,13 +63,10 @@ export const AiRoutePage = () => {
     [grids],
   );
 
-  const { mutate } = useRouteRecommend({ onLoginRequired: openLoginModal });
-  const submit = useCallback(() => {
-    // 지도 준비 전(bounds null)이거나 빈 문장이면 요청을 만들지 않는다 (L9)
-    const body = buildRecommendBody({ text, bounds });
-    if (body === null) return;
-    mutate(body);
-  }, [text, bounds, mutate]);
+  // 제출·출발지 자동 판정·지역 자동 이동·2차 재요청은 자동 동작 훅이 소유한다 (MSG-489)
+  const { submit, originActive } = useAiRouteAutoMove({
+    onLoginRequired: openLoginModal,
+  });
 
   // 카드 클릭 — 선택 강조 + 그 지점으로 지도 이동(줌은 그대로). fitBounds·zoomTo는 489 몫
   const selectFromCard = useCallback(
@@ -91,62 +90,65 @@ export const AiRoutePage = () => {
     onWaypointSelect: selectFromMarker,
   });
 
-  // [MSG-489 확장점] mentionedArea 자동 이동 훅을 여기서 마운트한다.
-
   const loading = status === "loading";
   const bannerText = partialBannerText(notice, points.length);
 
   return (
-    <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 shrink-0 flex-col bg-background shadow-raised">
-      <h1 className="sr-only">AI 경로추천</h1>
-      <div className="flex min-h-0 flex-1 flex-col gap-md overflow-y-auto p-5">
-        {status === "idle" && <RouteEmptyState />}
-        {status === "error" && errorNotice && (
-          <RouteErrorNotice notice={errorNotice} onRetry={submit} />
-        )}
-        {loading && (
-          <>
-            <RouteResultHeader loading count={0} />
-            <RouteLoadingList />
-          </>
-        )}
-        {status === "result" && (
-          <>
-            <RouteResultHeader loading={false} count={points.length} />
-            {bannerText && <RoutePartialBanner text={bannerText} />}
-            {points.length > 0 && (
-              <RouteResultList
-                points={points}
-                selectedOrder={selectedOrder}
-                onSelect={selectFromCard}
-              />
-            )}
-          </>
-        )}
-        {/* 각주는 로딩·결과 공통 (Figma 15666:12621·12855) — 두 블록 끝에 같은 위치로 붙는다 */}
-        {(loading || status === "result") && (
-          <p className="text-fm-caption text-foreground-muted">
-            {RESULT_FOOTNOTE}
-          </p>
-        )}
-      </div>
+    <>
+      <RouteToastHost />
+      <aside className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-97 shrink-0 flex-col bg-background shadow-raised">
+        <h1 className="sr-only">AI 경로추천</h1>
+        <div className="flex min-h-0 flex-1 flex-col gap-md overflow-y-auto p-5">
+          {status === "idle" && <RouteEmptyState />}
+          {status === "error" && errorNotice && (
+            <RouteErrorNotice notice={errorNotice} onRetry={submit} />
+          )}
+          {loading && (
+            <>
+              <RouteResultHeader loading count={0} />
+              <RouteLoadingList />
+            </>
+          )}
+          {status === "result" && (
+            <>
+              <RouteResultHeader loading={false} count={points.length} />
+              {bannerText && <RoutePartialBanner text={bannerText} />}
+              {points.length > 0 && (
+                <RouteResultList
+                  points={points}
+                  selectedOrder={selectedOrder}
+                  onSelect={selectFromCard}
+                />
+              )}
+            </>
+          )}
+          {/* 각주는 로딩·결과 공통 (Figma 15666:12621·12855) — 두 블록 끝에 같은 위치로 붙는다 */}
+          {(loading || status === "result") && (
+            <p className="text-fm-caption text-foreground-muted">
+              {RESULT_FOOTNOTE}
+            </p>
+          )}
+        </div>
 
-      <div className="flex flex-col gap-md p-5 pt-0">
-        {status === "idle" && <RouteSuggestionChips onSelect={setText} />}
-        <RouteInputCard
-          text={text}
-          onChange={setText}
-          onSubmit={submit}
-          canSubmit={canSubmit({
-            text,
-            status,
-            featureDisabled,
-            mapReady: bounds !== null,
-          })}
-          submitLabel={status === "idle" ? "동선 짜기" : "다시 짜기"}
-          loading={loading}
-        />
-      </div>
-    </aside>
+        <div className="flex flex-col gap-md p-5 pt-0">
+          {status === "idle" && <RouteSuggestionChips onSelect={setText} />}
+          <RouteInputCard
+            text={text}
+            onChange={setText}
+            onSubmit={submit}
+            canSubmit={canSubmit({
+              text,
+              status,
+              featureDisabled,
+              mapReady: bounds !== null,
+            })}
+            submitLabel={submitLabel({ status, originSent })}
+            // 결과 화면은 버튼 문구로만 출발지를 알린다 — 표시 행은 사라진다 (Figma 15666:13139)
+            originActive={originActive && status !== "result"}
+            loading={loading}
+          />
+        </div>
+      </aside>
+    </>
   );
 };
