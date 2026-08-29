@@ -113,3 +113,49 @@ describe("useAiRouteStore — 요청·결과 상태 전이 (L7)", () => {
     expect(store().selectedOrder).toBeNull();
   });
 });
+
+describe("2차 자동 재요청 사이클 (L14·L15)", () => {
+  beforeEach(() => {
+    useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
+  });
+
+  it("2차 요청을 시작하면 로딩을 유지한 채 1차 결과를 게시하지 않고 자동 이동을 기록한다 (L14)", () => {
+    store().startRequest();
+
+    store().startSecondaryRequest("부산 서면");
+
+    expect(store().status).toBe("loading");
+    expect(store().points).toHaveLength(0);
+    expect(store().autoMoved).toBe(true);
+    expect(store().movedAreaName).toBe("부산 서면");
+    expect(store().secondaryPending).toBe(true);
+  });
+
+  it("새 1차 요청은 자동 이동·출발지·이동 지역명을 초기화한다 (L15)", () => {
+    store().startRequest(true);
+    store().startSecondaryRequest("부산 서면");
+    store().markSecondarySent(true);
+
+    store().startRequest();
+
+    expect(store().autoMoved).toBe(false);
+    expect(store().originSent).toBe(false);
+    expect(store().movedAreaName).toBeNull();
+    expect(store().secondaryPending).toBe(false);
+  });
+
+  it("요청 시작 시각을 기록한다 — 2차 발사가 서버 10초 창을 계산하는 기준 (Q2 안 B)", () => {
+    const before = Date.now();
+
+    store().startRequest();
+
+    expect(store().requestedAt).not.toBeNull();
+    expect(store().requestedAt!).toBeGreaterThanOrEqual(before);
+  });
+
+  it("출발지를 실어 보낸 요청은 originSent를 켠다 — 결과 화면 버튼 문구의 근거 (L13 배선)", () => {
+    store().startRequest(true);
+
+    expect(store().originSent).toBe(true);
+  });
+});

@@ -1,4 +1,5 @@
 import { Button } from "@fillmap/ui-web";
+import { Navigation } from "lucide-react";
 import { MAX_ROUTE_TEXT_LENGTH } from "@/features/ai-route/model/route-request";
 
 /**
@@ -14,6 +15,8 @@ interface RouteInputCardProps {
   canSubmit: boolean;
   /** 버튼 문구 — 입력 대기 "동선 짜기" / 결과·실패 "다시 짜기" (로딩은 아래에서 덮는다) */
   submitLabel: string;
+  /** 현위치가 뷰포트 안이라 출발지가 실리는가 — 상태 표시일 뿐 누르는 컨트롤이 아니다 (D8) */
+  originActive: boolean;
   loading: boolean;
 }
 
@@ -23,6 +26,7 @@ export const RouteInputCard = ({
   onSubmit,
   canSubmit,
   submitLabel,
+  originActive,
   loading,
 }: RouteInputCardProps) => (
   <div className="flex flex-col gap-sm rounded-md border border-border bg-surface-soft p-3.5">
@@ -42,8 +46,15 @@ export const RouteInputCard = ({
       className="resize-none bg-transparent text-fm-base text-foreground outline-none placeholder:text-foreground-muted"
     />
     <div className="flex items-center justify-between gap-sm">
-      {/* [MSG-489 확장점] 출발지 상태 행이 이 슬롯에 들어온다 — 지금은 null. */}
-      <span />
+      {/* 좌측 슬롯 — 출발지가 실릴 때만 상태 행이 뜬다 (Figma 15666:12571). 없으면 자리만 (S2) */}
+      {originActive ? (
+        <span className="flex items-center gap-1.25 text-fm-label text-foreground-muted">
+          <Navigation aria-hidden className="size-3.25" />
+          현재 위치에서 출발
+        </span>
+      ) : (
+        <span />
+      )}
       <Button
         text={loading ? "짜는 중…" : submitLabel}
         variant="primary"
