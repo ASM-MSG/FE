@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Bounds } from "@/entities/cell";
 import {
   MAX_ROUTE_TEXT_LENGTH,
+  advanceSettleDeadline,
   MAX_VIEWPORT_SPAN_DEG,
   SECONDARY_MIN_INTERVAL_MS,
   buildRecommendBody,
@@ -295,5 +296,118 @@ describe("secondaryDelayMs — 2차 자동 재요청 대기 (Q2 안 B)", () => {
 
   it("1차 요청 시각을 모르면 기다리지 않는다", () => {
     expect(secondaryDelayMs({ requestedAt: null, now: 4_000 })).toBe(0);
+  });
+});
+
+describe("advanceSettleDeadline — 가시 시간만 소모하는 정착 마감 (§13 P2)", () => {
+  const TIMEOUT = 3_000;
+
+  it("첫 호출이 마감을 확정한다 — 상한만큼 남은 채로 시작한다", () => {
+    const { deadline, remainingMs } = advanceSettleDeadline({
+      deadline: null,
+      now: 1_000,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+
+    expect(deadline).toEqual({ deadlineAt: 4_000, hiddenSince: null });
+    expect(remainingMs).toBe(TIMEOUT);
+  });
+
+  it("이미 선 마감은 다시 계산하지 않는다 — 재호출은 남은 시간만 돌려준다", () => {
+    const first = advanceSettleDeadline({
+      deadline: null,
+      now: 1_000,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+    // 대기 중 뷰포트가 갱신돼 이펙트가 여러 번 재실행되는 상황
+    const second = advanceSettleDeadline({
+      deadline: first.deadline,
+      now: 2_500,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+    const third = advanceSettleDeadline({
+      deadline: second.deadline,
+      now: 3_800,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+
+    expect(second.remainingMs).toBe(1_500);
+    expect(third.remainingMs).toBe(200);
+    expect(third.deadline.deadlineAt).toBe(4_000);
+  });
+
+  it("마감이 지나면 0이다 — 호출부가 즉시 종결 경로를 탄다 (D13)", () => {
+    const started = advanceSettleDeadline({
+      deadline: null,
+      now: 1_000,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+
+    expect(
+      advanceSettleDeadline({
+        deadline: started.deadline,
+        now: 9_000,
+        visible: true,
+        timeoutMs: TIMEOUT,
+      }).remainingMs,
+    ).toBe(0);
+  });
+
+  it("숨은 구간은 마감에서 제외된다 — 복귀 시 그만큼 마감이 밀린다 (§12)", () => {
+    const started = advanceSettleDeadline({
+      deadline: null,
+      now: 1_000,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+    // 1초 소모한 뒤 탭이 숨는다
+    const hidden = advanceSettleDeadline({
+      deadline: started.deadline,
+      now: 2_000,
+      visible: false,
+      timeoutMs: TIMEOUT,
+    });
+    // 숨은 채 5초가 더 흘러도 마감은 그대로 밀려 있다
+    const stillHidden = advanceSettleDeadline({
+      deadline: hidden.deadline,
+      now: 7_000,
+      visible: false,
+      timeoutMs: TIMEOUT,
+    });
+    const resumed = advanceSettleDeadline({
+      deadline: stillHidden.deadline,
+      now: 7_000,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+
+    expect(hidden.deadline.hiddenSince).toBe(2_000);
+    // 숨김 시작 시각은 첫 숨김 관측으로 고정된다 — 재실행이 구간을 잘게 쪼개지 않는다
+    expect(stillHidden.deadline.hiddenSince).toBe(2_000);
+    // 남은 상한은 숨기 직전 그대로(2초)이고, 마감은 숨은 5초만큼 뒤로 간다
+    expect(resumed.remainingMs).toBe(2_000);
+    expect(resumed.deadline).toEqual({ deadlineAt: 9_000, hiddenSince: null });
+  });
+
+  it("숨은 채로 시작하면 그 시점부터 숨김 구간이다 — 상한을 소모하지 않는다", () => {
+    const started = advanceSettleDeadline({
+      deadline: null,
+      now: 1_000,
+      visible: false,
+      timeoutMs: TIMEOUT,
+    });
+    const resumed = advanceSettleDeadline({
+      deadline: started.deadline,
+      now: 11_000,
+      visible: true,
+      timeoutMs: TIMEOUT,
+    });
+
+    expect(resumed.remainingMs).toBe(TIMEOUT);
   });
 });

@@ -133,6 +133,60 @@ export const reachedTargetViewport = ({
  */
 export const VIEWPORT_SETTLE_TIMEOUT_MS = 3_000;
 
+/** 대기 사이클 1회의 마감 — 호출부(뷰-레이어 훅)가 ref에 들고 다닌다 */
+export interface SettleDeadline {
+  /** 절대 마감 시각(ms) — 숨은 구간만큼 뒤로 밀린다 */
+  deadlineAt: number;
+  /** 현재 숨김 구간이 시작된 시각. 보이는 중이면 null */
+  hiddenSince: number | null;
+}
+
+/**
+ * 정착 대기의 남은 상한 (codex 리뷰 P2 — §13).
+ *
+ * 대기 이펙트는 `bounds`·`zoom`이 갱신될 때마다 재실행되는데, 그때마다 상한을 처음부터
+ * 다시 재면 사용자가 계속 패닝·줌하는 동안 종결이 **무한히 연기**돼 패널이 로딩에 갇힌다
+ * (D13 "영구 로딩 금지" 위반). 그래서 마감은 사이클당 **한 번만** 정하고(`deadline === null`인
+ * 첫 호출), 이후 재실행은 남은 시간만 돌려받아 그만큼만 다시 스케줄한다. 0이면 즉시 종결이다.
+ *
+ * 다만 마감은 **가시 상태에서 흐른 시간**만 소모한다 (§12) — 숨은 탭은 rAF가 멈춰 지도가
+ * 정착할 수 없으므로 그 구간을 세면 갱신되지 않은 옛 뷰포트로 발사돼 14401을 맞는다.
+ * 숨은 동안 마감을 정지시키는 대신 **복귀 시 숨어 있던 만큼 마감을 뒤로 민다**(같은 결과이고
+ * 상태가 두 값뿐이다). 시각(`now`)과 가시성은 파라미터로 받는다 — 이 모듈은 시계도 `document`도
+ * 모른다(RN 경계).
+ */
+export const advanceSettleDeadline = ({
+  deadline,
+  now,
+  visible,
+  timeoutMs,
+}: {
+  /** 진행 중인 대기의 마감. null이면 이번 호출이 이 사이클의 첫 예약이다 */
+  deadline: SettleDeadline | null;
+  now: number;
+  visible: boolean;
+  timeoutMs: number;
+}): { deadline: SettleDeadline; remainingMs: number } => {
+  const next = ((): SettleDeadline => {
+    if (deadline === null) {
+      return { deadlineAt: now + timeoutMs, hiddenSince: visible ? null : now };
+    }
+    if (!visible) {
+      // 숨김 시작 시각은 첫 관측으로 고정한다 — 재실행이 구간을 잘게 쪼개면 안 된다
+      return deadline.hiddenSince === null
+        ? { ...deadline, hiddenSince: now }
+        : deadline;
+    }
+    if (deadline.hiddenSince === null) return deadline;
+    return {
+      deadlineAt: deadline.deadlineAt + (now - deadline.hiddenSince),
+      hiddenSince: null,
+    };
+  })();
+
+  return { deadline: next, remainingMs: Math.max(0, next.deadlineAt - now) };
+};
+
 /** 제출 버튼 문구 (L13·D9) — 출발지를 실어 보낸 결과 화면만 "현재 위치에서" 접두가 붙는다 */
 export const submitLabel = ({
   status,

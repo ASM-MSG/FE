@@ -1496,6 +1496,32 @@
       ]
     },
     {
+      "id": "18b32dd0fb5416ba",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "dd5d820765c65434",
+          "source_digest": "fnv1a64:e3848ea5585c1663",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
+          "lang": "typescript",
+          "start_line": 510,
+          "end_line": 533,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "ae5f8a00caa19a17",
+          "source_digest": "fnv1a64:0173170c6733d23e",
+          "file": "apps/web/src/features/ai-route/api/use-route-recommend.test.tsx",
+          "lang": "typescript",
+          "start_line": 95,
+          "end_line": 97,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "18b8fe37fdbfd2b2",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -2264,52 +2290,6 @@
           "lang": "typescript",
           "start_line": 64,
           "end_line": 75,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "25ae55e7a487529d",
-      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "7947a50a956c7ef8",
-          "source_digest": "fnv1a64:148271fb2dfcbd5f",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
-          "lang": "typescript",
-          "start_line": 220,
-          "end_line": 238,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "8913f9ceaffcf103",
-          "source_digest": "fnv1a64:4ffc419943892caf",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
-          "lang": "typescript",
-          "start_line": 205,
-          "end_line": 218,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "948a761c9d5c2a31",
-          "source_digest": "fnv1a64:c6fd29b1c441f0fb",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
-          "lang": "typescript",
-          "start_line": 240,
-          "end_line": 253,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "f77ab17872279a46",
-          "source_digest": "fnv1a64:1d70ef71f9a62dc3",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
-          "lang": "typescript",
-          "start_line": 255,
-          "end_line": 264,
           "kind": "Block",
           "is_fragment": false
         }
@@ -6874,6 +6854,45 @@
       ]
     },
     {
+      "id": "7b52af8761fb7135",
+      "note": "consolidate `useCurrentCoords` — 3 copies",
+      "members": [
+        {
+          "id": "03e4a3726e2129d0",
+          "source_digest": "fnv1a64:e05f46d1da962eed",
+          "file": "apps/mobile/src/features/dex/model/use-region-stat-query.ts",
+          "lang": "typescript",
+          "start_line": 52,
+          "end_line": 66,
+          "kind": "Function",
+          "name": "useCurrentCoords",
+          "is_fragment": false
+        },
+        {
+          "id": "d0650e039bb8b528",
+          "source_digest": "fnv1a64:eacffa5f717fb5c0",
+          "file": "apps/web/src/features/dex/model/use-region-stat-query.ts",
+          "lang": "typescript",
+          "start_line": 52,
+          "end_line": 66,
+          "kind": "Function",
+          "name": "useCurrentCoords",
+          "is_fragment": false
+        },
+        {
+          "id": "7be2f4a8d6298129",
+          "source_digest": "fnv1a64:55053a666cf480a0",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.ts",
+          "lang": "typescript",
+          "start_line": 48,
+          "end_line": 62,
+          "kind": "Function",
+          "name": "useCurrentCoords",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "7c75640dbba2f4b4",
       "note": "consolidate `setState` — 2 copies",
       "members": [
@@ -8078,6 +8097,52 @@
       ]
     },
     {
+      "id": "9127d6caea5b31ef",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "6ebd1d4f0c45a0fd",
+          "source_digest": "fnv1a64:148271fb2dfcbd5f",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
+          "lang": "typescript",
+          "start_line": 253,
+          "end_line": 271,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "32968f5e9c962a55",
+          "source_digest": "fnv1a64:4ffc419943892caf",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
+          "lang": "typescript",
+          "start_line": 238,
+          "end_line": 251,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "051e619f1e485923",
+          "source_digest": "fnv1a64:c6fd29b1c441f0fb",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
+          "lang": "typescript",
+          "start_line": 273,
+          "end_line": 286,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "4c7866d33dedf245",
+          "source_digest": "fnv1a64:1d70ef71f9a62dc3",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
+          "lang": "typescript",
+          "start_line": 288,
+          "end_line": 297,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "916f3d724def1020",
       "note": "duplicated across 2 directories — extract a helper",
       "members": [
@@ -8610,6 +8675,32 @@
       ]
     },
     {
+      "id": "98b6b041ff1030cc",
+      "note": "local duplication — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "2b449e20e846de6e",
+          "source_digest": "fnv1a64:d6525215b91d02c8",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.ts",
+          "lang": "typescript",
+          "start_line": 221,
+          "end_line": 225,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "13c62cad13b6850d",
+          "source_digest": "fnv1a64:e6f47b6bc6da04f2",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.ts",
+          "lang": "typescript",
+          "start_line": 261,
+          "end_line": 264,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "991f64fd937247fd",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -9090,6 +9181,32 @@
           "lang": "typescript",
           "start_line": 107,
           "end_line": 112,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "a1addb935f78f278",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "26ab1b79081d1833",
+          "source_digest": "fnv1a64:75903149581218d6",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
+          "lang": "typescript",
+          "start_line": 554,
+          "end_line": 581,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "ca207977568e2544",
+          "source_digest": "fnv1a64:a36f920ddbc4c460",
+          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
+          "lang": "typescript",
+          "start_line": 515,
+          "end_line": 533,
           "kind": "Block",
           "is_fragment": false
         }
@@ -10268,45 +10385,6 @@
       ]
     },
     {
-      "id": "b2cca4c3caff91e1",
-      "note": "consolidate `useCurrentCoords` — 3 copies",
-      "members": [
-        {
-          "id": "03e4a3726e2129d0",
-          "source_digest": "fnv1a64:e05f46d1da962eed",
-          "file": "apps/mobile/src/features/dex/model/use-region-stat-query.ts",
-          "lang": "typescript",
-          "start_line": 52,
-          "end_line": 66,
-          "kind": "Function",
-          "name": "useCurrentCoords",
-          "is_fragment": false
-        },
-        {
-          "id": "d0650e039bb8b528",
-          "source_digest": "fnv1a64:eacffa5f717fb5c0",
-          "file": "apps/web/src/features/dex/model/use-region-stat-query.ts",
-          "lang": "typescript",
-          "start_line": 52,
-          "end_line": 66,
-          "kind": "Function",
-          "name": "useCurrentCoords",
-          "is_fragment": false
-        },
-        {
-          "id": "470d22055eea927d",
-          "source_digest": "fnv1a64:55053a666cf480a0",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.ts",
-          "lang": "typescript",
-          "start_line": 43,
-          "end_line": 57,
-          "kind": "Function",
-          "name": "useCurrentCoords",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "b3694a4690fa9219",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -10627,32 +10705,6 @@
           "end_line": 87,
           "kind": "Block",
           "name": "p",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "ba91d4a2c4677bdc",
-      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "08963fa1a1250e80",
-          "source_digest": "fnv1a64:a7befad4bbcc9e51",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
-          "lang": "typescript",
-          "start_line": 282,
-          "end_line": 288,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e005b977dfc5a049",
-          "source_digest": "fnv1a64:5d981aa860b0f991",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.test.tsx",
-          "lang": "typescript",
-          "start_line": 104,
-          "end_line": 109,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -13693,32 +13745,6 @@
           "lang": "typescript",
           "start_line": 2,
           "end_line": 10,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "f0b68aff23f94d8c",
-      "note": "local duplication — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "3792025dbf418c0e",
-          "source_digest": "fnv1a64:d6525215b91d02c8",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.ts",
-          "lang": "typescript",
-          "start_line": 170,
-          "end_line": 174,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "8bcc9543c7695d3d",
-          "source_digest": "fnv1a64:e6f47b6bc6da04f2",
-          "file": "apps/web/src/pages/ai-route/ui/use-ai-route-auto-move.ts",
-          "lang": "typescript",
-          "start_line": 191,
-          "end_line": 194,
           "kind": "Block",
           "is_fragment": false
         }

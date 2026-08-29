@@ -13,7 +13,7 @@ import {
 import { MAP_SCALE_1KM_ZOOM } from "@/features/map-home/model/map-scale";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import type { MentionedAreaDto } from "@/shared/api/generated";
-import { envelopeResponse } from "@/test/envelope-response";
+import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
 import { allowPositionAt, setGeolocation } from "@/test/geolocation";
 import { ROUTE_POINTS } from "@/test/route-points";
 import { stubFetch } from "@/test/stub-fetch";
@@ -100,11 +100,10 @@ const stubBothWithMentionedArea = () =>
   );
 
 /** 렌더 → 현위치 확보 대기 → 제출. 제출 전 줌은 각 시나리오가 세팅한다 */
-const renderAndSubmit = async () => {
-  const rendered = renderHook(
-    () => useAiRouteAutoMove({ onLoginRequired: vi.fn() }),
-    { wrapper },
-  );
+const renderAndSubmit = async (onLoginRequired = vi.fn()) => {
+  const rendered = renderHook(() => useAiRouteAutoMove({ onLoginRequired }), {
+    wrapper,
+  });
 
   await waitFor(() => expect(rendered.result.current.originActive).toBe(true));
   act(() => rendered.result.current.submit());
@@ -113,8 +112,8 @@ const renderAndSubmit = async () => {
 };
 
 /** 제출 → 자동 이동 명령 도착까지 */
-const submitAndAwaitMove = async () => {
-  const rendered = await renderAndSubmit();
+const submitAndAwaitMove = async (onLoginRequired = vi.fn()) => {
+  const rendered = await renderAndSubmit(onLoginRequired);
   await waitFor(() => expect(moveTo).toHaveBeenCalledTimes(1));
 
   return rendered;
@@ -172,6 +171,40 @@ const setVisibility = (state: DocumentVisibilityState) => {
     });
     document.dispatchEvent(new Event("visibilitychange"));
   });
+};
+
+/** 목표(1km)를 벗어난 줌 — 이 줌으로 갱신하는 한 도달 판정은 영영 성립하지 않는다 */
+const OFF_TARGET_ZOOM = 16;
+
+/** 사용자가 지도를 조금씩 미는 상황 — 갱신마다 두 대기 이펙트가 재실행된다 */
+const pannedBounds = (step: number): Bounds => ({
+  sw: { lat: 35.1521 + step * 0.001, lng: 129.0537 + step * 0.001 },
+  ne: { lat: 35.1662 + step * 0.001, lng: 129.0712 + step * 0.001 },
+});
+
+/**
+ * `intervalMs`마다 뷰포트를 갱신하며 `until()`이 참이 될 때까지 기다린다 (§13 P2 재현).
+ * 참이 된 시점까지 걸린 ms를 돌려주고, `times`번 안에 참이 안 되면 Infinity —
+ * 상한이 갱신마다 초기화되면(결함) 영원히 참이 되지 않는다.
+ */
+const panUntil = async ({
+  times,
+  intervalMs = 200,
+  until,
+}: {
+  times: number;
+  intervalMs?: number;
+  until: () => boolean;
+}): Promise<number> => {
+  const startedAt = Date.now();
+  for (let step = 1; step <= times; step += 1) {
+    settleViewport(pannedBounds(step), OFF_TARGET_ZOOM);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    });
+    if (until()) return Date.now() - startedAt;
+  }
+  return Number.POSITIVE_INFINITY;
 };
 
 /** 정착 상한을 실제로 넘겨 본다 — 이 훅의 대기는 실타이머 기반이다 */
@@ -448,4 +481,102 @@ describe("서버 뷰포트 상한 가드와 탭 가시성 (§12 — 14401 재현
     expect(received).toHaveLength(1);
     expect(useAiRouteStore.getState().secondaryPending).toBe(false);
   });
+});
+
+describe("codex 리뷰 반영 — 2차 인증 처리와 대기 마감 (§13)", () => {
+  /** 1차는 이동 신호, 2차는 세션 만료 — 1차 성공과 지연된 2차 사이에 세션이 끊긴 경우 */
+  const stubSecondaryUnauthorized = () => {
+    let call = 0;
+    return stubFetch(() => {
+      call += 1;
+      return call === 1
+        ? envelopeResponse({
+            points: ROUTE_POINTS,
+            notice: null,
+            mentionedArea: MENTIONED_AREA,
+          })
+        : errorEnvelope(2403, "인증이 필요합니다", 401);
+    });
+  };
+
+  it("2차가 401이면 1차와 똑같이 로그인 모달 콜백이 호출된다 (§13 P1)", async () => {
+    const received = stubSecondaryUnauthorized();
+    const onLoginRequired = vi.fn();
+
+    await submitAndAwaitMove(onLoginRequired);
+    settleNewViewport();
+
+    await waitFor(() => expect(received).toHaveLength(2));
+    await waitFor(() => expect(onLoginRequired).toHaveBeenCalledTimes(1));
+    // 로그인 필요는 에러 화면 없이 입력 대기로 돌아간다 (§1-3)
+    expect(useAiRouteStore.getState().status).toBe("idle");
+  });
+
+  it("정규화 대기 중 뷰포트가 반복 갱신돼도 최초 예약 상한 안에 종결한다 (§13 P2 — D13)", async () => {
+    const received = stubBothWithMentionedArea();
+    useViewportStore.setState({
+      bounds: BOUNDS_BEFORE,
+      zoom: OFF_TARGET_ZOOM,
+    });
+
+    await renderAndSubmit();
+    expect(received).toHaveLength(0);
+
+    // 사용자가 계속 패닝한다 — 갱신마다 상한을 다시 재면 요청이 영영 안 나간다
+    const elapsed = await panUntil({
+      times: 30,
+      until: () => received.length > 0,
+    });
+
+    expect(elapsed).toBeLessThan(VIEWPORT_SETTLE_TIMEOUT_MS + 1_500);
+    expect(useAiRouteStore.getState().normalizePending).toBe(false);
+  }, 20_000);
+
+  it("2차 대기 중 뷰포트가 반복 갱신돼도 최초 예약 상한 안에 종결한다 (§13 P2 — D13)", async () => {
+    const received = stubBothWithMentionedArea();
+
+    await submitAndAwaitMove();
+    act(() =>
+      useAiRouteStore.setState({
+        requestedAt: Date.now() - SECONDARY_MIN_INTERVAL_MS,
+      }),
+    );
+
+    const elapsed = await panUntil({
+      times: 30,
+      until: () => received.length > 1,
+    });
+
+    expect(elapsed).toBeLessThan(VIEWPORT_SETTLE_TIMEOUT_MS + 1_500);
+    expect(useAiRouteStore.getState().secondaryPending).toBe(false);
+  }, 20_000);
+
+  it("숨은 구간은 마감에서 제외되고 복귀 후 남은 시간만 기다린다 (§13 P2 + §12 가시성)", async () => {
+    const received = stubBothWithMentionedArea();
+    useViewportStore.setState({
+      bounds: BOUNDS_BEFORE,
+      zoom: OFF_TARGET_ZOOM,
+    });
+
+    await renderAndSubmit();
+
+    // ① 가시 상태로 상한의 절반가량을 소모한다 (약 1.7초)
+    expect(await panUntil({ times: 8, until: () => received.length > 0 })).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+
+    // ② 숨은 동안에는 지도가 정착하지 못하므로 마감이 흐르지 않는다 (§12)
+    setVisibility("hidden");
+    await panUntil({ times: 12, until: () => received.length > 0 });
+    expect(received).toHaveLength(0);
+
+    // ③ 복귀 후에는 **남은 시간만** 기다린다 — 상한을 처음부터 다시 재면 3초가 걸린다
+    setVisibility("visible");
+    const afterReturn = await panUntil({
+      times: 20,
+      until: () => received.length > 0,
+    });
+
+    expect(afterReturn).toBeLessThan(2_200);
+  }, 30_000);
 });

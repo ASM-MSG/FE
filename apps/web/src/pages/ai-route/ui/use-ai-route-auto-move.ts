@@ -7,7 +7,9 @@ import { VIEWPORT_TOO_WIDE_NOTICE } from "@/features/ai-route/model/route-error"
 import { resolveRouteOrigin } from "@/features/ai-route/model/route-origin";
 import {
   MAX_VIEWPORT_SPAN_DEG,
+  type SettleDeadline,
   VIEWPORT_SETTLE_TIMEOUT_MS,
+  advanceSettleDeadline,
   buildRecommendBody,
   exceedsViewportSpan,
   needsZoomNormalize,
@@ -34,6 +36,9 @@ import { useMapShell } from "@/widgets/map-shell/use-map-shell";
  *
  * 두 대기(정규화·2차) 모두 **반드시 종결한다** — 목표 도달 판정이 성립하지 않는 경로에서도
  * `VIEWPORT_SETTLE_TIMEOUT_MS` 뒤에는 현재 뷰포트로 보낸다. 패널이 로딩에 갇히면 안 된다 (D13).
+ * 그 상한은 **대기 사이클당 절대 마감 한 번**이다(`advanceSettleDeadline`) — 이펙트가
+ * 뷰포트 갱신마다 재실행돼도 남은 시간만 다시 잴 뿐이라, 사용자가 계속 패닝해도 종결이
+ * 밀리지 않는다. 단 마감은 가시 구간만 소모한다 (§13·§12).
  * 단 그 출구가 **서버 상한을 넘는 뷰포트를 쏘면 확정 400(14401)** 이라, 발사는 전부
  * `send()` 하나를 거치고 상한을 넘으면 보내는 대신 안내로 종결한다 (§12).
  * 결과 상태에서는 두 대기 플래그가 모두 꺼져 있어 뷰포트가 바뀌어도 요청이 나가지 않는다 (D14·L25).
@@ -79,6 +84,38 @@ const useDocumentVisible = (): boolean => {
   return visible;
 };
 
+/**
+ * 대기 사이클 1회의 정착 마감을 들고 있는다 (§13) — 판정은 `advanceSettleDeadline`이 소유하고
+ * 여기에는 ref 보관과 시계(`Date.now`) 주입만 남는다.
+ *
+ * `remainingMs`는 이펙트가 재실행될 때마다 호출된다: 첫 호출이 마감을 정하고 이후에는 남은
+ * 시간만 돌려주므로, 뷰포트가 아무리 자주 갱신돼도 종결이 밀리지 않는다. 대기가 끝나면
+ * (예약 플래그가 내려가면) `reset()`으로 다음 사이클에 새 상한을 준다.
+ */
+const useSettleDeadline = (visible: boolean) => {
+  const deadlineRef = useRef<SettleDeadline | null>(null);
+
+  const remainingMs = useCallback(
+    (now: number): number => {
+      const advanced = advanceSettleDeadline({
+        deadline: deadlineRef.current,
+        now,
+        visible,
+        timeoutMs: VIEWPORT_SETTLE_TIMEOUT_MS,
+      });
+      deadlineRef.current = advanced.deadline;
+      return advanced.remainingMs;
+    },
+    [visible],
+  );
+
+  const reset = useCallback(() => {
+    deadlineRef.current = null;
+  }, []);
+
+  return { remainingMs, reset };
+};
+
 interface AiRouteAutoMove {
   /** 제출 — 축척이 1km 단이 아니면 줌을 먼저 맞추고 새 뷰포트가 반영된 뒤 보낸다 (D10) */
   submit: () => void;
@@ -102,6 +139,11 @@ export const useAiRouteAutoMove = ({
   const abortPending = useAiRouteStore((s) => s.abortPending);
 
   const visible = useDocumentVisible();
+  // 두 대기는 각자의 마감을 갖는다 — 사이클이 겹치지 않아도 상한이 서로 섞이면 안 된다
+  const { remainingMs: normalizeRemainingMs, reset: resetNormalizeDeadline } =
+    useSettleDeadline(visible);
+  const { remainingMs: secondaryRemainingMs, reset: resetSecondaryDeadline } =
+    useSettleDeadline(visible);
   const coords = useCurrentCoords();
   const origin = useMemo(
     () => resolveRouteOrigin({ coords, bounds }),
@@ -125,7 +167,13 @@ export const useAiRouteAutoMove = ({
     onLoginRequired,
     onAutoMove,
   });
-  const { mutate: sendSecondary } = useRouteRecommend({ secondary: true });
+  // 1차와 같은 인증 처리를 붙인다 — 1차 성공과 지연된 2차(서버 10초 창) 사이에 세션이
+  // 만료되면 2차가 401을 받는데, 콜백이 없으면 패널만 입력 대기로 돌아가고 로그인 모달이
+  // 뜨지 않는다(codex 리뷰 P1 — 사용자는 왜 결과가 사라졌는지 알 수 없다).
+  const { mutate: sendSecondary } = useRouteRecommend({
+    secondary: true,
+    onLoginRequired,
+  });
 
   /**
    * 이 훅의 **유일한 발사 지점** — 어떤 경로(즉시·정규화 대기·2차·상한 만료)로 와도
@@ -163,7 +211,10 @@ export const useAiRouteAutoMove = ({
   }, [zoom, zoomTo, startNormalize, send, sendPrimary]);
 
   useEffect(() => {
-    if (!normalizePending) return;
+    if (!normalizePending) {
+      resetNormalizeDeadline();
+      return;
+    }
 
     // 예약이 이미 소비됐으면 쏘지 않는다 — StrictMode(dev)의 이펙트 2회 실행 방어.
     // 첫 실행의 `onMutate`(startRequest)가 플래그를 끄므로 두 번째 실행은 여기서 멈춘다 (L22).
@@ -177,15 +228,34 @@ export const useAiRouteAutoMove = ({
       fire();
       return;
     }
-    // 숨은 탭에서는 지도가 정착하지 않는다 — 상한을 소모하지 않고 복귀 시 다시 잰다 (§12)
+    // 대기 중 사용자가 줌을 되돌리면 목표에 영영 닿지 않는다 — 상한을 두고 종결한다 (D13).
+    // 마감은 이 사이클에서 한 번만 서고, 재실행은 **남은 시간만** 다시 잰다 (§13).
+    const remaining = normalizeRemainingMs(Date.now());
+    // 숨은 탭에서는 지도가 정착하지 않는다 — 그 구간은 마감에서 빠진다 (§12)
     if (!visible) return;
-    // 대기 중 사용자가 줌을 되돌리면 목표에 영영 닿지 않는다 — 상한을 두고 종결한다 (D13)
-    const timer = setTimeout(fire, VIEWPORT_SETTLE_TIMEOUT_MS);
+    if (remaining <= 0) {
+      fire();
+      return;
+    }
+    const timer = setTimeout(fire, remaining);
     return () => clearTimeout(timer);
-  }, [normalizePending, zoom, visible, send, sendPrimary, abortPending]);
+  }, [
+    normalizePending,
+    zoom,
+    visible,
+    send,
+    sendPrimary,
+    abortPending,
+    normalizeRemainingMs,
+    resetNormalizeDeadline,
+  ]);
 
   useEffect(() => {
-    if (!secondaryPending || bounds === null) return;
+    if (!secondaryPending) {
+      resetSecondaryDeadline();
+      return;
+    }
+    if (bounds === null) return;
 
     // 예약 소비 여부는 스토어가 정본이다 — 위 정규화 이펙트와 같은 StrictMode 방어
     const fire = () => {
@@ -202,18 +272,27 @@ export const useAiRouteAutoMove = ({
     });
     // 서버 재요청 제한(14429)은 자동 재요청도 예외가 아니다 — 남은 창만큼 로딩을 유지한다 (Q2)
     const delay = secondaryDelayMs({ requestedAt, now: Date.now() });
-    if (reached && delay <= 0) {
+    // 이미 도달했으면 남은 것은 서버 10초 창뿐이다 — 지도와 무관하므로 숨은 채로도 계속 잰다 (§12)
+    if (reached) {
+      if (delay <= 0) {
+        fire();
+        return;
+      }
+      const windowTimer = setTimeout(fire, delay);
+      return () => clearTimeout(windowTimer);
+    }
+    // 도달 실패 경로에서도 마감이 지나면 현재 뷰포트로 1회 보낸다 — 영구 로딩 금지 (D13·L24).
+    // 마감은 이 사이클에서 한 번만 서고 재실행은 남은 시간만 잰다 — 갱신마다 다시 재면
+    // 사용자가 계속 지도를 만지는 동안 2차가 무한히 연기된다 (§13).
+    const remaining = secondaryRemainingMs(Date.now());
+    // 도달 대기 중 탭이 숨으면 지도가 정착하지 않는다 — 그 구간은 마감에서 빠진다 (§12)
+    if (!visible) return;
+    const wait = Math.max(delay, remaining);
+    if (wait <= 0) {
       fire();
       return;
     }
-    // 도달 대기 중 탭이 숨으면 지도가 정착하지 않는다 — 상한을 소모하지 않는다 (§12).
-    // 이미 도달했으면 남은 것은 서버 10초 창뿐이라 숨은 채로도 계속 잰다.
-    if (!reached && !visible) return;
-    // 도달 실패 경로에서도 창 경과 후에는 현재 뷰포트로 1회 보낸다 — 영구 로딩 금지 (D13·L24)
-    const timer = setTimeout(
-      fire,
-      reached ? delay : Math.max(delay, VIEWPORT_SETTLE_TIMEOUT_MS),
-    );
+    const timer = setTimeout(fire, wait);
     // 재제출·언마운트·뷰포트 재갱신 시 예약을 취소한다 (Q2 — 대기 중 이탈)
     return () => clearTimeout(timer);
   }, [
@@ -225,6 +304,8 @@ export const useAiRouteAutoMove = ({
     send,
     sendSecondary,
     abortPending,
+    secondaryRemainingMs,
+    resetSecondaryDeadline,
   ]);
 
   return { submit, originActive: origin !== null };
