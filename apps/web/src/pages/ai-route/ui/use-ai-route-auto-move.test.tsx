@@ -7,6 +7,7 @@ import type { Bounds } from "@/entities/cell";
 import { useAiRouteStore } from "@/features/ai-route/model/ai-route-store";
 import {
   SECONDARY_MIN_INTERVAL_MS,
+  VIEWPORT_SETTLE_TIMEOUT_MS,
   toViewportDto,
 } from "@/features/ai-route/model/route-request";
 import { MAP_SCALE_1KM_ZOOM } from "@/features/map-home/model/map-scale";
@@ -47,6 +48,14 @@ const BOUNDS_AFTER: Bounds = {
   ne: { lat: 35.1712, lng: 129.1712 },
 };
 const CURRENT_POSITION = { lat: 35.1579, lng: 129.0594 };
+/**
+ * 줌 9(축척 16km)에서 아직 1km로 정착하지 못한 뷰포트 — 검증 실측 span 1.9379° × 4.7461°.
+ * 현위치를 품고 있어 제출은 정상 진입한다(originActive true).
+ */
+const UNSETTLED_WIDE: Bounds = {
+  sw: { lat: 34.2, lng: 126.6 },
+  ne: { lat: 36.1379, lng: 131.3461 },
+};
 
 const MENTIONED_AREA: MentionedAreaDto = {
   name: "부산 해운대",
@@ -90,8 +99,8 @@ const stubBothWithMentionedArea = () =>
     }),
   );
 
-/** 현위치 확보 대기 → 1차 제출 → 자동 이동 명령 도착까지 */
-const submitAndAwaitMove = async () => {
+/** 렌더 → 현위치 확보 대기 → 제출. 제출 전 줌은 각 시나리오가 세팅한다 */
+const renderAndSubmit = async () => {
   const rendered = renderHook(
     () => useAiRouteAutoMove({ onLoginRequired: vi.fn() }),
     { wrapper },
@@ -99,26 +108,90 @@ const submitAndAwaitMove = async () => {
 
   await waitFor(() => expect(rendered.result.current.originActive).toBe(true));
   act(() => rendered.result.current.submit());
+
+  return rendered;
+};
+
+/** 제출 → 자동 이동 명령 도착까지 */
+const submitAndAwaitMove = async () => {
+  const rendered = await renderAndSubmit();
   await waitFor(() => expect(moveTo).toHaveBeenCalledTimes(1));
 
   return rendered;
 };
 
+/** 지도가 새 뷰포트로 정착한다 — 줌 단은 시나리오가 정한다(기본은 목표 1km) */
+const settleViewport = (bounds: Bounds, zoom = MAP_SCALE_1KM_ZOOM) => {
+  act(() => useViewportStore.setState({ bounds, zoom }));
+};
+
 /** 지도 이동이 반영돼 새 bounds가 들어오고, 서버 10초 창도 지난 상태를 만든다 */
 const settleNewViewport = () => {
-  act(() => {
+  act(() =>
     useAiRouteStore.setState({
       requestedAt: Date.now() - SECONDARY_MIN_INTERVAL_MS,
+    }),
+  );
+  settleViewport(BOUNDS_AFTER);
+};
+
+/** 제출 → 자동 이동 → 서버 10초 창 경과 → 대기 중 사용자가 지도를 바꾼다 (도달 실패 경로) */
+const submitThenDisturbViewport = async (bounds: Bounds, zoom: number) => {
+  const rendered = await submitAndAwaitMove();
+  act(() =>
+    useAiRouteStore.setState({
+      requestedAt: Date.now() - SECONDARY_MIN_INTERVAL_MS,
+    }),
+  );
+  settleViewport(bounds, zoom);
+
+  return rendered;
+};
+
+/** 지도가 목표 축척으로 정착하면 그 뷰포트로 1차가 1회 나간다 — 정규화 경로의 공통 종착 */
+const settleAndExpectPrimaryFired = async (
+  received: ReturnType<typeof stubBothWithMentionedArea>,
+) => {
+  settleViewport(BOUNDS_AFTER);
+
+  await waitFor(() => expect(received).toHaveLength(1));
+  expect(received[0].body).toMatchObject({
+    viewport: toViewportDto(BOUNDS_AFTER),
+  });
+};
+
+/**
+ * 탭 가시성 스텁 — jsdom의 `document.visibilityState`는 프로토타입 getter라 재정의로 바꾼다.
+ * 숨은 탭에서는 rAF가 멈춰 지도가 `idle`을 내지 않는다(§12 결함의 조건).
+ */
+const setVisibility = (state: DocumentVisibilityState) => {
+  act(() => {
+    Object.defineProperty(document, "visibilityState", {
+      value: state,
+      configurable: true,
     });
-    useViewportStore.setState({ bounds: BOUNDS_AFTER });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+};
+
+/** 정착 상한을 실제로 넘겨 본다 — 이 훅의 대기는 실타이머 기반이다 */
+const waitPastSettleTimeout = async () => {
+  await act(async () => {
+    await new Promise((resolve) =>
+      setTimeout(resolve, VIEWPORT_SETTLE_TIMEOUT_MS + 300),
+    );
   });
 };
 
 beforeEach(() => {
   useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
   useAiRouteStore.getState().setText("해운대에서 저녁 먹고 산책");
-  useViewportStore.setState({ bounds: BOUNDS_BEFORE });
+  useViewportStore.setState({
+    bounds: BOUNDS_BEFORE,
+    zoom: MAP_SCALE_1KM_ZOOM,
+  });
   allowPositionAt(CURRENT_POSITION);
+  setVisibility("visible");
   moveTo.mockClear();
   zoomTo.mockClear();
 });
@@ -154,14 +227,10 @@ describe("useAiRouteAutoMove — 언급 지역 자동 이동과 2차 재요청 (
       expect(useAiRouteStore.getState().status).toBe("result"),
     );
     // 2차 응답 뒤 뷰포트가 또 갱신돼도 예약이 남아 있지 않다
-    act(() =>
-      useViewportStore.setState({
-        bounds: {
-          sw: { lat: 35.15, lng: 129.15 },
-          ne: { lat: 35.18, lng: 129.18 },
-        },
-      }),
-    );
+    settleViewport({
+      sw: { lat: 35.15, lng: 129.15 },
+      ne: { lat: 35.18, lng: 129.18 },
+    });
 
     expect(received).toHaveLength(2);
     expect(moveTo).toHaveBeenCalledTimes(1);
@@ -204,7 +273,10 @@ describe("useAiRouteAutoMove — 언급 지역 자동 이동과 2차 재요청 (
         secondaryPending: true,
         requestedAt: Date.now() - SECONDARY_MIN_INTERVAL_MS,
       });
-      useViewportStore.setState({ bounds: BOUNDS_AFTER });
+      useViewportStore.setState({
+        bounds: BOUNDS_AFTER,
+        zoom: MAP_SCALE_1KM_ZOOM,
+      });
     });
 
     renderHook(() => useAiRouteAutoMove({ onLoginRequired: vi.fn() }), {
@@ -222,7 +294,7 @@ describe("useAiRouteAutoMove — 언급 지역 자동 이동과 2차 재요청 (
     const received = stubBothWithMentionedArea();
 
     await submitAndAwaitMove();
-    act(() => useViewportStore.setState({ bounds: BOUNDS_AFTER }));
+    settleViewport(BOUNDS_AFTER);
     await act(async () => {
       await Promise.resolve();
     });
@@ -230,5 +302,150 @@ describe("useAiRouteAutoMove — 언급 지역 자동 이동과 2차 재요청 (
     expect(received).toHaveLength(1);
     expect(useAiRouteStore.getState().status).toBe("loading");
     expect(useAiRouteStore.getState().points).toHaveLength(0);
+  });
+});
+
+describe("항상 1km 정규화 (L20~L23·D10·D11)", () => {
+  /** 제출 시점 줌이 1km 단이 아닌 상태 — 정규화 대기로 들어간다 */
+  const startWide = () =>
+    useViewportStore.setState({ bounds: BOUNDS_BEFORE, zoom: 16 });
+
+  it("현재 줌이 1km 단이 아니면 제출이 요청을 보내지 않고 줌만 맞춘다 (L20)", async () => {
+    const received = stubBothWithMentionedArea();
+    startWide();
+
+    await renderAndSubmit();
+
+    expect(zoomTo).toHaveBeenCalledTimes(1);
+    expect(zoomTo).toHaveBeenCalledWith(MAP_SCALE_1KM_ZOOM);
+    expect(received).toHaveLength(0);
+  });
+
+  it("제출 클릭 즉시 로딩이고 요청 시각은 mutate 시점에만 기록된다 (L23·D11)", async () => {
+    stubBothWithMentionedArea();
+    startWide();
+
+    await renderAndSubmit();
+
+    expect(useAiRouteStore.getState().status).toBe("loading");
+    expect(useAiRouteStore.getState().requestedAt).toBeNull();
+  });
+
+  it("줌이 목표에 도달하면 요청이 정확히 1회 나간다 — StrictMode 2회 실행 포함 (L22)", async () => {
+    const received = stubBothWithMentionedArea();
+    startWide();
+
+    await renderAndSubmit();
+    await settleAndExpectPrimaryFired(received);
+
+    expect(useAiRouteStore.getState().requestedAt).not.toBeNull();
+    // 새 뷰포트가 또 들어와도 1차가 다시 나가지 않는다
+    settleViewport(BOUNDS_BEFORE);
+    expect(received).toHaveLength(1);
+  });
+
+  it("이미 1km 단이면 줌 명령 없이 즉시 발사한다 (L21)", async () => {
+    const received = stubBothWithMentionedArea();
+
+    await renderAndSubmit();
+
+    // 자동 이동 응답이 오기 전 — 정규화 줌 명령이 아예 없어야 한다
+    expect(zoomTo).not.toHaveBeenCalled();
+    await waitFor(() => expect(received).toHaveLength(1));
+  });
+});
+
+describe("2차 종결 보장과 결과 후 자유 확대 (L24·L25)", () => {
+  it("목표 도달에 실패해도 대기 창이 지나면 현재 뷰포트로 2차가 1회 나간다 (L24 — 영구 로딩 금지)", async () => {
+    const received = stubBothWithMentionedArea();
+
+    // 대기 중 사용자가 줌을 바꿔 목표(1km)를 벗어난다 — 도달 판정이 영영 성립하지 않는다
+    await submitThenDisturbViewport(BOUNDS_AFTER, 16);
+
+    expect(received).toHaveLength(1);
+    await waitFor(() => expect(received).toHaveLength(2), {
+      timeout: VIEWPORT_SETTLE_TIMEOUT_MS + 1_000,
+    });
+    expect(received[1].body).toMatchObject({
+      viewport: toViewportDto(BOUNDS_AFTER),
+    });
+    await waitFor(() =>
+      expect(useAiRouteStore.getState().status).toBe("result"),
+    );
+  });
+
+  it("결과 상태에서 뷰포트가 바뀌어도 recommend가 추가로 나가지 않는다 (L25)", async () => {
+    const received = stubFetch(() =>
+      envelopeResponse({
+        points: ROUTE_POINTS,
+        notice: null,
+        mentionedArea: null,
+      }),
+    );
+
+    await renderAndSubmit();
+    await waitFor(() =>
+      expect(useAiRouteStore.getState().status).toBe("result"),
+    );
+
+    settleViewport(BOUNDS_AFTER, 16);
+    settleViewport(BOUNDS_BEFORE);
+
+    expect(received).toHaveLength(1);
+    expect(zoomTo).not.toHaveBeenCalled();
+  });
+});
+
+describe("서버 뷰포트 상한 가드와 탭 가시성 (§12 — 14401 재현 방지)", () => {
+  /** 줌 9에서 제출 — 정규화 대기로 들어가지만 지도가 정착하지 못한 상태를 만든다 */
+  const startUnsettledWide = () =>
+    useViewportStore.setState({ bounds: UNSETTLED_WIDE, zoom: 9 });
+
+  it("정착 상한이 만료돼도 뷰포트가 서버 상한을 넘으면 요청을 보내지 않고 안내로 종결한다 (§12·S8)", async () => {
+    const received = stubBothWithMentionedArea();
+    startUnsettledWide();
+
+    await renderAndSubmit();
+
+    await waitFor(
+      () => expect(useAiRouteStore.getState().status).toBe("error"),
+      { timeout: VIEWPORT_SETTLE_TIMEOUT_MS + 1_000 },
+    );
+    expect(received).toHaveLength(0);
+    // 사용자가 다시 누를 수 있어야 한다 — 영구 로딩도, 확정 400도 아니다 (D13)
+    expect(useAiRouteStore.getState().errorNotice?.retryable).toBe(true);
+    expect(useAiRouteStore.getState().normalizePending).toBe(false);
+  });
+
+  it("숨은 탭에서는 정착 상한을 소모하지 않고, 복귀 후 정착한 1km 뷰포트로 1회 나간다 (§12)", async () => {
+    const received = stubBothWithMentionedArea();
+    startUnsettledWide();
+    setVisibility("hidden");
+
+    await renderAndSubmit();
+    await waitPastSettleTimeout();
+
+    expect(received).toHaveLength(0);
+    expect(useAiRouteStore.getState().status).toBe("loading");
+
+    // 탭 복귀 → rAF 재개 → 지도가 목표 축척으로 정착한다
+    setVisibility("visible");
+    await settleAndExpectPrimaryFired(received);
+
+    expect(useAiRouteStore.getState().status).not.toBe("error");
+  });
+
+  it("2차 종결 상한에서도 과대 뷰포트로는 쏘지 않고 안내로 종결한다 (§12 — 어떤 경로로도)", async () => {
+    const received = stubBothWithMentionedArea();
+
+    // 대기 중 사용자가 크게 줌아웃 — 도달 실패 + 상한 초과가 겹치는 경로
+    await submitThenDisturbViewport(UNSETTLED_WIDE, 9);
+
+    await waitFor(
+      () => expect(useAiRouteStore.getState().status).toBe("error"),
+      { timeout: VIEWPORT_SETTLE_TIMEOUT_MS + 1_000 },
+    );
+    expect(received).toHaveLength(1);
+    expect(useAiRouteStore.getState().secondaryPending).toBe(false);
   });
 });

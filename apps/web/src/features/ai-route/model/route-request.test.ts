@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { Bounds } from "@/entities/cell";
 import {
   MAX_ROUTE_TEXT_LENGTH,
+  MAX_VIEWPORT_SPAN_DEG,
   SECONDARY_MIN_INTERVAL_MS,
   buildRecommendBody,
   canSubmit,
-  needsSpanNormalize,
+  exceedsViewportSpan,
+  needsZoomNormalize,
+  reachedTargetViewport,
   secondaryDelayMs,
   submitLabel,
   toViewportDto,
@@ -122,34 +125,130 @@ describe("buildRecommendBody — 출발지 병합 (L11)", () => {
   });
 });
 
-describe("needsSpanNormalize — 0.5도 초과 뷰포트 예방 판정 (L12)", () => {
-  it("위·경도 어느 한 변이라도 0.5도를 넘으면 정규화가 필요하다 (L12)", () => {
+describe("needsZoomNormalize — 항상 1km 정규화 판정 (L20·L21)", () => {
+  it("현재 줌이 목표 축척 단이 아니면 정규화가 필요하다 (L20)", () => {
+    expect(needsZoomNormalize({ zoom: 16, targetZoom: 13 })).toBe(true);
+    expect(needsZoomNormalize({ zoom: 10, targetZoom: 13 })).toBe(true);
+  });
+
+  it("이미 목표 축척 단이면 정규화가 필요 없다 — 줌 명령을 내면 안 된다 (L21)", () => {
+    expect(needsZoomNormalize({ zoom: 13, targetZoom: 13 })).toBe(false);
+  });
+
+  it("소수 줌은 축척 라벨과 같은 내림 기준으로 같은 단으로 본다 (L21)", () => {
+    expect(needsZoomNormalize({ zoom: 13.4, targetZoom: 13 })).toBe(false);
+  });
+});
+
+describe("reachedTargetViewport — 목표 뷰포트 도달 판정 (L24·D12)", () => {
+  const MOVED: Bounds = {
+    sw: { lat: 35.1523, lng: 129.1521 },
+    ne: { lat: 35.1712, lng: 129.1712 },
+  };
+
+  it("줌이 목표 단이고 이동이 지도에 반영되면 도달이다 (L24)", () => {
     expect(
-      needsSpanNormalize({
-        sw: { lat: 35.0, lng: 129.0 },
-        ne: { lat: 35.6, lng: 129.1 },
-      }),
-    ).toBe(true);
-    expect(
-      needsSpanNormalize({
-        sw: { lat: 35.0, lng: 129.0 },
-        ne: { lat: 35.1, lng: 129.6 },
+      reachedTargetViewport({
+        bounds: MOVED,
+        boundsAtCommand: BOUNDS,
+        zoom: 13,
+        targetZoom: 13,
       }),
     ).toBe(true);
   });
 
-  it("두 변 모두 0.5도 이하면 정규화가 필요 없다 (L12, 경계 포함)", () => {
-    expect(needsSpanNormalize(BOUNDS)).toBe(false);
+  it("이동이 아직 반영되지 않았으면(명령 시점 뷰포트 그대로) 도달이 아니다 (L24)", () => {
     expect(
-      needsSpanNormalize({
-        sw: { lat: 35.0, lng: 129.0 },
-        ne: { lat: 35.5, lng: 129.5 },
+      reachedTargetViewport({
+        bounds: BOUNDS,
+        boundsAtCommand: BOUNDS,
+        zoom: 13,
+        targetZoom: 13,
       }),
     ).toBe(false);
   });
 
-  it("지도가 준비되기 전(bounds null)에는 정규화를 시도하지 않는다 (L12)", () => {
-    expect(needsSpanNormalize(null)).toBe(false);
+  it("대기 중 사용자가 줌을 바꿔 목표를 벗어나면 도달이 아니다 (D12)", () => {
+    expect(
+      reachedTargetViewport({
+        bounds: MOVED,
+        boundsAtCommand: BOUNDS,
+        zoom: 16,
+        targetZoom: 13,
+      }),
+    ).toBe(false);
+  });
+
+  it("지도가 준비되기 전(bounds null)에는 도달이 아니다 (L24)", () => {
+    expect(
+      reachedTargetViewport({
+        bounds: null,
+        boundsAtCommand: BOUNDS,
+        zoom: 13,
+        targetZoom: 13,
+      }),
+    ).toBe(false);
+  });
+
+  it("이 마운트에서 이동 명령을 내지 않았으면(재진입) 이미 정착한 뷰포트로 본다 (A7)", () => {
+    expect(
+      reachedTargetViewport({
+        bounds: MOVED,
+        boundsAtCommand: null,
+        zoom: 16,
+        targetZoom: 13,
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("exceedsViewportSpan — 서버 뷰포트 상한 가드 (§12 · developCode 14401)", () => {
+  /** 줌 9(축척 16km)에서 아직 정착하지 않은 지도의 뷰포트 — 검증 실측 span 1.9379° × 4.7461° */
+  const UNSETTLED_WIDE: Bounds = {
+    sw: { lat: 34.2, lng: 126.6 },
+    ne: { lat: 36.1379, lng: 131.3461 },
+  };
+
+  it("정착 전 저줌 뷰포트는 상한을 넘는다 — 이대로 나가면 확정 400(14401)이다 (§12)", () => {
+    expect(
+      exceedsViewportSpan({
+        viewport: toViewportDto(UNSETTLED_WIDE),
+        maxSpanDeg: MAX_VIEWPORT_SPAN_DEG,
+      }),
+    ).toBe(true);
+  });
+
+  it("한 변만 넘어도 상한 초과다 — 위도·경도를 각각 본다 (§12)", () => {
+    const tallOnly: Bounds = {
+      sw: { lat: 35.0, lng: 129.0 },
+      ne: { lat: 35.6, lng: 129.1 },
+    };
+    const wideOnly: Bounds = {
+      sw: { lat: 35.0, lng: 129.0 },
+      ne: { lat: 35.1, lng: 129.6 },
+    };
+
+    expect(
+      exceedsViewportSpan({
+        viewport: toViewportDto(tallOnly),
+        maxSpanDeg: MAX_VIEWPORT_SPAN_DEG,
+      }),
+    ).toBe(true);
+    expect(
+      exceedsViewportSpan({
+        viewport: toViewportDto(wideOnly),
+        maxSpanDeg: MAX_VIEWPORT_SPAN_DEG,
+      }),
+    ).toBe(true);
+  });
+
+  it("1km 단으로 정착한 뷰포트는 상한 안이다 — 정상 경로는 이 가드에 걸리지 않는다 (§12·D10)", () => {
+    expect(
+      exceedsViewportSpan({
+        viewport: toViewportDto(BOUNDS),
+        maxSpanDeg: MAX_VIEWPORT_SPAN_DEG,
+      }),
+    ).toBe(false);
   });
 });
 

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RequireAuth } from "@/app/RequireAuth";
 import { useAiRouteStore } from "@/features/ai-route/model/ai-route-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
+import { MAP_SCALE_1KM_ZOOM } from "@/features/map-home/model/map-scale";
 import { useViewportStore } from "@/features/map-home/model/viewport-store";
 import { useMapOverlayStore } from "@/widgets/map-shell/map-overlay-store";
 import type { MapShellContext } from "@/widgets/map-shell/use-map-shell";
@@ -85,12 +86,14 @@ beforeEach(() => {
   useLoginModalStore.setState({ open: false });
   useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
   useMapOverlayStore.setState(useMapOverlayStore.getInitialState(), true);
-  // 지도 준비 완료 — 요청 뷰포트의 근원 (부산 서면)
+  // 지도 준비 완료 — 요청 뷰포트의 근원 (부산 서면).
+  // 줌은 1km 단으로 둔다: MSG-489 §11 이후 제출은 이 단에서만 즉시 발사된다 (D10)
   useViewportStore.setState({
     bounds: {
       sw: { lat: 35.1521, lng: 129.0537 },
       ne: { lat: 35.1662, lng: 129.0712 },
     },
+    zoom: MAP_SCALE_1KM_ZOOM,
   });
   moveTo.mockClear();
 });

@@ -32,15 +32,29 @@ interface AiRouteState {
   movedAreaName: string | null;
   /** 2차 요청이 예약됐지만 아직 발사되지 않았는가 — 섹션 이탈·재진입에도 예약이 살아남는다 */
   secondaryPending: boolean;
+  /** 제출했지만 1km 축척 정규화를 기다리는 중인가 — 로딩 표시의 근거 (D11·L23) */
+  normalizePending: boolean;
   /** 1차 요청을 쏜 시각(ms) — 2차 발사가 서버 10초 창을 계산하는 기준 (Q2 안 B) */
   requestedAt: number | null;
   setText: (text: string) => void;
+  /**
+   * 제출 직후 축척 정규화 대기 시작 (D11) — 즉시 로딩 화면이지만 요청은 아직 안 나갔다.
+   * `requestedAt`을 여기서 기록하지 않는 이유: 그러면 정규화 대기가 서버 10초 창을
+   * 잡아먹어 2차가 조기 발사되고 14429가 난다 (L23).
+   */
+  startNormalize: () => void;
   /** 1차 요청 시작 — 사이클 플래그를 전부 초기화한다 (L15) */
   startRequest: (originSent?: boolean) => void;
   /** 자동 이동 확정 + 2차 요청 예약 — 1차 결과는 게시하지 않고 로딩을 유지한다 (D5·L14) */
   startSecondaryRequest: (areaName: string) => void;
   /** 예약된 2차를 실제로 발사한 시점 — 재발사를 막고 출발지 재판정 결과를 반영한다 */
   markSecondarySent: (originSent: boolean) => void;
+  /**
+   * 요청을 보내지 못한 채 대기를 끝낸다 (§12) — 정착 상한이 만료됐는데 뷰포트가
+   * 서버 상한을 넘어 확정 400이 되는 경로. 쏘면 400, 안 쏘면 영구 로딩이라
+   * **명시적 안내로 종결**해 사용자가 다시 누를 수 있게 한다 (D13).
+   */
+  abortPending: (notice: RouteErrorNotice) => void;
   succeed: (points: RoutePointDto[], notice: string | null) => void;
   fail: (notice: RouteErrorNotice) => void;
   selectOrder: (order: number | null) => void;
@@ -50,12 +64,17 @@ interface AiRouteState {
 /** 요청 사이클 플래그 초기값 — startRequest와 reset이 공유한다 (L15) */
 const clearedCycle = (): Pick<
   AiRouteState,
-  "autoMoved" | "originSent" | "movedAreaName" | "secondaryPending"
+  | "autoMoved"
+  | "originSent"
+  | "movedAreaName"
+  | "secondaryPending"
+  | "normalizePending"
 > => ({
   autoMoved: false,
   originSent: false,
   movedAreaName: null,
   secondaryPending: false,
+  normalizePending: false,
 });
 
 /** 결과·선택·에러가 비워진 상태 — 새 요청 시작과 reset이 공유한다 (매번 새 배열) */
@@ -77,6 +96,14 @@ export const useAiRouteStore = create<AiRouteState>((set) => ({
   ...cleared(),
   ...clearedCycle(),
   setText: (text) => set({ text }),
+  // 정규화 대기도 새 사이클이라 이전 결과를 먼저 비운다 — 잔상이 로딩 중에 남지 않는다
+  startNormalize: () =>
+    set({
+      ...cleared(),
+      ...clearedCycle(),
+      status: "loading",
+      normalizePending: true,
+    }),
   // 새 요청은 이전 결과를 **먼저** 비운다 — 잔상(이전 카드·지도 표시)이 로딩 중에 남지 않는다
   startRequest: (originSent = false) =>
     set({
@@ -95,6 +122,14 @@ export const useAiRouteStore = create<AiRouteState>((set) => ({
     }),
   markSecondarySent: (originSent) =>
     set({ secondaryPending: false, originSent }),
+  // 두 대기(정규화·2차)를 함께 푼다 — 예약이 남으면 같은 뷰포트로 재발사된다
+  abortPending: (notice) =>
+    set({
+      status: "error",
+      errorNotice: notice,
+      normalizePending: false,
+      secondaryPending: false,
+    }),
   succeed: (points, notice) =>
     set({ status: "result", points, notice, errorNotice: null }),
   fail: (notice) =>

@@ -159,3 +159,71 @@ describe("2차 자동 재요청 사이클 (L14·L15)", () => {
     expect(store().originSent).toBe(true);
   });
 });
+
+describe("축척 정규화 대기 (L23·D11)", () => {
+  beforeEach(() => {
+    useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
+  });
+
+  it("정규화 대기를 시작하면 즉시 로딩이지만 요청 시각은 아직 기록하지 않는다 (L23)", () => {
+    store().startNormalize();
+
+    expect(store().status).toBe("loading");
+    expect(store().normalizePending).toBe(true);
+    expect(store().requestedAt).toBeNull();
+  });
+
+  it("실제 mutate 시점에 요청 시각이 기록되고 정규화 대기가 풀린다 (L23)", () => {
+    store().startNormalize();
+    const before = Date.now();
+
+    store().startRequest();
+
+    expect(store().normalizePending).toBe(false);
+    expect(store().requestedAt!).toBeGreaterThanOrEqual(before);
+  });
+
+  it("정규화 대기는 이전 결과를 먼저 비운다 — 잔상이 로딩 중에 남지 않는다 (D11)", () => {
+    store().startRequest();
+    store().succeed(ROUTE_POINTS, null);
+
+    store().startNormalize();
+
+    expect(store().points).toHaveLength(0);
+    expect(store().selectedOrder).toBeNull();
+  });
+});
+
+describe("요청 없이 대기를 종결한다 (§12 — 영구 로딩·확정 400 동시 금지)", () => {
+  /** 뷰포트가 서버 상한을 넘어 보낼 수 없을 때의 안내 (route-error VIEWPORT_TOO_WIDE_NOTICE와 같은 모양) */
+  const TOO_WIDE = {
+    message: "지도를 조금 더 확대하거나 다른 곳으로 옮긴 뒤 다시 시도해 주세요",
+    retryable: true,
+    disablesFeature: false,
+    requiresLogin: false,
+  } as const;
+
+  beforeEach(() => {
+    useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
+  });
+
+  it("정규화 대기를 안내로 종결하면 에러 화면이 되고 대기 플래그가 풀린다 — 다시 누를 수 있다 (§12·D13)", () => {
+    store().startNormalize();
+
+    store().abortPending(TOO_WIDE);
+
+    expect(store().status).toBe("error");
+    expect(store().errorNotice).toEqual(TOO_WIDE);
+    expect(store().normalizePending).toBe(false);
+  });
+
+  it("2차 대기도 같은 종결을 쓴다 — 예약이 남아 재발사되지 않는다 (§12·D13)", () => {
+    store().startRequest();
+    store().startSecondaryRequest("부산 해운대");
+
+    store().abortPending(TOO_WIDE);
+
+    expect(store().status).toBe("error");
+    expect(store().secondaryPending).toBe(false);
+  });
+});

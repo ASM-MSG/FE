@@ -10,7 +10,7 @@ import type { AiRouteStatus } from "./ai-route-store";
  * 추천 요청 조립·제출 판정 (MSG-488 L8·L9).
  * 순수 함수 — 지도 SDK를 모르고 뷰포트를 플랫폼 중립 `Bounds`로 받는다(RN 경계).
  *
- * MSG-489가 출발지 병합(L11)·0.5도 예방 판정(L12)·버튼 문구(L13)·2차 대기(Q2)를 얹었다.
+ * MSG-489가 출발지 병합(L11)·축척 정규화 판정(L20·L24)·버튼 문구(L13)·2차 대기(Q2)를 얹었다.
  */
 
 /** 서버 계약 상한 (RouteRecommendRequestDto.text: trim 후 1~500자) */
@@ -47,21 +47,91 @@ export const buildRecommendBody = ({
   return origin ? { ...body, origin } : body;
 };
 
-/** 서버 뷰포트 상한 (14401) — 위·경도 한 변이 이 값을 넘으면 요청이 거절된다 */
-const MAX_VIEWPORT_SPAN_DEG = 0.5;
+/**
+ * 요청 전 축척 정규화가 필요한가 (L20·L21, D10).
+ * 추천은 **항상 1km 단 뷰포트**에서만 나간다 — 참이면 호출부가 줌을 먼저 맞추고
+ * 새 뷰포트가 반영된 뒤 보낸다(bounds를 잘라 보내지 않는다). 거짓이면 즉시 발사한다:
+ * 이미 목표 단인데 줌 명령을 내면 지도가 `idle`을 내지 않아 요청이 영영 안 나간다 (L21).
+ *
+ * 목표 줌 단은 파라미터로 받는다 — 이 모듈은 지도 축척 상수(features/map-home)를
+ * import하지 않는다(RN 경계·feature 경계). 값 주입은 뷰-레이어 훅 몫이다.
+ * 내림 비교인 이유: 축척 라벨(map-scale)이 내림 기준이라 13.4도 사용자에게는 "1km"다.
+ *
+ * MSG-489 §11에서 0.5도 상한 판정(`needsSpanNormalize`, A2)을 대체했다.
+ * 단 §11이 함께 적은 "항상 1km면 14401이 구조적으로 불가능"은 §12에서 반증됐다 —
+ * 정착 대기 상한이 만료되는 출구(D13)는 이 판정을 거치지 않는다.
+ * 최종 방어선은 아래 `exceedsViewportSpan`이다.
+ */
+export const needsZoomNormalize = ({
+  zoom,
+  targetZoom,
+}: {
+  zoom: number;
+  targetZoom: number;
+}): boolean => Math.floor(zoom) !== targetZoom;
 
 /**
- * 요청 전 축척 정규화가 필요한가 (L12, A2).
- * 참이면 호출부가 1km 단으로 줌을 맞추고 새 뷰포트가 반영된 뒤 보낸다 —
- * bounds를 잘라 보내지 않는다(사용자가 보는 화면과 요청 범위를 어긋나게 두지 않는다).
+ * 서버 뷰포트 상한 (developCode 14401) — 요청 사각형의 한 변이 이 값을 넘으면 400이다.
+ *
+ * MSG-489 §11이 "항상 1km 정규화면 14401은 구조적으로 불가능"이라며 이 상수와
+ * `needsSpanNormalize`를 폐기했으나, §12 검증에서 **반증**됐다: 숨은 탭에서는 지도가
+ * `idle`을 내지 않아 뷰포트가 갱신되지 않는데, D13의 종결 출구(정착 상한 만료)가
+ * 그 옛 bounds로 그대로 쏴 줌 9의 1.9379° × 4.7461° 요청이 나가 400을 맞았다(실측).
+ *
+ * 그래서 **정규화 트리거가 아니라 발사 직전 최종 가드**로만 되살렸다 —
+ * 정상 경로의 "항상 1km"(D10)는 그대로이고, 이 판정은 정착 실패 경로에서만 참이 된다.
  */
-export const needsSpanNormalize = (bounds: Bounds | null): boolean => {
+export const MAX_VIEWPORT_SPAN_DEG = 0.5;
+
+/**
+ * 보내려는 사각형이 서버 상한을 넘는가 (§12) — 참이면 호출부는 요청을 보내지 않고
+ * 안내로 종결한다(확정 400을 대신 맞아 주지 않는다). 판정 대상은 **실제로 실릴 body의
+ * viewport**라, 어떤 경로로 조립됐든 같은 가드를 통과한다.
+ * 상한 값은 파라미터로 받는다 — 테스트가 값을 고정하고, 서버 계약이 바뀌어도 호출부만 고친다.
+ */
+export const exceedsViewportSpan = ({
+  viewport,
+  maxSpanDeg,
+}: {
+  viewport: ViewportDto;
+  maxSpanDeg: number;
+}): boolean =>
+  viewport.maxLat - viewport.minLat > maxSpanDeg ||
+  viewport.maxLng - viewport.minLng > maxSpanDeg;
+
+/**
+ * 목표 뷰포트 도달 판정 (L24·D12) — 2차 자동 재요청의 발사 조건.
+ * "이동 명령이 지도에 반영됐고(bounds 참조 교체) 줌이 목표 단"일 때만 참이라,
+ * 대기 중 사용자가 지도를 만져도 2차가 엉뚱한 뷰포트로 나가지 않는다(지도는 잠그지 않는다).
+ *
+ * `boundsAtCommand`가 null이면 이 마운트에서 이동 명령을 내지 않은 것이다(섹션 재진입, A7) —
+ * 이동은 이전 마운트에서 이미 정착했으므로 도달로 본다.
+ */
+export const reachedTargetViewport = ({
+  bounds,
+  boundsAtCommand,
+  zoom,
+  targetZoom,
+}: {
+  bounds: Bounds | null;
+  /** 이동 명령을 낸 시점의 bounds — 새 bounds가 들어오면 참조가 바뀐다 */
+  boundsAtCommand: Bounds | null;
+  zoom: number;
+  targetZoom: number;
+}): boolean => {
   if (bounds === null) return false;
+  if (boundsAtCommand === null) return true;
   return (
-    bounds.ne.lat - bounds.sw.lat > MAX_VIEWPORT_SPAN_DEG ||
-    bounds.ne.lng - bounds.sw.lng > MAX_VIEWPORT_SPAN_DEG
+    bounds !== boundsAtCommand && !needsZoomNormalize({ zoom, targetZoom })
   );
 };
+
+/**
+ * 지도 정착 대기 상한 (D13) — 목표 도달 판정이 성립하지 않아도 이 시간이 지나면
+ * 현재 뷰포트로 보낸다. 사용자가 대기 중 줌을 되돌리면 목표에 영영 닿지 않는데,
+ * 그때 패널이 로딩에 갇히는 것을 막는 유일한 출구다. 어떤 경로로도 요청은 1회 종결한다.
+ */
+export const VIEWPORT_SETTLE_TIMEOUT_MS = 3_000;
 
 /** 제출 버튼 문구 (L13·D9) — 출발지를 실어 보낸 결과 화면만 "현재 위치에서" 접두가 붙는다 */
 export const submitLabel = ({
