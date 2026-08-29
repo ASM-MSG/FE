@@ -18,6 +18,13 @@ import {
  * mutation은 TanStack 기본 `retry: 0`이라 14429(10초 제한)가 자동 재시도로 악화되지 않는다.
  * 콜백은 훅 레벨 옵션으로 받는다 — mutate per-call 콜백은 관찰자 언마운트 시 유실된다(MSG-325 선례).
  *
+ * **쿼리 무효화가 없는 것은 의도다** (react-doctor `query-mutation-missing-invalidation` 오탐,
+ * 2026-08-29 판정). 이 엔드포인트는 body가 필요해 POST일 뿐 **읽기형**이라(생성 스펙: "…보내면
+ * 지점 목록을 돌려준다") 서버 리소스를 만들지도 고치지도 않고, 응답은 쿼리 캐시가 아니라
+ * `ai-route-store`로 간다 — 낡아질 캐시가 없다. 되레 `onSuccess`에 무효화를 넣으면 1차 응답
+ * 분기(결과 미게시 + 2차 예약)에서도 실행돼 무관한 격자 쿼리를 재요청하고 오버레이를 흔든다.
+ * 규칙 자체는 레포의 다른 mutation(video·profile·badge)에서 유효하므로 전역 off 하지 않는다.
+ *
  * MSG-489: 응답에 `mentionedArea`가 실리면 **결과를 게시하지 않고**(D5) 2차 요청을 예약한다.
  * 2차 인스턴스(`secondary: true`)는 예약 플래그를 보존한 채 로딩만 이어 간다 —
  * `startRequest`를 쓰면 `autoMoved`가 초기화돼 2차 응답에서 또 이동하는 무한 루프가 된다.
@@ -39,6 +46,9 @@ export const useRouteRecommend = (callbacks?: {
   const succeed = useAiRouteStore((s) => s.succeed);
   const fail = useAiRouteStore((s) => s.fail);
 
+  // 읽기형 POST라 무효화할 캐시가 없다 — 위 주석의 판정(2026-08-29). 규칙은 레포 다른
+  // mutation에서 유효하므로 전역 off 대신 이 한 줄만 억제한다.
+  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
   return useMutation({
     mutationFn: (body: RouteRecommendRequestDto, context) =>
       recommendFn({ body }, context),
