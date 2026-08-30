@@ -5,6 +5,7 @@ CLAUDE.md에는 최근 5행만 유지하고, 행이 밀려나면 이 파일로 �
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
+| 2026-08-19 | 모바일 런타임(Hermes) 미구현 API 차단 규칙 신설 — `apps/mobile`·`packages/ui-native` 한정 `no-restricted-properties`(`toSorted`·`toReversed`·`toSpliced`·`Object.groupBy`·`Map.groupBy`·`Promise.withResolvers`) + `no-restricted-globals`(`structuredClone`) | .oxlintrc.json | MSG-427 실기 사고 — 웹에서 포팅한 `toSorted` 3곳이 지도 홈을 마운트 즉시 크래시시켰는데 **게이트 6종이 전부 통과**했다(vitest는 Node에서 돌아 메서드가 존재하고, typecheck는 `lib`에 ES2023이 있다). 같은 함정이 `gallery-groups.ts`·`region-cluster-overlay.ts`에 두 번 주석으로 문서화돼 있었는데도 재발해, 주석으로는 못 막는 것이 실증됐다. 웹→모바일 포팅이 계속되는 한(MSG-428 등) 재발 창이 열려 있어 기계 게이트로 내린다 (MSG-298·386 좌시프트 원칙) |
 | 2026-08-13 | 검증 풀 게이트에 openapi-ts 드리프트 검사 추가(5종→6종), hey-api는 루트 devDep+TS ~6.0.3 peer로 이전 | skills/page-verification·page-implementation, agents 2종, package.json | MSG-386 CI 실패 환류 — CI에만 있던 드리프트 게이트가 검증 스킬에 없어 hey-api TS 7 비호환을 로컬이 못 잡음 (MSG-298 좌시프트 원칙 누락 보수) |
 | 2026-08-13 | task-retro 산출 경로 변경 — docs/retro/(레포) → ~/fillmaphtml/(레포 밖, 커밋 없음) | skills/task-retro, skills/fillmap-page-dev, CLAUDE.md | 사용자 결정 — 회고는 개인 학습 자산, 레포 스테이징분은 사용자가 되돌림 |
 | 2026-08-13 | 테스트 템플릿 신설 — 유형 선택 매트릭스(로직/스토어/쿼리 훅/스모크/흐름)와 단정 범위, test-first에 템플릿 선택 의무화, 검증 감사에 템플릿 부합 추가 | skills/page-implementation(+references/test-templates.md), skills/page-verification | MSG-380 — 템플릿 없는 TDD가 무의미 테스트를 양산(사용자 보고). Testing Trophy·공식 가이드 리서치 기반 |

@@ -40,7 +40,10 @@ const BY_DEVELOP_CODE: Record<number, RouteErrorNotice> = {
   14401: notice(
     "지도를 조금 더 확대하거나 다른 곳으로 옮긴 뒤 다시 시도해 주세요",
   ),
-  14429: notice("잠시 후 다시 시도해 주세요"),
+  // 서버 문구를 그대로 쓴다 (MSG-489, 2026-08-29 사용자 지시) — "다시 시도"를 연속으로 누르면
+  // 이 코드만 반복해서 보게 되는데, 종전 문구는 왜 막혔는지를 알려주지 않았다.
+  // 서버 응답 문자열을 렌더하지는 않는다(FE 고정 문구 정책, MSG-488 §1-5) — 같은 문장을 상수로 둔다.
+  14429: notice("요청이 너무 잦습니다. 잠시 후 다시 시도해주세요"),
   14502: notice("AI가 문장을 이해하지 못했어요. 다시 시도해 주세요"),
   14503: notice("지금은 경로 추천을 쓸 수 없어요", {
     retryable: false,
@@ -48,6 +51,14 @@ const BY_DEVELOP_CODE: Record<number, RouteErrorNotice> = {
   }),
   2403: notice(null, { retryable: false, requiresLogin: true }),
 };
+
+/**
+ * 요청을 **보내지 못하고** 끝낸 경우의 안내 (MSG-489 §12).
+ * 지도가 정착하지 못해 뷰포트가 서버 상한을 넘을 때, 확정 400(14401)을 대신 맞아 주는 대신
+ * 같은 안내로 종결한다 — 사용자가 할 일(확대 후 재시도)이 서버 응답 때와 동일하다.
+ */
+export const VIEWPORT_TOO_WIDE_NOTICE: RouteErrorNotice =
+  BY_DEVELOP_CODE[14401];
 
 export const routeErrorNotice = (error: unknown): RouteErrorNotice => {
   if (!(error instanceof ApiError)) return GENERIC;

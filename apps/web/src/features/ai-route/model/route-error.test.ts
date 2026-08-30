@@ -18,11 +18,11 @@ describe("routeErrorNotice — developCode → UI 반응 매핑 (L5, §1-4)", ()
     }
   });
 
-  it("14429(요청 과다)는 잠시 후 재시도 안내다 — 클라이언트 쿨다운은 걸지 않는다 (L5, Q7)", () => {
+  it("14429(요청 과다)는 서버와 같은 문구로 사유까지 알린다 — 클라이언트 쿨다운은 걸지 않는다 (L5, Q7)", () => {
     expect(
       routeErrorNotice(apiError({ status: 429, developCode: 14429 })),
     ).toEqual({
-      message: "잠시 후 다시 시도해 주세요",
+      message: "요청이 너무 잦습니다. 잠시 후 다시 시도해주세요",
       retryable: true,
       disablesFeature: false,
       requiresLogin: false,
