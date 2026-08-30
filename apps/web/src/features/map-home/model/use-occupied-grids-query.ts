@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { Bounds } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
@@ -58,5 +59,15 @@ export const useOccupiedGridsQuery = (bounds: Bounds | null) => {
     ...mapQueryPolicy,
   });
 
-  return { ...query, grids: flattenGridPages(query.data?.pages) };
+  // `flatMap`은 호출마다 새 배열이라 그대로 반환하면 소비자의 `useMemo([grids])`가
+  // 매 렌더 재계산된다. AI 경로추천은 그 파생을 **전역 오버레이 스토어에 effect로 게시**해
+  // 무관한 리렌더(타이핑 등)마다 clear → 재게시가 돌고 naver Marker가 재생성됐다
+  // (MSG-488 PR #104 리뷰). react-query는 데이터 불변 시 `data`를 같은 참조로 주므로
+  // 여기서 한 번 memo하면 소비자 전원이 안정된 참조를 받는다 (MapShell:149도 함께 해소).
+  const grids = useMemo(
+    () => flattenGridPages(query.data?.pages),
+    [query.data?.pages],
+  );
+
+  return { ...query, grids };
 };

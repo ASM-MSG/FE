@@ -90,6 +90,10 @@ export type UserProfileResponseDto = {
      * 위치기반서비스 이용 동의 여부 — 가입 직후는 false 다. 마지막 변경 시각은 서버에만 두고 응답에 싣지 않는다 (MSG-402 §D-6)
      */
     locationConsent: boolean;
+    /**
+     * 사용자 역할 — 화면이 일반 사용자·행사 운영자·관리자 진입을 가르는 재료다 (MSG-496)
+     */
+    role: 'USER' | 'ORG' | 'ADMIN';
 };
 
 /**
@@ -540,6 +544,86 @@ export type ProfileImagePresignResponseDto = {
      * presigned URL 유효 시간(초)
      */
     expiresInSec: number;
+};
+
+/**
+ * 보행 경로 조회 요청
+ */
+export type RouteWalkPathRequestDto = {
+    /**
+     * 추천 응답의 이웃 좌표쌍 목록 (1~8개 — 지점 상한 8이라 세그먼트 최대 7개에 출발지 구간 1개)
+     */
+    segments?: Array<SegmentDto>;
+};
+
+/**
+ * 이웃 두 지점 사이 구간 (WGS84)
+ */
+export type SegmentDto = {
+    /**
+     * 출발 위도
+     */
+    startLat?: number;
+    /**
+     * 출발 경도
+     */
+    startLng?: number;
+    /**
+     * 도착 위도
+     */
+    endLat?: number;
+    /**
+     * 도착 경도
+     */
+    endLng?: number;
+};
+
+export type ApiResponseDtoRouteWalkPathResponseDto = {
+    developCode: number;
+    message: string;
+    data: RouteWalkPathResponseDto;
+};
+
+/**
+ * 보행로 좌표 (WGS84)
+ */
+export type PathPointDto = {
+    /**
+     * 위도
+     */
+    lat: number;
+    /**
+     * 경도
+     */
+    lng: number;
+};
+
+/**
+ * 보행 경로 조회 응답 — 요청과 같은 개수, 같은 순서
+ */
+export type RouteWalkPathResponseDto = {
+    /**
+     * 세그먼트별 보행 경로 결과
+     */
+    segments: Array<WalkSegmentDto>;
+};
+
+/**
+ * 세그먼트 보행 경로
+ */
+export type WalkSegmentDto = {
+    /**
+     * 보행 경로 확보 여부 — false 면 직선 폴백
+     */
+    resolved: boolean;
+    /**
+     * 보행로를 따르는 좌표열 (위도-경도 순). 실패 시 null
+     */
+    path: Array<PathPointDto> | null;
+    /**
+     * 실제 걷는 거리 (TMap totalDistance, 미터). 실패 시 null
+     */
+    distanceMeters: number | null;
 };
 
 /**
@@ -1006,6 +1090,10 @@ export type LoginResponseDto = {
      * 발급된 리프레시 토큰. 앱(X-Client-Type: app)만 값이 채워지고, 웹은 HttpOnly 쿠키(Set-Cookie)로 내려가므로 null 이다.
      */
     refreshToken: string | null;
+    /**
+     * 로그인한 사용자의 역할. 화면이 일반 사용자·행사 운영자·관리자 진입을 가르는 재료다 (MSG-496).
+     */
+    role: 'USER' | 'ORG' | 'ADMIN';
 };
 
 /**
@@ -1852,6 +1940,10 @@ export type Spot = {
      * 코스 내 순번 — mission_grids.seq 는 NULL 허용 컬럼이라 없을 수 있다
      */
     seq: number | null;
+    /**
+     * 표시 이름 (MSG-492) — 명소 이름·구역 표시명("서면 A-14")·행정동 이름 중 하나로 이미 조립된 문자열이다. 시더가 적재 시점에 정해 저장한 값을 그대로 통과시킨다. 코스가 아닌 유형의 스팟과 시더 갱신 전 스팟만 null — 화면은 기존 안내 문구를 폴백으로 남긴다
+     */
+    name: string | null;
 };
 
 /**
@@ -2605,13 +2697,17 @@ export type ApiResponseDtoFriendPreviewResponseDto = {
 };
 
 /**
- * 친구 코드 미리보기 응답 — 요청 확정 전 확인 화면("OOO님에게 요청을 보낼까요?")용. 조회 전용이며 요청 API 가 전 검증을 재수행한다.
+ * 친구 코드 미리보기 응답 — 요청 확정 전 확인 화면("OOO님에게 요청을 보낼까요?")용. 관계 상태(relation)를 함께 담아 화면이 요청 버튼의 활성 여부·문구를 미리 정할 수 있다 (MSG-391). 조회 전용이며 요청 API 가 전 검증을 재수행한다.
  */
 export type FriendPreviewResponseDto = {
     /**
-     * 코드 소유자의 닉네임
+     * 코드 소유자의 닉네임 — SELF 면 내 닉네임
      */
     nickname: string;
+    /**
+     * 조회자와 코드 소유자의 관계 상태 — 조회 시점 실시간 판정 (MSG-391)
+     */
+    relation: 'SELF' | 'NONE' | 'OUTGOING_PENDING' | 'INCOMING_PENDING' | 'FRIENDS';
 };
 
 export type ApiResponseDtoFriendCodeResponseDto = {
@@ -3616,6 +3712,22 @@ export type IssueProfileImagePresignedUrlResponses = {
 
 export type IssueProfileImagePresignedUrlResponse = IssueProfileImagePresignedUrlResponses[keyof IssueProfileImagePresignedUrlResponses];
 
+export type WalkPathsData = {
+    body: RouteWalkPathRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/routes/walk-paths';
+};
+
+export type WalkPathsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoRouteWalkPathResponseDto;
+};
+
+export type WalkPathsResponse = WalkPathsResponses[keyof WalkPathsResponses];
+
 export type RecommendData = {
     body: RouteRecommendRequestDto;
     path?: never;
@@ -4319,6 +4431,14 @@ export type SearchPlacesData = {
          * 검색어 (자유 텍스트 장소명)
          */
         q: string;
+        /**
+         * 지도 중심 위도 (33.0~39.0). lng 과 한 쌍으로만 유효하다
+         */
+        lat?: number;
+        /**
+         * 지도 중심 경도 (124.0~132.0). lat 과 한 쌍으로만 유효하다
+         */
+        lng?: number;
     };
     url: '/api/search/places';
 };

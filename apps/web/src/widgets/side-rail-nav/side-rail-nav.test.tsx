@@ -1,6 +1,7 @@
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { useAiRouteStore } from "@/features/ai-route/model/ai-route-store";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { useGalleryRegionStore } from "@/features/dex/model/gallery-region-store";
@@ -162,5 +163,65 @@ describe("활성 탭 재클릭 — 초기화 → 접기 (AC 17·18)", () => {
 
     expect(useGalleryRegionStore.getState().selected).toBeNull();
     expect(useSidebarStore.getState().collapsed).toBe(false);
+  });
+});
+
+/**
+ * AI 경로추천 레일 항목 (MSG-488 L11·S1·S12) — 홈 바로 아래 신설 섹션.
+ * 로그인 게이트는 도감·프로필과 같은 분기(URL 불변 + 모달)를 쓴다.
+ */
+describe("AI 경로추천 레일 항목 (MSG-488 L11)", () => {
+  beforeEach(() => {
+    useAuthStore.setState({ isAuthenticated: true });
+    useLoginModalStore.setState({ open: false });
+    useSidebarStore.setState({ collapsed: false });
+    useAiRouteStore.setState(useAiRouteStore.getInitialState(), true);
+  });
+
+  it("레일 항목이 홈·AI 경로추천·업로드·도감·프로필 순으로 뜬다 (L11)", () => {
+    renderNav("/");
+
+    const labels = screen
+      .getAllByRole("button")
+      .map((button) => button.textContent);
+
+    expect(labels).toEqual(["홈", "AI 경로추천", "업로드", "도감", "프로필"]);
+  });
+
+  it("로그인 상태에서 누르면 /ai-route로 이동한다 (S1)", () => {
+    renderNav("/");
+
+    fireEvent.click(screen.getByRole("button", { name: "AI 경로추천" }));
+
+    expect(screen.getByTestId("location").textContent).toBe("/ai-route");
+  });
+
+  it("로그아웃 상태에서는 이동 대신 로그인 모달만 열린다 — URL 불변 (§1-3)", () => {
+    useAuthStore.setState({ isAuthenticated: false });
+    renderNav("/");
+
+    fireEvent.click(screen.getByRole("button", { name: "AI 경로추천" }));
+
+    expect(useLoginModalStore.getState().open).toBe(true);
+    expect(screen.getByTestId("location").textContent).toBe("/");
+  });
+
+  it("입력·결과가 있는 상태에서 재클릭하면 입력 대기로 초기화되고 패널은 열려 있다 (S12①)", () => {
+    useAiRouteStore.getState().setText("서면 동선");
+    renderNav("/ai-route");
+
+    fireEvent.click(screen.getByRole("button", { name: "AI 경로추천" }));
+
+    expect(useAiRouteStore.getState().text).toBe("");
+    expect(useAiRouteStore.getState().status).toBe("idle");
+    expect(useSidebarStore.getState().collapsed).toBe(false);
+  });
+
+  it("이미 초기 상태면 재클릭이 패널을 접는다 (S12②)", () => {
+    renderNav("/ai-route");
+
+    fireEvent.click(screen.getByRole("button", { name: "AI 경로추천" }));
+
+    expect(useSidebarStore.getState().collapsed).toBe(true);
   });
 });

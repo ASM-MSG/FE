@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/app/routes";
 import type { LatLng } from "@/entities/cell";
 import { buildCellClickHandler } from "./grid-click-routing";
+import { gateRouteClusters } from "./cluster-route-gate";
 import { useMapOverlayStore } from "./map-overlay-store";
 import { gateFillCells } from "@/features/map-home/model/cluster-overlay";
 import {
@@ -111,6 +112,8 @@ export const MapShell = () => {
     viewportBounds,
     viewportZoom,
   );
+  // 칩 바 표시(AC 14)와 집계 마커 게이트(MSG-489 §12)가 같은 pathname을 읽는다
+  const { pathname } = useLocation();
   // 집계 소스는 칩 기준 **택일** (MSG-475 AC 14) — 한 지도에 두 종류의 집계 마커가
   // 서지 않는다. 경로추천 칩은 집계 층이 없고, 도감 집계는 훅이 로그인·칩 없음을 게이트한다
   const clusters = useMemo(() => {
@@ -133,8 +136,18 @@ export const MapShell = () => {
     aggregationUnit,
     viewportZoom,
   ]);
+  // AI 경로추천에서는 다른 섹션의 집계 마커를 지도에 남기지 않는다 (MSG-489 §12 — 사용자 지시).
+  // 파생은 그대로 두고 셸이 내리는 값만 걷는다 — 다른 섹션 동작 영향 0
+  const visibleClusters = useMemo(
+    () => gateRouteClusters(clusters, pathname),
+    [clusters, pathname],
+  );
   // 오버레이 셀 클릭(MSG-122 AC 14·18) — 핸들러도 스토어 중계, null이면 표시 전용 기존 동작(R3)
   const onOverlayCellClick = useMapOverlayStore((s) => s.onCellClick);
+  // 경로 경유지 마커 클릭(MSG-488 S8) — AI 경로추천 패널이 게시, null이면 코스 마커는 비클릭
+  const onRouteWaypointClick = useMapOverlayStore(
+    (s) => s.onRouteWaypointClick,
+  );
 
   // 점령 격자 클릭 우선 라우팅 (MSG-329 후속) — 어느 탭·어떤 선택 상태에서든 점령 격자
   // 클릭은 격자 상세가 우선한다. select()가 미니 패널까지 체인으로 닫아 이전 선택을
@@ -172,7 +185,6 @@ export const MapShell = () => {
 
   // 칩 바는 홈에서만 뜨지만 **접힘 래퍼 밖**이다 (AC 14) — 패널을 접어도 칩은 지도 위에
   // 남아야 한다. 접힘 래퍼(hidden) 안의 MapHomePage가 그리던 것을 셸로 올렸다
-  const { pathname } = useLocation();
   const isHome = pathname === ROUTES.home;
 
   const mapRef = useRef<MapCanvasHandle>(null);
@@ -214,8 +226,9 @@ export const MapShell = () => {
           gridLines={gridLines}
           routes={routeOverlays}
           labels={labelOverlays}
-          clusters={clusters}
+          clusters={visibleClusters}
           onOverlayCellClick={handleCellClick}
+          onRouteWaypointClick={onRouteWaypointClick ?? undefined}
         />
       </div>
 

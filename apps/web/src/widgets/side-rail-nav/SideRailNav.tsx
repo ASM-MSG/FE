@@ -1,7 +1,8 @@
-import { Home, LayoutGrid, MapPin, Upload, User } from "lucide-react";
+import { Home, LayoutGrid, MapPin, Sparkles, Upload, User } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { SideRail, type SideRailItem } from "@fillmap/ui-web";
 import { ROUTES, getActiveNavKey, isNavKey, type NavKey } from "@/app/routes";
+import { useAiRouteStore } from "@/features/ai-route/model/ai-route-store";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useLoginModalStore } from "@/features/auth/model/login-modal-store";
 import { dexTabPath, parseDexTab } from "@/features/dex/model/dex-tab";
@@ -15,6 +16,7 @@ import { useRegionPanelStore } from "@/features/region/model/region-panel-store"
 import { useUploadModalStore } from "@/features/upload/model/upload-modal-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
 import {
+  isAiRouteInitial,
   isDexInitial,
   isHomeInitial,
   isProfileInitial,
@@ -24,6 +26,12 @@ import {
 // 탐색 메뉴는 MSG-328에서 제거 — 지역 탐색·검색이 홈 좌측 패널로 통합됐다 (AC 1)
 const items: (SideRailItem & { key: NavKey })[] = [
   { key: "home", label: "홈", icon: <Home className="size-full" /> },
+  // AI 경로추천(MSG-488) — Figma 레일 마스터 15688:810이 홈 바로 아래 sparkles로 그렸다
+  {
+    key: "aiRoute",
+    label: "AI 경로추천",
+    icon: <Sparkles className="size-full" />,
+  },
   { key: "upload", label: "업로드", icon: <Upload className="size-full" /> },
   { key: "dex", label: "도감", icon: <LayoutGrid className="size-full" /> },
   { key: "profile", label: "프로필", icon: <User className="size-full" /> },
@@ -66,6 +74,10 @@ export const SideRailNav = () => {
         galleryOpen: useGalleryRegionStore.getState().selected !== null,
       });
     }
+    if (key === "aiRoute") {
+      const { status, text } = useAiRouteStore.getState();
+      return isAiRouteInitial({ status, text });
+    }
     return isProfileInitial({
       modalOpen: useProfileModalStore.getState().open !== null,
     });
@@ -82,6 +94,11 @@ export const SideRailNav = () => {
     if (key === "dex") {
       useGalleryRegionStore.getState().clear();
       navigate(dexTabPath("map"));
+      return;
+    }
+    if (key === "aiRoute") {
+      // 입력·결과·선택을 비우되 패널은 열어 둔다 (MSG-488 S12①)
+      useAiRouteStore.getState().reset();
       return;
     }
     useProfileModalStore.getState().close();
@@ -105,7 +122,11 @@ export const SideRailNav = () => {
         // 도감도 같은 분기다 (MSG-328 사용자 버그 리포트) — 이동을 허용하면
         // /dex → RequireAuth 홈 귀환 → MapHomePage 재마운트가 실패 쿼리(grids·hotzones
         // 401 + reissue)를 클릭마다 재발사시킨다. RequireAuth 래핑은 직접 URL 진입 방어로 존치
-        if ((key === "profile" || key === "dex") && !isAuthenticated) {
+        // AI 경로추천도 같은 분기다 (MSG-488 §1-3) — 서버가 익명 추천 요청을 401(2403)로 막는다
+        if (
+          (key === "profile" || key === "dex" || key === "aiRoute") &&
+          !isAuthenticated
+        ) {
           openLoginModal();
           return;
         }

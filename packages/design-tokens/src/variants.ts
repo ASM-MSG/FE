@@ -73,6 +73,14 @@ export interface GridCellBaseProps {
   state?: GridCellState;
 }
 
+/** SOURCE: Figma "FeelMap Skeleton" (node 14798:5267) — Type 속성 */
+export type SkeletonVariant = "text-line" | "pill";
+
+export interface SkeletonBaseProps {
+  /** 기본 "text-line" */
+  variant?: SkeletonVariant;
+}
+
 /** SOURCE: Figma "FeelMap MapIconButton" (node 13404:693) — Icon 속성 */
 export type MapIconButtonIcon = "back" | "locate";
 
