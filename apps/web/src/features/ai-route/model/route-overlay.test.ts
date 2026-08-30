@@ -131,6 +131,24 @@ describe("buildAiRouteOverlay — walk-paths 실보행 폴리라인 합성 (L9~L
     ]);
   });
 
+  it("resolved:true인데 path가 빈 배열이면 그 구간은 두 끝점 직선으로 폴백한다 (L9, PR #106 리뷰)", () => {
+    const emptyPath: WalkSegmentDto = {
+      resolved: true,
+      path: [],
+      distanceMeters: 604,
+    };
+
+    const { routes } = buildAiRouteOverlay(ROUTE_POINTS, [], null, {
+      segments: [resolvedSegment(ROUTE_POINTS[0], ROUTE_POINTS[1]), emptyPath],
+    });
+
+    // 마지막 구간이 통째로 빠지면 선이 3번 마커에 닿지 않는다 — 끝점까지 반드시 그린다
+    expect(routes[0].path).toEqual([
+      ...walkPath(ROUTE_POINTS[0], ROUTE_POINTS[1]),
+      { lat: ROUTE_POINTS[2].lat, lng: ROUTE_POINTS[2].lng },
+    ]);
+  });
+
   it("응답 세그먼트 개수가 요청 개수와 다르면 walk 결과를 통째로 버리고 직선으로 되돌린다 (L11, Q9)", () => {
     const { routes } = buildAiRouteOverlay(ROUTE_POINTS, [], null, {
       segments: [resolvedSegment(ROUTE_POINTS[0], ROUTE_POINTS[1])],

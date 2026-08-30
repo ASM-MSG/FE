@@ -57,7 +57,13 @@ const buildRoutePath = (
   ordered.slice(1).forEach((to, index) => {
     const from = ordered[index];
     const segment = segments[index];
-    if (segment?.resolved === true && segment.path !== null) {
+    // 빈 path는 계약 위반이지만 그 구간이 통째로 빠지면 끝점 마커에 선이 안 닿는다 —
+    // route-legs의 distanceMeters null 방어와 같은 수준으로 직선 폴백 (PR #106 리뷰)
+    if (
+      segment?.resolved === true &&
+      segment.path !== null &&
+      segment.path.length > 0
+    ) {
       for (const { lat, lng } of segment.path) pushPoint(path, { lat, lng });
       return;
     }
