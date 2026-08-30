@@ -129,6 +129,7 @@ describe("resetSessionCache — 로그인 직후 이전 세션 캐시 폐기 (AC
         profileImageUrl: null,
         createdAt: "2026-01-01T00:00:00Z",
         locationConsent: true,
+        role: "USER",
       },
     });
     // 비로그인 게이트는 enabled:false라 요청을 만들지 않는다 (AC 3)

@@ -4,6 +4,10 @@
  */
 export const ROUTES = {
   home: "/",
+  // AI 경로추천 (MSG-488) — 티켓 가칭 `/route`가 아니라 `/ai-route`다(승인 Q1):
+  // `route`는 코드베이스에서 이미 3중 의미(ROUTES · ThemeId "route" 코스 칩 ·
+  // map-overlay-store.routes)라 새 섹션까지 그 낱말을 쓰면 계속 섞인다
+  aiRoute: "/ai-route",
   // explore는 MSG-328에서 제거 — 지역 탐색·검색이 홈 좌측 패널로 통합됐다. 재추가 금지.
   upload: "/upload",
   dex: "/dex",

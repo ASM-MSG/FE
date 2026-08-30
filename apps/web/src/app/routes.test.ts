@@ -30,6 +30,7 @@ describe("getActiveNavKey", () => {
   });
 
   it("각 섹션 경로는 해당 네비 키를 반환한다", () => {
+    expect(getActiveNavKey(ROUTES.aiRoute)).toBe("aiRoute");
     expect(getActiveNavKey(ROUTES.upload)).toBe("upload");
     expect(getActiveNavKey(ROUTES.dex)).toBe("dex");
     expect(getActiveNavKey(ROUTES.profile)).toBe("profile");
@@ -47,5 +48,31 @@ describe("getActiveNavKey", () => {
   it("제거된 /explore 경로는 undefined다 — 라우터 404 폴백을 따른다 (MSG-328 AC 2)", () => {
     expect("explore" in ROUTES).toBe(false);
     expect(getActiveNavKey("/explore")).toBeUndefined();
+  });
+});
+
+/**
+ * AI 경로추천 라우트 신설 (MSG-488 L11, 승인 Q1) — 티켓 가칭 `/route`가 아니라 `/ai-route`다.
+ * 기존 `route` 3중 동음이의(ROUTES · ThemeId "route" 코스 칩 · map-overlay-store.routes)를 피한다.
+ */
+describe("AI 경로추천 라우트 (MSG-488 L11)", () => {
+  it("네비 섹션은 홈·AI 경로추천·업로드·도감·프로필 5개다 (L11)", () => {
+    expect(Object.keys(ROUTES)).toEqual([
+      "home",
+      "aiRoute",
+      "upload",
+      "dex",
+      "profile",
+    ]);
+  });
+
+  it('경로는 "/ai-route"이고 getActiveNavKey가 aiRoute를 반환한다 (L11)', () => {
+    expect(ROUTES.aiRoute).toBe("/ai-route");
+    expect(getActiveNavKey("/ai-route")).toBe("aiRoute");
+  });
+
+  it('티켓 가칭 "/route"는 미등록 경로다 — 라우터 404 폴백을 따른다 (L11, Q1)', () => {
+    expect("route" in ROUTES).toBe(false);
+    expect(getActiveNavKey("/route")).toBeUndefined();
   });
 });

@@ -112,6 +112,8 @@ export const emphasizeCell = (
 export interface RouteWaypoint {
   seq: number;
   position: LatLng;
+  /** 선택 강조 (MSG-488 S8) — 미지정이면 기존 코스 마커 렌더 그대로(가산 확장) */
+  active?: boolean;
 }
 
 /**

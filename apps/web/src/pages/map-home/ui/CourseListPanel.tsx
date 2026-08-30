@@ -1,6 +1,6 @@
+import { RetryNotice } from "@fillmap/ui-web";
 import type { CourseView } from "@/features/map-home/model/mission-view";
 import { ChipListPanel } from "./ChipListPanel";
-import { RetryNotice } from "./RetryNotice";
 import { CourseCard } from "./CourseCard";
 
 interface CourseListPanelProps {

@@ -6,6 +6,7 @@
  * 그 상태가 그대로라 "홈으로 돌아가는" 수단이 없었다 — 초기 상태가 아니면 먼저 초기화하고,
  * 초기 상태에서 다시 누르면 종전대로 접는 2단으로 나눈다.
  */
+import type { AiRouteStatus } from "@/features/ai-route/model/ai-route-store";
 import type { DexTab } from "@/features/dex/model/dex-tab";
 
 export interface HomeSnapshot {
@@ -42,6 +43,17 @@ export interface ProfileSnapshot {
 
 /** 프로필 초기 상태 — 열린 모달 없음 */
 export const isProfileInitial = (s: ProfileSnapshot): boolean => !s.modalOpen;
+
+export interface AiRouteSnapshot {
+  /** 요청·결과 상태 — 정의는 ai-route-store가 소유, 여기선 type-only 참조 (MSG-488) */
+  status: AiRouteStatus;
+  /** 입력창 문장 (trim 전 원문) */
+  text: string;
+}
+
+/** AI 경로추천 초기 상태 — 입력 대기이고 입력이 비어 있음 (MSG-488 L10) */
+export const isAiRouteInitial = (s: AiRouteSnapshot): boolean =>
+  s.status === "idle" && s.text.trim().length === 0;
 
 /** 재클릭 동작 — 초기 상태가 아니면 초기화(패널 유지), 초기 상태면 접기/펼치기 토글 */
 export const railReclickAction = (isInitial: boolean): "reset" | "toggle" =>

@@ -93,7 +93,8 @@ export interface MapRouteOverlay {
   /** 코스 식별자 — 코스가 목록으로 여럿 그려지므로 렌더 키가 필요하다 (MSG-395) */
   id: string;
   path: LatLng[];
-  waypoints: { seq: number; position: LatLng }[];
+  /** active는 선택 강조 (MSG-488 S8) — 미지정이면 기존 코스 마커 렌더 그대로(가산) */
+  waypoints: { seq: number; position: LatLng; active?: boolean }[];
   color: string;
 }
 
@@ -143,6 +144,8 @@ interface MapCanvasProps {
   clusters?: MapClusterOverlay[];
   /** 오버레이 셀 클릭 (MSG-122 AC 14·18) — 미제공이면 표시 전용 기존 동작과 동일(R3) */
   onOverlayCellClick?: (cellId: string) => void;
+  /** 경로 경유지 마커 클릭 (MSG-488 S8) — 미제공이면 코스 마커는 종전대로 비클릭 */
+  onRouteWaypointClick?: (routeId: string, seq: number) => void;
 }
 
 const NAVER_NCP_KEY_ID = import.meta.env.VITE_NAVER_MAP_NCP_KEY_ID as
@@ -257,6 +260,7 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
       labels,
       clusters,
       onOverlayCellClick,
+      onRouteWaypointClick,
     },
     ref,
   ) => {
@@ -288,6 +292,7 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
         labels={labels}
         clusters={clusters}
         onOverlayCellClick={onOverlayCellClick}
+        onRouteWaypointClick={onRouteWaypointClick}
         onRetry={retry}
       />
     );
@@ -326,13 +331,17 @@ const ROUTE_STROKE_WEIGHT = 4;
 const ROUTE_STROKE_OPACITY = 0.9;
 
 /**
- * 경로 경유지 번호 마커 HTML (MSG-252 AC 8) — 네이버 Marker HtmlIcon content.
+ * 경로 경유지 번호 마커 HTML (MSG-252 AC 8 → MSG-488 Figma 정본) — 네이버 Marker HtmlIcon content.
  * 마커 앵커는 좌상단 기준이라 translate로 원 중심을 좌표에 맞춘다 (naver.maps.Point 앵커 불요).
  * 지도 DOM은 같은 document라 tailwind 토큰 클래스가 그대로 적용된다 — 색 임의값 없이 토큰만.
- * seq는 정적 목 경로(theme.ts) 숫자 전제 — 경로 데이터가 서버/사용자 입력을 포함하게 되면 이스케이프 필요.
+ * seq는 order·경유지 인덱스라 숫자 전제 — 이스케이프 불요(경로 데이터의 문자열은 이름표 몫).
+ *
+ * MSG-488(승인 Q5): 28px + 흰 링 + 그림자가 Figma 정본이고 **기존 코스 칩 경유지 마커도 함께**
+ * 이 모양으로 바뀐다(24px 무테 → 28px 흰 링). 두 마커가 같은 초록이라 통일이 낫다는 판단으로,
+ * `markerStyle` 분기는 만들지 않는다. active는 카드↔마커 연동의 선택 강조다 (S8).
  */
-const routeMarkerContent = (seq: number): string =>
-  `<div class="flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-theme-route text-fm-body-strong text-primary-foreground shadow-raised">${seq}</div>`;
+const routeMarkerContent = (seq: number, active = false): string =>
+  `<div class="flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-background bg-theme-route text-fm-body-strong text-primary-foreground shadow-raised${active ? " scale-125 ring-2 ring-theme-route" : ""}">${seq}</div>`;
 
 /** count 서식 — 천 단위 구분 (구 "99+" 캡 폐기: 디자인이 세 자리 수치를 그대로 보여준다) */
 const formatClusterCount = (count: number): string =>
@@ -405,6 +414,7 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       labels,
       clusters,
       onOverlayCellClick,
+      onRouteWaypointClick,
       onRetry,
     },
     ref,
@@ -691,7 +701,18 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                           key={waypoint.seq}
                           position={waypoint.position}
                           title={`경유지 ${waypoint.seq}`}
-                          icon={{ content: routeMarkerContent(waypoint.seq) }}
+                          icon={{
+                            content: routeMarkerContent(
+                              waypoint.seq,
+                              waypoint.active,
+                            ),
+                          }}
+                          onClick={
+                            onRouteWaypointClick
+                              ? () =>
+                                  onRouteWaypointClick(route.id, waypoint.seq)
+                              : undefined
+                          }
                         />
                       ))}
                     </Fragment>
