@@ -3,9 +3,9 @@ import { cn } from "@fillmap/ui-web";
 import {
   cityLabel,
   toEventSegments,
-  todayKstDate,
   type EventSegmentView,
 } from "@/features/event/model/event-chip";
+import { useKstToday } from "@/features/event/model/use-kst-today";
 import { useEventCapsuleStore } from "@/features/event/model/event-capsule-store";
 import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { useEventOccurrencesQuery } from "@/features/event/model/use-event-occurrences-query";
@@ -39,10 +39,9 @@ export const EventCapsule = () => {
   const { chips } = useEventOccurrencesQuery(bounds);
 
   const city = cityLabel(reverse.region?.regionName ?? null);
-  const segments = useMemo(
-    () => toEventSegments(chips, todayKstDate()),
-    [chips],
-  );
+  // "오늘"은 자정 전환을 추종하는 훅으로 — 고정값이면 자정 넘김 시 D-day 스테일 (codex P2)
+  const today = useKstToday();
+  const segments = useMemo(() => toEventSegments(chips, today), [chips, today]);
 
   // 행사 없음(빈 배열·실패·저줌)·지역명 미확정이면 캡슐 자체를 걷는다 (AC 8, 추정 3)
   if (segments.length === 0 || city === null) return null;

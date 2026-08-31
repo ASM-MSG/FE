@@ -111,6 +111,37 @@ describe("useEventOccurrencesQuery — 뷰포트 행사 회차 조회 (AC 7·8)"
     expect(result.current.chips).toEqual([]);
   });
 
+  it("뷰포트가 바뀌면 이전 bbox 결과를 유지하지 않는다 — 시 경계 이동 시 새 지역명 옆에 이전 시 행사가 남는 짝 어긋남 방지 (codex 리뷰 P2)", async () => {
+    let resolveSecond: (response: Response) => void = () => {};
+    const fetchSpy = vi
+      .fn<() => Promise<Response>>()
+      .mockImplementationOnce(async () => envelopeResponse([CHIP_DTO]))
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveSecond = resolve;
+          }),
+      );
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const { result, rerender } = renderHook(
+      ({ b }: { b: Bounds }) => useEventOccurrencesQuery(b),
+      { wrapper, initialProps: { b: bounds(0.1, 0.1) } },
+    );
+    await waitFor(() => expect(result.current.chips).toHaveLength(1));
+
+    // 다른 시로 이동 (bbox 교체) → 새 요청 pending 동안 이전 결과가 비어야 한다
+    rerender({
+      b: { sw: { lat: 35.2, lng: 128.6 }, ne: { lat: 35.3, lng: 128.7 } },
+    });
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2), {
+      timeout: 2_000,
+    });
+    expect(result.current.chips).toEqual([]);
+
+    resolveSecond(envelopeResponse([]));
+  });
+
   it("뷰포트 미준비(null)면 조회하지 않는다 (경계)", async () => {
     const fetchSpy = vi.fn(async () => envelopeResponse([CHIP_DTO]));
     vi.stubGlobal("fetch", fetchSpy);

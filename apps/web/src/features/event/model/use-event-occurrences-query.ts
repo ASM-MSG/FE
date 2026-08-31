@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Bounds } from "@/entities/cell";
 import type { EventOccurrenceChip } from "@/entities/event";
-import { mapQueryPolicy } from "@/features/map-home/model/map-query-policy";
+import { entityQueryPolicy } from "@/features/map-home/model/map-query-policy";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { getOccurrencesInViewportOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { useDebouncedValue } from "@/shared/use-debounced-value";
@@ -55,7 +55,10 @@ export const useEventOccurrencesQuery = (
     }),
     select: unwrapEnvelope,
     enabled,
-    ...mapQueryPolicy,
+    // keepPreviousData(mapQueryPolicy) 불채택 (codex 리뷰 P2) — 캡슐 지역명은 역지오코딩이
+    // 독립 갱신하므로, 시 경계 이동에서 이전 bbox 행사를 유지하면 새 지역명 옆에 이전 시
+    // 행사가 남아 짝이 어긋난다. pending 동안 캡슐이 잠시 걷히는 쪽(빈 배열 수렴)이 정합.
+    ...entityQueryPolicy,
   });
 
   return { chips: enabled && query.data ? query.data : EMPTY_CHIPS };

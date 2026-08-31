@@ -12,8 +12,8 @@ import type {
  * (테스트 결정성) — 실사용 진입점은 todayKstDate().
  */
 
-const DAY_MS = 86_400_000;
-const KST_OFFSET_MS = 9 * 3_600_000;
+export const DAY_MS = 86_400_000;
+export const KST_OFFSET_MS = 9 * 3_600_000;
 
 /** KST 기준 오늘 날짜 "YYYY-MM-DD" — 뷰가 파생 함수에 주입하는 실사용 "오늘" */
 export const todayKstDate = (nowMs: number = Date.now()): string =>
