@@ -22,6 +22,8 @@ interface HomePanelStateInput {
   selectedMission: MissionView | null;
   selectedCourse: CourseView | null;
   selectedCellId: string | null;
+  /** 행사방 열림 (MSG-516 AC 10) — 캡슐 세그먼트 선택으로 채워진다 */
+  eventRoomOpen: boolean;
   committedRegion: DisplayedRegion | null;
   currentRegion: ReloadTarget | null;
   zoom: number;
@@ -32,6 +34,7 @@ export const useHomePanelState = ({
   selectedMission,
   selectedCourse,
   selectedCellId,
+  eventRoomOpen,
   committedRegion,
   currentRegion,
   zoom,
@@ -51,14 +54,19 @@ export const useHomePanelState = ({
     activeTheme,
     selectedMissionId: resolvedMissionId,
     selectedGridId: selectedCellId,
+    eventRoomOpen,
   });
 
   // "장소 불러오기" (MSG-328 AC 10) — 칩 4종 화면과 지역 격자 패널이 같은 버튼을
   // 공유하므로 패널이 아니라 페이지가 소유한다. 판정은 순수 함수(region-reload) 몫
   const reloadTarget = deriveReloadTarget({
     // 격자 상세는 지역 격자 목록 위에 겹쳐 열릴 뿐이라 갱신 대상이 화면 뒤에 남아 있다 —
-    // 미션·코스 상세만 목록을 대체한다 (MSG-451 AC 15)
-    isThemeDetailPanel: panel === "mission-detail" || panel === "course-detail",
+    // 미션·코스 상세만 목록을 대체한다 (MSG-451 AC 15). 행사방도 목록을 통째로 대체하므로
+    // 같은 취급이다 (MSG-516 AC 10 — 셸은 헤더+자리표시만, 불러오기 버튼을 얹지 않는다)
+    isThemeDetailPanel:
+      panel === "mission-detail" ||
+      panel === "course-detail" ||
+      panel === "event-room",
     isGridListMode: panelMode === "grids",
     committedRegionCode: committedRegion?.regionCode ?? null,
     currentRegion,

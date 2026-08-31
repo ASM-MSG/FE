@@ -7,6 +7,7 @@ import type {
   CourseView,
   MissionView,
 } from "@/features/map-home/model/mission-view";
+import type { EventRoomSelection } from "@/features/event/model/event-room-store";
 import type { HomePanelKind } from "@/features/map-home/model/panel-branch";
 import type { HotRegionSummaryResult } from "@/features/map-home/model/use-hot-region-summary";
 import type { GridNamesResult } from "@/features/map-home/model/use-grid-names-query";
@@ -14,6 +15,7 @@ import type { MissionVideosResult } from "@/features/map-home/model/use-mission-
 import type { ThemeId } from "@/features/map-home/model/theme";
 import { CourseDetailPanel } from "./CourseDetailPanel";
 import { CourseListPanel } from "./CourseListPanel";
+import { EventRoomPanel } from "./EventRoomPanel";
 import {
   HomeCellDetailError,
   HomeCellDetailLoading,
@@ -39,6 +41,10 @@ interface HomePanelSwitchProps {
   onCloseDetail: () => void;
   onBackFromDetail: () => void;
   onViewAll: () => void;
+
+  // 행사방 (MSG-516 AC 10) — 캡슐 세그먼트 선택으로 열린다
+  eventRoom: EventRoomSelection | null;
+  onEventRoomBack: () => void;
 
   // 핫구역
   hotSummary: HotRegionSummaryResult;
@@ -95,6 +101,8 @@ export const HomePanelSwitch = ({
   onCloseDetail,
   onBackFromDetail,
   onViewAll,
+  eventRoom,
+  onEventRoomBack,
   hotSummary,
   regionName,
   onHotUpload,
@@ -146,6 +154,10 @@ export const HomePanelSwitch = ({
       );
     return <HomeCellDetailLoading onClose={onCloseDetail} />;
   }
+
+  // 행사방 셸 (MSG-516 AC 10) — 라우트 없이 홈 패널 상태로 교체된다 (추정 5)
+  if (panel === "event-room" && eventRoom)
+    return <EventRoomPanel room={eventRoom} onBack={onEventRoomBack} />;
 
   if (panel === "hot-region")
     return (

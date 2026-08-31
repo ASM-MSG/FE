@@ -48,6 +48,10 @@ export const palette = {
   "grass-1": "#C7DFF7",
   "grass-2": "#8CBBEF",
   "grass-3": "#4A93E0",
+  // 지도 홈 행사 캡슐 연블루 (MSG-516 AC 3·5) — Figma 연결 캡슐 시안(15806:3654) 실측값.
+  // 캡슐 접힘 배경·열림 세그먼트 틴트 공용. 투명도 근사(primary/10 류)는 실측과 불일치라
+  // 기각(근사 사용 금지 — theme-*·grass-* 선례). Figma 변수 미등록 상태의 선등록.
+  "event-tint": "#E8F5FF",
 } as const;
 
 /** 시맨틱 토큰 — Figma "FeelMap Color" 컬렉션과 1:1. 컴포넌트에서는 이것을 우선 사용 */

@@ -6,6 +6,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@fillmap/ui-web";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import {
   THEME_META,
   THEME_ORDER,
@@ -14,6 +15,7 @@ import {
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
+import { EventCapsule } from "./EventCapsule";
 import { ThemeChip } from "./ThemeChip";
 
 /**
@@ -58,28 +60,35 @@ export const ThemeChipsBar = () => {
 
   return (
     <div
-      role="group"
-      aria-label="테마 필터"
       className={cn(
         "pointer-events-auto absolute top-md z-10 ml-md flex gap-xs transition-transform",
         collapsed ? "left-0" : "left-97",
         !collapsed && miniPanelOpen && "translate-x-97",
       )}
     >
-      {THEME_ORDER.map((id) => {
-        const view = CHIP_VIEW[id];
-        return (
-          <ThemeChip
-            key={id}
-            label={THEME_META[id].label}
-            icon={view.icon}
-            active={activeTheme === id}
-            activeBgClassName={view.activeBg}
-            iconClassName={view.iconColor}
-            onClick={() => toggle(id)}
-          />
-        );
-      })}
+      <div role="group" aria-label="테마 필터" className="flex gap-xs">
+        {THEME_ORDER.map((id) => {
+          const view = CHIP_VIEW[id];
+          return (
+            <ThemeChip
+              key={id}
+              label={THEME_META[id].label}
+              icon={view.icon}
+              active={activeTheme === id}
+              activeBgClassName={view.activeBg}
+              iconClassName={view.iconColor}
+              onClick={() => {
+                // 테마 칩 활성화는 행사방과 상호 배타 (MSG-516 추정 6) — 유령 패널 방지.
+                // 해제 클릭에서는 방이 이미 닫혀 있어(배타 유지) 무동작이다
+                useEventRoomStore.getState().close();
+                toggle(id);
+              }}
+            />
+          );
+        })}
+      </div>
+      {/* 위치 기반 행사 캡슐 (MSG-516 AC 3) — 테마 칩 4종 오른쪽, 같은 바에 이어붙는다 */}
+      <EventCapsule />
     </div>
   );
 };

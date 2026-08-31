@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, addHelpful, approve, createComment, delete_, deleteComment, deleteFriend, deleteMe, findMyBadges, getActiveMissionsInViewport, getCell, getCollectionGrids, getComments, getConsentStatus, getDistricts, getEventLocationsByGrid, getExploreRegions, getFriendGridAggregates, getFriendGrids, getFriendGridVideos, getFriendProfile, getFriends, getGridCover, getGridGlobalVideos, getGridHourlyUploads, getGridVideos, getHotZoneAggregates, getHotZones, getInbox, getLocations, getLocationVideos, getMe, getMissionAggregates, getMissionDetail, getMissionsByGrid, getMissionVideos, getMyFriendCode, getMyProgress, getNationalStat, getOccupiedAggregatesInViewport, getOccupiedInViewport, getOccurrenceDetail, getOccurrencesInViewport, getPlayback, getPreferences, getReceivedRequests, getRegionGrids, getRegionVideos, getReports, getStatByGrid, getStatByPoint, getStats, getSummary, getTrendingKeywords, getUnreadCount, getUploadHistory, getVideoDetail, getVideoForReview, getViewerCount, getZones, heartbeat, highlightPreview, issuePresignedUrl, issueProfileImagePresignedUrl, login, logout, markAllRead, markRead, oauthCodeLogin, oauthLogin, type Options, preview, recommend, redirectToKakaoAuthorize, register, reissue, reject, reject1, removeHelpful, removeProfileImage, replace, replaceFeatured, report, request, reverseGeocode, searchPlaces, setVisibility, signup, socialLogin, submitConsents, unblindVideo, unregister, update, updateComment, updateLocationConsent, updateMarketingConsent, updateNickname, updateProfileImage, updateSubscription, upload, upload1, uploadMissionVideo, walkPaths } from '../sdk.gen';
-import type { AcceptData, AddHelpfulData, AddHelpfulResponse, ApproveData, ApproveResponse, CreateCommentData, CreateCommentResponse, DeleteCommentData, DeleteData, DeleteFriendData, DeleteMeData, FindMyBadgesData, FindMyBadgesResponse, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponse, GetCellData, GetCellResponse, GetCollectionGridsData, GetCollectionGridsResponse, GetCommentsData, GetCommentsResponse, GetConsentStatusData, GetConsentStatusResponse, GetDistrictsData, GetDistrictsResponse, GetEventLocationsByGridData, GetEventLocationsByGridResponse, GetExploreRegionsData, GetExploreRegionsResponse, GetFriendGridAggregatesData, GetFriendGridAggregatesResponse, GetFriendGridsData, GetFriendGridsResponse, GetFriendGridVideosData, GetFriendGridVideosResponse, GetFriendProfileData, GetFriendProfileResponse, GetFriendsData, GetFriendsResponse, GetGridCoverData, GetGridCoverResponse, GetGridGlobalVideosData, GetGridGlobalVideosResponse, GetGridHourlyUploadsData, GetGridHourlyUploadsResponse, GetGridVideosData, GetGridVideosResponse, GetHotZoneAggregatesData, GetHotZoneAggregatesResponse, GetHotZonesData, GetHotZonesResponse, GetInboxData, GetInboxResponse, GetLocationsData, GetLocationsResponse, GetLocationVideosData, GetLocationVideosResponse, GetMeData, GetMeResponse, GetMissionAggregatesData, GetMissionAggregatesResponse, GetMissionDetailData, GetMissionDetailResponse, GetMissionsByGridData, GetMissionsByGridResponse, GetMissionVideosData, GetMissionVideosResponse, GetMyFriendCodeData, GetMyFriendCodeResponse, GetMyProgressData, GetMyProgressResponse, GetNationalStatData, GetNationalStatResponse, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponse, GetOccupiedInViewportData, GetOccupiedInViewportResponse, GetOccurrenceDetailData, GetOccurrenceDetailResponse, GetOccurrencesInViewportData, GetOccurrencesInViewportResponse, GetPlaybackData, GetPlaybackResponse, GetPreferencesData, GetPreferencesResponse, GetReceivedRequestsData, GetReceivedRequestsResponse, GetRegionGridsData, GetRegionGridsResponse, GetRegionVideosData, GetRegionVideosResponse, GetReportsData, GetReportsResponse, GetStatByGridData, GetStatByGridResponse, GetStatByPointData, GetStatByPointResponse, GetStatsData, GetStatsResponse, GetSummaryData, GetSummaryResponse, GetTrendingKeywordsData, GetTrendingKeywordsResponse, GetUnreadCountData, GetUnreadCountResponse, GetUploadHistoryData, GetUploadHistoryResponse, GetVideoDetailData, GetVideoDetailResponse, GetVideoForReviewData, GetVideoForReviewResponse, GetViewerCountData, GetViewerCountResponse, GetZonesData, GetZonesResponse, HeartbeatData, HighlightPreviewData, HighlightPreviewResponse, IssuePresignedUrlData, IssuePresignedUrlResponse, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponse, LoginData, LoginResponse, LogoutData, MarkAllReadData, MarkReadData, OauthCodeLoginData, OauthCodeLoginResponse, OauthLoginData, OauthLoginResponse, PreviewData, PreviewResponse, RecommendData, RecommendResponse, RedirectToKakaoAuthorizeData, RegisterData, ReissueData, ReissueResponse, Reject1Data, Reject1Response, RejectData, RemoveHelpfulData, RemoveHelpfulResponse, RemoveProfileImageData, RemoveProfileImageResponse, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponse, ReplaceResponse, ReportData, ReportResponse, RequestData, RequestResponse, ReverseGeocodeData, ReverseGeocodeResponse, SearchPlacesData, SearchPlacesResponse, SetVisibilityData, SetVisibilityResponse, SignupData, SignupResponse, SocialLoginData, SocialLoginResponse, SubmitConsentsData, SubmitConsentsResponse, UnblindVideoData, UnblindVideoResponse, UnregisterData, UpdateCommentData, UpdateCommentResponse, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponse, UpdateMarketingConsentData, UpdateMarketingConsentResponse, UpdateNicknameData, UpdateNicknameResponse, UpdateProfileImageData, UpdateProfileImageResponse, UpdateResponse, UpdateSubscriptionData, UpdateSubscriptionResponse, Upload1Data, Upload1Response, UploadData, UploadMissionVideoData, UploadMissionVideoResponse, UploadResponse, WalkPathsData, WalkPathsResponse } from '../types.gen';
+import { accept, addHelpful, approve, approve1, approve2, approveEmailChange, changePassword, create, createComment, delete_, deleteComment, deleteFriend, deleteMe, findMyBadges, getAccounts, getActiveMissionsInViewport, getApprovedEvents, getCell, getCollectionGrids, getComments, getConsentStatus, getDistricts, getEmailChangeRequests, getEventLocationsByGrid, getEvents, getExploreRegions, getFriendGridAggregates, getFriendGrids, getFriendGridVideos, getFriendProfile, getFriends, getGridCover, getGridGlobalVideos, getGridHourlyUploads, getGridVideos, getHotZoneAggregates, getHotZones, getInbox, getLocations, getLocationVideos, getMe, getMissionAggregates, getMissionDetail, getMissionsByGrid, getMissionVideos, getMyFriendCode, getMyProgress, getMySubmissions, getNationalStat, getOccupiedAggregatesInViewport, getOccupiedInViewport, getOccurrenceDetail, getOccurrencesInViewport, getPlayback, getPreferences, getProfile, getReceivedRequests, getRegionGrids, getRegionVideos, getReports, getRequest, getRequests, getStatByGrid, getStatByPoint, getStats, getStatus, getSubmission, getSubmission1, getSubmissions, getSummary, getTrendingKeywords, getUnreadCount, getUploadHistory, getVideoDetail, getVideoForReview, getViewerCount, getZones, heartbeat, highlightPreview, issueDirect, issueImagePresignedUrl, issuePresignedUrl, issueProfileImagePresignedUrl, login, logout, markAllRead, markRead, oauthCodeLogin, oauthLogin, type Options, preview, recommend, redirectToKakaoAuthorize, register, reissue, reject, reject1, reject2, reject3, rejectEmailChange, removeHelpful, removeProfileImage, replace, replaceFeatured, report, request, requestEmailChange, requestReset, resendPassword, resetPassword, resubmit, reverseGeocode, searchPlaces, setVisibility, signup, socialLogin, submit, submitConsents, unblindVideo, unpublish, unregister, update, updateComment, updateLocationConsent, updateMarketingConsent, updateNickname, updateProfile, updateProfileImage, updateSubscription, upload, upload1, uploadMissionVideo, walkPaths } from '../sdk.gen';
+import type { AcceptData, AddHelpfulData, AddHelpfulResponse, Approve1Data, Approve1Response, Approve2Data, Approve2Response, ApproveData, ApproveEmailChangeData, ApproveEmailChangeResponse, ApproveResponse, ChangePasswordData, CreateCommentData, CreateCommentResponse, CreateData, DeleteCommentData, DeleteData, DeleteFriendData, DeleteMeData, FindMyBadgesData, FindMyBadgesResponse, GetAccountsData, GetAccountsResponse, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponse, GetApprovedEventsData, GetApprovedEventsResponse, GetCellData, GetCellResponse, GetCollectionGridsData, GetCollectionGridsResponse, GetCommentsData, GetCommentsResponse, GetConsentStatusData, GetConsentStatusResponse, GetDistrictsData, GetDistrictsResponse, GetEmailChangeRequestsData, GetEmailChangeRequestsResponse, GetEventLocationsByGridData, GetEventLocationsByGridResponse, GetEventsData, GetEventsResponse, GetExploreRegionsData, GetExploreRegionsResponse, GetFriendGridAggregatesData, GetFriendGridAggregatesResponse, GetFriendGridsData, GetFriendGridsResponse, GetFriendGridVideosData, GetFriendGridVideosResponse, GetFriendProfileData, GetFriendProfileResponse, GetFriendsData, GetFriendsResponse, GetGridCoverData, GetGridCoverResponse, GetGridGlobalVideosData, GetGridGlobalVideosResponse, GetGridHourlyUploadsData, GetGridHourlyUploadsResponse, GetGridVideosData, GetGridVideosResponse, GetHotZoneAggregatesData, GetHotZoneAggregatesResponse, GetHotZonesData, GetHotZonesResponse, GetInboxData, GetInboxResponse, GetLocationsData, GetLocationsResponse, GetLocationVideosData, GetLocationVideosResponse, GetMeData, GetMeResponse, GetMissionAggregatesData, GetMissionAggregatesResponse, GetMissionDetailData, GetMissionDetailResponse, GetMissionsByGridData, GetMissionsByGridResponse, GetMissionVideosData, GetMissionVideosResponse, GetMyFriendCodeData, GetMyFriendCodeResponse, GetMyProgressData, GetMyProgressResponse, GetMySubmissionsData, GetMySubmissionsResponse, GetNationalStatData, GetNationalStatResponse, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponse, GetOccupiedInViewportData, GetOccupiedInViewportResponse, GetOccurrenceDetailData, GetOccurrenceDetailResponse, GetOccurrencesInViewportData, GetOccurrencesInViewportResponse, GetPlaybackData, GetPlaybackResponse, GetPreferencesData, GetPreferencesResponse, GetProfileData, GetProfileResponse, GetReceivedRequestsData, GetReceivedRequestsResponse, GetRegionGridsData, GetRegionGridsResponse, GetRegionVideosData, GetRegionVideosResponse, GetReportsData, GetReportsResponse, GetRequestData, GetRequestResponse, GetRequestsData, GetRequestsResponse, GetStatByGridData, GetStatByGridResponse, GetStatByPointData, GetStatByPointResponse, GetStatsData, GetStatsResponse, GetStatusData, GetStatusResponse, GetSubmission1Data, GetSubmission1Response, GetSubmissionData, GetSubmissionResponse, GetSubmissionsData, GetSubmissionsResponse, GetSummaryData, GetSummaryResponse, GetTrendingKeywordsData, GetTrendingKeywordsResponse, GetUnreadCountData, GetUnreadCountResponse, GetUploadHistoryData, GetUploadHistoryResponse, GetVideoDetailData, GetVideoDetailResponse, GetVideoForReviewData, GetVideoForReviewResponse, GetViewerCountData, GetViewerCountResponse, GetZonesData, GetZonesResponse, HeartbeatData, HighlightPreviewData, HighlightPreviewResponse, IssueDirectData, IssueDirectResponse, IssueImagePresignedUrlData, IssueImagePresignedUrlResponse, IssuePresignedUrlData, IssuePresignedUrlResponse, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponse, LoginData, LoginResponse, LogoutData, MarkAllReadData, MarkReadData, OauthCodeLoginData, OauthCodeLoginResponse, OauthLoginData, OauthLoginResponse, PreviewData, PreviewResponse, RecommendData, RecommendResponse, RedirectToKakaoAuthorizeData, RegisterData, ReissueData, ReissueResponse, Reject1Data, Reject1Response, Reject2Data, Reject3Data, RejectData, RejectEmailChangeData, RemoveHelpfulData, RemoveHelpfulResponse, RemoveProfileImageData, RemoveProfileImageResponse, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponse, ReplaceResponse, ReportData, ReportResponse, RequestData, RequestEmailChangeData, RequestResetData, RequestResponse, ResendPasswordData, ResendPasswordResponse, ResetPasswordData, ResubmitData, ResubmitResponse, ReverseGeocodeData, ReverseGeocodeResponse, SearchPlacesData, SearchPlacesResponse, SetVisibilityData, SetVisibilityResponse, SignupData, SignupResponse, SocialLoginData, SocialLoginResponse, SubmitConsentsData, SubmitConsentsResponse, SubmitData, SubmitResponse, UnblindVideoData, UnblindVideoResponse, UnpublishData, UnpublishResponse, UnregisterData, UpdateCommentData, UpdateCommentResponse, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponse, UpdateMarketingConsentData, UpdateMarketingConsentResponse, UpdateNicknameData, UpdateNicknameResponse, UpdateProfileData, UpdateProfileImageData, UpdateProfileImageResponse, UpdateProfileResponse, UpdateResponse, UpdateSubscriptionData, UpdateSubscriptionResponse, Upload1Data, Upload1Response, UploadData, UploadMissionVideoData, UploadMissionVideoResponse, UploadResponse, WalkPathsData, WalkPathsResponse } from '../types.gen';
 
 /**
  * 영상 삭제
@@ -284,7 +284,7 @@ export const addHelpfulMutation = (options?: Partial<Options<AddHelpfulData>>): 
 /**
  * 행사 알림 구독 토글
  *
- * 행사 회차 단위로 알림을 켜고 끈다. 행사방에는 참여 절차가 없어 구독이 사용자와 행사가 맺는 관계의 전부다. 같은 값을 반복 요청해도 같은 결과로 성공한다.
+ * 행사 회차 단위로 알림을 켜고 끈다. 이벤트에는 참여 절차가 없어 구독이 사용자와 행사가 맺는 관계의 전부다. 같은 값을 반복 요청해도 같은 결과로 성공한다.
  *
  * 응답의 enabled 는 저장된 구독 행의 존재가 아니라 **노출 상태**다 — 구독 행이 있으면서 회차가 예정이거나 진행 중일 때만 true 이고, 종료된 회차는 행이 남아 있어도 false 다(종료 시점부터 즉시 OFF, 정리 배치를 기다리지 않는다).
  *
@@ -458,6 +458,90 @@ export const recommendMutation = (options?: Partial<Options<RecommendData>>): Us
     const mutationOptions: UseMutationOptions<RecommendResponse, DefaultError, Options<RecommendData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await recommend({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 행사 등재 신청 제출
+ *
+ * 심사 중 상태로 접수하고 신청 번호(FM-2026-XXXX 꼴)를 부여한다. 위치마다 대표 격자를 서버가 계산해 저장하며, 위치 하나의 영역은 겹침을 한 번만 세는 합집합 기준 최대 81칸이다.
+ *
+ * 유형별 필수 항목이 다르다 — FESTIVAL 은 주요 프로그램, POPUP 은 운영 시간, EVENT 는 참여 방식과 참여할 승인 이벤트 회차(parentOccurrenceId)이고 자기 유형이 아닌 항목이 실려 오면 거부한다. EVENT 의 위치는 대표 위치 정확히 1곳이고, 참여할 회차가 이미 끝났으면 접수하지 않는다.
+ *
+ * 위치에는 이름 필드가 없고 배열 순서가 곧 순번이다.
+ */
+export const submitMutation = (options?: Partial<Options<SubmitData>>): UseMutationOptions<SubmitResponse, DefaultError, Options<SubmitData>> => {
+    const mutationOptions: UseMutationOptions<SubmitResponse, DefaultError, Options<SubmitData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await submit({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 대표 이미지 presigned URL 발급
+ *
+ * 받은 uploadUrl 로 S3 에 직접 PUT 업로드한 뒤, 응답의 s3Key 를 신청 제출·재제출 요청의 imageS3Key 로 넘긴다. jpg·jpeg·png 만 받고 상한은 10MB 다.
+ */
+export const issueImagePresignedUrlMutation = (options?: Partial<Options<IssueImagePresignedUrlData>>): UseMutationOptions<IssueImagePresignedUrlResponse, DefaultError, Options<IssueImagePresignedUrlData>> => {
+    const mutationOptions: UseMutationOptions<IssueImagePresignedUrlResponse, DefaultError, Options<IssueImagePresignedUrlData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await issueImagePresignedUrl({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 아이디 변경 요청
+ *
+ * 아이디(공식 이메일)는 기관 인증의 근거라 자체 변경이 불가하다. 이 API 는 변경 요청을 접수만 하고, 관리자가 승인해야 실제로 바뀐다.
+ *
+ * 대기 중인 요청이 있으면 그 요청이 새 값으로 갱신된다 — 마지막 요청이 유효하다.
+ */
+export const requestEmailChangeMutation = (options?: Partial<Options<RequestEmailChangeData>>): UseMutationOptions<unknown, DefaultError, Options<RequestEmailChangeData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<RequestEmailChangeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await requestEmailChange({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 계정 발급 요청 접수
+ *
+ * 계정 발급 신청을 대기 상태로 접수한다. 관리자가 큐에서 검토해 승인하면 계정이 만들어지고 초기 비밀번호가 공식 이메일로 발송된다.
+ *
+ * 같은 공식 이메일의 대기 요청이 이미 있으면 그 요청이 새 내용으로 갱신된다 — 마지막 접수가 유효하므로 더블클릭 재제출과 오타 정정 재접수가 한 건으로 수렴한다. 신청 번호는 부여하지 않는다.
+ */
+export const createMutation = (options?: Partial<Options<CreateData>>): UseMutationOptions<unknown, DefaultError, Options<CreateData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<CreateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await create({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -736,7 +820,7 @@ export const getCommentsInfiniteOptions = (options: Options<GetCommentsData>) =>
  *
  * 행사 영상에 댓글을 단다. 내용은 1~500자다.
  *
- * 행사방이 아카이브로 넘어가면 댓글을 더 달 수 없다 — 종료 30일 후부터 409 + developCode 13422 다(기존 댓글은 계속 보인다). 그 전까지는 예정·진행 중은 물론 유예 기간(종료 후 30일)에도 쓸 수 있고, 유예 기간에 새로 올라온 영상에도 댓글을 남길 수 있다.
+ * 이벤트가 아카이브로 넘어가면 댓글을 더 달 수 없다 — 종료 30일 후부터 409 + developCode 13422 다(기존 댓글은 계속 보인다). 그 전까지는 예정·진행 중은 물론 유예 기간(종료 후 30일)에도 쓸 수 있고, 유예 기간에 새로 올라온 영상에도 댓글을 남길 수 있다.
  *
  * 상세에 보이는 영상에만 쓸 수 있다 — 삭제·블라인드·비공개·처리 미완료 영상과 행사 영상이 아닌 영상 id 는 올린 본인에게도 404 + 13406 이다.
  */
@@ -848,7 +932,7 @@ export const upload1Mutation = (options?: Partial<Options<Upload1Data>>): UseMut
 /**
  * 열람 heartbeat
  *
- * 행사방을 보는 동안 30초 주기로 보낸다. 마지막 신호가 90초 이내인 세션만 열람 인원에 센다. 비로그인은 X-Viewer-Session 헤더(공백 아님·최대 64자) 필수 — 없으면 400. 캐시 장애는 삼켜져 200 이다.
+ * 이벤트를 보는 동안 30초 주기로 보낸다. 마지막 신호가 90초 이내인 세션만 열람 인원에 센다. 비로그인은 X-Viewer-Session 헤더(공백 아님·최대 64자) 필수 — 없으면 400. 캐시 장애는 삼켜져 200 이다.
  */
 export const heartbeatMutation = (options?: Partial<Options<HeartbeatData>>): UseMutationOptions<unknown, DefaultError, Options<HeartbeatData>> => {
     const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<HeartbeatData>> = {
@@ -892,6 +976,69 @@ export const reissueMutation = (options?: Partial<Options<ReissueData>>): UseMut
     const mutationOptions: UseMutationOptions<ReissueResponse, DefaultError, Options<ReissueData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await reissue({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 비밀번호 재설정 확정
+ *
+ * 메일 링크의 토큰으로 새 비밀번호를 설정한다. 토큰은 한 번만 쓸 수 있다.
+ *
+ * 성공하면 그 계정의 모든 기기 로그인이 끊기고, 이미 발급돼 있던 액세스 토큰도 즉시 무효가 된다 — 비밀번호를 잊은 복구 흐름이라 기존 세션을 남기지 않는다.
+ */
+export const resetPasswordMutation = (options?: Partial<Options<ResetPasswordData>>): UseMutationOptions<unknown, DefaultError, Options<ResetPasswordData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<ResetPasswordData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resetPassword({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 비밀번호 재설정 링크 요청
+ *
+ * 공식 이메일로 30분 동안 유효한 재설정 링크를 보낸다. 재요청하면 이전 링크는 즉시 무효가 된다.
+ *
+ * 계정이 있든 없든 항상 같은 성공 응답이다 — 이 API 로 가입 여부를 알아낼 수 없게 하기 위해서다.
+ */
+export const requestResetMutation = (options?: Partial<Options<RequestResetData>>): UseMutationOptions<unknown, DefaultError, Options<RequestResetData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<RequestResetData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await requestReset({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 비밀번호 변경
+ *
+ * 현재 비밀번호를 확인하고 새 비밀번호로 바꾼다. 성공하면 강제 변경 상태가 풀려 콘솔이 열리고, 남아 있던 재설정 링크는 폐기된다. 로그인 중인 다른 기기의 세션은 그대로 유지된다.
+ *
+ * 이메일·비밀번호로 만든 계정만 쓸 수 있다 — 소셜 로그인 계정은 2445 로 거절된다.
+ */
+export const changePasswordMutation = (options?: Partial<Options<ChangePasswordData>>): UseMutationOptions<unknown, DefaultError, Options<ChangePasswordData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<ChangePasswordData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await changePassword({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1054,6 +1201,271 @@ export const approveMutation = (options?: Partial<Options<ApproveData>>): UseMut
     return mutationOptions;
 };
 
+export const getAccountsQueryKey = (options?: Options<GetAccountsData>) => createQueryKey('getAccounts', options);
+
+/**
+ * 발급된 행사 운영자 계정 목록
+ *
+ * 발급 최신순으로 계정을 조회한다. 목록은 이 발급 경로가 만드는 형태(역할 ORG · 제공자 LOCAL) 만 담는다 — 재발송 대상 식별과 직접 발급 복구 확인이 목적이라서다.
+ *
+ * 각 항목의 mustChange 가 화면의 사용 중 / 초기 로그인 전 라벨이다(false 가 사용 중). email 을 주면 완전 일치 검색이고, page 음수나 size 범위(1~100) 밖은 400(1425) 이다.
+ */
+export const getAccountsOptions = (options?: Options<GetAccountsData>) => queryOptions<GetAccountsResponse, DefaultError, GetAccountsResponse, ReturnType<typeof getAccountsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAccounts({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAccountsQueryKey(options)
+});
+
+export const getAccountsInfiniteQueryKey = (options?: Options<GetAccountsData>): QueryKey<Options<GetAccountsData>> => createQueryKey('getAccounts', options, true);
+
+/**
+ * 발급된 행사 운영자 계정 목록
+ *
+ * 발급 최신순으로 계정을 조회한다. 목록은 이 발급 경로가 만드는 형태(역할 ORG · 제공자 LOCAL) 만 담는다 — 재발송 대상 식별과 직접 발급 복구 확인이 목적이라서다.
+ *
+ * 각 항목의 mustChange 가 화면의 사용 중 / 초기 로그인 전 라벨이다(false 가 사용 중). email 을 주면 완전 일치 검색이고, page 음수나 size 범위(1~100) 밖은 400(1425) 이다.
+ */
+export const getAccountsInfiniteOptions = (options?: Options<GetAccountsData>) => {
+    const opts = infiniteQueryOptions<GetAccountsResponse, DefaultError, InfiniteData<GetAccountsResponse>, QueryKey<Options<GetAccountsData>>, number | Pick<QueryKey<Options<GetAccountsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetAccountsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getAccounts({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getAccountsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * 행사 운영자 계정 직접 발급
+ *
+ * 공문으로 먼저 확인된 기관에 발급 요청 없이 계정을 만들고 초기 비밀번호를 발송한다. 결과는 승인과 같다.
+ *
+ * 응답을 받지 못했으면 같은 요청을 재시도한다. 1409(이미 존재)가 오면 그 이메일로 계정이 있다는 뜻일 뿐 발급 성공의 증거가 아니므로, 계정 목록의 email 검색으로 가른다 — 결과가 있으면 발급된 것이고, 없으면 다른 계정과의 이메일 충돌이라 기관에 다른 공식 이메일을 요청한다.
+ *
+ * 이미 계정이 있는 이메일은 409(1409) 다.
+ */
+export const issueDirectMutation = (options?: Partial<Options<IssueDirectData>>): UseMutationOptions<IssueDirectResponse, DefaultError, Options<IssueDirectData>> => {
+    const mutationOptions: UseMutationOptions<IssueDirectResponse, DefaultError, Options<IssueDirectData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await issueDirect({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 초기 비밀번호 재발송
+ *
+ * 새 초기 비밀번호를 만들어 공식 이메일로 다시 보낸다 — <b>재발송은 재발급이다.</b> 평문을 저장하지 않아 보냈던 비밀번호를 다시 보낼 수 없고, 이전 초기 비밀번호는 즉시 무효가 된다.
+ *
+ * 대상은 아직 초기 로그인을 마치지 않은 행사 운영자 계정뿐이다. 이미 본인이 비밀번호를 바꾼 계정은 409(1423) 이며, 그 경우의 분실 복구는 비밀번호 재설정 흐름을 안내한다.
+ *
+ * 없는 사용자는 404(1404) 다.
+ */
+export const resendPasswordMutation = (options?: Partial<Options<ResendPasswordData>>): UseMutationOptions<ResendPasswordResponse, DefaultError, Options<ResendPasswordData>> => {
+    const mutationOptions: UseMutationOptions<ResendPasswordResponse, DefaultError, Options<ResendPasswordData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resendPassword({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 계정 발급 요청 반려
+ *
+ * 요청을 반려하고 사유를 저장한다. 사유는 필수이며 <b>메일은 발송되지 않는다</b> — 반려 통보는 당분간 수기이고 저장된 사유가 그 재료다.
+ *
+ * 없는 요청은 404(1421), 이미 처리된 요청은 409(1422), 검토 이후 요청 내용이 바뀌었으면 409(1426) 다.
+ */
+export const reject2Mutation = (options?: Partial<Options<Reject2Data>>): UseMutationOptions<unknown, DefaultError, Options<Reject2Data>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<Reject2Data>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await reject2({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 계정 발급 요청 승인
+ *
+ * 행사 운영자 계정을 만들고 초기 비밀번호를 공식 이메일로 발송한다. 응답에는 발송 성공 여부만 실리고 초기 비밀번호 평문은 어디에도 실리지 않는다.
+ *
+ * 메일 발송이 실패해도 계정과 발급됨 상태는 유지되며 emailSent 가 false 로 온다 — 복구는 재발송 API 다. 응답 자체를 받지 못했으면 상세를 재조회해 ISSUED 인지 확인하고, 발송 확신이 없으면 재발송을 쓴다.
+ *
+ * 없는 요청은 404(1421), 이미 처리된 요청과 동시 승인의 늦은 쪽은 409(1422), 검토 이후 요청 내용이 바뀌었으면 409(1426), 이미 계정이 있는 이메일은 409(1409) 다.
+ */
+export const approve1Mutation = (options?: Partial<Options<Approve1Data>>): UseMutationOptions<Approve1Response, DefaultError, Options<Approve1Data>> => {
+    const mutationOptions: UseMutationOptions<Approve1Response, DefaultError, Options<Approve1Data>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approve1({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 행사 노출 중지
+ *
+ * 승인된 행사의 지도 노출을 사유와 함께 중지한다. 중지하면 그 승인 미션이 지도 칩 목록·격자 선택·미션 상세·영상 목록·스탬프 판정·미션 경유 업로드에서 <b>즉시</b> 빠진다(재기동 불요). 알고 있는 missionId 로 여는 상세와 영상 목록도 없는 미션과 같은 404 가 된다.
+ *
+ * 이미 완료한 사용자의 스탬프와 진행 기록은 그대로 남는다 — 중지는 노출을 끊는 것이지 기록을 회수하는 것이 아니다.
+ *
+ * 사유는 신청 계정의 공식 이메일로 발송된다. 발송이 실패해도 중지는 유지되며 emailSent 가 false 로 온다 — 저장된 사유가 수기 재통지의 재료이고 재발송 API 는 없다. 중지 해제(재노출)도 이 티켓 범위 밖이다.
+ *
+ * 없거나 승인되지 않은 신청은 404(13430), 이미 중지된 행사는 409(13453) 다.
+ */
+export const unpublishMutation = (options?: Partial<Options<UnpublishData>>): UseMutationOptions<UnpublishResponse, DefaultError, Options<UnpublishData>> => {
+    const mutationOptions: UseMutationOptions<UnpublishResponse, DefaultError, Options<UnpublishData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await unpublish({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 신청 반려
+ *
+ * 신청을 반려하고 항목 코드와 사유를 이력에 남긴다. 항목 코드는 1개 이상이어야 하고 PERIOD·AREA·IMAGE·INFO 만 쓸 수 있으며 중복은 허용하지 않는다. 사유 본문도 필수다.
+ *
+ * <b>메일은 발송되지 않는다</b> — 행사 운영자가 콘솔 상세에서 항목과 사유를 보고 고쳐서 다시 낸다. 승인 시 격자 겹침(13452)을 만난 경우의 다음 조작도 이 반려이고, 항목 코드는 AREA 다.
+ *
+ * 없는 신청은 404(13430), 심사 중이 아니면 409(13450), 항목 코드가 비었거나 허용 밖이거나 중복이면 400(13454) 이다.
+ */
+export const reject3Mutation = (options?: Partial<Options<Reject3Data>>): UseMutationOptions<unknown, DefaultError, Options<Reject3Data>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<Reject3Data>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await reject3({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 신청 승인
+ *
+ * 신청을 승인하고 승인 번호(APR-2026-XXXX 꼴)를 부여한다. 요청 본문이 없다 — 승인 입력은 전부 저장된 신청에서 나온다.
+ *
+ * 지역축제는 지도 홈 <b>축제 칩</b> 미션으로, 팝업스토어는 <b>팝업 칩</b> 미션으로 등재되어 재기동이나 재시드 없이 기존 미션 조회 API 에 즉시 나타난다. 판정 격자는 신청한 전 위치의 셀 합집합이고 대표 격자는 서버가 그 합집합에서 다시 계산한다.
+ *
+ * 전이·이력·미션 등재가 한 트랜잭션이라 절반만 반영되는 결과가 없다. 응답을 받지 못했으면 상세를 재조회해 APPROVED 인지 확인한다 — 같은 신청을 다시 승인하면 409(13450) 다.
+ *
+ * 없는 신청은 404(13430), 심사 중이 아니거나 동시 승인의 늦은 쪽은 409(13450), 종료일이 이미 지난 신청은 409(13451) 다.
+ */
+export const approve2Mutation = (options?: Partial<Options<Approve2Data>>): UseMutationOptions<Approve2Response, DefaultError, Options<Approve2Data>> => {
+    const mutationOptions: UseMutationOptions<Approve2Response, DefaultError, Options<Approve2Data>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approve2({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 아이디 변경 요청 반려
+ *
+ * 요청을 반려하고 사유를 저장한다. 아이디는 바뀌지 않고 <b>메일도 발송되지 않는다</b> — 반려 통보는 수기이고 저장된 사유가 그 재료다. 처리 후에는 같은 계정이 다시 접수할 수 있다.
+ *
+ * 검토 기준 시각을 승인과 똑같이 요구하는 것은, 검토한 내용과 다른 요청을 그 사유로 반려하는 어긋남을 막기 위해서다.
+ *
+ * 없는 요청은 404(1427), 이미 처리된 요청은 409(1428), 검토 이후 내용이 바뀌었으면 409(1429) 다.
+ */
+export const rejectEmailChangeMutation = (options?: Partial<Options<RejectEmailChangeData>>): UseMutationOptions<unknown, DefaultError, Options<RejectEmailChangeData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<RejectEmailChangeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await rejectEmailChange({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 아이디 변경 요청 승인
+ *
+ * 요청한 이메일로 로그인 아이디를 교체하고 <b>새 이메일로 변경 완료를 통지</b>한다. 요청 전이와 이메일 교체는 한 트랜잭션이라 함께 성공하거나 함께 실패한다. 비밀번호와 세션은 그대로이며 다음 로그인부터 새 아이디를 쓴다.
+ *
+ * 발급·반려 통보와 달리 메일을 보내는 이유는 로그인 수단 자체가 바뀌는 사건이라서다 — 알리지 않으면 행사 운영자가 계정 접근을 잃는다. 발송이 실패해도 교체는 유지되며 emailSent 가 false 로 온다.
+ *
+ * 없는 요청은 404(1427), 이미 처리된 요청은 409(1428), 검토 이후 재요청으로 내용이 바뀌었으면 409(1429), 요청한 이메일이 이미 다른 계정에 있으면 409(1409) 다.
+ */
+export const approveEmailChangeMutation = (options?: Partial<Options<ApproveEmailChangeData>>): UseMutationOptions<ApproveEmailChangeResponse, DefaultError, Options<ApproveEmailChangeData>> => {
+    const mutationOptions: UseMutationOptions<ApproveEmailChangeResponse, DefaultError, Options<ApproveEmailChangeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approveEmailChange({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 /**
  * 영상 공개 범위 전환
  *
@@ -1063,6 +1475,88 @@ export const setVisibilityMutation = (options?: Partial<Options<SetVisibilityDat
     const mutationOptions: UseMutationOptions<SetVisibilityResponse, DefaultError, Options<SetVisibilityData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await setVisibility({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getProfileQueryKey = (options?: Options<GetProfileData>) => createQueryKey('getProfile', options);
+
+/**
+ * 계정 설정 조회
+ *
+ * 계정 설정 화면의 초기값이다. 아이디(이메일)는 읽기 전용으로 함께 내려간다.
+ */
+export const getProfileOptions = (options?: Options<GetProfileData>) => queryOptions<GetProfileResponse, DefaultError, GetProfileResponse, ReturnType<typeof getProfileQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getProfile({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getProfileQueryKey(options)
+});
+
+/**
+ * 담당자 정보 수정
+ *
+ * 담당자 이름과 연락처를 바꾸고 변경 후 값을 반환한다. 아이디(이메일)는 이 API 로 바꿀 수 없다.
+ */
+export const updateProfileMutation = (options?: Partial<Options<UpdateProfileData>>): UseMutationOptions<UpdateProfileResponse, DefaultError, Options<UpdateProfileData>> => {
+    const mutationOptions: UseMutationOptions<UpdateProfileResponse, DefaultError, Options<UpdateProfileData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateProfile({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getSubmissionQueryKey = (options: Options<GetSubmissionData>) => createQueryKey('getSubmission', options);
+
+/**
+ * 신청 상세
+ *
+ * 기본 정보와 위치 목록(순번·대표 격자·표시명 재료·제출 원본 사각형), 상태 이력, 반려 항목과 사유를 돌려준다. 반려 항목은 현재 상태가 반려일 때만 값이 있고, 과거 반려는 재제출 뒤에도 이력에 남는다.
+ *
+ * 없는 신청과 남의 신청은 완전히 같은 실패 응답이다 — 응답 차이로 남의 신청 존재를 추측할 수 없다.
+ */
+export const getSubmissionOptions = (options: Options<GetSubmissionData>) => queryOptions<GetSubmissionResponse, DefaultError, GetSubmissionResponse, ReturnType<typeof getSubmissionQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSubmission({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSubmissionQueryKey(options)
+});
+
+/**
+ * 반려본 수정 재제출
+ *
+ * 반려된 신청만 수정할 수 있고, 재제출하면 상태가 심사 중으로 돌아간다(신청 번호는 그대로다). 부분 수정이 아니라 전체 교체이고 등록 유형은 바꿀 수 없다 — 유형을 바꾸려면 새로 제출한다.
+ *
+ * imageS3Key 를 생략하거나 null 로 보내면 기존 대표 이미지가 유지되고, 새 pending 키를 보내면 교체된다.
+ */
+export const resubmitMutation = (options?: Partial<Options<ResubmitData>>): UseMutationOptions<ResubmitResponse, DefaultError, Options<ResubmitData>> => {
+    const mutationOptions: UseMutationOptions<ResubmitResponse, DefaultError, Options<ResubmitData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resubmit({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1465,6 +1959,50 @@ export const getDistrictsOptions = (options?: Options<GetDistrictsData>) => quer
         return data;
     },
     queryKey: getDistrictsQueryKey(options)
+});
+
+export const getApprovedEventsQueryKey = (options?: Options<GetApprovedEventsData>) => createQueryKey('getApprovedEvents', options);
+
+/**
+ * 승인 이벤트 목록 조회
+ *
+ * 참여 신청 모달의 재료 — 시·도 칩, 시·도별 건수, 이벤트 목록이다. 담기는 것은 아직 끝나지 않은 회차(예정·진행 중)뿐이고, 종료된 행사(업로드 유예·아카이브)는 참여를 신청해도 열 자리가 없으므로 빠진다. 일반 사용자 조회와 달리 노출 시작 전인 예정 회차도 담긴다 — 심사에 시간이 걸려 행사 운영자는 미리 부모 이벤트를 골라야 한다.
+ *
+ * totalCount 와 cityCounts 는 city·name 을 적용하지 않은 전체 기준이라 검색 중에도 칩 건수가 고정이고, events 에만 두 파라미터가 적용된다. cityCounts 는 건수 내림차순·동수는 이름 오름차순, events 는 시작일 오름차순·동시각은 회차 id 오름차순이다.
+ *
+ * placeLabel 은 그 회차의 위치 중 표시 순서가 가장 앞선 것의 이름이고, 위치가 없으면 null 이다. 존재하지 않는 시·도 값은 실패가 아니라 빈 목록이다.
+ */
+export const getApprovedEventsOptions = (options?: Options<GetApprovedEventsData>) => queryOptions<GetApprovedEventsResponse, DefaultError, GetApprovedEventsResponse, ReturnType<typeof getApprovedEventsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApprovedEvents({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApprovedEventsQueryKey(options)
+});
+
+export const getMySubmissionsQueryKey = (options?: Options<GetMySubmissionsData>) => createQueryKey('getMySubmissions', options);
+
+/**
+ * 내 신청 목록
+ *
+ * 콘솔 홈 현황 카드와 최근 신청 목록의 재료다. 상태별 건수는 내 신청 전체 기준이고 목록은 최신 제출 순이다. 페이지네이션은 없다.
+ */
+export const getMySubmissionsOptions = (options?: Options<GetMySubmissionsData>) => queryOptions<GetMySubmissionsResponse, DefaultError, GetMySubmissionsResponse, ReturnType<typeof getMySubmissionsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getMySubmissions({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getMySubmissionsQueryKey(options)
 });
 
 export const getInboxQueryKey = (options?: Options<GetInboxData>) => createQueryKey('getInbox', options);
@@ -2214,7 +2752,7 @@ export const getOccurrenceDetailQueryKey = (options: Options<GetOccurrenceDetail
 /**
  * 행사 회차 상세 조회
  *
- * 행사방 헤더 재료 — 행사명, 기간, 업로드 마감(종료 30일 후), 서버 시각 기준 상태, 알림 구독 여부, 같은 시리즈의 지난 회차 목록이다. 상태는 저장값이 아니라 요청 시점 계산이며 경계 정각은 다음 상태에 속한다(종료 정각부터 UPLOAD_GRACE).
+ * 이벤트 헤더 재료 — 행사명, 기간, 업로드 마감(종료 30일 후), 서버 시각 기준 상태, 알림 구독 여부, 같은 시리즈의 지난 회차 목록이다. 상태는 저장값이 아니라 요청 시점 계산이며 경계 정각은 다음 상태에 속한다(종료 정각부터 UPLOAD_GRACE).
  *
  * 지난 회차는 최신순이고 예정 회차는 담기지 않는다. 그 회차의 위치·영상은 회차 id 로 위치 목록을 다시 부르면 되므로 회차 간 데이터가 섞이지 않는다. 알림 구독 여부는 구독을 켰으면서 회차가 예정이거나 진행 중일 때만 true 다 — 비로그인 열람과 종료된 회차는 false 다.
  *
@@ -2375,6 +2913,26 @@ export const findMyBadgesOptions = (options?: Options<FindMyBadgesData>) => quer
     queryKey: findMyBadgesQueryKey(options)
 });
 
+export const getStatusQueryKey = (options?: Options<GetStatusData>) => createQueryKey('getStatus', options);
+
+/**
+ * 비밀번호 강제 변경 상태 조회
+ *
+ * true 면 초기 비밀번호 상태라 행사 등재 콘솔(/api/org**)이 전부 막힌다. 비밀번호가 없는 소셜 계정은 항상 false 다.
+ */
+export const getStatusOptions = (options?: Options<GetStatusData>) => queryOptions<GetStatusResponse, DefaultError, GetStatusResponse, ReturnType<typeof getStatusQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getStatus({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getStatusQueryKey(options)
+});
+
 export const redirectToKakaoAuthorizeQueryKey = (options: Options<RedirectToKakaoAuthorizeData>) => createQueryKey('redirectToKakaoAuthorize', options);
 
 /**
@@ -2463,6 +3021,286 @@ export const getReportsInfiniteOptions = (options?: Options<GetReportsData>) => 
             return data;
         },
         queryKey: getReportsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getRequestsQueryKey = (options?: Options<GetRequestsData>) => createQueryKey('getRequests', options);
+
+/**
+ * 계정 발급 요청 목록 조회
+ *
+ * 상태 필터 기준으로 발급 요청을 마지막 접수 최신순 페이지 단위로 조회한다. 기본은 대기(PENDING) 요청이다. 상태별 건수 3종이 필터와 무관하게 함께 실려 탭 뱃지를 그릴 수 있다.
+ *
+ * 지원하지 않는 status 는 400(1424), page 음수나 size 범위(1~100) 밖은 400(1425) 이다.
+ */
+export const getRequestsOptions = (options?: Options<GetRequestsData>) => queryOptions<GetRequestsResponse, DefaultError, GetRequestsResponse, ReturnType<typeof getRequestsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRequests({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRequestsQueryKey(options)
+});
+
+export const getRequestsInfiniteQueryKey = (options?: Options<GetRequestsData>): QueryKey<Options<GetRequestsData>> => createQueryKey('getRequests', options, true);
+
+/**
+ * 계정 발급 요청 목록 조회
+ *
+ * 상태 필터 기준으로 발급 요청을 마지막 접수 최신순 페이지 단위로 조회한다. 기본은 대기(PENDING) 요청이다. 상태별 건수 3종이 필터와 무관하게 함께 실려 탭 뱃지를 그릴 수 있다.
+ *
+ * 지원하지 않는 status 는 400(1424), page 음수나 size 범위(1~100) 밖은 400(1425) 이다.
+ */
+export const getRequestsInfiniteOptions = (options?: Options<GetRequestsData>) => {
+    const opts = infiniteQueryOptions<GetRequestsResponse, DefaultError, InfiniteData<GetRequestsResponse>, QueryKey<Options<GetRequestsData>>, number | Pick<QueryKey<Options<GetRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getRequests({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getRequestsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getRequestQueryKey = (options: Options<GetRequestData>) => createQueryKey('getRequest', options);
+
+/**
+ * 계정 발급 요청 상세 조회
+ *
+ * 접수 필드 전체와 처리 결과를 조회한다. 응답의 updatedAt 은 승인·반려 요청에 그대로 되돌려 보내야 하는 검토 기준 시각이다 — 검토와 처리 사이에 신청 내용이 바뀌면 그 값으로 걸러진다.
+ *
+ * 없는 요청은 404(1421) 다.
+ */
+export const getRequestOptions = (options: Options<GetRequestData>) => queryOptions<GetRequestResponse, DefaultError, GetRequestResponse, ReturnType<typeof getRequestQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRequest({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRequestQueryKey(options)
+});
+
+export const getEventsQueryKey = (options?: Options<GetEventsData>) => createQueryKey('getEvents', options);
+
+/**
+ * 승인 행사 목록 조회
+ *
+ * 승인된 행사를 노출 중(EXPOSED)·예정(UPCOMING)·종료(ENDED) 탭으로 조회한다. 기본은 노출 중이다. 상태는 저장값이 아니라 <b>조회 시점 KST 오늘과 행사 기간으로 파생</b>하므로 시작일 당일은 노출 중, 종료일 당일도 노출 중이고 그 다음 날부터 종료다.
+ *
+ * 탭 건수 3종은 탭과 무관한 전체 집계라 화면 뱃지에 그대로 쓴다. <b>노출이 중지된 행사도 탭에 그대로 남고</b> unpublished·unpublishedAt·unpublishReason 으로 구분된다 — 무엇을 왜 내렸는지 관리자가 계속 확인할 수 있어야 하기 때문이다.
+ *
+ * 지원하지 않는 status 는 400(13455), page 음수나 size 범위(1~100) 밖은 400(13456) 이다.
+ */
+export const getEventsOptions = (options?: Options<GetEventsData>) => queryOptions<GetEventsResponse, DefaultError, GetEventsResponse, ReturnType<typeof getEventsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getEvents({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getEventsQueryKey(options)
+});
+
+export const getEventsInfiniteQueryKey = (options?: Options<GetEventsData>): QueryKey<Options<GetEventsData>> => createQueryKey('getEvents', options, true);
+
+/**
+ * 승인 행사 목록 조회
+ *
+ * 승인된 행사를 노출 중(EXPOSED)·예정(UPCOMING)·종료(ENDED) 탭으로 조회한다. 기본은 노출 중이다. 상태는 저장값이 아니라 <b>조회 시점 KST 오늘과 행사 기간으로 파생</b>하므로 시작일 당일은 노출 중, 종료일 당일도 노출 중이고 그 다음 날부터 종료다.
+ *
+ * 탭 건수 3종은 탭과 무관한 전체 집계라 화면 뱃지에 그대로 쓴다. <b>노출이 중지된 행사도 탭에 그대로 남고</b> unpublished·unpublishedAt·unpublishReason 으로 구분된다 — 무엇을 왜 내렸는지 관리자가 계속 확인할 수 있어야 하기 때문이다.
+ *
+ * 지원하지 않는 status 는 400(13455), page 음수나 size 범위(1~100) 밖은 400(13456) 이다.
+ */
+export const getEventsInfiniteOptions = (options?: Options<GetEventsData>) => {
+    const opts = infiniteQueryOptions<GetEventsResponse, DefaultError, InfiniteData<GetEventsResponse>, QueryKey<Options<GetEventsData>>, number | Pick<QueryKey<Options<GetEventsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetEventsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getEvents({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getEventsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getSubmissionsQueryKey = (options?: Options<GetSubmissionsData>) => createQueryKey('getSubmissions', options);
+
+/**
+ * 심사 큐 조회
+ *
+ * 상태 필터 기준으로 신청을 접수 최신순 페이지 단위로 조회한다. 기본은 심사 중(IN_REVIEW) 신청이다. 상태별 건수 3종이 필터와 무관하게 함께 실려 탭 뱃지를 그릴 수 있다.
+ *
+ * 항목의 organizerName 은 신청 폼의 주최 기관이고 orgName 은 신청 계정에 등록된 기관명이라, 둘이 다르면 그 자체가 심사 신호다.
+ *
+ * 지원하지 않는 status 는 400(13455), page 음수나 size 범위(1~100) 밖은 400(13456) 이다.
+ */
+export const getSubmissionsOptions = (options?: Options<GetSubmissionsData>) => queryOptions<GetSubmissionsResponse, DefaultError, GetSubmissionsResponse, ReturnType<typeof getSubmissionsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSubmissions({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSubmissionsQueryKey(options)
+});
+
+export const getSubmissionsInfiniteQueryKey = (options?: Options<GetSubmissionsData>): QueryKey<Options<GetSubmissionsData>> => createQueryKey('getSubmissions', options, true);
+
+/**
+ * 심사 큐 조회
+ *
+ * 상태 필터 기준으로 신청을 접수 최신순 페이지 단위로 조회한다. 기본은 심사 중(IN_REVIEW) 신청이다. 상태별 건수 3종이 필터와 무관하게 함께 실려 탭 뱃지를 그릴 수 있다.
+ *
+ * 항목의 organizerName 은 신청 폼의 주최 기관이고 orgName 은 신청 계정에 등록된 기관명이라, 둘이 다르면 그 자체가 심사 신호다.
+ *
+ * 지원하지 않는 status 는 400(13455), page 음수나 size 범위(1~100) 밖은 400(13456) 이다.
+ */
+export const getSubmissionsInfiniteOptions = (options?: Options<GetSubmissionsData>) => {
+    const opts = infiniteQueryOptions<GetSubmissionsResponse, DefaultError, InfiniteData<GetSubmissionsResponse>, QueryKey<Options<GetSubmissionsData>>, number | Pick<QueryKey<Options<GetSubmissionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetSubmissionsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getSubmissions({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getSubmissionsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getSubmission1QueryKey = (options: Options<GetSubmission1Data>) => createQueryKey('getSubmission1', options);
+
+/**
+ * 심사 상세 조회
+ *
+ * 신청 폼 필드 전체(대표 이미지는 presigned GET URL)에 심사 재료를 더해 조회한다 — 신청 계정 정보, 전 위치를 감싸는 노출 영역 사각형, 상태 이력이다. 노출 영역은 조회 시점 계산값이라 저장되지 않는다.
+ *
+ * 관리자 조회에는 존재 은닉이 없다 — 없는 신청은 그대로 404(13430) 다.
+ */
+export const getSubmission1Options = (options: Options<GetSubmission1Data>) => queryOptions<GetSubmission1Response, DefaultError, GetSubmission1Response, ReturnType<typeof getSubmission1QueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSubmission1({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSubmission1QueryKey(options)
+});
+
+export const getEmailChangeRequestsQueryKey = (options?: Options<GetEmailChangeRequestsData>) => createQueryKey('getEmailChangeRequests', options);
+
+/**
+ * 아이디 변경 요청 목록 조회
+ *
+ * 행사 운영자가 낸 아이디(공식 이메일) 변경 요청을 상태 필터 기준으로 접수 최신순 조회한다. 기본은 대기(PENDING) 요청이다. 항목에 현재 아이디와 바꾸려는 이메일이 나란히 실려 그대로 대조할 수 있고, 상태별 건수 3종이 필터와 무관하게 함께 온다.
+ *
+ * 응답의 createdAt 은 승인·반려 요청에 되돌려 보내야 하는 검토 기준 시각이다 — 재요청은 같은 대기 행을 덮어쓰므로, 이 값으로 걸러야 본 적 없는 이메일을 승인하는 사고가 없다.
+ *
+ * 지원하지 않는 status 는 400(1424), page 음수나 size 범위(1~100) 밖은 400(1425) 이다.
+ */
+export const getEmailChangeRequestsOptions = (options?: Options<GetEmailChangeRequestsData>) => queryOptions<GetEmailChangeRequestsResponse, DefaultError, GetEmailChangeRequestsResponse, ReturnType<typeof getEmailChangeRequestsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getEmailChangeRequests({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getEmailChangeRequestsQueryKey(options)
+});
+
+export const getEmailChangeRequestsInfiniteQueryKey = (options?: Options<GetEmailChangeRequestsData>): QueryKey<Options<GetEmailChangeRequestsData>> => createQueryKey('getEmailChangeRequests', options, true);
+
+/**
+ * 아이디 변경 요청 목록 조회
+ *
+ * 행사 운영자가 낸 아이디(공식 이메일) 변경 요청을 상태 필터 기준으로 접수 최신순 조회한다. 기본은 대기(PENDING) 요청이다. 항목에 현재 아이디와 바꾸려는 이메일이 나란히 실려 그대로 대조할 수 있고, 상태별 건수 3종이 필터와 무관하게 함께 온다.
+ *
+ * 응답의 createdAt 은 승인·반려 요청에 되돌려 보내야 하는 검토 기준 시각이다 — 재요청은 같은 대기 행을 덮어쓰므로, 이 값으로 걸러야 본 적 없는 이메일을 승인하는 사고가 없다.
+ *
+ * 지원하지 않는 status 는 400(1424), page 음수나 size 범위(1~100) 밖은 400(1425) 이다.
+ */
+export const getEmailChangeRequestsInfiniteOptions = (options?: Options<GetEmailChangeRequestsData>) => {
+    const opts = infiniteQueryOptions<GetEmailChangeRequestsResponse, DefaultError, InfiniteData<GetEmailChangeRequestsResponse>, QueryKey<Options<GetEmailChangeRequestsData>>, number | Pick<QueryKey<Options<GetEmailChangeRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetEmailChangeRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getEmailChangeRequests({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getEmailChangeRequestsInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };
