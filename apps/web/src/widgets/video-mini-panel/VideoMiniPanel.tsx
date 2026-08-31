@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
-import { Film, MoreHorizontal, X } from "lucide-react";
-import { Button } from "@fillmap/ui-web";
+import { MoreHorizontal, X } from "lucide-react";
 import { useVideoPlaybackQuery } from "@/features/map-home/model/use-video-playback-query";
 import { playbackUnavailableMessage } from "@/features/map-home/model/video-playback";
 import type { VideoMiniSelection } from "@/features/map-home/model/video-mini-panel-store";
 import { VideoMoreMenu } from "@/features/video-actions/ui/VideoMoreMenu";
 import { formatViewCountKo } from "@/shared/format";
 import { VideoOwnerMeta } from "./VideoOwnerMeta";
+import { VideoPlaybackSurface } from "./VideoPlaybackSurface";
 
 interface VideoMiniPanelProps {
   /** 미니 패널 선택 — 영상 데이터 + 내 영상 여부 (video-mini-panel-store) */
@@ -29,7 +29,6 @@ interface VideoMiniPanelProps {
 export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
   const { video, mine } = selected;
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   const { playback, isPending, isError, retry } = useVideoPlaybackQuery(video);
   // 재생 소스 — 목(videoSrc) 우선, 실 API는 presigned playbackUrl (기준 9, 추정 8)
@@ -47,12 +46,6 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
   useEffect(() => {
     closeButtonRef.current?.focus();
   }, []);
-
-  // 소스 도착·교체 시 자동재생 시도 (추정 4) — 카드 클릭 제스처 직후라 대체로 허용되고,
-  // autoplay 정책·소스 로드 실패 시엔 무시하고 controls 수동 재생으로 폴백 (VideoPreview 관례)
-  useEffect(() => {
-    if (src !== null) videoRef.current?.play()?.catch(() => {});
-  }, [src]);
 
   return (
     <aside
@@ -95,42 +88,17 @@ export const VideoMiniPanel = ({ selected, onClose }: VideoMiniPanelProps) => {
         </button>
       </div>
 
-      {/* 재생 영역 — 소스 확보 시 HTML5 video, 그 외 재생 조회 상태 3분기 (기준 9·12) */}
-      <div
-        aria-busy={isPending}
-        className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-foreground"
-      >
-        {src !== null ? (
-          <video
-            ref={videoRef}
-            src={src}
-            controls
-            playsInline
-            className="size-full object-contain"
-          />
-        ) : isError ? (
-          <div className="flex flex-col items-center gap-sm px-md">
-            <p className="text-center text-fm-caption text-foreground-inverse">
-              영상을 불러오지 못했어요
-            </p>
-            <Button
-              text="다시 시도"
-              variant="secondary"
-              size="sm"
-              onClick={retry}
-            />
-          </div>
-        ) : isPending ? (
-          <Film aria-hidden className="size-8 text-foreground-inverse/40" />
-        ) : playback ? (
-          // 조회는 성공했는데 playbackUrl null — non-READY(처리 중·실패)·BLINDED (기준 12)
-          <p className="px-md text-center text-fm-caption text-foreground-inverse">
-            {playbackUnavailableMessage(playback)}
-          </p>
-        ) : (
-          <Film aria-hidden className="size-8 text-foreground-inverse/40" />
-        )}
-      </div>
+      {/* 재생 영역 — 공유 표면(MSG-520 추출)에 위임: 소스 확보 시 HTML5 video,
+          그 외 재생 조회 상태 3분기 (기준 9·12) */}
+      <VideoPlaybackSurface
+        src={src}
+        isPending={isPending}
+        isError={isError}
+        onRetry={retry}
+        unavailableMessage={
+          playback ? playbackUnavailableMessage(playback) : null
+        }
+      />
 
       <div className="flex flex-col gap-xxs">
         <h2 className="text-fm-title text-foreground">{title}</h2>

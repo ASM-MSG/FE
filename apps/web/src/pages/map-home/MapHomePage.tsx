@@ -24,6 +24,7 @@ import { useDocumentTitle } from "@/shared/use-document-title";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
 import { CardPlayNotice } from "./ui/CardPlayNotice";
+import { EventVideoMiniPanel } from "./ui/EventVideoMiniPanel";
 import { HomePanelSwitch } from "./ui/HomePanelSwitch";
 import { HomeSearchBox } from "./ui/HomeSearchBox";
 import { RegionReloadButton } from "./ui/RegionReloadButton";
@@ -68,6 +69,10 @@ export const MapHomePage = () => {
   // 행사방 (MSG-516 AC 10) — 캡슐 세그먼트 선택이 열고, 뒤로가기·캡슐 ✕·테마 활성화가
   // 닫는다. 뒤로가기는 2단(MSG-518 AC 12) — useHomeCloseHandlers가 배선한다
   const eventRoom = useEventRoomStore((s) => s.room);
+  // 행사 영상 미니 패널 (MSG-520 AC 1·3) — 카드 클릭(EventRoomPanel)이 선택하고,
+  // X·Escape(back 3단)가 닫는다. 영상 수명은 방·위치에 종속(스토어가 함께 해제)
+  const eventVideoId = useEventRoomStore((s) => s.videoId);
+  const closeEventVideo = useEventRoomStore((s) => s.closeVideo);
 
   // 내 점령 격자 id — 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정용.
   // 표시는 셸 상시 층(MSG-263 D9) 소유이고, 홈은 같은 뷰포트 쿼리를 구독만 한다(캐시 공유)
@@ -316,6 +321,9 @@ export const MapHomePage = () => {
 
       {miniSelection && (
         <VideoMiniPanel selected={miniSelection} onClose={closeMiniPanel} />
+      )}
+      {eventVideoId !== null && (
+        <EventVideoMiniPanel videoId={eventVideoId} onClose={closeEventVideo} />
       )}
       <CardPlayNotice
         notice={cardPlay.notice}

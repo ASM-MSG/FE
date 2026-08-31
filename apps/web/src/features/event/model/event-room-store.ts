@@ -20,12 +20,23 @@ interface EventRoomState {
   highlightedLocationId: number | null;
   /** 선택된 행사 위치 스냅숏 (MSG-518 AC 1) — null이면 개요. 클릭 배선은 MSG-517 몫 */
   location: EventLocationSelection | null;
+  /**
+   * 선택된 행사 영상 id (MSG-520 AC 1) — null이면 미니 패널 닫힘. 상세(재생 URL·
+   * 메타·helpful·댓글)는 getVideoDetail이 한 번에 돌려주므로 id만 담는다.
+   * 방·위치 수명에 종속 — 위치 해제·교체·방 닫힘이 함께 비운다.
+   */
+  videoId: number | null;
   open: (selection: EventRoomSelection) => void;
   close: () => void;
   highlightLocation: (locationId: number) => void;
   selectLocation: (location: EventLocationSelection) => void;
   clearLocation: () => void;
-  /** 뒤로가기 2단 (MSG-518 AC 12) — 위치 선택 중이면 위치만 해제, 아니면 방을 닫는다 */
+  selectVideo: (videoId: number) => void;
+  closeVideo: () => void;
+  /**
+   * 뒤로가기 3단 (MSG-518 AC 12 → MSG-520 AC 3) — 영상이 열려 있으면 영상만 닫고,
+   * 아니면 위치 해제, 아니면 방을 닫는다.
+   */
   back: () => void;
 }
 
@@ -44,23 +55,40 @@ export const useEventRoomStore = create<EventRoomState>((set) => ({
   room: null,
   highlightedLocationId: null,
   location: null,
+  videoId: null,
   open: (selection) =>
-    set((state) => ({
-      room: selection,
+    set((state) => {
+      const sameRoom = state.room?.occurrenceId === selection.occurrenceId;
+      return {
+        room: selection,
+        highlightedLocationId: null,
+        // 같은 행사 재open(활성 세그먼트 재클릭)은 보던 위치·영상을 유지한다
+        location: sameRoom ? state.location : null,
+        videoId: sameRoom ? state.videoId : null,
+      };
+    }),
+  close: () =>
+    set({
+      room: null,
       highlightedLocationId: null,
-      location:
-        state.room?.occurrenceId === selection.occurrenceId
-          ? state.location
-          : null,
-    })),
-  close: () => set({ room: null, highlightedLocationId: null, location: null }),
+      location: null,
+      videoId: null,
+    }),
   highlightLocation: (locationId) => set({ highlightedLocationId: locationId }),
-  selectLocation: (location) => set({ location }),
-  clearLocation: () => set({ location: null }),
+  // 위치 교체는 이전 위치의 영상을 함께 해제한다 (MSG-520 — 유령 영상 방지)
+  selectLocation: (location) => set({ location, videoId: null }),
+  clearLocation: () => set({ location: null, videoId: null }),
+  selectVideo: (videoId) => set({ videoId }),
+  closeVideo: () => set({ videoId: null }),
   back: () =>
-    set((state) =>
-      state.location !== null
-        ? { location: null }
-        : { room: null, highlightedLocationId: null, location: null },
-    ),
+    set((state) => {
+      if (state.videoId !== null) return { videoId: null };
+      if (state.location !== null) return { location: null };
+      return {
+        room: null,
+        highlightedLocationId: null,
+        location: null,
+        videoId: null,
+      };
+    }),
 }));

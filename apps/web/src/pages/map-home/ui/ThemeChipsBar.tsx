@@ -51,11 +51,14 @@ const CHIP_VIEW: Record<
  * 칩 바도 지도 좌상단으로 붙는다.
  * 미니 디테일 패널(w-97, left-97)이 열리면 겹치지 않게 그 폭만큼 우측 이동한다 (MSG-277 3차
  * AC 15, 추정 3) — 칩 해제·전환이 미니를 닫으므로 이동 후에도 칩 상호작용은 유효하다.
+ * 행사 영상 미니 패널(MSG-520 AC 1, 동일 rect)도 같은 이유로 이동 조건에 합류한다 —
+ * 안 하면 칩 바가 패널 헤더(X·⋯)를 덮어 클릭이 칩으로 새고 행사방이 통째로 닫힌다.
  */
 export const ThemeChipsBar = () => {
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
   const toggle = useThemeFilterStore((s) => s.toggle);
   const miniPanelOpen = useVideoMiniPanelStore((s) => s.selected !== null);
+  const eventVideoOpen = useEventRoomStore((s) => s.videoId !== null);
   const collapsed = useSidebarStore((s) => s.collapsed);
 
   return (
@@ -63,7 +66,7 @@ export const ThemeChipsBar = () => {
       className={cn(
         "pointer-events-auto absolute top-md z-10 ml-md flex gap-xs transition-transform",
         collapsed ? "left-0" : "left-97",
-        !collapsed && miniPanelOpen && "translate-x-97",
+        !collapsed && (miniPanelOpen || eventVideoOpen) && "translate-x-97",
       )}
     >
       <div role="group" aria-label="테마 필터" className="flex gap-xs">

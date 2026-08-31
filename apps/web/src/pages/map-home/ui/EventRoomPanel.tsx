@@ -1,6 +1,9 @@
 import { DotsLoader, RetryNotice } from "@fillmap/ui-web";
 import { ChevronLeft } from "lucide-react";
-import type { EventRoomSelection } from "@/features/event/model/event-room-store";
+import {
+  type EventRoomSelection,
+  useEventRoomStore,
+} from "@/features/event/model/event-room-store";
 import { useEventArchiveDetailQuery } from "@/features/event/model/use-event-archive-query";
 import { EventRoomBodySwitch } from "./EventRoomBodySwitch";
 import { useEscapeClose } from "./use-escape-close";
@@ -27,6 +30,8 @@ export const EventRoomPanel = ({ room, onBack }: EventRoomPanelProps) => {
   // 2값뿐이라 아카이브가 이 셸에 못 들어온다. 상세 도착 전엔 칩 status 폴백(깜빡임 방지)
   const detailQuery = useEventArchiveDetailQuery(room.occurrenceId);
   const body = useEventRoomBody(room, detailQuery.data?.status ?? room.status);
+  // 카드 클릭 → 행사 미니 패널 (MSG-520 AC 1·2) — 패널 렌더는 MapHomePage 몫
+  const selectVideo = useEventRoomStore((s) => s.selectVideo);
   useEscapeClose(onBack);
 
   return (
@@ -74,6 +79,7 @@ export const EventRoomPanel = ({ room, onBack }: EventRoomPanelProps) => {
             hasNext={body.hasNext}
             loadMore={body.loadMore}
             isLoadingMore={body.isLoadingMore}
+            onVideoSelect={(video) => selectVideo(video.videoId)}
           />
         </div>
       )}
