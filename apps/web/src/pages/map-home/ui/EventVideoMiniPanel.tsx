@@ -81,7 +81,11 @@ export const EventVideoMiniPanel = ({
     setToastMessage(eventInteractionErrorMessage(error));
   const toggleHelpful = useToggleHelpful({ onError: showError });
   const createComment = useCreateComment({
-    onCreated: () => setDraft(""),
+    // 제출 videoId 대조 — A 전송 중 B로 전환하면 A 완료가 B의 입력을 지우는
+    // 레이스 차단 (codex 리뷰 P2). 불일치 완료는 캐시 seed만 남기고 무시
+    onCreated: (submittedVideoId) => {
+      if (submittedVideoId === videoId) setDraft("");
+    },
     onError: showError,
   });
   const commentsPages = useEventCommentsPages(

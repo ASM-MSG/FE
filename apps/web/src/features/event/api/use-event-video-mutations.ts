@@ -100,7 +100,8 @@ export interface CreateCommentInput {
  * commentCount를 +1 seed, 위치 목록을 무효화한다. 입력 비우기는 onCreated 콜백 몫.
  */
 export const useCreateComment = (callbacks?: {
-  onCreated?: () => void;
+  /** 성공한 제출의 videoId — 완료 시점에 다른 영상으로 전환됐을 수 있어 호출부가 대조한다 */
+  onCreated?: (videoId: number) => void;
   onError?: (error: unknown) => void;
 }) => {
   const queryClient = useQueryClient();
@@ -125,7 +126,7 @@ export const useCreateComment = (callbacks?: {
         },
       }));
       invalidateLocationVideos(queryClient);
-      callbacks?.onCreated?.();
+      callbacks?.onCreated?.(videoId);
     },
     onError: (error) => callbacks?.onError?.(error),
   });

@@ -143,6 +143,8 @@ describe("useCreateComment — 댓글 작성 append seed (AC 8·12)", () => {
     result.current.mutate({ videoId: 42, content: "댓글" });
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+    // 제출 videoId를 콜백에 전달 — 완료 시점 선택 영상 대조 재료 (codex 리뷰 P2)
+    expect(onCreated).toHaveBeenCalledWith(42);
     expect(queryClient.getQueryState(LIST_KEY)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(DETAIL_KEY)?.isInvalidated).toBe(false);
   });
