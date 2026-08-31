@@ -72,6 +72,11 @@ const UPLOAD_RESULT = {
 let lastConfirmBody: Record<string, unknown> | null = null;
 /** 마지막 교체 확정(PUT /api/videos/42) 요청 body — lat·lng 미전송 단정용 (MSG-415 AC 3) */
 let lastReplaceBody: Record<string, unknown> | null = null;
+/** 마지막 행사 확정(upload1) 요청 body — s3Key·durationSec·recordedAt만 단정용 (MSG-521 AC 3) */
+let lastEventUploadBody: Record<string, unknown> | null = null;
+
+/** 행사 확정 path — CTA 시점의 행사방(7)·선택 위치(3) 귀속 (MSG-521 AC 3) */
+const EVENT_UPLOAD_PATH = "/api/event-occurrences/7/locations/3/videos";
 
 const stubApi = (overrides?: {
   highlights?: number[][] | null;
@@ -116,6 +121,24 @@ const stubApi = (overrides?: {
           unknown
         >;
         return envelopeResponse({ videoId: 42, processingStatus: "UPLOADED" });
+      }
+      // 행사 확정 — POST upload1 (MSG-521)
+      if (
+        url.pathname === EVENT_UPLOAD_PATH &&
+        input instanceof Request &&
+        input.method === "POST"
+      ) {
+        lastEventUploadBody = (await input.clone().json()) as Record<
+          string,
+          unknown
+        >;
+        return envelopeResponse({
+          videoId: 43,
+          gridId: "grid-78",
+          processingStatus: "UPLOADED",
+          occupied: false,
+          newBadges: [],
+        });
       }
       if (url.pathname === "/api/videos") {
         if (confirmFailures > 0) {
@@ -176,6 +199,28 @@ const openReplaceModal = () =>
     }),
   );
 
+/** 행사 업로드 진입 — 빈 위치 CTA·헤더 버튼이 넘기는 대상 (MSG-521) */
+const openEventUploadModal = () =>
+  act(() =>
+    useUploadModalStore.getState().openEventUploadModal({
+      occurrenceId: 7,
+      locationId: 3,
+      occurrenceTitle: "부산 불꽃축제",
+      locationName: "광안리 해변",
+    }),
+  );
+
+/** 행사 확정 POST(upload1) 발사 횟수 — 모드 격리 단정용 (MSG-521 AC 9) */
+const countEventPosts = () =>
+  vi.mocked(fetch).mock.calls.filter((call) => {
+    const input = call[0] as RequestInfo | URL;
+    return (
+      input instanceof Request &&
+      input.method === "POST" &&
+      new URL(input.url).pathname === EVENT_UPLOAD_PATH
+    );
+  }).length;
+
 /** 교체 PUT(/api/videos/42) 발사 횟수 — 확정 전 미발사 단정용 (AC 7·8) */
 const countReplacePuts = () =>
   vi.mocked(fetch).mock.calls.filter((call) => {
@@ -212,11 +257,13 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
       open: false,
       pendingAfterLogin: false,
       replaceTarget: null,
+      eventTarget: null,
     });
     useLoginModalStore.setState({ open: false });
     useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
     lastConfirmBody = null;
     lastReplaceBody = null;
+    lastEventUploadBody = null;
     mockMeta.duration = null;
     mockMeta.objectUrl = null;
     mockMeta.error = false;
@@ -498,6 +545,65 @@ describe("업로드 위저드 흐름 스모크 (MSG-329)", () => {
     expect(lastReplaceBody).not.toHaveProperty("visibility");
     // 블러 폴링 폐기 — 교체도 처리 대기 등록이 없다 (MSG-476 AC 7)
     expect(localStorage.getItem("fillmap.upload.pending:v1")).toBeNull();
+  });
+
+  it("행사 모드: 같은 스텝열 완주 후 [업로드하기]로 upload1(행사·위치 path)이 발사되고, 공개 범위 라디오가 없으며 위치 라벨은 '행사명 · 위치명'이다 (MSG-521 AC 1·3·7·8)", async () => {
+    stubApi({ highlights: [] });
+    mockMeta.objectUrl = "blob:original";
+    mockMeta.duration = 4;
+    openEventUploadModal();
+    // 위치 라벨 — 지도 중심 행정동 대신 행사 라벨 (AC 8). 역지오코딩은 발사되지 않는다
+    expect(await screen.findByText("부산 불꽃축제 · 광안리 해변")).toBeTruthy();
+    expect(screen.queryByText("부산 부산진구 부전동")).toBeNull();
+    selectValidFile();
+    fireEvent.click(nextButton());
+
+    // 기존 스텝열 그대로 — 미리보기 도달 (AC 1)
+    expect(await screen.findByText("업로드 미리보기")).toBeTruthy();
+    // 행사 모드에는 공개 범위 선택이 없다 — DTO에 visibility 없음 (AC 7)
+    expect(screen.queryByRole("radiogroup", { name: "공개 범위" })).toBeNull();
+    // 확정·완료 문구는 일반 업로드와 동일 (추정 5)
+    fireEvent.click(await screen.findByRole("button", { name: "업로드하기" }));
+
+    expect(await screen.findByText("업로드 완료!")).toBeTruthy();
+    // 확정은 행사 upload1 1회 — 일반 업로드 POST /api/videos는 발사되지 않는다 (AC 3·9)
+    expect(countEventPosts()).toBe(1);
+    expect(lastConfirmBody).toBeNull();
+    // body는 s3Key·durationSec·recordedAt만 — 귀속은 URL path (AC 3)
+    expect(lastEventUploadBody).toMatchObject({ s3Key: PRESIGN_DATA.s3Key });
+    expect(lastEventUploadBody).not.toHaveProperty("lat");
+    expect(lastEventUploadBody).not.toHaveProperty("lng");
+    expect(lastEventUploadBody).not.toHaveProperty("visibility");
+  });
+
+  it("행사 모드 위저드를 확정 전에 닫으면 upload1이 발사되지 않고, 이어지는 일반 업로드는 POST /api/videos(visibility 포함)로 간다 (MSG-521 AC 9)", async () => {
+    stubApi({ highlights: [] });
+    mockMeta.objectUrl = "blob:original";
+    mockMeta.duration = 4;
+    openEventUploadModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+    await screen.findByText("업로드 미리보기");
+    await screen.findByRole("button", { name: "업로드하기" });
+
+    // 확정 직전 닫기 (✕) — 쓰기(upload1) 미발사 + 행사 대상 해제 (AC 9)
+    fireEvent.click(screen.getByRole("button", { name: "닫기" }));
+    expect(useUploadModalStore.getState().open).toBe(false);
+    expect(useUploadModalStore.getState().eventTarget).toBeNull();
+    expect(countEventPosts()).toBe(0);
+
+    // 이어지는 일반 진입(FAB·사이드레일) — 행사 모드를 이어받지 않는다 (AC 9)
+    openModal();
+    selectValidFile();
+    fireEvent.click(nextButton());
+    await screen.findByText("업로드 미리보기");
+    fireEvent.click(await screen.findByRole("button", { name: "업로드하기" }));
+
+    expect(await screen.findByText("업로드 완료!")).toBeTruthy();
+    expect(countEventPosts()).toBe(0);
+    expect(Number.isFinite(lastConfirmBody?.lat)).toBe(true);
+    expect(Number.isFinite(lastConfirmBody?.lng)).toBe(true);
+    expect(lastConfirmBody?.visibility).toBe("PUBLIC");
   });
 
   it("교체 모드 위치 라벨은 대상 영상의 격자 라벨('서면 A-02')이다 — 지도 중심 행정동 아님 (MSG-415 추정 1)", async () => {

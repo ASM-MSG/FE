@@ -29,10 +29,22 @@ interface UploadModalState {
    * pendingAfterLogin(카카오 리다이렉트 재개) 경로와 무관하다.
    */
   replaceTarget: ReplaceTarget | null;
+  /**
+   * 행사 업로드 대상 (MSG-521) — null이면 행사 모드 아님. 빈 행사 위치 CTA·헤더
+   * [+ 영상 올리기]가 세팅하고, 위저드 확정이 POST 대신
+   * `POST /api/event-occurrences/{occurrenceId}/locations/{locationId}/videos`(upload1)로
+   * 간다 — 귀속은 URL path가 결정한다(좌표 미전송). occurrenceTitle·locationName은
+   * 행사 모드 위치 라벨("행사명 · 위치명")용. 비로그인 게이트를 지나므로 카카오
+   * 리다이렉트 생존용으로 uploadIntentStorage에 함께 영속화한다(추정 3 — 미영속 시
+   * 재개가 일반 업로드로 열려 뷰포트 중심에 오귀속되는 경로 봉쇄).
+   */
+  eventTarget: EventUploadTarget | null;
   /** 업로드 진입 — 비로그인이면 위저드 대신 로그인 모달을 연다 (MSG-352 C9). target은 지목 격자 */
   openModal: (target?: LatLng) => void;
   /** 교체 진입 (MSG-415) — mine 전용 표면이라 로그인 게이트 불요. 지목 격자(target)는 쓰지 않는다 */
   openReplaceModal: (target: ReplaceTarget) => void;
+  /** 행사 업로드 진입 (MSG-521) — openModal과 동일한 비로그인 게이트를 탄다 (AC 6) */
+  openEventUploadModal: (target: EventUploadTarget) => void;
   closeModal: () => void;
 }
 
@@ -43,6 +55,19 @@ export interface ReplaceTarget {
   gridId: string | null;
   zoneName: string | null;
   zoneCell: string | null;
+}
+
+/**
+ * 행사 업로드 대상 (MSG-521) — CTA 시점의 행사방·선택 위치. features/event를
+ * import하지 않는 로컬 정의(교차 feature 회피 — 스펙 수정 1).
+ */
+export interface EventUploadTarget {
+  occurrenceId: number;
+  locationId: number;
+  /** 행사명 — 위저드 위치 라벨 "행사명 · 위치명" 재료 (AC 8) */
+  occurrenceTitle: string;
+  /** 위치명 — 위저드 위치 라벨 재료 (AC 8) */
+  locationName: string;
 }
 
 /**
@@ -64,23 +89,47 @@ export const useUploadModalStore = create<UploadModalState>((set) => ({
   // C11 hydrate — 영속 의도의 지목 좌표도 함께 복원한다 (리다이렉트 복귀 재개가 격자 고정을 잇는다)
   target: uploadIntentStorage.peekTarget(),
   replaceTarget: null,
+  // MSG-521 hydrate — 행사 의도의 맥락도 복원한다 (리다이렉트 복귀 재개가 행사 귀속을 잇는다)
+  eventTarget: uploadIntentStorage.peekEventTarget(),
   openModal: (target) => {
     if (!useAuthStore.getState().isAuthenticated) {
       // 로그인 모달을 먼저 연다 — "모달 열림 = 이전 의도 무효" 구독(아래 stale 가드)이
       // 잔존 의도를 청소한 뒤에 이번 의도를 세팅해야 게이트의 의도가 지워지지 않는다.
       // 지목 격자도 함께 보존해 재개(C10)가 격자 고정 진입을 잇는다
       useLoginModalStore.getState().openModal();
-      set({ pendingAfterLogin: true, target: target ?? null });
+      set({
+        pendingAfterLogin: true,
+        target: target ?? null,
+        eventTarget: null,
+      });
       uploadIntentStorage.save(target); // C11: 카카오 리다이렉트 생존용 영속화 (지목 좌표 포함)
       return;
     }
-    // 매 진입마다 지목·교체 대상을 명시 세팅한다 — 일반 진입이 직전 교체 모드를 이어받는 경로 차단 (AC 6)
-    set({ open: true, target: target ?? null, replaceTarget: null });
+    // 매 진입마다 지목·교체·행사 대상을 명시 세팅한다 — 일반 진입이 직전 모드를 이어받는 경로 차단
+    // (MSG-415 AC 6 · MSG-521 AC 9)
+    set({
+      open: true,
+      target: target ?? null,
+      replaceTarget: null,
+      eventTarget: null,
+    });
   },
   openReplaceModal: (replaceTarget) =>
     // 지목 격자(target)는 세팅하지 않는다 — 교체는 좌표 미전송(격자 유지, 추정 1)
-    set({ open: true, target: null, replaceTarget }),
-  closeModal: () => set({ open: false, target: null, replaceTarget: null }),
+    set({ open: true, target: null, replaceTarget, eventTarget: null }),
+  openEventUploadModal: (eventTarget) => {
+    if (!useAuthStore.getState().isAuthenticated) {
+      // openModal 게이트 미러 (AC 6) — 행사 맥락을 보존해 재개가 행사 귀속을 잇는다
+      useLoginModalStore.getState().openModal();
+      set({ pendingAfterLogin: true, target: null, eventTarget });
+      uploadIntentStorage.saveEvent(eventTarget); // 카카오 리다이렉트 생존용 영속화 (추정 3)
+      return;
+    }
+    // 지목 격자·교체 대상과 상호 배타 — 행사 확정은 좌표를 보내지 않는다 (AC 9)
+    set({ open: true, target: null, replaceTarget: null, eventTarget });
+  },
+  closeModal: () =>
+    set({ open: false, target: null, replaceTarget: null, eventTarget: null }),
 }));
 
 // C10·C11: 비로그인→로그인 전이 시 보류된 업로드 의도를 재개 — 로그인 모달을 닫고

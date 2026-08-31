@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { replaceGridLabel, wizardModeCopy } from "./wizard-mode";
+import {
+  eventUploadLabel,
+  replaceGridLabel,
+  wizardModeCopy,
+} from "./wizard-mode";
 
 describe("replaceGridLabel — 교체 모드 위치 라벨 (MSG-415 추정 1)", () => {
   it("zoneName·zoneCell이 모두 있으면 '서면 A-02'로 조합한다", () => {
@@ -10,6 +14,14 @@ describe("replaceGridLabel — 교체 모드 위치 라벨 (MSG-415 추정 1)", 
     expect(replaceGridLabel(null, "A-02")).toBeNull();
     expect(replaceGridLabel("서면", null)).toBeNull();
     expect(replaceGridLabel(null, null)).toBeNull();
+  });
+});
+
+describe("eventUploadLabel — 행사 모드 위치 라벨 (MSG-521 AC 8)", () => {
+  it("행사 모드 위저드의 위치 라벨은 '행사명 · 위치명'이다 (AC 8)", () => {
+    expect(eventUploadLabel("부산 불꽃축제", "광안리 해변")).toBe(
+      "부산 불꽃축제 · 광안리 해변",
+    );
   });
 });
 

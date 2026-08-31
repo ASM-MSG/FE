@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ApiError } from "@/shared/api/api-error";
 import {
   useAnalyzeVideo,
+  useConfirmEventUpload,
   useConfirmUpload,
   useReplaceVideo,
 } from "@/features/upload/api/use-upload-mutations";
@@ -34,6 +35,7 @@ import {
   MAX_TRIMMED_DURATION_SEC,
 } from "@/features/upload/model/video-trim";
 import {
+  eventUploadLabel,
   replaceGridLabel,
   wizardModeCopy,
 } from "@/features/upload/model/wizard-mode";
@@ -73,6 +75,10 @@ export const useUploadWizard = () => {
   // 교체 모드 (MSG-415) — 대상이 있으면 확정만 PUT /api/videos/{videoId}로 간다
   const replaceTarget = useUploadModalStore((s) => s.replaceTarget);
   const replaceMode = replaceTarget !== null;
+  // 행사 모드 (MSG-521) — 대상이 있으면 확정만 upload1(행사·위치 path)로 간다.
+  // 스토어 열기 액션들이 상호 배타를 보장한다 (replaceTarget과 동시에 서지 않는다)
+  const eventTarget = useUploadModalStore((s) => s.eventTarget);
+  const eventMode = eventTarget !== null;
   const [file, setFile] = useState<UploadCandidate | null>(null);
   // 원본 File — duration 캡처·미리보기·선분석 업로드용(플랫폼 경계)
   const [rawFile, setRawFile] = useState<File | null>(null);
@@ -100,11 +106,13 @@ export const useUploadWizard = () => {
     objectUrl,
     error: videoLoadError,
   } = useVideoDuration(rawFile);
-  // 교체 모드는 좌표 미전송(격자 유지) — 뷰포트 중심 역지오코딩 조회가 불필요하다 (추정 1)
-  const location = useUploadLocation(open && !replaceMode);
+  // 교체·행사 모드는 좌표 미전송 — 뷰포트 중심 역지오코딩 조회가 불필요하다
+  // (교체=격자 유지 추정 1, 행사=URL path 귀속 MSG-521 AC 3)
+  const location = useUploadLocation(open && !replaceMode && !eventMode);
   const analyze = useAnalyzeVideo();
   const confirm = useConfirmUpload();
   const replaceVideo = useReplaceVideo();
+  const confirmEvent = useConfirmEventUpload();
 
   // 180초 초과 — FE 1차 검증 사유 표시 + [다음] 비활성 (B1)
   const durationTooLong = duration !== null && !isWithinDurationLimit(duration);
@@ -114,8 +122,9 @@ export const useUploadWizard = () => {
     !videoLoadError &&
     !durationTooLong;
 
-  // 확정 진행 중 — 모드별로 실제 발사되는 뮤테이션은 하나뿐이다 (publish 분기)
-  const submitting = confirm.isPending || replaceVideo.isPending;
+  // 확정 진행 중 — 모드별로 실제 발사되는 뮤테이션은 하나뿐이다 (publish 3분기)
+  const submitting =
+    confirm.isPending || replaceVideo.isPending || confirmEvent.isPending;
 
   // 진행 중 = 닫기·중복 게시 차단 (B12)
   const busy = analyze.isPending || trim.status === "trimming" || submitting;
@@ -151,7 +160,10 @@ export const useUploadWizard = () => {
     confirm.resetFlow();
     replaceVideo.reset();
     replaceVideo.resetFlow();
-    // closeModal이 replaceTarget도 해제한다 — 다음 일반 업로드의 교체 오발사 차단 (AC 6)
+    confirmEvent.reset();
+    confirmEvent.resetFlow();
+    // closeModal이 replaceTarget·eventTarget도 해제한다 — 다음 일반 업로드의
+    // 교체·행사 오발사 차단 (MSG-415 AC 6 · MSG-521 AC 9)
     closeModal();
   };
 
@@ -257,9 +269,10 @@ export const useUploadWizard = () => {
   };
 
   /**
-   * [업로드하기]/[교체하기] (B9·MSG-415 AC 3) — 교체 대상이 있으면 확정만
-   * PUT /api/videos/{videoId}(좌표 미전송)로 간다. 실패 시 단계 구분 표시,
-   * 재클릭 재시도는 성공 단계 스킵 (B11 재사용).
+   * [업로드하기]/[교체하기] (B9·MSG-415 AC 3·MSG-521 AC 3) — 교체 대상이 있으면
+   * PUT /api/videos/{videoId}(좌표 미전송), 행사 대상이 있으면 upload1(행사·위치
+   * path 귀속)로 간다. 실패 시 단계 구분 표시, 재클릭 재시도는 성공 단계 스킵
+   * (B11 재사용).
    */
   const publish = async () => {
     if (trim.status !== "ready" || submitting) return;
@@ -274,6 +287,14 @@ export const useUploadWizard = () => {
           durationSec,
           videoId: replaceTarget.videoId,
           gridId: replaceTarget.gridId,
+        });
+      } else if (eventTarget !== null) {
+        // 행사 귀속 확정 — path가 곧 귀속, 좌표·공개 범위 미전송 (MSG-521 AC 3)
+        await confirmEvent.mutateAsync({
+          blob: trim.blob,
+          durationSec,
+          occurrenceId: eventTarget.occurrenceId,
+          locationId: eventTarget.locationId,
         });
       } else {
         await confirm.mutateAsync({
@@ -291,10 +312,18 @@ export const useUploadWizard = () => {
     }
   };
 
-  // 모드별 활성 확정 뮤테이션의 실패만 표시한다 — 다른 모드의 잔존 에러 오표시 방지
-  const finalizeError = replaceMode ? replaceVideo.error : confirm.error;
+  // 모드별 활성 확정 뮤테이션의 실패만 표시한다 — 다른 모드의 잔존 에러 오표시 방지 (3모드)
+  const finalizeError = replaceMode
+    ? replaceVideo.error
+    : eventMode
+      ? confirmEvent.error
+      : confirm.error;
   const submitFailureMessage = (
-    replaceMode ? replaceVideo.isError : confirm.isError
+    replaceMode
+      ? replaceVideo.isError
+      : eventMode
+        ? confirmEvent.isError
+        : confirm.isError
   )
     ? STAGE_FAILURE_MESSAGES[
         finalizeError instanceof UploadFlowError
@@ -312,9 +341,11 @@ export const useUploadWizard = () => {
     // presign→PUT을 다시 밟아야 한다. 빠뜨리면 새로 자른 영상이 업로드되지 않은 채
     // 직전 구간의 s3Key로 확정되는 정합성 버그가 된다 (리뷰 반영)
     confirm.resetFlow();
-    // 교체 모드도 동일한 정합성 규칙 — 옛 s3Key로 교체 확정되는 경로 차단 (MSG-415)
+    // 교체·행사 모드도 동일한 정합성 규칙 — 옛 s3Key로 확정되는 경로 차단 (MSG-415·MSG-521)
     replaceVideo.reset();
     replaceVideo.resetFlow();
+    confirmEvent.reset();
+    confirmEvent.resetFlow();
     setStep("highlight");
   };
 
@@ -335,15 +366,22 @@ export const useUploadWizard = () => {
     duration,
     objectUrl,
     videoLoadError,
-    // 교체 모드는 대상 영상의 격자 라벨 — 미확보면 null(생략) (추정 1)
+    // 교체 모드는 대상 영상의 격자 라벨(미확보면 null·생략, 추정 1),
+    // 행사 모드는 "행사명 · 위치명" (MSG-521 AC 8)
     locationLabel:
       replaceTarget !== null
         ? replaceGridLabel(replaceTarget.zoneName, replaceTarget.zoneCell)
-        : location.label,
-    /** 모드별 확정 버튼·완료 모달 문구 (AC 2, 추정 3) */
+        : eventTarget !== null
+          ? eventUploadLabel(
+              eventTarget.occurrenceTitle,
+              eventTarget.locationName,
+            )
+          : location.label,
+    /** 모드별 확정 버튼·완료 모달 문구 (AC 2, 추정 3) — 행사 모드는 일반 문구 유지 (MSG-521 추정 5) */
     copy: wizardModeCopy(replaceMode),
-    // 공개 범위 — 교체 모드는 DTO에 필드가 없어 선택 미노출(null) (MSG-476 AC 11)
-    visibility: replaceMode ? null : visibility,
+    // 공개 범위 — 교체·행사 모드는 DTO에 필드가 없어 선택 미노출(null)
+    // (MSG-476 AC 11 · MSG-521 AC 7)
+    visibility: replaceMode || eventMode ? null : visibility,
     setVisibility,
     durationTooLong,
     canProceed,
