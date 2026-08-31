@@ -151,6 +151,40 @@ describe("useLocationVideosQuery — 위치별 영상 피드 (AC 5·7·8·10)", 
     expect(result.current.isError).toBe(false);
   });
 
+  it("이어받기 실패는 전면 실패(isError)로 승격되지 않는다 — 받은 목록 유지, 더 보기 재클릭이 곧 재시도 (codex 리뷰 P2)", async () => {
+    let failNext = true;
+    const received = stubFetch(async (request: Request) => {
+      const cursor = new URL(request.url).searchParams.get("cursor");
+      if (cursor === null) return envelopeResponse(PAGE_1);
+      if (failNext) {
+        failNext = false;
+        return new Response("boom", { status: 500 });
+      }
+      return envelopeResponse(PAGE_2);
+    });
+
+    const { result } = renderHook(() => useLocationVideosQuery(TARGET), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.videos).toHaveLength(2));
+
+    act(() => result.current.loadMore());
+
+    await waitFor(() => expect(received).toHaveLength(2));
+    await waitFor(() => expect(result.current.isLoadingMore).toBe(false));
+    // 전면 에러 승격 금지 — 이미 로드된 목록이 RetryNotice로 교체되면 안 된다
+    expect(result.current.isError).toBe(false);
+    expect(result.current.videos).toHaveLength(2);
+    // 실패 후에도 hasNext가 남아 "더 보기" 버튼이 유지되고, 재클릭이 곧 재시도다
+    expect(result.current.hasNext).toBe(true);
+
+    act(() => result.current.loadMore());
+
+    await waitFor(() =>
+      expect(result.current.videos?.map((v) => v.videoId)).toEqual([1, 2, 3]),
+    );
+  });
+
   it("대상이 null이면(위치 미선택) 요청을 발사하지 않는다 (AC 1 게이트)", async () => {
     const received = stubFetch(async () => envelopeResponse(PAGE_1));
 

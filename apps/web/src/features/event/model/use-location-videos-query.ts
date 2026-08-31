@@ -39,7 +39,7 @@ export interface LocationVideosResult {
   /** 빈 위치 판정 (AC 7) — 첫 페이지 0건이면 false. event-room-mode 입력 슬롯 */
   hasLocationVideos: boolean;
   isPending: boolean;
-  /** 첫 페이지 실패 — 본문 전체를 RetryNotice로 대체한다 (AC 8) */
+  /** 첫 페이지 실패 — 본문 전체를 RetryNotice로 대체한다 (AC 8). 이어받기 실패는 제외 */
   isError: boolean;
   retry: () => void;
   /** 다음 페이지 존재 여부 — true면 "더 보기" 노출 (AC 10) */
@@ -88,7 +88,11 @@ export const useLocationVideosQuery = (
     hasLocationVideos: (videos?.length ?? 0) > 0,
     // 비활성(게이트 false) 쿼리는 영원히 pending이라 게이트로 눌러준다 (gated-query-status 관례)
     isPending: active && query.isPending,
-    isError: query.isError,
+    // 이어받기 실패를 전면 실패로 승격하지 않는다 (codex 리뷰 P2 — explore-regions AC 6
+    // 동일 방식): fetchNextPage 실패도 isError를 세우므로 필터 없이는 이미 로드된
+    // 목록이 RetryNotice로 교체된다. 받은 목록 유지 + hasNext 잔존 → "더 보기"
+    // 재클릭이 곧 재시도 (DECISIONS 2026-08-31 — 별도 실패 UI 미노출 결정과 정합)
+    isError: query.isError && !query.isFetchNextPageError,
     retry: () => void query.refetch(),
     hasNext: query.hasNextPage,
     loadMore,
