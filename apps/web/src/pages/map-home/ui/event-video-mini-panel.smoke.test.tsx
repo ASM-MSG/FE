@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import {
   afterEach,
   beforeAll,
@@ -159,6 +166,79 @@ describe("행사 영상 미니 패널 (MSG-520)", () => {
     expect(await screen.findByText("불꽃 미쳤다")).toBeTruthy();
     expect(screen.getByText("댓글 3")).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe("");
+  });
+
+  it("댓글 전송 중 다른 영상으로 전환하면 지연 완료가 새 영상의 입력을 지우지 않는다 (codex 리뷰 P2)", async () => {
+    // 42의 POST를 보류시켜 두고, 응답 도착 전에 43으로 전환 → 42의 완료 콜백이
+    // 43에서 타이핑 중인 초안을 지우지 않아야 한다 (videoId 대조 가드 회귀 고정)
+    let releasePost: (() => void) | undefined;
+    stubFetch(async (request) => {
+      const { pathname } = new URL(request.url);
+      if (
+        request.method === "POST" &&
+        pathname === "/api/event-videos/42/comments"
+      ) {
+        await new Promise<void>((resolve) => {
+          releasePost = resolve;
+        });
+        return envelopeResponse(eventComment(3));
+      }
+      if (request.method === "GET" && pathname === "/api/event-videos/42") {
+        return envelopeResponse(EVENT_VIDEO_DETAIL);
+      }
+      if (request.method === "GET" && pathname === "/api/event-videos/43") {
+        return envelopeResponse({
+          ...EVENT_VIDEO_DETAIL,
+          videoId: 43,
+          commentCount: 0,
+          comments: { comments: [], hasNext: false, nextCursor: null },
+        });
+      }
+      return envelopeResponse(null);
+    });
+    // 카드 교체 = 같은 마운트의 videoId 리렌더(패널 계약) — 하네스가 그 전환을 재현한다
+    const SwitchHarness = () => {
+      const [videoId, setVideoId] = useState(42);
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => setVideoId(videoId === 42 ? 43 : 42)}
+          >
+            영상 전환
+          </button>
+          <EventVideoMiniPanel videoId={videoId} onClose={() => {}} />
+        </>
+      );
+    };
+    renderWithProviders(<SwitchHarness />);
+    const input = await screen.findByLabelText("댓글 입력");
+
+    fireEvent.change(input, { target: { value: "42 댓글" } });
+    fireEvent.click(screen.getByRole("button", { name: "등록" }));
+    await waitFor(() => expect(releasePost).toBeDefined());
+
+    fireEvent.click(screen.getByRole("button", { name: "영상 전환" }));
+    await screen.findByText("댓글 0"); // 43 상세 도착 (전환 리셋 완료)
+    fireEvent.change(screen.getByLabelText("댓글 입력"), {
+      target: { value: "43 초안" },
+    });
+
+    // 42의 전송 완료 도착 — onSuccess(seed+onCreated)까지 플러시
+    await act(async () => {
+      releasePost?.();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    // 가드 없으면 여기서 ""로 지워진다 (재작업 전 동작)
+    expect((screen.getByLabelText("댓글 입력") as HTMLInputElement).value).toBe(
+      "43 초안",
+    );
+
+    // 완료가 실제 처리됐다는 증거 — 42로 복귀하면 seed된 새 댓글이 캐시에서 렌더된다
+    fireEvent.click(screen.getByRole("button", { name: "영상 전환" }));
+    expect(await screen.findByText("현장 분위기 최고 3")).toBeTruthy();
+    expect(screen.getByText("댓글 3")).toBeTruthy();
   });
 
   it("빈 입력은 전송 버튼이 비활성이다 (AC 8)", async () => {
