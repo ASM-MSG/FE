@@ -75,6 +75,8 @@ describe("종료 행사 아카이브 본문 (MSG-519)", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    // 개요(자급 컨테이너) 테스트가 여는 행사방을 단정 실패 경로에서도 확실히 걷는다
+    useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
   });
 
   it("종료 행사(UPLOAD_GRACE) 방은 '지난 행사 기록' 헤더 + 행사명 + 기간 라벨로 렌더된다 (AC 3)", async () => {
@@ -195,7 +197,6 @@ describe("종료 행사 아카이브 본문 (MSG-519)", () => {
     expect(
       await screen.findByRole("heading", { name: "포켓몬 메가페스타 부산" }),
     ).toBeTruthy();
-    useEventRoomStore.getState().close();
     await waitFor(() =>
       expect(screen.queryByText("지난 행사 기록")).toBeNull(),
     );

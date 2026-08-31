@@ -177,7 +177,9 @@ export const MapHomePage = () => {
     suspended: eventRoom !== null,
   });
   // 행사 위치 영역 채색·라벨·격자 클릭 강조 게시 — 열림 동안 유지, 닫으면 걷힘 (MSG-517 AC 6·7).
-  // 홈 게시 훅보다 뒤에 호출해야 한다 — effect 실행 순서가 게시 우선순위다 (suspended 주석 참조)
+  // 단독 게시 보장은 두 guard의 상호 배타가 맡는다 — 홈 훅은 suspended(=방 열림)면, 이
+  // 훅은 room === null이면 스토어를 건드리지 않아 한 커밋에 게시자는 항상 하나다.
+  // 선언 순서는 안전 조건이 아니다 (React가 destroy 전부 → create 전부 순으로 실행)
   useEventOverlayPublish(eventRoom);
   // 열람 heartbeat (MSG-517 AC 5, 확정 2) — 행사방이 열려 있는 동안 30초 주기, 닫으면 중단
   useEventHeartbeat(eventRoom?.occurrenceId ?? null);
