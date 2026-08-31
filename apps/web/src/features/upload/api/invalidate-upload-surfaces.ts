@@ -1,10 +1,22 @@
 import type { QueryClient } from "@tanstack/react-query";
 import {
+  getLocationsQueryKey,
+  getLocationVideosInfiniteQueryKey,
   getPlaybackQueryKey,
   getRegionVideosQueryKey,
   getUploadHistoryQueryKey,
 } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { invalidateGridQueries } from "./invalidate-grid-queries";
+
+/**
+ * 행사 업로드 확장 무효화 대상 (MSG-521 AC 4) — 확정이 행사·위치로 귀속됐을 때만
+ * 존재한다. 무효화 키는 생성 헬퍼에서 직접 만든다 — MSG-518 파일(use-location-videos-query)
+ * 무접촉(병렬 충돌 회피).
+ */
+export interface EventUploadSurface {
+  occurrenceId: number;
+  locationId: number;
+}
 
 /**
  * 업로드·교체가 바꾼 화면 전부를 무효화한다 (MSG-476 재작업 2회차).
@@ -19,7 +31,11 @@ import { invalidateGridQueries } from "./invalidate-grid-queries";
  */
 export const invalidateUploadSurfaces = (
   queryClient: QueryClient,
-  { videoId, gridId }: { videoId: number; gridId: string | null },
+  {
+    videoId,
+    gridId,
+    event,
+  }: { videoId: number; gridId: string | null; event?: EventUploadSurface },
 ): void => {
   // ① 단건 재생 — 썸네일·playbackUrl·처리 상태
   void queryClient.invalidateQueries({
@@ -36,4 +52,23 @@ export const invalidateUploadSurfaces = (
 
   // ④ 업로드 잔디 이력 (MSG-414 AC 11, A8)
   void queryClient.invalidateQueries({ queryKey: getUploadHistoryQueryKey() });
+
+  // ⑤ 행사 귀속 확정(MSG-521 AC 4)에만 — 해당 위치 영상 목록(infinite)과
+  // 위치 목록(videoCount). 확정·READY가 같은 집합을 쓰는 계약(위 주석)에 따라
+  // 인자로 관통시킨다 — READY 재무효화도 이 확장을 그대로 받는다 (AC 5)
+  if (event !== undefined) {
+    void queryClient.invalidateQueries({
+      queryKey: getLocationVideosInfiniteQueryKey({
+        path: {
+          occurrenceId: event.occurrenceId,
+          locationId: event.locationId,
+        },
+      }),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: getLocationsQueryKey({
+        path: { occurrenceId: event.occurrenceId },
+      }),
+    });
+  }
 };

@@ -6,6 +6,7 @@ import {
   issuePresignedUrl,
   replace,
   upload,
+  upload1,
 } from "@/shared/api/generated/sdk.gen";
 import type { PresignedUrlRequestDto } from "@/shared/api/generated";
 import { httpClient } from "@/shared/api/http-client";
@@ -170,6 +171,86 @@ export const useReplaceVideo = () => {
       // 교체본도 새 인코딩을 거친다 — READY 전이에서 같은 집합을 다시 싣는다.
       // restart: 원본이 아직 인코딩 중이었다면 그 폴링을 끊고 상한 기산점을 새로 잡는다
       startReadyRefresh(queryClient, videoId, gridId, { restart: true });
+    },
+  });
+  const resetFlow = () => {
+    flowState.current = createOrchestration();
+  };
+  return { ...mutation, resetFlow };
+};
+
+export interface ConfirmEventUploadInput {
+  /** 잘린 최종 영상 — 트리밍 생략(전체 구간) 시 원본 File 그대로 */
+  blob: Blob;
+  /** 잘린 영상 실측 길이(초) — 업로드와 동일한 1~30 클램프 */
+  durationSec: number;
+  /** 귀속 대상 행사 회차 — CTA 시점의 행사방 (AC 3) */
+  occurrenceId: number;
+  /** 귀속 대상 행사 위치 — CTA 시점의 선택 위치 (AC 3) */
+  locationId: number;
+}
+
+/**
+ * 행사 영상 업로드 확정 (MSG-521 AC 3·4·5) — useConfirmUpload 미러. presign(purpose
+ * 미전송=UPLOAD — 행사 전용 presign 없음, 추정 1) → 잘린 영상 S3 PUT →
+ * `POST /api/event-occurrences/{occurrenceId}/locations/{locationId}/videos`(upload1,
+ * body는 s3Key·durationSec·recordedAt=업로드 시각만 — 귀속은 URL path가 결정,
+ * lat/lng·visibility는 DTO에 없다). 성공 시 기존 업로드 표면 + 위치 영상 목록·
+ * 위치 목록(videoCount)을 무효화하고, READY 전이에서 같은 집합을 재무효화한다(AC 5).
+ * 실패 시 진행 상태를 보존해 재시도가 성공 단계를 건너뛴다(B11 재사용 — AC 10).
+ */
+export const useConfirmEventUpload = () => {
+  const queryClient = useQueryClient();
+  const flowState = useRef<OrchestrationState | null>(null);
+  const mutation = useMutation({
+    mutationFn: async (input: ConfirmEventUploadInput) => {
+      try {
+        const { state, result } = await runUploadFlow(
+          (flowState.current ??= createOrchestration()),
+          {
+            presign: presignEffect({
+              extension: extensionFromType(input.blob.type),
+              contentType: input.blob.type || "video/mp4",
+              contentLength: input.blob.size,
+              // purpose 미전송 = UPLOAD — 확정 업로드와 동일 (추정 1)
+            }),
+            putToS3: (presign) => uploadToS3(presign.uploadUrl, input.blob),
+            finalize: async (s3Key) => {
+              const { data } = await upload1({
+                path: {
+                  occurrenceId: input.occurrenceId,
+                  locationId: input.locationId,
+                },
+                body: {
+                  s3Key,
+                  durationSec: input.durationSec,
+                  // recordedAt = 업로드 시각 (결정 B 준용 — 5분 오차 허용 계약 내)
+                  recordedAt: new Date().toISOString(),
+                },
+                throwOnError: true,
+              });
+              return unwrapEnvelope(data);
+            },
+          },
+        );
+        flowState.current = state;
+        return result;
+      } catch (error) {
+        if (error instanceof UploadFlowError) flowState.current = error.state;
+        throw error;
+      }
+    },
+    onSuccess: (video, { occurrenceId, locationId }) => {
+      const event = { occurrenceId, locationId };
+      // 확정이 바꾼 화면 전부 + 행사 확장 집합 (AC 4)
+      invalidateUploadSurfaces(queryClient, {
+        videoId: video.videoId,
+        gridId: video.gridId,
+        event,
+      });
+
+      // READY 전이에서 같은 집합을 한 번 더 — "확정=READY 동일 집합" 계약 (AC 5)
+      startReadyRefresh(queryClient, video.videoId, video.gridId, { event });
     },
   });
   const resetFlow = () => {

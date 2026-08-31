@@ -3,7 +3,10 @@ import { useAuthStore } from "@/features/auth/model/auth-store";
 import { unwrapEnvelope } from "@/shared/api/envelope";
 import { getPlayback } from "@/shared/api/generated/sdk.gen";
 import { type ReadyPollHandle, startReadyPoll } from "../model/ready-poll";
-import { invalidateUploadSurfaces } from "./invalidate-upload-surfaces";
+import {
+  type EventUploadSurface,
+  invalidateUploadSurfaces,
+} from "./invalidate-upload-surfaces";
 
 /**
  * 확정한 영상이 READY가 되는 순간 업로드가 바꾼 화면을 한 번 더 무효화한다
@@ -65,6 +68,11 @@ export interface ReadyRefreshOptions {
    * 그대로 재시작하면 호출이 잦을 때 폴링이 영영 발화하지 못한다 (PR #99 리뷰).
    */
   restart?: boolean;
+  /**
+   * 행사 귀속 확정의 확장 무효화 대상 (MSG-521 AC 5) — READY 전이가 확정 시점과
+   * **같은 집합**(위치 영상 목록·위치 목록 포함)을 재무효화하도록 관통시킨다.
+   */
+  event?: EventUploadSurface;
 }
 
 export const startReadyRefresh = (
@@ -93,8 +101,12 @@ export const startReadyRefresh = (
     },
     onReady: () => {
       // 확정 시점과 **같은 집합**을 다시 무효화한다 — 그때는 서버가 non-READY라
-      // 새 영상을 빼고 응답했고, 이제야 실제 데이터가 있다
-      invalidateUploadSurfaces(queryClient, { videoId, gridId });
+      // 새 영상을 빼고 응답했고, 이제야 실제 데이터가 있다 (행사 확장 집합 포함 — AC 5)
+      invalidateUploadSurfaces(queryClient, {
+        videoId,
+        gridId,
+        event: options?.event,
+      });
     },
     onStop: () => {
       activePolls.delete(videoId);
