@@ -87,7 +87,9 @@ describe("행사방 위치 영상 본문 (MSG-518)", () => {
     expect(screen.getByText("2분 전")).toBeTruthy();
   });
 
-  it("카드는 클릭 대상이 아니다 — 버튼은 뒤로가기·업로드 CTA뿐 (AC 6, 추정 2)", async () => {
+  // MSG-518 원판은 "카드는 클릭 대상이 아니다"를 고정했으나(그때는 동작 없는 button이
+  // a11y 결함), MSG-520 AC 2가 카드를 button화하며 확장점을 해소했다 — 계약 교체
+  it("카드는 button으로 낭독되고 클릭하면 그 영상이 선택된다 (MSG-520 AC 1·2)", async () => {
     stubFetch(async () =>
       envelopeResponse({
         videos: [video(1)],
@@ -99,11 +101,11 @@ describe("행사방 위치 영상 본문 (MSG-518)", () => {
     renderRoom();
     await screen.findByText("♥ 18 · 댓글 6");
 
-    expect(
-      screen
-        .getAllByRole("button")
-        .map((b) => b.getAttribute("aria-label") ?? b.textContent),
-    ).toEqual(["뒤로가기", "+ 영상 올리기"]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /행사 영상 재생 — 2분 전/ }),
+    );
+
+    expect(useEventRoomStore.getState().videoId).toBe(1);
   });
 
   it("hasNext면 더 보기가 다음 페이지 카드를 이어 붙인다 (AC 10)", async () => {

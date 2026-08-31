@@ -23,6 +23,8 @@ interface EventRoomBodySwitchProps {
   hasNext: boolean;
   loadMore: () => void;
   isLoadingMore: boolean;
+  /** 카드 클릭 — 행사 미니 패널 열기/교체 (MSG-520 AC 1·2) */
+  onVideoSelect: (video: EventLocationVideoResponseDto) => void;
 }
 
 /** 위치 선택 공통 상단 — 헤더 + 격자 안내 (AC 3·4) */
@@ -54,6 +56,7 @@ export const EventRoomBodySwitch = ({
   hasNext,
   loadMore,
   isLoadingMore,
+  onVideoSelect,
 }: EventRoomBodySwitchProps) => {
   switch (mode) {
     case "archive":
@@ -73,7 +76,11 @@ export const EventRoomBodySwitch = ({
             </h4>
             <ul className="flex flex-col gap-md">
               {(videos ?? []).map((video) => (
-                <EventVideoCard key={video.videoId} video={video} />
+                <EventVideoCard
+                  key={video.videoId}
+                  video={video}
+                  onSelect={() => onVideoSelect(video)}
+                />
               ))}
             </ul>
             {hasNext && (

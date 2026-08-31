@@ -149,6 +149,93 @@ describe("useEventRoomStore — 선택 위치 상태 (MSG-518 AC 1)", () => {
   });
 });
 
+describe("useEventRoomStore — 선택 영상 상태 (MSG-520 AC 1·2·3)", () => {
+  beforeEach(() => {
+    useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
+    useEventRoomStore.getState().open({
+      occurrenceId: 7,
+      title: "포켓몬 메가페스타 부산",
+      status: "LIVE",
+    });
+    useEventRoomStore.getState().selectLocation(LOCATION);
+  });
+
+  it("카드를 클릭(selectVideo)하면 그 영상이 선택된다 (AC 1)", () => {
+    useEventRoomStore.getState().selectVideo(42);
+
+    expect(useEventRoomStore.getState().videoId).toBe(42);
+  });
+
+  it("열린 상태에서 다른 카드를 선택하면 그 영상으로 교체된다 (AC 2)", () => {
+    useEventRoomStore.getState().selectVideo(42);
+
+    useEventRoomStore.getState().selectVideo(43);
+
+    expect(useEventRoomStore.getState().videoId).toBe(43);
+  });
+
+  it("closeVideo는 영상만 닫고 위치·행사방은 유지한다 (AC 3)", () => {
+    useEventRoomStore.getState().selectVideo(42);
+
+    useEventRoomStore.getState().closeVideo();
+
+    expect(useEventRoomStore.getState().videoId).toBeNull();
+    expect(useEventRoomStore.getState().location).toEqual(LOCATION);
+    expect(useEventRoomStore.getState().room?.occurrenceId).toBe(7);
+  });
+
+  it("back 3단 — 영상만 닫히고, 다시 위치 해제, 다시 방 닫기 (AC 3)", () => {
+    useEventRoomStore.getState().selectVideo(42);
+
+    useEventRoomStore.getState().back();
+    expect(useEventRoomStore.getState().videoId).toBeNull();
+    expect(useEventRoomStore.getState().location).toEqual(LOCATION);
+
+    useEventRoomStore.getState().back();
+    expect(useEventRoomStore.getState().location).toBeNull();
+    expect(useEventRoomStore.getState().room?.occurrenceId).toBe(7);
+
+    useEventRoomStore.getState().back();
+    expect(useEventRoomStore.getState().room).toBeNull();
+  });
+
+  it("selectLocation 교체가 이전 위치의 영상을 함께 해제한다", () => {
+    useEventRoomStore.getState().selectVideo(42);
+
+    useEventRoomStore.getState().selectLocation({ ...LOCATION, locationId: 5 });
+
+    expect(useEventRoomStore.getState().videoId).toBeNull();
+  });
+
+  it("clearLocation(위치 해제)이 영상을 함께 해제한다", () => {
+    useEventRoomStore.getState().selectVideo(42);
+
+    useEventRoomStore.getState().clearLocation();
+
+    expect(useEventRoomStore.getState().videoId).toBeNull();
+  });
+
+  it("close()·다른 행사 open()이 영상을 함께 해제한다 — 유령 영상 방지", () => {
+    useEventRoomStore.getState().selectVideo(42);
+    useEventRoomStore.getState().close();
+    expect(useEventRoomStore.getState().videoId).toBeNull();
+
+    useEventRoomStore.getState().open({
+      occurrenceId: 7,
+      title: "포켓몬 메가페스타 부산",
+      status: "LIVE",
+    });
+    useEventRoomStore.getState().selectLocation(LOCATION);
+    useEventRoomStore.getState().selectVideo(42);
+    useEventRoomStore.getState().open({
+      occurrenceId: 8,
+      title: "부산 불꽃축제",
+      status: "UPCOMING",
+    });
+    expect(useEventRoomStore.getState().videoId).toBeNull();
+  });
+});
+
 describe("useEventRoomStore.back — 뒤로가기 2단 (MSG-518 AC 12)", () => {
   beforeEach(() => {
     useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
