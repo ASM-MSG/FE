@@ -63,9 +63,9 @@ export const MapHomePage = () => {
   const miniSelection = useVideoMiniPanelStore((s) => s.selected);
   const openMiniPanel = useVideoMiniPanelStore((s) => s.open);
   const closeMiniPanel = useVideoMiniPanelStore((s) => s.close);
-  // 행사방 (MSG-516 AC 10) — 캡슐 세그먼트 선택이 열고, 뒤로가기·캡슐 ✕·테마 활성화가 닫는다
+  // 행사방 (MSG-516 AC 10) — 캡슐 세그먼트 선택이 열고, 뒤로가기·캡슐 ✕·테마 활성화가
+  // 닫는다. 뒤로가기는 2단(MSG-518 AC 12) — useHomeCloseHandlers가 배선한다
   const eventRoom = useEventRoomStore((s) => s.room);
-  const closeEventRoom = useEventRoomStore((s) => s.close);
 
   // 내 점령 격자 id — 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정용.
   // 표시는 셸 상시 층(MSG-263 D9) 소유이고, 홈은 같은 뷰포트 쿼리를 구독만 한다(캐시 공유)
@@ -231,7 +231,7 @@ export const MapHomePage = () => {
   }, [hotSummary.hotGridIds, openUploadModal, viewportCenter]);
 
   // Escape·닫기 핸들러 — 미니 패널 우선순위 조합 (리뷰 반영 — 300줄 초과 분할)
-  const { closeDetailMiniFirst, closeThemeMiniFirst } =
+  const { closeDetailMiniFirst, closeThemeMiniFirst, backEventRoomMiniFirst } =
     useHomeCloseHandlers(activeTheme);
 
   // 패널 분기 + "장소 불러오기" 대상 (리뷰 반영 — 300줄 초과 분할)
@@ -271,7 +271,7 @@ export const MapHomePage = () => {
           onBackFromDetail={closeDetail}
           onViewAll={handleViewAll}
           eventRoom={eventRoom}
-          onEventRoomBack={closeEventRoom}
+          onEventRoomBack={backEventRoomMiniFirst}
           hotSummary={hotSummary}
           regionName={committedRegion?.regionName ?? null}
           onHotUpload={handleHotUpload}

@@ -23,9 +23,11 @@ export const useHomeEntryLifecycle = (): void => {
   // 접힘은 셸이 display:none으로 숨겨 언마운트되지 않으므로 상태가 유지된다 (A6 정합)
   useEffect(() => resetThemeFilter, [resetThemeFilter]);
 
-  // 행사 캡슐·행사방도 같은 초기화 대상 (MSG-516 — 미션/코스 상세 선례와 동일 수명).
-  // collapse가 행사방 close까지 체인한다 — 복귀 화면은 접힌 캡슐 + 기본 패널이다
-  const collapseEventCapsule = useEventCapsuleStore((s) => s.collapse);
+  // 행사 캡슐은 접되 행사방·선택 위치는 유지한다 (MSG-518 AC 11 — 섹션 이동 후 복귀
+  // 시 세션 유지, 사용자 승인). MSG-516의 "복귀 화면은 접힌 캡슐 + 기본 패널" 결정 중
+  // 행사방 리셋 부분을 번복 — 섹션 이탈은 사용자 명시 닫기(✕·뒤로가기)가 아닌 비명시
+  // 문맥 전환이라 collapseOnly가 맞다(시 경계 전환과 같은 부류, DECISIONS 2026-08-31)
+  const collapseEventCapsule = useEventCapsuleStore((s) => s.collapseOnly);
   useEffect(() => collapseEventCapsule, [collapseEventCapsule]);
 
   const shellSelectionRef = useRef(

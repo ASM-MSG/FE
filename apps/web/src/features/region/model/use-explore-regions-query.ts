@@ -1,6 +1,6 @@
-import { useCallback } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { unwrapEnvelope } from "@/shared/api/envelope";
+import { useLoadMore } from "@/shared/use-load-more";
 import { getExploreRegionsInfiniteOptions } from "@/shared/api/generated/@tanstack/react-query.gen";
 import type {
   ApiResponseDtoRegionExplorePageResponseDto,
@@ -59,12 +59,8 @@ export const useExploreRegionsQuery = (): ExploreRegionsResult => {
     getNextPageParam: nextExploreRegionsPageParam,
   });
 
-  const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
-  const loadMore = useCallback(() => {
-    // 진행 중 재호출을 막는다 — cancelRefetch 기본값이 진행 중 요청을 재시작한다.
-    // 실패 후에는 hasNextPage가 그대로 true라 이 호출이 곧 재시도다 (AC 6)
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  // 진행 중 재호출 가드 + 실패 후 재시도(AC 6) — 두 번째 사용처(MSG-518)에서 shared 추출
+  const loadMore = useLoadMore(query);
 
   return {
     regions:
