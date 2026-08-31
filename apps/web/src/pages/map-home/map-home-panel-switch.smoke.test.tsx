@@ -169,6 +169,30 @@ const stubDetail = (
           nextCursor: null,
         });
       }
+      // MSG-517: 행사방 열림 중 페이지가 개요 재료(상세·위치·인원)와 heartbeat를 조회한다
+      // — 분기 단정과 무관하나 응답 모양이 없으면 개요 본문이 성립하지 않는다
+      if (pathname === "/api/event-occurrences/7") {
+        return envelopeResponse({
+          occurrenceId: 7,
+          seriesId: 1,
+          title: "부산 불꽃축제",
+          startsAt: "2099-10-24T19:00:00",
+          endsAt: "2099-10-24T21:00:00",
+          uploadClosesAt: "2099-11-23T21:00:00",
+          status: "UPCOMING",
+          notificationOn: false,
+          previousOccurrences: [],
+        });
+      }
+      if (pathname === "/api/event-occurrences/7/locations") {
+        return envelopeResponse([]);
+      }
+      if (pathname === "/api/event-occurrences/7/viewer-count") {
+        return envelopeResponse({ viewerCount: 0 });
+      }
+      if (pathname === "/api/event-occurrences/7/heartbeat") {
+        return envelopeResponse(null);
+      }
       return envelopeResponse({ hotZones: [] });
     }),
   );
@@ -502,7 +526,7 @@ describe("접힘 상태 셀 탭 → 패널 펼침 (사용자 결정 2026-08-10)"
 });
 
 describe("행사방 패널 분기 (MSG-516)", () => {
-  it("행사방이 열리면 좌측 패널이 행사방 셸(헤더+자리표시)로 교체되고, 뒤로가기로 지역 패널에 복귀한다 (AC 10)", async () => {
+  it("행사방이 열리면 좌측 패널이 행사방 셸(헤더+개요 본문 — MSG-517 교체)로 바뀌고, 뒤로가기로 지역 패널에 복귀한다 (AC 10)", async () => {
     stubDetail("ready");
     useEventRoomStore.getState().open({
       occurrenceId: 7,
@@ -513,7 +537,10 @@ describe("행사방 패널 분기 (MSG-516)", () => {
     renderHome();
 
     expect(await screen.findByRole("heading", { name: "이벤트" })).toBeTruthy();
-    expect(screen.getByText("행사 정보를 준비 중이에요")).toBeTruthy();
+    // MSG-517: 자리표시("행사 정보를 준비 중이에요")가 개요 본문으로 교체됐다 (MSG-517 AC 1)
+    expect(
+      await screen.findByRole("heading", { name: "부산 불꽃축제" }),
+    ).toBeTruthy();
     // 지역 격자 패널(행정동 헤더)은 이 자리에 나오면 안 된다 — 교체이지 겹침이 아니다
     expect(screen.queryByText("부전제1동")).toBeNull();
 

@@ -43,6 +43,54 @@ describe("useEventRoomStore — 열린 행사방 선택 (AC 9·10)", () => {
   });
 });
 
+describe("useEventRoomStore — 격자 클릭 위치 강조 (MSG-517 AC 7)", () => {
+  const ROOM = {
+    occurrenceId: 7,
+    title: "부산 불꽃축제",
+    status: "UPCOMING",
+  } as const;
+
+  beforeEach(() => {
+    useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
+  });
+
+  it("행사 위치 격자를 클릭하면 그 위치가 강조된다 (AC 7)", () => {
+    useEventRoomStore.getState().open(ROOM);
+
+    useEventRoomStore.getState().highlightLocation(12);
+
+    expect(useEventRoomStore.getState().highlightedLocationId).toBe(12);
+  });
+
+  it("행사방을 닫으면 강조가 함께 리셋된다 (AC 6 — 닫으면 전부 걷힘)", () => {
+    useEventRoomStore.getState().open(ROOM);
+    useEventRoomStore.getState().highlightLocation(12);
+
+    useEventRoomStore.getState().close();
+
+    expect(useEventRoomStore.getState().highlightedLocationId).toBeNull();
+  });
+
+  it("다른 행사방으로 전환하면 이전 방의 강조가 남지 않는다 (방 전환 리셋)", () => {
+    useEventRoomStore.getState().open(ROOM);
+    useEventRoomStore.getState().highlightLocation(12);
+
+    useEventRoomStore.getState().open({ ...ROOM, occurrenceId: 8 });
+
+    expect(useEventRoomStore.getState().highlightedLocationId).toBeNull();
+  });
+
+  it("방을 닫는 뒤로가기(back)도 강조를 함께 리셋한다 (AC 6 — MSG-518 back 합류)", () => {
+    useEventRoomStore.getState().open(ROOM);
+    useEventRoomStore.getState().highlightLocation(12);
+
+    useEventRoomStore.getState().back();
+
+    expect(useEventRoomStore.getState().room).toBeNull();
+    expect(useEventRoomStore.getState().highlightedLocationId).toBeNull();
+  });
+});
+
 describe("useEventRoomStore — 선택 위치 상태 (MSG-518 AC 1)", () => {
   beforeEach(() => {
     useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);

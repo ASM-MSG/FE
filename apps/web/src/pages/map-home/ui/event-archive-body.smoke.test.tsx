@@ -6,6 +6,7 @@ import {
   ARCHIVE_LOCATIONS,
   ARCHIVE_LOCATIONS_PATH,
 } from "@/test/event-archive-fixture";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { envelopeResponse } from "@/test/envelope-response";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { EventRoomPanel } from "./EventRoomPanel";
@@ -74,6 +75,8 @@ describe("종료 행사 아카이브 본문 (MSG-519)", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    // 개요(자급 컨테이너) 테스트가 여는 행사방을 단정 실패 경로에서도 확실히 걷는다
+    useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
   });
 
   it("종료 행사(UPLOAD_GRACE) 방은 '지난 행사 기록' 헤더 + 행사명 + 기간 라벨로 렌더된다 (AC 3)", async () => {
@@ -184,11 +187,16 @@ describe("종료 행사 아카이브 본문 (MSG-519)", () => {
 
   it("회귀: 활성 행사(상세 LIVE) 방은 기존 '이벤트' 헤더 + 자리표시 그대로다 (AC 10)", async () => {
     stubArchiveApis({ detail: { ...ARCHIVE_DETAIL, status: "LIVE" } });
+    // 개요 본문(MSG-517)은 자급 컨테이너라 스토어의 방을 읽는다 — 실사용 경로 재현
+    useEventRoomStore.getState().open(ROOM);
 
     renderWithProviders(<EventRoomPanel room={ROOM} onBack={() => {}} />);
 
     expect(await screen.findByRole("heading", { name: "이벤트" })).toBeTruthy();
-    expect(screen.getByText("행사 정보를 준비 중이에요")).toBeTruthy();
+    // 자리표시는 MSG-517 개요 본문으로 교체됐다(웨이브 2 병렬 머지) — 활성 방은 개요 렌더
+    expect(
+      await screen.findByRole("heading", { name: "포켓몬 메가페스타 부산" }),
+    ).toBeTruthy();
     await waitFor(() =>
       expect(screen.queryByText("지난 행사 기록")).toBeNull(),
     );

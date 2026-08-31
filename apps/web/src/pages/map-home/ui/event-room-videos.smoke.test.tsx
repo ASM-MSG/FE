@@ -191,7 +191,14 @@ describe("행사방 위치 영상 본문 (MSG-518)", () => {
       />,
     );
 
-    expect(screen.getByText("행사 정보를 준비 중이에요")).toBeTruthy();
+    // 자리표시는 MSG-517 개요 본문으로 교체됐다(웨이브 2 병렬 머지) — 이 테스트의 계약은
+    // "위치 미선택이면 videos 본문이 아니라 개요 모드"라는 것: 위치 헤더가 없어야 한다
+    expect(
+      screen.queryByRole("heading", { name: "광안리 피카츄 퍼레이드" }),
+    ).toBeNull();
+    expect(
+      await screen.findByRole("status", { name: "행사 정보 불러오는 중" }),
+    ).toBeTruthy();
   });
 
   it("Escape가 뒤로가기와 같은 2단을 탄다 — 위치 해제 후 행사방 닫기 (추정 5)", async () => {

@@ -86,3 +86,47 @@ describe("buildCellClickHandler — 축제·팝업 칩 활성 예외 (MSG-462 AC
     expect(sectionHandler).not.toHaveBeenCalled();
   });
 });
+
+describe("buildCellClickHandler — 행사방 열림 중 행사 격자 예외 (MSG-517 AC 7·8)", () => {
+  const OCCUPIED = ["16846_11428", "16840_11414"];
+  const EVENT_GRIDS = new Set(["16846_11428", "16850_11440"]);
+
+  const setup = () => {
+    const openGridDetail = vi.fn();
+    const sectionHandler = vi.fn();
+    const handle = buildCellClickHandler({
+      occupiedIds: OCCUPIED,
+      openGridDetail,
+      sectionHandler,
+      eventGridIds: EVENT_GRIDS,
+    });
+    return { openGridDetail, sectionHandler, handle };
+  };
+
+  it("행사 위치 격자는 점령이어도 섹션 핸들러(위치 강조)로 위임한다 (AC 7)", () => {
+    const { openGridDetail, sectionHandler, handle } = setup();
+
+    handle("16846_11428");
+
+    expect(openGridDetail).not.toHaveBeenCalled();
+    expect(sectionHandler).toHaveBeenCalledWith("16846_11428");
+  });
+
+  it("행사 소속이 아닌 점령 격자는 기존 그대로 격자 상세가 우선한다 (AC 8)", () => {
+    const { openGridDetail, sectionHandler, handle } = setup();
+
+    handle("16840_11414");
+
+    expect(openGridDetail).toHaveBeenCalledWith("16840_11414");
+    expect(sectionHandler).not.toHaveBeenCalled();
+  });
+
+  it("행사 소속이 아닌 비점령 셀은 기존 위임 경로 그대로다 (AC 8)", () => {
+    const { openGridDetail, sectionHandler, handle } = setup();
+
+    handle("99999_99999");
+
+    expect(openGridDetail).not.toHaveBeenCalled();
+    expect(sectionHandler).toHaveBeenCalledWith("99999_99999");
+  });
+});

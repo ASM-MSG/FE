@@ -29,6 +29,7 @@ const toDayIndex = (date: string): number => {
  * date-time 문자열의 KST 날짜부 "YYYY-MM-DD".
  * 오프셋이 없으면(서버 LocalDateTime 직렬화) 문자열 자체가 KST 벽시계라 날짜부를 그대로
  * 읽고, Z·±hh:mm 오프셋이 있으면 epoch로 환산 후 +9h를 더해 KST 날짜를 얻는다.
+ * MSG-517: 기간 라벨(event-overview)이 같은 규칙을 쓰게 되어 export로 공유한다.
  */
 export const kstDateOf = (dateTime: string): string => {
   const hasOffset = /(?:Z|[+-]\d{2}:?\d{2})$/.test(dateTime);
