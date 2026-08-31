@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useEventCapsuleStore } from "@/features/event/model/event-capsule-store";
 import { useEventRoomStore } from "@/features/event/model/event-room-store";
@@ -138,6 +144,46 @@ describe("행사 캡슐 (MSG-516)", () => {
         .getByRole("button", { name: /부산 불꽃축제/ })
         .getAttribute("aria-pressed"),
     ).toBe("true");
+  });
+
+  it("펼친 채 다른 시로 이동하면 캡슐이 접힘부터 다시 시작한다 — 컴포넌트가 항상 렌더라 스토어가 지역을 넘어 살아남는 경로 (AC 3, PR 리뷰 반영)", async () => {
+    // 역지오코딩 응답을 테스트 중간에 바꿀 수 있는 가변 스텁
+    let region = BUSAN_REGION;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<(input: Request) => Promise<Response>>(async (request) => {
+        const { pathname } = new URL(request.url);
+        if (pathname === "/api/regions/reverse-geocode") {
+          return envelopeResponse(region);
+        }
+        if (pathname === "/api/event-occurrences") {
+          return envelopeResponse(EVENT_CHIPS);
+        }
+        return envelopeResponse(null, 404);
+      }),
+    );
+    await expandCapsule();
+    await screen.findByRole("button", { name: /부산 불꽃축제/ });
+
+    // 김해로 이동 — 시 라벨이 "부산"→"경남"으로 바뀐다 (bounds 불변 — 칩 목록은 그대로)
+    region = {
+      regionCode: "4833056000",
+      regionName: "경상남도 김해시 장유3동",
+      parentCode: "4833000000",
+    };
+    act(() => {
+      useViewportStore.setState({ center: { lat: 35.19, lng: 128.808 } });
+    });
+
+    // 역지오코딩 디바운스(500ms) 소화 후 접힘 캡슐로 재시작해야 한다
+    expect(
+      await screen.findByRole(
+        "button",
+        { name: "경남 행사 2건 펼치기" },
+        { timeout: 2_000 },
+      ),
+    ).toBeTruthy();
+    expect(useEventCapsuleStore.getState().expanded).toBe(false);
   });
 
   it("머리의 ✕를 클릭하면 캡슐이 접히고 행사방도 함께 닫힌다 (AC 10)", async () => {
