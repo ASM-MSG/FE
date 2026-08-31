@@ -32,6 +32,7 @@ export const EventCapsule = () => {
   const expanded = useEventCapsuleStore((s) => s.expanded);
   const expand = useEventCapsuleStore((s) => s.expand);
   const collapse = useEventCapsuleStore((s) => s.collapse);
+  const collapseOnly = useEventCapsuleStore((s) => s.collapseOnly);
   const room = useEventRoomStore((s) => s.room);
   const openRoom = useEventRoomStore((s) => s.open);
 
@@ -46,15 +47,16 @@ export const EventCapsule = () => {
   // 시 경계 이동 시 접힘부터 재시작 (AC 3, PR 리뷰 반영) — 캡슐은 항상 렌더(미표시 = null
   // 렌더)라 expanded가 지역을 넘어 살아남는다. "표시 전환마다 접기"는 keepPreviousData
   // 제거로 생긴 pending 깜빡임(같은 시 안 팬)까지 접어버리므로, 시 라벨이 실제로 바뀔 때만
-  // 접는다. collapse는 행사방 close 체인 — 접힘+방 잔존의 유령 패널 금지(스토어 불변식).
+  // 접는다. collapseOnly — 읽고 있던 행사방은 유지한다(패널은 지도 이동으로 닫지 않는 관례,
+  // 방 닫힘 체인은 명시 액션 ✕에만).
   const prevCityRef = useRef(city);
   useEffect(() => {
     if (city === null) return;
     if (prevCityRef.current !== null && prevCityRef.current !== city) {
-      collapse();
+      collapseOnly();
     }
     prevCityRef.current = city;
-  }, [city, collapse]);
+  }, [city, collapseOnly]);
 
   // 행사 없음(빈 배열·실패·저줌)·지역명 미확정이면 캡슐 자체를 걷는다 (AC 8, 추정 3)
   if (segments.length === 0 || city === null) return null;

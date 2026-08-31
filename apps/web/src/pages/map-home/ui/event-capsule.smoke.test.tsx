@@ -163,7 +163,10 @@ describe("행사 캡슐 (MSG-516)", () => {
       }),
     );
     await expandCapsule();
-    await screen.findByRole("button", { name: /부산 불꽃축제/ });
+    // 행사방을 연 채로 이동한다 — 읽고 있던 방은 시 경계를 넘어도 유지돼야 한다 (PR 리뷰 반영)
+    fireEvent.click(
+      await screen.findByRole("button", { name: /부산 불꽃축제/ }),
+    );
 
     // 김해로 이동 — 시 라벨이 "부산"→"경남"으로 바뀐다 (bounds 불변 — 칩 목록은 그대로)
     region = {
@@ -184,6 +187,8 @@ describe("행사 캡슐 (MSG-516)", () => {
       ),
     ).toBeTruthy();
     expect(useEventCapsuleStore.getState().expanded).toBe(false);
+    // 명시 액션(✕·뒤로가기) 없이 방이 닫히면 안 된다 — 패널은 지도 이동으로 닫지 않는 관례
+    expect(useEventRoomStore.getState().room?.occurrenceId).toBe(1);
   });
 
   it("머리의 ✕를 클릭하면 캡슐이 접히고 행사방도 함께 닫힌다 (AC 10)", async () => {
