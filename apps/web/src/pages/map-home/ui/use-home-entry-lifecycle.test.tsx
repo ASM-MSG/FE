@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { useEventCapsuleStore } from "@/features/event/model/event-capsule-store";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useHomeEntryLifecycle } from "./use-home-entry-lifecycle";
@@ -21,6 +23,8 @@ const GRID = "16846_11428";
 beforeEach(() => {
   useHomeCellDetailStore.setState({ selectedCellId: null });
   useThemeFilterStore.setState({ activeTheme: null });
+  useEventCapsuleStore.setState(useEventCapsuleStore.getInitialState(), true);
+  useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
 });
 
 afterEach(() => {
@@ -63,5 +67,33 @@ describe("useHomeEntryLifecycle", () => {
 
     expect(useHomeCellDetailStore.getState().selectedCellId).toBeNull();
     expect(useThemeFilterStore.getState().activeTheme).toBeNull();
+  });
+
+  it("홈 이탈(언마운트): 캡슐만 접히고 행사방·선택 위치는 세션 동안 유지된다 (MSG-518 AC 11)", () => {
+    const { unmount } = render(
+      <StrictMode>
+        <Host />
+      </StrictMode>,
+    );
+    useEventCapsuleStore.getState().expand();
+    useEventRoomStore.getState().open({
+      occurrenceId: 7,
+      title: "포켓몬 메가페스타 부산",
+      status: "LIVE",
+    });
+    useEventRoomStore.getState().selectLocation({
+      locationId: 4,
+      name: "광안리 피카츄 퍼레이드",
+      type: "PARADE",
+      operatingHours: "19:00~20:00",
+      gridCount: 4,
+      videoCount: 34,
+    });
+
+    unmount();
+
+    expect(useEventCapsuleStore.getState().expanded).toBe(false);
+    expect(useEventRoomStore.getState().room?.occurrenceId).toBe(7);
+    expect(useEventRoomStore.getState().location?.locationId).toBe(4);
   });
 });

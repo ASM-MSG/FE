@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { EventLocationResponseDto } from "@/shared/api/generated/types.gen";
 import {
   eventPeriodLabel,
-  locationTypeLabel,
   toLocationCardViews,
   viewerCountLabel,
 } from "./event-overview";
@@ -54,15 +53,8 @@ describe("viewerCountLabel — 시청 인원 라벨 (AC 3·4)", () => {
   });
 });
 
-describe("locationTypeLabel — 위치 유형 라벨 매핑 (AC 9)", () => {
-  it("서버 enum 5종을 한글 라벨로 옮긴다", () => {
-    expect(locationTypeLabel("POPUP")).toBe("팝업");
-    expect(locationTypeLabel("EXPERIENCE_ZONE")).toBe("체험존");
-    expect(locationTypeLabel("PARADE")).toBe("퍼레이드");
-    expect(locationTypeLabel("PHOTO_ZONE")).toBe("포토존");
-    expect(locationTypeLabel("ETC")).toBe("기타");
-  });
-});
+// 위치 유형 라벨 매핑(AC 9)은 event-location.test.ts의 eventLocationTypeLabel 커버리지로
+// 단일화됐다 — merge에서 exact 중복(MSG-517 ↔ 518) 발견·헬퍼 공유
 
 describe("toLocationCardViews — 위치 카드 뷰 파생 (AC 9)", () => {
   it("유형 라벨 · 운영시간을 '·'로 잇고 '영상 N' 배지·이미지를 담는다", () => {

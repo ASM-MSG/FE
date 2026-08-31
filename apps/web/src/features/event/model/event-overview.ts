@@ -1,5 +1,7 @@
 import type { EventLocationResponseDto } from "@/shared/api/generated/types.gen";
 import { kstDateOf } from "./event-chip";
+// 유형 라벨은 MSG-518의 event-location과 공유 — merge에서 exact 중복 발견·단일화
+import { eventLocationTypeLabel } from "./event-location";
 
 /**
  * 행사 위치 개요 파생 (MSG-517 AC 1·3·4·9) — 기간·시청 인원·위치 카드 뷰.
@@ -23,20 +25,6 @@ export const eventPeriodLabel = (startsAt: string, endsAt: string): string =>
 export const viewerCountLabel = (viewerCount: number | null): string | null =>
   viewerCount === null ? null : `${viewerCount}명 보는 중`;
 
-/** 위치 유형 → 표시 라벨 (AC 9) — 명세가 "표시 라벨 변환은 FE 몫"으로 지시 */
-export const locationTypeLabel = (
-  type: EventLocationResponseDto["type"],
-): string =>
-  (
-    ({
-      POPUP: "팝업",
-      EXPERIENCE_ZONE: "체험존",
-      PARADE: "퍼레이드",
-      PHOTO_ZONE: "포토존",
-      ETC: "기타",
-    }) as const
-  )[type];
-
 /** 위치 카드 하나의 뷰 재료 (AC 9) — 카드는 표시 전용(추정 6), 클릭은 MSG-518 슬롯 */
 export interface EventLocationCardView {
   locationId: number;
@@ -58,8 +46,8 @@ export const toLocationCardViews = (
     name: loc.name,
     meta:
       loc.operatingHours === null
-        ? locationTypeLabel(loc.type)
-        : `${locationTypeLabel(loc.type)} · ${loc.operatingHours}`,
+        ? eventLocationTypeLabel(loc.type)
+        : `${eventLocationTypeLabel(loc.type)} · ${loc.operatingHours}`,
     videoBadge: `영상 ${loc.videoCount}`,
     imageUrl: loc.imageUrl,
   }));

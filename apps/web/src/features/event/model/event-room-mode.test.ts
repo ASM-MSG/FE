@@ -11,8 +11,15 @@ describe("eventRoomMode — 행사방 본문 모드 판정 (AC 11)", () => {
     expect(eventRoomMode({ status: "ARCHIVED" })).toBe("archive");
   });
 
-  it("업로드 유예(UPLOAD_GRACE)는 위치 미선택이면 overview다", () => {
-    expect(eventRoomMode({ status: "UPLOAD_GRACE" })).toBe("overview");
+  it("업로드 유예(UPLOAD_GRACE)에서 archive를 반환한다 — 위치 선택이 남아 있어도 (MSG-519 AC 1)", () => {
+    expect(eventRoomMode({ status: "UPLOAD_GRACE" })).toBe("archive");
+    expect(
+      eventRoomMode({
+        status: "UPLOAD_GRACE",
+        selectedLocationId: 4,
+        hasLocationVideos: true,
+      }),
+    ).toBe("archive");
   });
 
   it("위치를 고르면 영상 유무로 videos/empty가 갈린다 — MSG-518 입력 슬롯", () => {
