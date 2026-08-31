@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/app/routes";
 import type { LatLng } from "@/entities/cell";
+import { eventGridIdSet } from "@/features/event/model/event-location-overlay";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
+import { useEventLocationsQuery } from "@/features/event/model/use-event-locations-query";
 import { buildCellClickHandler } from "./grid-click-routing";
 import { gateRouteClusters } from "./cluster-route-gate";
 import { useMapOverlayStore } from "./map-overlay-store";
@@ -167,6 +170,16 @@ export const MapShell = () => {
     },
     [selectCell, expandSidebar, navigate],
   );
+  // 행사방 열림 중 행사 위치 격자 (MSG-517 AC 7·8) — 소속 격자는 점령이어도 섹션
+  // 핸들러(위치 강조)로 위임한다. 개요 패널·게시 훅과 같은 queryKey라 조회는 1회다
+  const eventRoom = useEventRoomStore((s) => s.room);
+  const { locations: eventLocations } = useEventLocationsQuery(
+    eventRoom?.occurrenceId ?? null,
+  );
+  const eventGridIds = useMemo(
+    () => eventGridIdSet(eventLocations),
+    [eventLocations],
+  );
   const handleCellClick = useMemo(
     () =>
       buildCellClickHandler({
@@ -177,8 +190,15 @@ export const MapShell = () => {
         // 점령 우선 라우팅(MSG-329)의 칩 한정 예외 (MSG-462 AC 12)
         missionChipActive:
           activeTheme === "festival" || activeTheme === "popup",
+        eventGridIds,
       }),
-    [occupiedIds, openGridDetail, onOverlayCellClick, activeTheme],
+    [
+      occupiedIds,
+      openGridDetail,
+      onOverlayCellClick,
+      activeTheme,
+      eventGridIds,
+    ],
   );
   // 확정 지역·영역 최초 채택 — 지도 데이터 조회 전체의 bbox 근원 (AC 9)
   useCommittedRegionBootstrap();

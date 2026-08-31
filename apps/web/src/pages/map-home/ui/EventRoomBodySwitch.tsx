@@ -1,4 +1,5 @@
 import type { EventRoomMode } from "@/features/event/model/event-room-mode";
+import { EventRoomOverview } from "./EventRoomOverview";
 
 interface EventRoomBodySwitchProps {
   /** 표시할 본문 모드 — 순수 함수(event-room-mode)가 정한 값 */
@@ -15,10 +16,12 @@ interface EventRoomBodySwitchProps {
 export const EventRoomBodySwitch = ({ mode }: EventRoomBodySwitchProps) => {
   switch (mode) {
     case "overview":
+      // MSG-517 — 위치 개요 (자급 컨테이너, 스토어·쿼리 직접 구독)
+      return <EventRoomOverview />;
     case "videos":
     case "empty":
     case "archive":
-      // 전 모드 자리표시 (추정 7) — 본문 부재는 결함이 아니라 이번 티켓의 정답이다
+      // 자리표시 (MSG-516 추정 7) — 본문 부재는 결함이 아니라 MSG-518·519 범위다
       return (
         <p className="text-fm-body text-foreground-muted">
           행사 정보를 준비 중이에요

@@ -11,8 +11,15 @@ export interface EventRoomSelection {
 interface EventRoomState {
   /** 열린 행사방 — null이면 닫힘. 세그먼트 활성 표시(AC 9)의 근거 */
   room: EventRoomSelection | null;
+  /**
+   * 격자 클릭으로 강조된 행사 위치 (MSG-517 AC 7) — null이면 강조 없음.
+   * 방 전환·닫힘 시 리셋된다. 위치 "선택"(영상 피드 진입)은 MSG-518 소유 — 이 슬롯은
+   * 지도 강조 표시 전용이다.
+   */
+  highlightedLocationId: number | null;
   open: (selection: EventRoomSelection) => void;
   close: () => void;
+  highlightLocation: (locationId: number) => void;
 }
 
 /**
@@ -23,6 +30,9 @@ interface EventRoomState {
  */
 export const useEventRoomStore = create<EventRoomState>((set) => ({
   room: null,
-  open: (selection) => set({ room: selection }),
-  close: () => set({ room: null }),
+  highlightedLocationId: null,
+  // 방 전환 시 이전 방의 강조가 새 방 위치 id와 충돌하지 않게 함께 리셋한다 (MSG-517 AC 7)
+  open: (selection) => set({ room: selection, highlightedLocationId: null }),
+  close: () => set({ room: null, highlightedLocationId: null }),
+  highlightLocation: (locationId) => set({ highlightedLocationId: locationId }),
 }));

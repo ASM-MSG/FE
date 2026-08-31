@@ -35,6 +35,12 @@ interface HomeOverlayPublishInput {
   eventChip: EventChip | null;
   /** 활성 미션 격자 → 소속 미션 id — FE 도형 폴백 판정 입력 (MSG-462 AC 6ⓑ) */
   gridMembership: ReadonlyMap<string, number>;
+  /**
+   * 게시 정지 (MSG-517) — 행사방이 열려 있는 동안 true. 행사 오버레이 게시 훅
+   * (use-event-overlay-publish)이 단독 게시자가 되도록 이 훅은 스토어를 건드리지 않는다 —
+   * 같은 필드를 두 effect가 쓰면 나중에 재실행된 쪽이 상대 게시를 지운다.
+   */
+  suspended?: boolean;
 }
 
 export const useHomeOverlayPublish = ({
@@ -46,6 +52,7 @@ export const useHomeOverlayPublish = ({
   searchGridId,
   eventChip,
   gridMembership,
+  suspended = false,
 }: HomeOverlayPublishInput): void => {
   const selectCell = useHomeCellDetailStore((s) => s.select);
   const closeCellDetail = useHomeCellDetailStore((s) => s.close);
@@ -124,12 +131,16 @@ export const useHomeOverlayPublish = ({
   // 섹션 오버레이 게시 — 홈 마운트 중 유지, 이탈 시 해제. 격자선·기본 점령 셀은 셸 상시 층
   // 소유(MSG-263 D9)라 여기서 게시하지 않는다
   useEffect(() => {
+    // 행사방 열림 중에는 게시하지 않는다 (MSG-517) — 정리(clear)도 하지 않아 행사
+    // 게시를 지우지 않는다. 닫히면 이 effect가 재실행돼 홈 게시가 복원된다
+    if (suspended) return;
     setCells(publishedCells);
     setRoutes(overlays.routes);
     setLabels(overlays.labels);
     setOnCellClick(handleCellTap);
     return () => clearOverlays();
   }, [
+    suspended,
     publishedCells,
     overlays.routes,
     overlays.labels,

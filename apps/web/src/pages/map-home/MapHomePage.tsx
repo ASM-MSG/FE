@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { decodeGridCenter } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
+import { useEventHeartbeat } from "@/features/event/model/use-event-heartbeat";
 import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
@@ -28,6 +29,7 @@ import { HomeSearchBox } from "./ui/HomeSearchBox";
 import { RegionReloadButton } from "./ui/RegionReloadButton";
 import { useHomeChipEntry } from "./ui/use-home-chip-entry";
 import { useHomeCloseHandlers } from "./ui/use-home-close-handlers";
+import { useEventOverlayPublish } from "./ui/use-event-overlay-publish";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
 import { useHomeOverlayPublish } from "./ui/use-home-overlay-publish";
 import { useHomePanelState } from "./ui/use-home-panel-state";
@@ -171,7 +173,14 @@ export const MapHomePage = () => {
     searchGridId,
     eventChip,
     gridMembership,
+    // 행사방 열림 중에는 행사 오버레이 게시 훅이 단독 게시자다 (MSG-517 AC 6)
+    suspended: eventRoom !== null,
   });
+  // 행사 위치 영역 채색·라벨·격자 클릭 강조 게시 — 열림 동안 유지, 닫으면 걷힘 (MSG-517 AC 6·7).
+  // 홈 게시 훅보다 뒤에 호출해야 한다 — effect 실행 순서가 게시 우선순위다 (suspended 주석 참조)
+  useEventOverlayPublish(eventRoom);
+  // 열람 heartbeat (MSG-517 AC 5, 확정 2) — 행사방이 열려 있는 동안 30초 주기, 닫으면 중단
+  useEventHeartbeat(eventRoom?.occurrenceId ?? null);
 
   // 상세 패널의 "전체 보기" — 상세를 닫고 패널 안 전체 지역 리스트를 연다 (MSG-328)
   const openRegionList = useRegionPanelStore((s) => s.openRegionList);

@@ -126,6 +126,25 @@ export const fcmTokenStorage = {
   },
 };
 
+const VIEWER_SESSION_KEY = "fillmap.event.viewer-session";
+
+/**
+ * 행사 열람 세션 id 보관소 (MSG-517 AC 5, 확정 3) — 비로그인 heartbeat의
+ * `X-Viewer-Session` 헤더 값. 탭 세션 단위 고유(탭 2개 = 2명 집계)가 의도라
+ * sessionStorage를 쓴다(oauthStateStorage 선례). 최초 접근에서 1회 발급하고
+ * 같은 탭에서는 고정된다 — 값은 UUID 36자(서버 제약: 공백 아님·최대 64자).
+ */
+export const viewerSessionStorage = {
+  /** 발급 또는 재사용 — 항상 유효한 세션 id를 돌려준다 */
+  get: (): string => {
+    const existing = sessionStorage.getItem(VIEWER_SESSION_KEY);
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    sessionStorage.setItem(VIEWER_SESSION_KEY, created);
+    return created;
+  },
+};
+
 /** 1회성 state 토큰 생성 — 웹 crypto 의존이라 어댑터 층에 둔다 */
 export const createOauthState = (): string => crypto.randomUUID();
 
