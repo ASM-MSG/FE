@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useEventCapsuleStore } from "@/features/event/model/event-capsule-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 
@@ -21,6 +22,11 @@ export const useHomeEntryLifecycle = (): void => {
   // 홈 이탈(다른 섹션 라우트로 언마운트) 시 칩·셀 상세 초기화 (AC 14).
   // 접힘은 셸이 display:none으로 숨겨 언마운트되지 않으므로 상태가 유지된다 (A6 정합)
   useEffect(() => resetThemeFilter, [resetThemeFilter]);
+
+  // 행사 캡슐·행사방도 같은 초기화 대상 (MSG-516 — 미션/코스 상세 선례와 동일 수명).
+  // collapse가 행사방 close까지 체인한다 — 복귀 화면은 접힌 캡슐 + 기본 패널이다
+  const collapseEventCapsule = useEventCapsuleStore((s) => s.collapse);
+  useEffect(() => collapseEventCapsule, [collapseEventCapsule]);
 
   const shellSelectionRef = useRef(
     useHomeCellDetailStore.getState().selectedCellId,

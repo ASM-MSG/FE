@@ -62,3 +62,29 @@ describe("homePanelKind — 좌측 패널 분기 우선순위 (AC 7)", () => {
     ).toBe("hot-region");
   });
 });
+
+describe("homePanelKind — 행사방 분기 (MSG-516 AC 10·추정 6)", () => {
+  it("행사방이 열려 있으면 행사방이다", () => {
+    expect(homePanelKind({ ...base, eventRoomOpen: true })).toBe("event-room");
+  });
+
+  it("격자 상세가 행사방보다 앞선다 (우선순위 — grid-detail 아래)", () => {
+    expect(
+      homePanelKind({
+        ...base,
+        eventRoomOpen: true,
+        selectedGridId: "39064_112221",
+      }),
+    ).toBe("grid-detail");
+  });
+
+  it("테마 칩과 동시에 남으면 행사방이 이긴다 (경계 — 상호 배타는 뷰가 배선, 잔존 시 유령 패널 방지)", () => {
+    expect(
+      homePanelKind({ ...base, eventRoomOpen: true, activeTheme: "hot" }),
+    ).toBe("event-room");
+  });
+
+  it("입력을 생략하면 기존 분기 그대로다 (하위 호환)", () => {
+    expect(homePanelKind(base)).toBe("region");
+  });
+});

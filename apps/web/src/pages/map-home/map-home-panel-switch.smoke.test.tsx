@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
@@ -188,6 +189,7 @@ afterEach(() => {
   useVideoMiniPanelStore.setState({ selected: null });
   signOutForTest();
   useRegionPanelStore.setState(useRegionPanelStore.getInitialState(), true);
+  useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
 });
 
 describe("홈 좌측 패널 분기", () => {
@@ -496,6 +498,32 @@ describe("접힘 상태 셀 탭 → 패널 펼침 (사용자 결정 2026-08-10)"
     act(() => useMapOverlayStore.getState().onCellClick?.("0_0"));
     expect(useSidebarStore.getState().collapsed).toBe(true);
     expect(useHomeCellDetailStore.getState().selectedCellId).toBeNull();
+  });
+});
+
+describe("행사방 패널 분기 (MSG-516)", () => {
+  it("행사방이 열리면 좌측 패널이 행사방 셸(헤더+자리표시)로 교체되고, 뒤로가기로 지역 패널에 복귀한다 (AC 10)", async () => {
+    stubDetail("ready");
+    useEventRoomStore.getState().open({
+      occurrenceId: 7,
+      title: "부산 불꽃축제",
+      status: "UPCOMING",
+    });
+
+    renderHome();
+
+    expect(await screen.findByRole("heading", { name: "이벤트" })).toBeTruthy();
+    expect(screen.getByText("행사 정보를 준비 중이에요")).toBeTruthy();
+    // 지역 격자 패널(행정동 헤더)은 이 자리에 나오면 안 된다 — 교체이지 겹침이 아니다
+    expect(screen.queryByText("부전제1동")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "뒤로가기" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "부전제1동" }),
+    ).toBeTruthy();
+    // 세그먼트 활성 근거(room)도 함께 비워진다 (AC 10)
+    expect(useEventRoomStore.getState().room).toBeNull();
   });
 });
 
