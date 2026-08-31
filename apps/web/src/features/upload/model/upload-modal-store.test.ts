@@ -222,6 +222,155 @@ describe("업로드 모달 스토어 — 교체 모드 진입 (MSG-415)", () => 
   });
 });
 
+describe("업로드 모달 스토어 — 행사 업로드 진입 (MSG-521)", () => {
+  const EVENT_TARGET = {
+    occurrenceId: 7,
+    locationId: 3,
+    occurrenceTitle: "부산 불꽃축제",
+    locationName: "광안리 해변",
+  };
+
+  beforeEach(() => {
+    useUploadModalStore.setState({
+      open: false,
+      pendingAfterLogin: false,
+      target: null,
+      replaceTarget: null,
+      eventTarget: null,
+    });
+    useLoginModalStore.setState({ open: false });
+    useAuthStore.setState({ accessToken: "token", isAuthenticated: true });
+    uploadIntentStorage.clear();
+  });
+
+  it("openEventUploadModal은 위저드를 열고 행사 대상(회차·위치·라벨 재료)을 저장한다 (AC 1)", () => {
+    useUploadModalStore.getState().openEventUploadModal(EVENT_TARGET);
+
+    expect(useUploadModalStore.getState().open).toBe(true);
+    expect(useUploadModalStore.getState().eventTarget).toEqual(EVENT_TARGET);
+  });
+
+  it("openEventUploadModal은 지목 격자·교체 대상을 잇지 않는다 — 모드 상호 배타 (AC 9)", () => {
+    useUploadModalStore.setState({
+      target: { lat: 35.158, lng: 129.06 },
+      replaceTarget: {
+        videoId: 42,
+        gridId: "g",
+        zoneName: "서면",
+        zoneCell: "A-02",
+      },
+    });
+
+    useUploadModalStore.getState().openEventUploadModal(EVENT_TARGET);
+
+    expect(useUploadModalStore.getState().target).toBeNull();
+    expect(useUploadModalStore.getState().replaceTarget).toBeNull();
+  });
+
+  it("closeModal은 행사 대상을 해제한다 — 다음 업로드가 행사로 오귀속되지 않는다 (AC 9)", () => {
+    useUploadModalStore.getState().openEventUploadModal(EVENT_TARGET);
+
+    useUploadModalStore.getState().closeModal();
+
+    expect(useUploadModalStore.getState().open).toBe(false);
+    expect(useUploadModalStore.getState().eventTarget).toBeNull();
+  });
+
+  it("행사 진입 직후의 일반 openModal(FAB·사이드레일)은 행사 모드를 이어받지 않는다 (AC 9)", () => {
+    useUploadModalStore.getState().openEventUploadModal(EVENT_TARGET);
+
+    useUploadModalStore.getState().openModal();
+
+    expect(useUploadModalStore.getState().eventTarget).toBeNull();
+  });
+
+  it("openReplaceModal도 이전 행사 대상을 잇지 않는다 (AC 9)", () => {
+    useUploadModalStore.getState().openEventUploadModal(EVENT_TARGET);
+    useUploadModalStore.getState().closeModal();
+
+    useUploadModalStore.getState().openReplaceModal({
+      videoId: 42,
+      gridId: "grid-77",
+      zoneName: "서면",
+      zoneCell: "A-02",
+    });
+
+    expect(useUploadModalStore.getState().eventTarget).toBeNull();
+  });
+
+  it("비로그인 클릭 시 위저드 대신 로그인 모달이 열린다 — openModal 게이트 미러 (AC 6)", () => {
+    useAuthStore.setState({ accessToken: null, isAuthenticated: false });
+
+    useUploadModalStore.getState().openEventUploadModal(EVENT_TARGET);
+
+    expect(useUploadModalStore.getState().open).toBe(false);
+    expect(useLoginModalStore.getState().open).toBe(true);
+  });
+
+  it("게이트 경로에서 로그인에 성공하면 행사 맥락을 유지한 채 위저드가 재개된다 (AC 6)", () => {
+    useAuthStore.setState({ accessToken: null, isAuthenticated: false });
+    useUploadModalStore.getState().openEventUploadModal(EVENT_TARGET); // 게이트
+
+    useAuthStore.getState().setAccessToken("token"); // 로그인 성공 → 재개
+
+    expect(useUploadModalStore.getState().open).toBe(true);
+    expect(useUploadModalStore.getState().eventTarget).toEqual(EVENT_TARGET);
+  });
+});
+
+describe("업로드 모달 스토어 — 행사 업로드 카카오 리다이렉트 생존 (MSG-521 추정 3)", () => {
+  /** 새 로드 모사 — C11 describe의 loadSession과 동일 사유(메모리 소실 재현) */
+  const loadSession = async () => {
+    vi.resetModules();
+    const [upload, login, auth] = await Promise.all([
+      import("./upload-modal-store"),
+      import("@/features/auth/model/login-modal-store"),
+      import("@/features/auth/model/auth-store"),
+    ]);
+    return {
+      uploadStore: upload.useUploadModalStore,
+      loginStore: login.useLoginModalStore,
+      authStore: auth.useAuthStore,
+    };
+  };
+
+  const EVENT_TARGET = {
+    occurrenceId: 7,
+    locationId: 3,
+    occurrenceTitle: "부산 불꽃축제",
+    locationName: "광안리 해변",
+  };
+
+  beforeEach(() => {
+    webStorage.removeItem(AUTH_STORAGE_KEY);
+    uploadIntentStorage.clear();
+  });
+
+  it("행사 게이트로 영속화된 맥락이 리다이렉트(새 로드)를 생존해, 로그인 성공 시 행사 모드로 위저드가 재개된다 (AC 6)", async () => {
+    const before = await loadSession();
+    before.uploadStore.getState().openEventUploadModal(EVENT_TARGET); // 게이트 — 의도 영속화
+
+    const after = await loadSession(); // 카카오 콜백 복귀 — 메모리 소실, 영속 의도만 생존
+    after.authStore.getState().setAccessToken("token");
+
+    expect(after.uploadStore.getState().open).toBe(true);
+    expect(after.uploadStore.getState().eventTarget).toEqual(EVENT_TARGET);
+    // 행사 의도가 일반 업로드(뷰포트 중심 귀속)로 조용히 바뀌지 않는다
+    expect(after.uploadStore.getState().target).toBeNull();
+  });
+
+  it("행사 게이트로 연 로그인 모달을 로그인 없이 닫으면(취소) 영속 의도도 해제된다", async () => {
+    const before = await loadSession();
+    before.uploadStore.getState().openEventUploadModal(EVENT_TARGET);
+    before.loginStore.getState().closeModal(); // 취소
+
+    const after = await loadSession();
+    after.authStore.getState().setAccessToken("token");
+
+    expect(after.uploadStore.getState().open).toBe(false);
+  });
+});
+
 describe("업로드 모달 스토어 — 격자 고정 진입 (지목 격자)", () => {
   beforeEach(() => {
     useUploadModalStore.setState({

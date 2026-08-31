@@ -44,3 +44,12 @@ export const replaceGridLabel = (
   zoneCell: string | null,
 ): string | null =>
   zoneName !== null && zoneCell !== null ? `${zoneName} ${zoneCell}` : null;
+
+/**
+ * 행사 모드 위치 라벨 (MSG-521 AC 8, replaceGridLabel 미러) — 귀속이 URL path로
+ * 결정돼 좌표를 보내지 않으므로 지도 중심 행정동 대신 "행사명 · 위치명"을 표기한다.
+ */
+export const eventUploadLabel = (
+  occurrenceTitle: string,
+  locationName: string,
+): string => `${occurrenceTitle} · ${locationName}`;

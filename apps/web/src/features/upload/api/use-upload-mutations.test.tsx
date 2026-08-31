@@ -5,6 +5,8 @@ import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getCellQueryKey,
+  getLocationsQueryKey,
+  getLocationVideosInfiniteQueryKey,
   getOccupiedInViewportInfiniteQueryKey,
   getPlaybackQueryKey,
   getRegionVideosQueryKey,
@@ -19,6 +21,7 @@ import {
 import { __resetReadyRefreshForTest } from "./start-ready-refresh";
 import {
   useAnalyzeVideo,
+  useConfirmEventUpload,
   useConfirmUpload,
   useReplaceVideo,
 } from "./use-upload-mutations";
@@ -382,6 +385,208 @@ describe("useConfirmUpload — 확정 흐름 (B9·B13)", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     expect(queryClient.getQueryState(historyKey)?.isInvalidated).toBe(false);
+  });
+});
+
+describe("useConfirmEventUpload — 행사 확정 흐름 (MSG-521 AC 3·4·5·10)", () => {
+  const EVENT_UPLOAD_PATH = "/api/event-occurrences/7/locations/3/videos";
+
+  const eventInput = () => ({
+    blob: new Blob(["trimmed"], { type: "video/mp4" }),
+    durationSec: 8,
+    occurrenceId: 7,
+    locationId: 3,
+  });
+
+  /** 행사 확정 라우팅 — upload1만 추가하고 나머지는 기본 해피 패스로 위임 */
+  const routeEventPath =
+    (overrides?: { onEventFinalize?: () => Response | null }) =>
+    (call: ReceivedCall): Response => {
+      if (call.url.pathname === EVENT_UPLOAD_PATH && call.method === "POST") {
+        const override = overrides?.onEventFinalize?.();
+        if (override) return override;
+        return envelopeResponse({
+          videoId: 42,
+          gridId: "grid-77",
+          processingStatus: "UPLOADED",
+          occupied: false,
+          newBadges: [],
+        });
+      }
+      return routeHappyPath()(call);
+    };
+
+  const eventKeys = () => ({
+    locationVideosKey: getLocationVideosInfiniteQueryKey({
+      path: { occurrenceId: 7, locationId: 3 },
+    }),
+    locationsKey: getLocationsQueryKey({ path: { occurrenceId: 7 } }),
+  });
+
+  it("presign(purpose 미전송) → S3 PUT → POST /api/event-occurrences/{occurrenceId}/locations/{locationId}/videos 순서로 호출하고 body는 s3Key·durationSec·recordedAt만이다 (AC 3)", async () => {
+    const received = stubFetch(routeEventPath());
+    const { wrapper } = createHarness();
+
+    const { result } = renderHook(() => useConfirmEventUpload(), { wrapper });
+    act(() => {
+      result.current.mutate(eventInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(received.map((c) => `${c.method} ${c.url.pathname}`)).toEqual([
+      "POST /api/videos/presigned-url",
+      "PUT /put",
+      `POST ${EVENT_UPLOAD_PATH}`,
+    ]);
+    // purpose 미전송 = UPLOAD — 행사 전용 presign 없음 (스펙 추정 1)
+    expect(received[0].body).not.toHaveProperty("purpose");
+
+    const confirmBody = received[2].body as Record<string, unknown>;
+    expect(confirmBody).toMatchObject({
+      s3Key: PRESIGN_DATA.s3Key,
+      durationSec: 8,
+    });
+    expect(Number.isNaN(Date.parse(String(confirmBody.recordedAt)))).toBe(
+      false,
+    );
+    // 귀속은 URL path가 결정한다 — 좌표·공개 범위는 DTO에 없다 (AC 3·7)
+    expect(confirmBody).not.toHaveProperty("lat");
+    expect(confirmBody).not.toHaveProperty("lng");
+    expect(confirmBody).not.toHaveProperty("visibility");
+  });
+
+  it("확정 성공 시 위치 영상 목록·위치 목록(videoCount)·기존 업로드 표면(playback·격자·도감·잔디)이 무효화된다 (AC 4)", async () => {
+    stubFetch(routeEventPath());
+    const { queryClient, wrapper } = createHarness();
+    const { locationVideosKey, locationsKey } = eventKeys();
+    const playbackKey = getPlaybackQueryKey({ path: { videoId: 42 } });
+    const cellKey = getCellQueryKey({ path: { gridId: "grid-77" } });
+    const regionKey = getRegionVideosQueryKey({
+      query: { regionCode: "2644056000" },
+    });
+    const historyKey = getUploadHistoryQueryKey();
+    queryClient.setQueryData(locationVideosKey, { pages: [], pageParams: [] });
+    queryClient.setQueryData(locationsKey, { cached: true });
+    queryClient.setQueryData(playbackKey, { cached: true });
+    queryClient.setQueryData(cellKey, { cached: true });
+    queryClient.setQueryData(regionKey, { cached: true });
+    queryClient.setQueryData(historyKey, { cached: true });
+
+    const { result } = renderHook(() => useConfirmEventUpload(), { wrapper });
+    act(() => {
+      result.current.mutate(eventInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // 행사 확장 집합 — 위치 영상 목록(infinite)·위치 목록(videoCount)
+    expect(queryClient.getQueryState(locationVideosKey)?.isInvalidated).toBe(
+      true,
+    );
+    expect(queryClient.getQueryState(locationsKey)?.isInvalidated).toBe(true);
+    // 기존 업로드 표면 집합 그대로 (재생·격자·도감·잔디)
+    expect(queryClient.getQueryState(playbackKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(cellKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(regionKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(historyKey)?.isInvalidated).toBe(true);
+  });
+
+  it("READY 전이 시 확정과 같은 집합이 재무효화된다 — 위치 영상 목록 포함 (AC 5)", async () => {
+    vi.useFakeTimers();
+    try {
+      let processingStatus = "ENCODING";
+      stubFetch((call) => {
+        if (call.url.pathname === "/api/videos/42" && call.method === "GET") {
+          return envelopeResponse({
+            videoId: 42,
+            gridId: "grid-77",
+            playbackUrl: null,
+            processingStatus,
+            expiresInSec: 600,
+          });
+        }
+        return routeEventPath()(call);
+      });
+      const { queryClient, wrapper } = createHarness();
+      const { locationVideosKey, locationsKey } = eventKeys();
+
+      const { result } = renderHook(() => useConfirmEventUpload(), { wrapper });
+      await act(async () => {
+        result.current.mutate(eventInput());
+        await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
+      });
+
+      // 확정 시점 무효화분을 걷어내고, READY 전이의 두 번째 무효화만 본다
+      queryClient.setQueryData(locationVideosKey, {
+        pages: [],
+        pageParams: [],
+      });
+      queryClient.setQueryData(locationsKey, { cached: true });
+      expect(queryClient.getQueryState(locationVideosKey)?.isInvalidated).toBe(
+        false,
+      );
+
+      // 아직 non-READY — 무효화 없음
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(READY_POLL_FIRST_DELAY_MS);
+      });
+      expect(queryClient.getQueryState(locationVideosKey)?.isInvalidated).toBe(
+        false,
+      );
+
+      // READY 전이 — 확정과 같은 집합(행사 확장 포함) 재무효화
+      processingStatus = "READY";
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(READY_POLL_MAX_INTERVAL_MS);
+      });
+      expect(queryClient.getQueryState(locationVideosKey)?.isInvalidated).toBe(
+        true,
+      );
+      expect(queryClient.getQueryState(locationsKey)?.isInvalidated).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("행사 확정 실패 시 무효화가 일어나지 않고, 재시도는 성공한 presign·S3 PUT을 건너뛴다 (AC 10)", async () => {
+    let failNext = true;
+    const received = stubFetch(
+      routeEventPath({
+        onEventFinalize: () => {
+          if (!failNext) return null;
+          failNext = false;
+          return new Response(
+            JSON.stringify({ developCode: 500, message: "실패" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        },
+      }),
+    );
+    const { queryClient, wrapper } = createHarness();
+    const { locationVideosKey } = eventKeys();
+    queryClient.setQueryData(locationVideosKey, { pages: [], pageParams: [] });
+
+    const { result } = renderHook(() => useConfirmEventUpload(), { wrapper });
+    act(() => {
+      result.current.mutate(eventInput());
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+
+    expect(queryClient.getQueryState(locationVideosKey)?.isInvalidated).toBe(
+      false,
+    );
+
+    act(() => {
+      result.current.mutate(eventInput());
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // 성공 단계 스킵 (B11 재사용) — presign·PUT 1회, 행사 확정만 2회
+    const paths = received.map((c) => c.url.pathname);
+    expect(paths.filter((p) => p === "/api/videos/presigned-url")).toHaveLength(
+      1,
+    );
+    expect(paths.filter((p) => p === "/put")).toHaveLength(1);
+    expect(paths.filter((p) => p === EVENT_UPLOAD_PATH)).toHaveLength(2);
   });
 });
 
