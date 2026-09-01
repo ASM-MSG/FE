@@ -13,6 +13,8 @@ interface EventLocationHeaderProps {
    * 빈 상태에서는 전폭 "첫 영상 올리기"가 유일한 primary가 되게 한다 (Figma 정본 대비)
    */
   uploadVariant: "primary" | "secondary";
+  /** 종료 행사 열람 (MSG-535 AC 5) — true면 "+ 영상 올리기"를 렌더하지 않는다 */
+  readOnly?: boolean;
 }
 
 /**
@@ -24,6 +26,7 @@ interface EventLocationHeaderProps {
 export const EventLocationHeader = ({
   location,
   uploadVariant,
+  readOnly = false,
 }: EventLocationHeaderProps) => {
   const openEventUpload = useEventUploadEntry();
 
@@ -38,13 +41,15 @@ export const EventLocationHeader = ({
             {location.name}
           </h3>
         </div>
-        <Button
-          text="+ 영상 올리기"
-          variant={uploadVariant}
-          size="sm"
-          className="shrink-0"
-          onClick={openEventUpload}
-        />
+        {!readOnly && (
+          <Button
+            text="+ 영상 올리기"
+            variant={uploadVariant}
+            size="sm"
+            className="shrink-0"
+            onClick={openEventUpload}
+          />
+        )}
       </div>
       <p className="text-fm-body text-foreground-muted">
         {eventLocationMetaLine(location)}

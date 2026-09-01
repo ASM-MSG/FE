@@ -1,6 +1,11 @@
 import { DotsLoader, RetryNotice } from "@fillmap/ui-web";
+import { ChevronRight } from "lucide-react";
+import { toEventLocationSelection } from "@/features/event/model/event-location";
 import { formatEventPeriod } from "@/features/event/model/event-period";
-import type { EventRoomSelection } from "@/features/event/model/event-room-store";
+import {
+  useEventRoomStore,
+  type EventRoomSelection,
+} from "@/features/event/model/event-room-store";
 import { useEventArchiveQuery } from "@/features/event/model/use-event-archive-query";
 
 interface EventArchiveBodyProps {
@@ -14,13 +19,16 @@ interface EventArchiveBodyProps {
  *
  * Figma 대비 의도적 미렌더(스펙 "Figma 오탐 방지" — 결함 아님):
  * 배너 이미지·"종료" 뱃지·지역 표기·위치 썸네일은 DTO에 필드가 없다(실측).
- * 위치 행은 클릭 무동작·셰브론 미렌더 — 당시 영상 연결은 MSG-518 머지 후(질문 5).
+ * MSG-535: 위치 행을 전체 button화 + 셰브론 렌더 — 클릭이 selectLocation으로 읽기 전용
+ * 위치 상세(당시 영상)를 연다 (MSG-519 "행 비활성·셰브론 미렌더" 결정을 의도적으로 뒤집음).
  * 업로드 유도 CTA는 렌더하지 않는다 (AC 7 — 조회 전용).
  */
 export const EventArchiveBody = ({ room }: EventArchiveBodyProps) => {
   const { detail, locations, isPending, isError, retry } = useEventArchiveQuery(
     room.occurrenceId,
   );
+  // 자급 컨테이너 패턴 유지 (MSG-517 선례) — 스토어 액션 직접 구독
+  const selectLocation = useEventRoomStore((s) => s.selectLocation);
 
   // 실패를 로딩으로 위장하지 않는다 — 재시도 수단을 준다 (AC 9, MSG-325 선례)
   if (isError) {
@@ -52,7 +60,7 @@ export const EventArchiveBody = ({ room }: EventArchiveBodyProps) => {
         </p>
       </div>
 
-      {/* 위치 목록 — 서버 정렬 유지, 행 비활성 (AC 5, 질문 5) */}
+      {/* 위치 목록 — 서버 정렬 유지, 행 전체 button (MSG-535 AC 3·4) */}
       <section aria-label="지난 행사 위치" className="flex flex-col gap-sm">
         <div className="flex flex-col gap-xxs">
           <h4 className="text-fm-title text-foreground">
@@ -64,16 +72,30 @@ export const EventArchiveBody = ({ room }: EventArchiveBodyProps) => {
         </div>
         <ul className="flex flex-col gap-xs">
           {locations.map((location) => (
-            <li
-              key={location.locationId}
-              className="flex flex-col gap-xxs rounded-md border border-border bg-background px-md py-sm"
-            >
-              <span className="text-fm-base font-semibold text-foreground">
-                {location.name}
-              </span>
-              <span className="text-fm-body text-foreground-muted">
-                영상 {location.videoCount}
-              </span>
+            <li key={location.locationId}>
+              {/* aria-label이 접근명을 통째로 대체하므로 시각 노출 맥락(영상 N)까지 싣는다
+                  (MSG-534 PR #114 리뷰 반영 컨벤션) */}
+              <button
+                type="button"
+                aria-label={`${location.name} 당시 영상 보기 — 영상 ${location.videoCount}`}
+                onClick={() =>
+                  selectLocation(toEventLocationSelection(location))
+                }
+                className="flex w-full items-center gap-sm rounded-md border border-border bg-background px-md py-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <span className="flex min-w-0 flex-1 flex-col gap-xxs">
+                  <span className="truncate text-fm-base font-semibold text-foreground">
+                    {location.name}
+                  </span>
+                  <span className="text-fm-body text-foreground-muted">
+                    영상 {location.videoCount}
+                  </span>
+                </span>
+                <ChevronRight
+                  aria-hidden
+                  className="size-4 shrink-0 text-foreground-muted"
+                />
+              </button>
             </li>
           ))}
         </ul>

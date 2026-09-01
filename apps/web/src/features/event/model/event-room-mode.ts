@@ -13,22 +13,31 @@ export interface EventRoomModeInput {
 }
 
 /**
+ * 종료 행사 판정 단일 정본 (MSG-535) — readOnly 관통·패널 헤더 타이틀이 공용한다.
+ * 명명 함정: 제품 "아카이브(종료 후 1개월)"의 주력 상태는 서버 UPLOAD_GRACE(종료~+30일)고,
+ * 서버 ARCHIVED는 "1개월 지난" 상태다 (MSG-519 질문 2 A안).
+ * 판정 입력은 서버 status뿐 — FE 날짜 계산 0줄 (MSG-519 질문 1 승인). 순수 함수, RN 재사용 대상.
+ */
+export const isArchivedEventStatus = (
+  status: EventOccurrenceDetailStatus,
+): boolean => status === "UPLOAD_GRACE" || status === "ARCHIVED";
+
+/**
  * 행사방 본문 모드 판정 (MSG-516 AC 11) — 순수 함수, RN 재사용 대상.
  * 분기 구조는 여기 한 곳에 모으고 렌더는 EventRoomBodySwitch가 맡는다
- * (MSG-427/428 확장점 패턴). 현재 입력(칩 status 2값·위치 미선택)으로는 overview 고정.
+ * (MSG-427/428 확장점 패턴).
  */
 export const eventRoomMode = ({
   status,
   selectedLocationId,
   hasLocationVideos,
 }: EventRoomModeInput): EventRoomMode => {
-  // 종료 행사는 위치 선택이 남아 있어도 아카이브다 — 유령 영상 목록 방지 (MSG-519 AC 1·2).
-  // 명명 함정: 제품 "아카이브(종료 후 1개월)"의 주력 상태는 서버 UPLOAD_GRACE(종료~+30일)고,
-  // 서버 ARCHIVED는 "1개월 지난" 상태다 — 잔여 경로(지난 회차 클릭) 도달 시 그대로 아카이브(질문 2 A안).
-  // 판정 입력은 서버 status뿐 — FE 날짜 계산 0줄 (질문 1 승인, AC 8)
-  if (status === "UPLOAD_GRACE" || status === "ARCHIVED") return "archive";
+  // 위치 선택이 status보다 먼저다 (MSG-535 AC 1) — 종료 행사도 위치를 고르면 videos/empty로
+  // 열람한다(읽기 전용 표현은 소비처의 readOnly 몫). MSG-519 AC 1·2 "유령 영상 목록 방지"의
+  // 실체는 "종료 행사에 업로드 가능한 활성 본문이 렌더되는 것"이라 재해석 — 진입 보장은
+  // 스토어가 진다: 다른 방 open()이 위치를 리셋하므로 아카이브 첫 화면은 여전히 개요다.
   if (selectedLocationId != null) {
     return hasLocationVideos ? "videos" : "empty";
   }
-  return "overview";
+  return isArchivedEventStatus(status) ? "archive" : "overview";
 };

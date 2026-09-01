@@ -1,6 +1,7 @@
 import type { EventLocationSelection } from "@/features/event/model/event-location";
 import {
   eventRoomMode,
+  isArchivedEventStatus,
   type EventRoomMode,
   type EventRoomModeInput,
 } from "@/features/event/model/event-room-mode";
@@ -16,6 +17,11 @@ import {
 export interface EventRoomBodyState {
   /** 본문 모드 — 순수 함수(event-room-mode)가 정한 값 */
   mode: EventRoomMode;
+  /**
+   * 종료 행사 열람 여부 (MSG-535) — 위치 상세(videos/empty)에서 업로드 CTA를 억제하고
+   * 패널 헤더를 "지난 행사 기록"으로 유지하는 단일 근거 (MSG-519 AC 7 확장 적용)
+   */
+  readOnly: boolean;
   location: EventLocationSelection | null;
   videos: LocationVideosResult["videos"];
   hasNext: boolean;
@@ -32,7 +38,7 @@ export interface EventRoomBodyState {
  * 뷰-레이어 훅 (MSG-518, MSG-451 선례) — 행사방 본문 재료 조립.
  * 스토어의 선택 위치 구독 + 위치 영상 쿼리 + `eventRoomMode` 입력 배선만 한다.
  * pending/error는 모드 밖에서 게이트한다 (MSG-403 좌측 패널 정책 — AC 8·9).
- * ARCHIVED는 위치가 남아 있어도 archive가 우선이므로(AC 2) 게이트도 걸지 않는다.
+ * 종료 행사도 위치 선택 시 videos/empty로 열람한다(MSG-535 — readOnly가 표현을 가른다).
  * status는 상세 4값이 정본(MSG-519 — 패널이 상세 도착 전 칩 폴백을 주입), 생략 시 칩 값.
  */
 export const useEventRoomBody = (
@@ -56,6 +62,7 @@ export const useEventRoomBody = (
 
   return {
     mode,
+    readOnly: isArchivedEventStatus(status),
     location,
     videos: query.videos,
     hasNext: query.hasNext,

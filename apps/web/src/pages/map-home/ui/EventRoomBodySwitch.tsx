@@ -25,18 +25,26 @@ interface EventRoomBodySwitchProps {
   isLoadingMore: boolean;
   /** 카드 클릭 — 행사 미니 패널 열기/교체 (MSG-520 AC 1·2) */
   onVideoSelect: (video: EventLocationVideoResponseDto) => void;
+  /** 종료 행사 열람 (MSG-535 AC 5·6) — 위치 상세의 업로드 CTA 2곳을 억제한다 */
+  readOnly?: boolean;
 }
 
 /** 위치 선택 공통 상단 — 헤더 + 격자 안내 (AC 3·4) */
 const LocationTop = ({
   location,
   uploadVariant,
+  readOnly,
 }: {
   location: EventLocationSelection;
   uploadVariant: "primary" | "secondary";
+  readOnly: boolean;
 }) => (
   <>
-    <EventLocationHeader location={location} uploadVariant={uploadVariant} />
+    <EventLocationHeader
+      location={location}
+      uploadVariant={uploadVariant}
+      readOnly={readOnly}
+    />
     <EventLocationGridNotice gridCount={location.gridCount} />
   </>
 );
@@ -47,6 +55,7 @@ const LocationTop = ({
  * - MSG-517: overview → 행사 위치 개요 (배너·시청 인원·위치 목록) ✅
  * - MSG-518: videos → 위치별 영상 목록 · empty → 빈 상태 ✅
  * - MSG-519: archive → 종료 행사 아카이브 ✅
+ * - MSG-535: 아카이브 위치 선택 → videos/empty를 readOnly로 재사용 (클론 0) ✅
  */
 export const EventRoomBodySwitch = ({
   mode,
@@ -57,6 +66,7 @@ export const EventRoomBodySwitch = ({
   loadMore,
   isLoadingMore,
   onVideoSelect,
+  readOnly = false,
 }: EventRoomBodySwitchProps) => {
   switch (mode) {
     case "archive":
@@ -66,7 +76,11 @@ export const EventRoomBodySwitch = ({
       if (location === null) return null;
       return (
         <div className="flex flex-col gap-md">
-          <LocationTop location={location} uploadVariant="primary" />
+          <LocationTop
+            location={location}
+            uploadVariant="primary"
+            readOnly={readOnly}
+          />
           <section
             aria-label={eventLocationSectionTitle(location.name)}
             className="flex flex-col gap-sm"
@@ -101,8 +115,12 @@ export const EventRoomBodySwitch = ({
       return (
         <div className="flex flex-col gap-md">
           {/* 빈 상태(6612)의 헤더 버튼은 흰 배경 — 전폭 CTA가 유일한 primary */}
-          <LocationTop location={location} uploadVariant="secondary" />
-          <EventLocationEmptyState />
+          <LocationTop
+            location={location}
+            uploadVariant="secondary"
+            readOnly={readOnly}
+          />
+          <EventLocationEmptyState readOnly={readOnly} />
         </div>
       );
     case "overview":

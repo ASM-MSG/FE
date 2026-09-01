@@ -1,5 +1,12 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { EventLocationVideoResponseDto } from "@/shared/api/generated/types.gen";
 import {
   ARCHIVE_DETAIL,
   ARCHIVE_DETAIL_PATH,
@@ -200,5 +207,194 @@ describe("종료 행사 아카이브 본문 (MSG-519)", () => {
     await waitFor(() =>
       expect(screen.queryByText("지난 행사 기록")).toBeNull(),
     );
+  });
+});
+
+/**
+ * 아카이브 위치 행 클릭 스모크 (MSG-535) — 행 button화·읽기 전용 위치 상세 전환·
+ * 업로드 CTA 부재·헤더 타이틀 유지·뒤로가기 복귀만 고정한다. 모드 재판정 매트릭스는
+ * event-room-mode 테스트가, 문구 파생·커서 로직은 features/event 로직 테스트가 커버한다.
+ */
+const archiveVideo = (videoId: number): EventLocationVideoResponseDto => ({
+  videoId,
+  thumbnailUrl: `https://cdn.example.com/thumb-${videoId}.jpg`,
+  durationSec: 24,
+  createdAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+  helpfulCount: 18,
+  commentCount: 6,
+});
+
+const VIDEOS_PATH = /^\/api\/event-occurrences\/7\/locations\/(\d+)\/videos$/;
+
+const stubArchiveWithVideos = ({
+  videos = [archiveVideo(1)],
+  pendingVideos = false,
+}: {
+  videos?: EventLocationVideoResponseDto[];
+  pendingVideos?: boolean;
+} = {}) => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<(input: Request) => Promise<Response>>(async (request) => {
+      const { pathname } = new URL(request.url);
+      if (VIDEOS_PATH.test(pathname)) {
+        if (pendingVideos) return new Promise<Response>(() => {});
+        return envelopeResponse({ videos, hasNext: false, nextCursor: null });
+      }
+      if (pathname === ARCHIVE_LOCATIONS_PATH) {
+        return envelopeResponse(ARCHIVE_LOCATIONS);
+      }
+      if (pathname === ARCHIVE_DETAIL_PATH) {
+        return envelopeResponse(ARCHIVE_DETAIL);
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+};
+
+/** 방을 열고 아카이브 위치 목록까지 기다린다 — back 단계 검증을 위해 스토어 방을 연다 */
+const renderArchiveWithStore = async () => {
+  useEventRoomStore.getState().open(ROOM);
+  renderWithProviders(
+    <EventRoomPanel
+      room={ROOM}
+      onBack={() => useEventRoomStore.getState().back()}
+    />,
+  );
+  await screen.findByText("지난 행사 위치 2곳");
+};
+
+describe("아카이브 위치 행 클릭 — 읽기 전용 위치 상세 (MSG-535)", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    useEventRoomStore.setState(useEventRoomStore.getInitialState(), true);
+  });
+
+  it("위치 행이 시각 맥락을 포함한 접근명의 button으로 렌더된다 (AC 3)", async () => {
+    stubArchiveWithVideos();
+
+    await renderArchiveWithStore();
+
+    expect(
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 당시 영상 보기 — 영상 12",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "서면 포켓몬 게임존 당시 영상 보기 — 영상 8",
+      }),
+    ).toBeTruthy();
+  });
+
+  it("행을 클릭하면 그 위치의 당시 영상 목록으로 전환되고 헤더·메타는 선택 스냅숏이다 (AC 4)", async () => {
+    stubArchiveWithVideos();
+    await renderArchiveWithStore();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 당시 영상 보기 — 영상 12",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "부산역 웰컴 팝업" }),
+    ).toBeTruthy();
+    expect(screen.getByText("팝업")).toBeTruthy();
+    expect(screen.getByText("영상 12 · 10:00~18:00")).toBeTruthy();
+    expect(screen.getByText("이 위치의 행사 격자 3개")).toBeTruthy();
+    expect(screen.getByText("♥ 18 · 댓글 6")).toBeTruthy();
+  });
+
+  it("아카이브 위치 상세(videos)에 업로드 CTA가 없다 (AC 5 — MSG-519 AC 7 관통)", async () => {
+    stubArchiveWithVideos();
+    await renderArchiveWithStore();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 당시 영상 보기 — 영상 12",
+      }),
+    );
+    await screen.findByRole("heading", { name: "부산역 웰컴 팝업" });
+
+    expect(screen.queryByText("+ 영상 올리기")).toBeNull();
+    expect(screen.queryByRole("button", { name: /올리|업로드/ })).toBeNull();
+  });
+
+  it("영상 0건 위치는 읽기 전용 빈 상태다 — 보관 맥락 문구 + CTA 부재 (AC 6)", async () => {
+    stubArchiveWithVideos({ videos: [] });
+    await renderArchiveWithStore();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "서면 포켓몬 게임존 당시 영상 보기 — 영상 8",
+      }),
+    );
+
+    expect(
+      await screen.findByText("이 위치에 남은 영상이 없어요"),
+    ).toBeTruthy();
+    expect(screen.getByText("행사 기간에 올라온 영상이 없었어요")).toBeTruthy();
+    expect(screen.queryByText("현장 영상을 가장 먼저 남겨보세요")).toBeNull();
+    expect(screen.queryByRole("button", { name: /올리|업로드/ })).toBeNull();
+  });
+
+  it("위치 상세에 들어가도 패널 헤더는 '지난 행사 기록'을 유지한다 (AC 7)", async () => {
+    stubArchiveWithVideos();
+    await renderArchiveWithStore();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 당시 영상 보기 — 영상 12",
+      }),
+    );
+    await screen.findByRole("heading", { name: "부산역 웰컴 팝업" });
+
+    expect(
+      screen.getByRole("heading", { name: "지난 행사 기록" }),
+    ).toBeTruthy();
+  });
+
+  it("Escape 뒤로가기: 위치 상세 → 아카이브 개요 → 방 닫힘 — 기존 back() 단계 그대로 (AC 8)", async () => {
+    stubArchiveWithVideos();
+    await renderArchiveWithStore();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 당시 영상 보기 — 영상 12",
+      }),
+    );
+    await screen.findByRole("heading", { name: "부산역 웰컴 팝업" });
+
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
+
+    expect(useEventRoomStore.getState().location).toBeNull();
+    expect(await screen.findByText("지난 행사 위치 2곳")).toBeTruthy();
+
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
+
+    expect(useEventRoomStore.getState().room).toBeNull();
+  });
+
+  it("위치 영상 첫 페이지 로딩 동안 부분 렌더 없이 로더가 게이트한다 (AC 10)", async () => {
+    stubArchiveWithVideos({ pendingVideos: true });
+    await renderArchiveWithStore();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 당시 영상 보기 — 영상 12",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("status", { name: "현장 영상 불러오는 중" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("heading", { name: "부산역 웰컴 팝업" }),
+    ).toBeNull();
   });
 });
