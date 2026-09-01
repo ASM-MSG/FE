@@ -4,11 +4,13 @@ import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { EventRoomOverview } from "./EventRoomOverview";
+import { EventRoomPanel } from "./EventRoomPanel";
 
 /**
- * 행사 위치 개요 스모크 (MSG-517 AC 1·3·9·10·11) — 헤더(행사명·시청 인원·기간)·위치 카드
- * (표시 전용)·안내 배너(행사명 보간)·실패 재시도 계약만 고정. 라벨 산술·폴링 주기·파생
- * 세부는 features/event 로직 테스트가 커버한다.
+ * 행사 위치 개요 스모크 (MSG-517 AC 1·3·9·10·11 + MSG-534 기준 1·2·6) — 헤더(행사명·
+ * 시청 인원·기간)·위치 카드(button + 클릭 → 위치 상세 전이)·안내 배너(행사명 보간)·
+ * 실패 재시도 계약만 고정. 라벨 산술·폴링 주기·파생 세부는 features/event 로직 테스트가,
+ * 위치 상세 본문의 videos/empty 분기는 event-room-videos 스모크가 커버한다.
  */
 
 const DETAIL_DTO = {
@@ -60,6 +62,14 @@ const stubApis = ({ failDetail = false } = {}) => {
       if (pathname === "/api/event-occurrences/7/heartbeat") {
         return envelopeResponse(null);
       }
+      // 위치 선택 후 본문(MSG-518) — 시딩 0건과 같은 빈 페이지로 empty 모드까지 간다
+      if (pathname === "/api/event-occurrences/7/locations/11/videos") {
+        return envelopeResponse({
+          videos: [],
+          hasNext: false,
+          nextCursor: null,
+        });
+      }
       return envelopeResponse(null, 404);
     },
   );
@@ -97,16 +107,53 @@ describe("행사 위치 개요 (MSG-517)", () => {
     ).toBeTruthy();
   });
 
-  it("위치 카드는 이름·메타·영상 배지를 보이되 표시 전용이다 — 버튼 아님 (AC 9, 추정 6)", async () => {
+  // MSG-517 원판은 "카드는 표시 전용 — 버튼 아님"을 고정했으나(그때는 동작 없는 button이
+  // a11y 결함), MSG-534가 클릭 배선을 이어 슬롯을 해소했다 — 계약 교체
+  it("위치 카드는 이름·메타·영상 배지를 보이고 위치명이 담긴 button으로 낭독된다 (AC 9, MSG-534 기준 2)", async () => {
     stubApis();
     renderWithProviders(<EventRoomOverview />);
 
     expect(await screen.findByText("부산역 웰컴 팝업")).toBeTruthy();
     expect(screen.getByText("팝업 · 10:00–20:00")).toBeTruthy();
     expect(screen.getByText("영상 12")).toBeTruthy();
+    // aria-label이 접근명을 통째로 대체하므로 시각 노출 맥락(meta·videoBadge)까지
+    // 접근명에 포함한다 — PR #114 리뷰 반영, 전체 문자열로 고정
     expect(
-      screen.queryByRole("button", { name: /부산역 웰컴 팝업/ }),
-    ).toBeNull();
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 위치 영상 보기 — 팝업 · 10:00–20:00, 영상 12",
+      }),
+    ).toBeTruthy();
+  });
+
+  it("위치 카드를 클릭하면 스토어 location이 그 위치 스냅숏으로 채워지고 본문이 위치 상세로 전환된다 (MSG-534 기준 1·6)", async () => {
+    stubApis();
+    renderWithProviders(
+      <EventRoomPanel
+        room={{
+          occurrenceId: 7,
+          title: "포켓몬 메가페스타 부산",
+          status: "LIVE",
+        }}
+        onBack={() => useEventRoomStore.getState().back()}
+      />,
+    );
+    await screen.findByRole("heading", { name: "행사 위치 1곳" });
+
+    fireEvent.click(screen.getByRole("button", { name: /부산역 웰컴 팝업/ }));
+
+    expect(useEventRoomStore.getState().location).toEqual({
+      locationId: 11,
+      name: "부산역 웰컴 팝업",
+      type: "POPUP",
+      operatingHours: "10:00–20:00",
+      gridCount: 1,
+      videoCount: 12,
+    });
+    expect(
+      await screen.findByRole("heading", { name: "부산역 웰컴 팝업" }),
+    ).toBeTruthy();
+    expect(screen.getByText("이 위치의 행사 격자 1개")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "행사 위치 1곳" })).toBeNull();
   });
 
   it("조회 실패 시 재시도 행이 뜨고 재시도로 복구된다 (AC 10)", async () => {
