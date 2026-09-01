@@ -116,8 +116,12 @@ describe("행사 위치 개요 (MSG-517)", () => {
     expect(await screen.findByText("부산역 웰컴 팝업")).toBeTruthy();
     expect(screen.getByText("팝업 · 10:00–20:00")).toBeTruthy();
     expect(screen.getByText("영상 12")).toBeTruthy();
+    // aria-label이 접근명을 통째로 대체하므로 시각 노출 맥락(meta·videoBadge)까지
+    // 접근명에 포함한다 — PR #114 리뷰 반영, 전체 문자열로 고정
     expect(
-      screen.getByRole("button", { name: /부산역 웰컴 팝업/ }),
+      screen.getByRole("button", {
+        name: "부산역 웰컴 팝업 위치 영상 보기 — 팝업 · 10:00–20:00, 영상 12",
+      }),
     ).toBeTruthy();
   });
 
