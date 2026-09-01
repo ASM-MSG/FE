@@ -49,7 +49,9 @@ export const EventRoomPanel = ({ room, onBack }: EventRoomPanelProps) => {
           <ChevronLeft aria-hidden className="size-5" />
         </button>
         <h2 className="min-w-0 flex-1 truncate text-fm-title text-foreground">
-          {body.mode === "archive" ? "지난 행사 기록" : "이벤트"}
+          {/* mode가 아니라 readOnly 기준 (MSG-535 AC 7) — 아카이브 위치 상세(videos/empty)
+              진입에도 "지난 행사 기록"을 유지한다 */}
+          {body.readOnly ? "지난 행사 기록" : "이벤트"}
         </h2>
       </header>
       {detailQuery.isError ? (
@@ -80,6 +82,7 @@ export const EventRoomPanel = ({ room, onBack }: EventRoomPanelProps) => {
             loadMore={body.loadMore}
             isLoadingMore={body.isLoadingMore}
             onVideoSelect={(video) => selectVideo(video.videoId)}
+            readOnly={body.readOnly}
           />
         </div>
       )}
