@@ -787,7 +787,7 @@ export type RouteRecommendResponseDto = {
      */
     points: Array<RoutePointDto>;
     /**
-     * 후보 부족 안내 — 지점 3개 이상이면 null, 0~2개면 안내 문구
+     * 안내 문구 — 후보 부족(0~2개)이면 부족 안내, 여행과 무관한 문장(MSG-513)이면 무관 안내. 지점 3개 이상 정상 추천이면 null
      */
     notice: string | null;
     /**
@@ -1276,6 +1276,16 @@ export type PasswordResetRequestDto = {
      * 계정 이메일(아이디)
      */
     email: string;
+};
+
+/**
+ * 초기 비밀번호 설정 요청
+ */
+export type PasswordInitialRequestDto = {
+    /**
+     * 새 비밀번호. 영문과 숫자를 각각 하나 이상 포함한 8~64자
+     */
+    newPassword: string;
 };
 
 /**
@@ -5567,6 +5577,20 @@ export type RequestResetData = {
 };
 
 export type RequestResetResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type SetInitialPasswordData = {
+    body: PasswordInitialRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/initial';
+};
+
+export type SetInitialPasswordResponses = {
     /**
      * OK
      */

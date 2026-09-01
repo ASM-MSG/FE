@@ -1,0 +1,86 @@
+import type { ReactNode } from "react";
+import { Calendar, Home, IdCard } from "lucide-react";
+import { CONSOLE_ROUTES } from "@/app/console-routes";
+import type { ConsoleNavItem } from "./console-nav";
+
+/** 레일 섹션 — 사이드바 메뉴와 같은 계약 + 아이콘 */
+export interface ConsoleRailItem extends ConsoleNavItem {
+  icon: ReactNode;
+}
+
+/** 콘솔 변형(운영자·관리자)의 전체 설정 — 셸은 이 객체만 읽고 도메인 분기를 하지 않는다 */
+export interface ConsoleConfig {
+  /** 사이드바 제목 (고정 텍스트 — 조직명·이메일·뱃지는 후속 544·545 범위, 추정 6) */
+  title: string;
+  /** 레일 `<nav>` 접근 가능한 이름 */
+  railLabel: string;
+  rail: ConsoleRailItem[];
+  menu: ConsoleNavItem[];
+}
+
+/**
+ * 운영자 콘솔 설정 — SOURCE: Figma "[v2] [행사 운영자 2] 홈·신청 현황" (node 15525:8652)
+ * + "레일 / OpsRail" (15551:1906). 레일 2섹션(홈·행사), 사이드바 4메뉴.
+ * "등록 가이드"는 대응 티켓이 없지만 자리표시로 존치한다 (질문 7 (b) 확정).
+ */
+export const ORG_CONSOLE: ConsoleConfig = {
+  title: "행사 운영자 콘솔",
+  railLabel: "운영자 콘솔 섹션",
+  rail: [
+    {
+      key: "home",
+      label: "홈",
+      path: CONSOLE_ROUTES.orgHome,
+      icon: <Home className="size-full" />,
+    },
+    {
+      key: "events",
+      label: "행사",
+      path: CONSOLE_ROUTES.orgSubmissions,
+      icon: <Calendar className="size-full" />,
+    },
+  ],
+  menu: [
+    {
+      key: "status",
+      label: "신청 현황",
+      path: CONSOLE_ROUTES.orgHome,
+    },
+    {
+      key: "submission-new",
+      label: "새 행사 등록",
+      path: CONSOLE_ROUTES.orgSubmissionNew,
+    },
+    { key: "guide", label: "등록 가이드", path: CONSOLE_ROUTES.orgGuide },
+    { key: "settings", label: "계정 설정", path: CONSOLE_ROUTES.orgSettings },
+  ],
+};
+
+/**
+ * 관리자 콘솔 설정 — SOURCE: Figma "[v2] [관리자 2] 행사 심사 큐" (node 15525:9124).
+ * 레일 2섹션(계정·행사), 사이드바 2메뉴(행사 심사·승인 행사).
+ */
+export const ADMIN_CONSOLE: ConsoleConfig = {
+  title: "관리자 콘솔",
+  railLabel: "관리자 콘솔 섹션",
+  rail: [
+    {
+      key: "accounts",
+      label: "계정",
+      path: CONSOLE_ROUTES.adminAccounts,
+      icon: <IdCard className="size-full" />,
+    },
+    {
+      key: "events",
+      label: "행사",
+      path: CONSOLE_ROUTES.adminReview,
+      // 레일 "행사" 섹션이 심사 큐와 승인 행사를 함께 덮는다
+      matches: [CONSOLE_ROUTES.adminEvents],
+      icon: <Calendar className="size-full" />,
+    },
+  ],
+  menu: [
+    { key: "review", label: "행사 심사", path: CONSOLE_ROUTES.adminReview },
+    { key: "events", label: "승인 행사", path: CONSOLE_ROUTES.adminEvents },
+  ],
+};

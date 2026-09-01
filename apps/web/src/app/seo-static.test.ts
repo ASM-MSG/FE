@@ -113,12 +113,15 @@ describe("public/robots.txt · sitemap.xml (B1·B2)", () => {
     expect(text).toMatch(/^User-agent: \*$/m);
     expect(text).toMatch(/^Allow: \/$/m);
     // MSG-488: /ai-route는 로그인 전용 화면이라 색인 대상이 아니다 (L13)
+    // MSG-541: /org·/admin은 운영자·관리자 콘솔 — 색인 대상이 아니다 (AC 10)
     expect(disallows()).toEqual([
       "/dex",
       "/profile",
       "/oauth/",
       "/upload",
       "/ai-route",
+      "/org",
+      "/admin",
     ]);
     expect(text).toMatch(/^Sitemap: https:\/\/fillmap\.kr\/sitemap\.xml$/m);
   });
