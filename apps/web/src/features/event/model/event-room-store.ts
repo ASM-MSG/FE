@@ -18,7 +18,7 @@ interface EventRoomState {
    * 지도 강조 표시 전용이다.
    */
   highlightedLocationId: number | null;
-  /** 선택된 행사 위치 스냅숏 (MSG-518 AC 1) — null이면 개요. 클릭 배선은 MSG-517 몫 */
+  /** 선택된 행사 위치 스냅숏 (MSG-518 AC 1) — null이면 개요. 개요 위치 카드가 배선한다 (MSG-534) */
   location: EventLocationSelection | null;
   /**
    * 선택된 행사 영상 id (MSG-520 AC 1) — null이면 미니 패널 닫힘. 상세(재생 URL·

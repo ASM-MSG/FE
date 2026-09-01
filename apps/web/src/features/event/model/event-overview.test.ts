@@ -66,7 +66,14 @@ describe("toLocationCardViews — 위치 카드 뷰 파생 (AC 9)", () => {
       meta: "팝업 · 10:00–20:00",
       videoBadge: "영상 12",
       imageUrl: "https://cdn.example.com/popup.png",
+      dto: LOCATION_DTO,
     });
+  });
+
+  it("클릭 배선용 원본 DTO를 카드에 동반한다 — 화면이 id로 되짚지 않는다 (MSG-534 기준 1)", () => {
+    const [card] = toLocationCardViews([LOCATION_DTO]);
+
+    expect(card?.dto).toBe(LOCATION_DTO);
   });
 
   it("operatingHours가 null이면 메타에서 생략한다 — 유형 라벨만 남는다 (AC 9)", () => {

@@ -25,7 +25,7 @@ export const eventPeriodLabel = (startsAt: string, endsAt: string): string =>
 export const viewerCountLabel = (viewerCount: number | null): string | null =>
   viewerCount === null ? null : `${viewerCount}명 보는 중`;
 
-/** 위치 카드 하나의 뷰 재료 (AC 9) — 카드는 표시 전용(추정 6), 클릭은 MSG-518 슬롯 */
+/** 위치 카드 하나의 뷰 재료 (AC 9) — 클릭은 선택 스냅숏으로 이어진다 (MSG-534) */
 export interface EventLocationCardView {
   locationId: number;
   name: string;
@@ -35,6 +35,11 @@ export interface EventLocationCardView {
   videoBadge: string;
   /** 커버 이미지 — null이면 Thumbnail 폴백 (AC 9) */
   imageUrl: string | null;
+  /**
+   * 클릭 배선용 원본 DTO (MSG-534) — 카드 선택은 `toEventLocationSelection(dto)`가
+   * 스냅숏을 만든다. 뷰 파생 한 곳에서 짝을 보장해 화면이 id로 목록을 되짚지 않는다.
+   */
+  dto: EventLocationResponseDto;
 }
 
 /** 위치 목록 → 카드 뷰 (AC 9) — 서버 정렬(표시 순서 → id 오름차순)을 그대로 유지한다 */
@@ -50,4 +55,5 @@ export const toLocationCardViews = (
         : `${eventLocationTypeLabel(loc.type)} · ${loc.operatingHours}`,
     videoBadge: `영상 ${loc.videoCount}`,
     imageUrl: loc.imageUrl,
+    dto: loc,
   }));
