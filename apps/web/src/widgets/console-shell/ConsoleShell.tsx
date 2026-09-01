@@ -9,7 +9,7 @@ import { ConsoleSidebar } from "./ConsoleSidebar";
 
 /**
  * 콘솔 공통 셸 (MSG-541 AC 4·5) — 72px 아이콘 레일(ui-web `SideRail` 재사용 + 하단
- * 로그아웃 슬롯) + 250px 사이드바 + 본문(Outlet).
+ * 로그아웃 슬롯) + 280px 사이드바 + 본문(Outlet).
  *
  * 운영자·관리자 변형은 **설정 객체 2벌**(console-config)로 표현한다 — 컴포넌트 분기가 아니다.
  * MapShell·AppLayout 밖 최상위 레이아웃이라 사이드레일 내비·로그인 모달·위치동의 게이트가

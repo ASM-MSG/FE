@@ -20,14 +20,18 @@ import { getStatusOptions } from "@/shared/api/generated/@tanstack/react-query.g
  *
  * 착지 경로 자신에서는 null을 돌려준다 — 그러지 않으면 setup 화면이 자기 자신으로
  * 무한 리다이렉트된다. app 레이어 라우팅 코드라 라우터 참조는 경계 규칙 안이다.
+ *
+ * `enabled`는 호출자(가드)의 통과 판정과 AND로 묶인다 — Rules of Hooks 때문에 가드가
+ * 거부할 세션에서도 훅 자체는 호출되는데, 그 세션에까지 status 요청을 내보낼 이유가
+ * 없다(PR #116 리뷰 반영). 거부 화면은 게이트 판정보다 먼저 렌더되므로 동작은 불변이다.
  */
-export const useMustChangeGate = (): string | null => {
+export const useMustChangeGate = (enabled: boolean = true): string | null => {
   const { role } = useSessionRole();
   const { pathname } = useLocation();
   const isConsoleSession = role === "ORG" || role === "ADMIN";
   const { data } = useQuery({
     ...getStatusOptions(),
-    enabled: isConsoleSession,
+    enabled: isConsoleSession && enabled,
     retry: false,
     select: unwrapEnvelope,
   });

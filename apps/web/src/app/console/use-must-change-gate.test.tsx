@@ -23,8 +23,8 @@ const wrapperAt = (route: string) => {
   return Wrapper;
 };
 
-const renderGate = (route: string) =>
-  renderHook(() => useMustChangeGate(), { wrapper: wrapperAt(route) });
+const renderGate = (route: string, enabled?: boolean) =>
+  renderHook(() => useMustChangeGate(enabled), { wrapper: wrapperAt(route) });
 
 describe("useMustChangeGate — 첫 로그인 비밀번호 강제 설정 게이트 (AC 9)", () => {
   afterEach(() => {
@@ -92,6 +92,20 @@ describe("useMustChangeGate — 첫 로그인 비밀번호 강제 설정 게이�
     const { result } = renderGate(CONSOLE_ROUTES.orgHome);
 
     await waitFor(() => expect(result.current).toBeNull());
+  });
+
+  it("enabled=false면 콘솔 세션이라도 상태 조회를 발사하지 않는다 — 가드가 거부할 세션의 여분 요청 차단 (PR #116 리뷰)", async () => {
+    signInForTest();
+    const received = consoleSessionFetch("ORG", { mustChange: true });
+    const urls = () =>
+      received.map(({ request }) => new URL(request.url).pathname);
+
+    const { result } = renderGate(CONSOLE_ROUTES.adminReview, false);
+
+    // role 확정(getMe 도착)까지 기다린 뒤에도 상태 조회가 없어야 한다
+    await waitFor(() => expect(urls()).toContain("/api/users/me"));
+    await waitFor(() => expect(result.current).toBeNull());
+    expect(urls()).not.toContain("/api/auth/password/status");
   });
 
   it("USER 세션은 상태 조회를 발사하지 않는다 — 콘솔 세션만 게이트 대상 (AC 9)", async () => {

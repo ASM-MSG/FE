@@ -29,7 +29,8 @@ export const ConsoleRoleGuard = ({
   reject,
 }: ConsoleRoleGuardProps) => {
   const { role, isPending } = useSessionRole();
-  const mustChangeRedirect = useMustChangeGate();
+  // 통과 판정과 AND — 거부될 세션(예: ORG의 /admin 진입)에 status 요청을 내보내지 않는다
+  const mustChangeRedirect = useMustChangeGate(allows(role));
 
   if (isPending) return <ConsoleGuardFallback />;
   if (!allows(role)) return reject;
