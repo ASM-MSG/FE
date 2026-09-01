@@ -13,6 +13,11 @@ interface SideRailProps {
   onSelect?: (key: string) => void;
   /** 상단 로고 슬롯 (40×40) */
   logo?: ReactNode;
+  /**
+   * 하단 고정 슬롯 (MSG-541) — 목록 아래 남은 공간을 밀어내고 레일 바닥에 붙는다.
+   * 콘솔 레일의 로그아웃 자리. 미지정 시 렌더 결과가 종전과 동일하다.
+   */
+  footer?: ReactNode;
   className?: string;
   /** `<nav>`의 접근 가능한 이름 — 랜드마크가 여럿일 때 스크린리더가 구분한다 (MSG-478 D3). 미지정 시 렌더 불변 */
   "aria-label"?: string;
@@ -35,6 +40,7 @@ export const SideRail = ({
   activeKey,
   onSelect,
   logo,
+  footer,
   className,
   "aria-label": ariaLabel,
 }: SideRailProps) => (
@@ -71,5 +77,6 @@ export const SideRail = ({
         </button>
       );
     })}
+    {footer && <div className="mt-auto shrink-0">{footer}</div>}
   </nav>
 );
