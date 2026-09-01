@@ -1190,32 +1190,6 @@
       ]
     },
     {
-      "id": "12b716854768f78c",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "26cbbb5b81ab8ada",
-          "source_digest": "fnv1a64:c42787d85f9e5541",
-          "file": "apps/web/src/pages/map-home/ui/event-room-overview.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 14,
-          "end_line": 43,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "235df9114c42c2b3",
-          "source_digest": "fnv1a64:1f570dd7c481f320",
-          "file": "apps/web/src/features/event/model/use-event-detail-query.test.tsx",
-          "lang": "typescript",
-          "start_line": 8,
-          "end_line": 26,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "130a3acbcb273ad7",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -6073,34 +6047,6 @@
       ]
     },
     {
-      "id": "6467bc8def987497",
-      "note": "consolidate `h4` — 2 copies",
-      "members": [
-        {
-          "id": "d5896b621fd54320",
-          "source_digest": "fnv1a64:7664b4154dccbfa1",
-          "file": "apps/web/src/pages/map-home/ui/EventArchiveBody.tsx",
-          "lang": "typescript",
-          "start_line": 66,
-          "end_line": 68,
-          "kind": "Block",
-          "name": "h4",
-          "is_fragment": false
-        },
-        {
-          "id": "32ce540b10ddef10",
-          "source_digest": "fnv1a64:991d4a28dbebe3d0",
-          "file": "apps/web/src/pages/map-home/ui/EventRoomOverview.tsx",
-          "lang": "typescript",
-          "start_line": 89,
-          "end_line": 91,
-          "kind": "Block",
-          "name": "h4",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "6609ad4b7dd7f779",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -6228,45 +6174,6 @@
           "start_line": 1,
           "end_line": 16,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "6ab19c7c8fe755e7",
-      "note": "consolidate `p` — 3 copies",
-      "members": [
-        {
-          "id": "a50eb6941f0a09ce",
-          "source_digest": "fnv1a64:ef42c09573b25183",
-          "file": "apps/web/src/pages/map-home/ui/MissionDetailPanel.tsx",
-          "lang": "typescript",
-          "start_line": 106,
-          "end_line": 113,
-          "kind": "Block",
-          "name": "p",
-          "is_fragment": false
-        },
-        {
-          "id": "6ef6c51a17df9321",
-          "source_digest": "fnv1a64:b037f670c8179763",
-          "file": "apps/web/src/pages/dex/ui/UploadHistoryModal.tsx",
-          "lang": "typescript",
-          "start_line": 79,
-          "end_line": 81,
-          "kind": "Block",
-          "name": "p",
-          "is_fragment": false
-        },
-        {
-          "id": "e94cb0e8d2ea17da",
-          "source_digest": "fnv1a64:c4920e714a3c92cc",
-          "file": "apps/web/src/pages/map-home/ui/EventRoomOverview.tsx",
-          "lang": "typescript",
-          "start_line": 107,
-          "end_line": 109,
-          "kind": "Block",
-          "name": "p",
           "is_fragment": false
         }
       ]
@@ -7099,52 +7006,6 @@
           "lang": "typescript",
           "start_line": 94,
           "end_line": 103,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "779d806bde300d9f",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "3525108e0e564d8a",
-          "source_digest": "fnv1a64:f523199e863ebd70",
-          "file": "apps/web/src/features/event/model/event-room-store.test.ts",
-          "lang": "typescript",
-          "start_line": 241,
-          "end_line": 256,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "82ead881a3091280",
-          "source_digest": "fnv1a64:f72a9a428934567b",
-          "file": "apps/web/src/features/event/model/event-room-store.test.ts",
-          "lang": "typescript",
-          "start_line": 96,
-          "end_line": 108,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "568bb75d048c3810",
-          "source_digest": "fnv1a64:9f7ed0e8f9d60f36",
-          "file": "apps/web/src/pages/map-home/ui/event-room-overview.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 72,
-          "end_line": 83,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "919f9a90becb7252",
-          "source_digest": "fnv1a64:fa96b9c4e391b056",
-          "file": "apps/web/src/features/event/model/event-room-store.test.ts",
-          "lang": "typescript",
-          "start_line": 154,
-          "end_line": 160,
           "kind": "Block",
           "is_fragment": false
         }
@@ -10264,32 +10125,6 @@
       ]
     },
     {
-      "id": "a60d0d0c75cb3da9",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "0b4d21350e5315de",
-          "source_digest": "fnv1a64:d7fe8130ac42cd7c",
-          "file": "apps/web/src/pages/map-home/ui/event-room-overview.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 29,
-          "end_line": 68,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "06b3a6bce2fe5a1a",
-          "source_digest": "fnv1a64:b2a80537ed55d77f",
-          "file": "apps/web/src/features/event/model/use-event-locations-query.test.tsx",
-          "lang": "typescript",
-          "start_line": 11,
-          "end_line": 33,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "a6473e1d920a77f5",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (9 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -12408,6 +12243,52 @@
       ]
     },
     {
+      "id": "cac18c74afea234f",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "3525108e0e564d8a",
+          "source_digest": "fnv1a64:f523199e863ebd70",
+          "file": "apps/web/src/features/event/model/event-room-store.test.ts",
+          "lang": "typescript",
+          "start_line": 241,
+          "end_line": 256,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "82ead881a3091280",
+          "source_digest": "fnv1a64:f72a9a428934567b",
+          "file": "apps/web/src/features/event/model/event-room-store.test.ts",
+          "lang": "typescript",
+          "start_line": 96,
+          "end_line": 108,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "ec305d87c192f1f8",
+          "source_digest": "fnv1a64:9f7ed0e8f9d60f36",
+          "file": "apps/web/src/pages/map-home/ui/event-room-overview.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 82,
+          "end_line": 93,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "919f9a90becb7252",
+          "source_digest": "fnv1a64:fa96b9c4e391b056",
+          "file": "apps/web/src/features/event/model/event-room-store.test.ts",
+          "lang": "typescript",
+          "start_line": 154,
+          "end_line": 160,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "caef3ae6a0f26275",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (7 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -12597,6 +12478,34 @@
           "start_line": 44,
           "end_line": 62,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "cd4558398ca0d507",
+      "note": "consolidate `h4` — 2 copies",
+      "members": [
+        {
+          "id": "d5896b621fd54320",
+          "source_digest": "fnv1a64:7664b4154dccbfa1",
+          "file": "apps/web/src/pages/map-home/ui/EventArchiveBody.tsx",
+          "lang": "typescript",
+          "start_line": 66,
+          "end_line": 68,
+          "kind": "Block",
+          "name": "h4",
+          "is_fragment": false
+        },
+        {
+          "id": "89e3510e7e697a38",
+          "source_digest": "fnv1a64:991d4a28dbebe3d0",
+          "file": "apps/web/src/pages/map-home/ui/EventRoomOverview.tsx",
+          "lang": "typescript",
+          "start_line": 93,
+          "end_line": 95,
+          "kind": "Block",
+          "name": "h4",
           "is_fragment": false
         }
       ]
@@ -13076,6 +12985,45 @@
           "start_line": 33,
           "end_line": 45,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d4616a8a672a3947",
+      "note": "consolidate `p` — 3 copies",
+      "members": [
+        {
+          "id": "a50eb6941f0a09ce",
+          "source_digest": "fnv1a64:ef42c09573b25183",
+          "file": "apps/web/src/pages/map-home/ui/MissionDetailPanel.tsx",
+          "lang": "typescript",
+          "start_line": 106,
+          "end_line": 113,
+          "kind": "Block",
+          "name": "p",
+          "is_fragment": false
+        },
+        {
+          "id": "6ef6c51a17df9321",
+          "source_digest": "fnv1a64:b037f670c8179763",
+          "file": "apps/web/src/pages/dex/ui/UploadHistoryModal.tsx",
+          "lang": "typescript",
+          "start_line": 79,
+          "end_line": 81,
+          "kind": "Block",
+          "name": "p",
+          "is_fragment": false
+        },
+        {
+          "id": "3dd3c1407ba8bd92",
+          "source_digest": "fnv1a64:c4920e714a3c92cc",
+          "file": "apps/web/src/pages/map-home/ui/EventRoomOverview.tsx",
+          "lang": "typescript",
+          "start_line": 117,
+          "end_line": 119,
+          "kind": "Block",
+          "name": "p",
           "is_fragment": false
         }
       ]
@@ -14416,6 +14364,32 @@
           "lang": "typescript",
           "start_line": 174,
           "end_line": 185,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "e41a855c1a5ee7e0",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "306830e3f70b206e",
+          "source_digest": "fnv1a64:c42787d85f9e5541",
+          "file": "apps/web/src/pages/map-home/ui/event-room-overview.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 45,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "235df9114c42c2b3",
+          "source_digest": "fnv1a64:1f570dd7c481f320",
+          "file": "apps/web/src/features/event/model/use-event-detail-query.test.tsx",
+          "lang": "typescript",
+          "start_line": 8,
+          "end_line": 26,
           "kind": "Block",
           "is_fragment": false
         }
@@ -15919,6 +15893,32 @@
           "lang": "typescript",
           "start_line": 153,
           "end_line": 157,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "fd1e47181e2a3815",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "b6cfa2eb28de7faa",
+          "source_digest": "fnv1a64:4242acf45c608c66",
+          "file": "apps/web/src/pages/map-home/ui/event-room-overview.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 31,
+          "end_line": 78,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "06b3a6bce2fe5a1a",
+          "source_digest": "fnv1a64:b2a80537ed55d77f",
+          "file": "apps/web/src/features/event/model/use-event-locations-query.test.tsx",
+          "lang": "typescript",
+          "start_line": 11,
+          "end_line": 33,
           "kind": "Block",
           "is_fragment": false
         }

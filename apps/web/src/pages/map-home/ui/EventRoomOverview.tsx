@@ -1,4 +1,5 @@
 import { RetryNotice, Skeleton } from "@fillmap/ui-web";
+import { toEventLocationSelection } from "@/features/event/model/event-location";
 import {
   eventPeriodLabel,
   toLocationCardViews,
@@ -23,6 +24,9 @@ import { EventLocationCard } from "./EventLocationCard";
  */
 export const EventRoomOverview = () => {
   const room = useEventRoomStore((s) => s.room);
+  // 카드 클릭 → 위치 상세 진입 (MSG-534) — 지도 격자 클릭의 highlightLocation(표시 전용,
+  // MSG-517 AC 7)과 다른 슬롯이다. 합치면 격자 클릭이 상세로 새어 들어간다
+  const selectLocation = useEventRoomStore((s) => s.selectLocation);
   const occurrenceId = room?.occurrenceId ?? null;
 
   const detail = useEventDetailQuery(occurrenceId);
@@ -84,7 +88,7 @@ export const EventRoomOverview = () => {
         </p>
       </header>
 
-      {/* 위치 목록 (AC 1·9) — 카드는 표시 전용, 선택 진입은 MSG-518 슬롯 */}
+      {/* 위치 목록 (AC 1·9) — 카드 클릭이 그 위치의 영상 상세로 진입한다 (MSG-534) */}
       <section aria-label="행사 위치" className="flex flex-col gap-xs">
         <h4 className="text-fm-body-strong text-foreground">
           행사 위치 {cards.length}곳
@@ -94,7 +98,13 @@ export const EventRoomOverview = () => {
         </p>
         <ul className="flex flex-col gap-xs">
           {cards.map((card) => (
-            <EventLocationCard key={card.locationId} card={card} />
+            <EventLocationCard
+              key={card.locationId}
+              card={card}
+              onSelect={() =>
+                selectLocation(toEventLocationSelection(card.dto))
+              }
+            />
           ))}
         </ul>
       </section>
