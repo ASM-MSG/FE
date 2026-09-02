@@ -59,6 +59,8 @@ export const ConsoleShell = ({ config }: { config: ConsoleConfig }) => {
         items={config.menu}
         activeKey={activeConsoleNavKey(pathname, config.menu)}
         onSelect={(path) => navigate(path)}
+        header={config.sidebarHeader}
+        footer={config.sidebarFooter}
       />
       <main className="flex flex-1 flex-col overflow-y-auto p-10">
         <Outlet />

@@ -11,8 +11,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { CONSOLE_ROUTES } from "@/app/console-routes";
 import { consoleRoutes } from "@/app/router";
 import { signInForTest, signOutForTest } from "@/test/auth-session";
+import { consoleSessionFetch } from "@/test/console-session";
 import { envelopeResponse } from "@/test/envelope-response";
-import { stubFetch } from "@/test/stub-fetch";
 
 /**
  * mustChange 강제 이동 라우팅 통합 스모크 (MSG-542 AC 4·7) — 실제 콘솔 라우트 등록
@@ -25,27 +25,24 @@ import { stubFetch } from "@/test/stub-fetch";
  * fetch 스텁의 `mustChange`는 initial 성공에 맞춰 뒤집힌다 — 서버가 강제 변경 상태를
  * 실제로 해제하기 때문이다(그러지 않으면 캐시 갱신만으로 통과하는 오탐이 된다).
  */
-const PROFILE = {
-  email: "tourism@busan.go.kr",
-  nickname: "부산광역시 관광마이스과",
-  profileImageUrl: null,
-  createdAt: "2026-08-01T00:00:00Z",
-  locationConsent: true,
-  role: "ORG" as const,
-};
-
+/**
+ * 공용 콘솔 스텁 위에 mustChange 동적 뒤집기만 얹는다 — 게이트 통과 후 착지하는
+ * 운영자 홈(MSG-545 실구현)이 부르는 org 응답들은 공용 스텁의 빈 상태를 물려받는다.
+ */
 const mustChangeSessionFetch = () => {
   let mustChange = true;
-  return stubFetch((request) => {
-    const { pathname } = new URL(request.url);
-    if (pathname === "/api/auth/password/initial") {
-      mustChange = false;
-      return envelopeResponse(null);
-    }
-    if (pathname === "/api/auth/password/status") {
-      return envelopeResponse({ mustChange });
-    }
-    return envelopeResponse(PROFILE);
+  return consoleSessionFetch("ORG", {
+    overrides: (request) => {
+      const { pathname } = new URL(request.url);
+      if (pathname === "/api/auth/password/initial") {
+        mustChange = false;
+        return envelopeResponse(null);
+      }
+      if (pathname === "/api/auth/password/status") {
+        return envelopeResponse({ mustChange });
+      }
+      return null;
+    },
   });
 };
 
@@ -125,7 +122,8 @@ describe("mustChange 강제 설정 게이트와 설정 화면의 협업 (AC 4·7
     );
 
     expect(
-      await screen.findByRole("heading", { name: "신청 현황", level: 1 }),
+      // MSG-545가 /org 실구현과 함께 h1을 "신청 현황" → "내 행사 신청"으로 바꿨다
+      await screen.findByRole("heading", { name: "내 행사 신청", level: 1 }),
     ).toBeDefined();
     expect(router.state.location.pathname).toBe(CONSOLE_ROUTES.orgHome);
   });

@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { Calendar, Home, IdCard } from "lucide-react";
 import { CONSOLE_ROUTES } from "@/app/console-routes";
 import type { ConsoleNavItem } from "./console-nav";
+import { OrgPermissionNotice } from "./OrgPermissionNotice";
+import { OrgSidebarProfile } from "./OrgSidebarProfile";
 
 /** 레일 섹션 — 사이드바 메뉴와 같은 계약 + 아이콘 */
 export interface ConsoleRailItem extends ConsoleNavItem {
@@ -10,22 +12,30 @@ export interface ConsoleRailItem extends ConsoleNavItem {
 
 /** 콘솔 변형(운영자·관리자)의 전체 설정 — 셸은 이 객체만 읽고 도메인 분기를 하지 않는다 */
 export interface ConsoleConfig {
-  /** 사이드바 제목 (고정 텍스트 — 조직명·이메일·뱃지는 후속 544·545 범위, 추정 6) */
+  /** 사이드바 제목 (고정 텍스트) */
   title: string;
   /** 레일 `<nav>` 접근 가능한 이름 */
   railLabel: string;
   rail: ConsoleRailItem[];
   menu: ConsoleNavItem[];
+  /** 사이드바 제목 아래 계정 정보 슬롯 — 미지정이면 렌더 불변 (MSG-545) */
+  sidebarHeader?: ReactNode;
+  /** 사이드바 하단 안내 슬롯 — 미지정이면 렌더 불변 (MSG-545) */
+  sidebarFooter?: ReactNode;
 }
 
 /**
  * 운영자 콘솔 설정 — SOURCE: Figma "[v2] [행사 운영자 2] 홈·신청 현황" (node 15525:8652)
  * + "레일 / OpsRail" (15551:1906). 레일 2섹션(홈·행사), 사이드바 4메뉴.
  * "등록 가이드"는 대응 티켓이 없지만 자리표시로 존치한다 (질문 7 (b) 확정).
+ * 사이드바 슬롯 2종(계정 정보·행사 등록 권한 안내)은 MSG-545에서 배선했다 —
+ * `ADMIN_CONSOLE`은 슬롯을 주지 않아 렌더가 불변이다.
  */
 export const ORG_CONSOLE: ConsoleConfig = {
   title: "행사 운영자 콘솔",
   railLabel: "운영자 콘솔 섹션",
+  sidebarHeader: <OrgSidebarProfile />,
+  sidebarFooter: <OrgPermissionNotice />,
   rail: [
     {
       key: "home",
