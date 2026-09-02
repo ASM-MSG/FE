@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { RegionAggregateResponseDto } from "../../../shared/api/sdk";
+import type {
+  HotZoneRegionAggregateResponseDto,
+  MissionRegionAggregateResponseDto,
+  RegionAggregateResponseDto,
+} from "../../../shared/api/sdk";
 import type { AggregationUnit } from "./aggregation-unit";
 import * as mobileClusterOverlay from "./region-cluster-overlay";
 
@@ -18,6 +22,8 @@ const WEB_CLUSTER_OVERLAY_PATH = new URL(
 interface WebClusterOverlay {
   MARKER_MERGE_PX: typeof mobileClusterOverlay.MARKER_MERGE_PX;
   toRegionClusterMarkers: typeof mobileClusterOverlay.toRegionClusterMarkers;
+  toMissionClusterMarkers: typeof mobileClusterOverlay.toMissionClusterMarkers;
+  toHotZoneClusterMarkers: typeof mobileClusterOverlay.toHotZoneClusterMarkers;
   mergeOverlappingMarkers: typeof mobileClusterOverlay.mergeOverlappingMarkers;
 }
 
@@ -202,5 +208,132 @@ describe("mergeOverlappingMarkers 동등성 (L8·L9)", () => {
         MERGE_ZOOM,
       ),
     ).toHaveLength(1);
+  });
+});
+
+/**
+ * L4' (MSG-558 확장): 칩 집계 마커 파생 — 웹 `toMissionClusterMarkers`·`toHotZoneClusterMarkers`
+ * (MSG-451·475) 포팅. `theme` 키는 **있을 때만 만든다**(`theme: undefined` 아님) — `toEqual`은
+ * undefined 키를 무시하므로 여기서는 `toStrictEqual`로 키 부재까지 고정한다(R13).
+ */
+const MISSION_ITEMS: MissionRegionAggregateResponseDto[] = DONG_ITEMS.map(
+  (entry) => ({ ...entry, missionIds: [] }),
+);
+const HOT_ITEMS: HotZoneRegionAggregateResponseDto[] = DONG_ITEMS.map(
+  (entry) => ({ ...entry, gridIds: [] }),
+);
+
+describe("칩 집계 마커 파생 동등성 (L4')", () => {
+  it("① toRegionClusterMarkers 출력은 불변이고 theme 키 자체가 없다", async () => {
+    const web = await loadWebClusterOverlay();
+
+    const markers = mobileClusterOverlay.toRegionClusterMarkers(
+      DONG_ITEMS,
+      "DONG",
+    );
+
+    expect(markers).toStrictEqual(
+      web.toRegionClusterMarkers(DONG_ITEMS, "DONG"),
+    );
+    expect(markers[0]).toStrictEqual({
+      id: "agg-DONG-2623051000",
+      name: "부전2동",
+      count: 31,
+      position: { lat: 35.1579, lng: 129.0594 },
+      unit: "DONG",
+    });
+    expect("theme" in markers[0]).toBe(false);
+  });
+
+  it("② toMissionClusterMarkers는 id 접두 `mission-${theme}` + theme 필드를 갖는다 — 축제·팝업 웹과 전건 동일", async () => {
+    const web = await loadWebClusterOverlay();
+
+    for (const theme of ["festival", "popup"] as const) {
+      const markers = mobileClusterOverlay.toMissionClusterMarkers(
+        MISSION_ITEMS,
+        "DONG",
+        theme,
+      );
+
+      expect(markers).toStrictEqual(
+        web.toMissionClusterMarkers(MISSION_ITEMS, "DONG", theme),
+      );
+      expect(markers[0].id).toBe(`mission-${theme}-DONG-2623051000`);
+      expect(markers[2].id).toBe(`mission-${theme}-DONG-unassigned-0`);
+      expect(markers.every((marker) => marker.theme === theme)).toBe(true);
+    }
+  });
+
+  it("③ toHotZoneClusterMarkers는 id 접두 `hot` + theme 'hot'이다 — 시도명 축약 포함 웹과 전건 동일", async () => {
+    const web = await loadWebClusterOverlay();
+    const sidoItems: HotZoneRegionAggregateResponseDto[] = [
+      {
+        regionCode: "26",
+        name: "부산광역시",
+        lat: 35.18,
+        lng: 129.08,
+        count: 214,
+        gridIds: [],
+      },
+    ];
+
+    const markers = mobileClusterOverlay.toHotZoneClusterMarkers(
+      HOT_ITEMS,
+      "DONG",
+    );
+    const sido = mobileClusterOverlay.toHotZoneClusterMarkers(
+      sidoItems,
+      "SIDO",
+    );
+
+    expect(markers).toStrictEqual(
+      web.toHotZoneClusterMarkers(HOT_ITEMS, "DONG"),
+    );
+    expect(sido).toStrictEqual(web.toHotZoneClusterMarkers(sidoItems, "SIDO"));
+    expect(markers[0].id).toBe("hot-DONG-2623051000");
+    expect(markers[0].theme).toBe("hot");
+    expect(sido[0]).toMatchObject({
+      id: "hot-SIDO-26",
+      name: "부산",
+      theme: "hot",
+    });
+  });
+
+  it("④ 병합 마커는 앵커의 theme을 승계하고, 테마 없는 입력의 병합 마커는 theme 키가 없다", async () => {
+    const web = await loadWebClusterOverlay();
+    // 임계 안쪽 10px의 두 동 — ②가 파생을 덮으므로 여기서는 같은 마커에 theme만 얹는다
+    const plainMarkers = apartByPx(10, "DONG");
+    const popupMarkers = plainMarkers.map((marker) => ({
+      ...marker,
+      theme: "popup" as const,
+    }));
+
+    const mergedPopup = mobileClusterOverlay.mergeOverlappingMarkers(
+      popupMarkers,
+      MERGE_ZOOM,
+    );
+    const mergedPlain = mobileClusterOverlay.mergeOverlappingMarkers(
+      plainMarkers,
+      MERGE_ZOOM,
+    );
+
+    expect(mergedPopup).toHaveLength(1);
+    expect(mergedPopup[0].theme).toBe("popup");
+    expect(mergedPopup).toStrictEqual(
+      web.mergeOverlappingMarkers(popupMarkers, MERGE_ZOOM),
+    );
+    expect(mergedPlain).toHaveLength(1);
+    expect("theme" in mergedPlain[0]).toBe(false);
+    expect(mergedPlain).toStrictEqual(
+      web.mergeOverlappingMarkers(plainMarkers, MERGE_ZOOM),
+    );
+  });
+
+  it("⑤ MARKER_MERGE_PX(68/80/92)는 테마 마커에도 같은 임계로 쓰인다 — 값 불변 (C7)", () => {
+    expect(mobileClusterOverlay.MARKER_MERGE_PX).toStrictEqual({
+      DONG: 68,
+      SIGUNGU: 80,
+      SIDO: 92,
+    });
   });
 });

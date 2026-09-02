@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClusterCount } from "./cluster-format";
+import { clusterMarkerLabel, formatClusterCount } from "./cluster-format";
 
 /**
  * L10: 마커 개수 서식 — 천 단위 구분. 웹은 `toLocaleString("ko-KR")`을 쓰지만 Hermes의
@@ -34,5 +34,49 @@ describe("formatClusterCount (L10)", () => {
     expect(formatClusterCount(-1)).toBe("-1");
     expect(formatClusterCount(-1234)).toBe("-1,234");
     expect(formatClusterCount(-1234567)).toBe("-1,234,567");
+  });
+});
+
+/**
+ * L11 (MSG-558 확장): 말풍선 접근명 — 웹 `MapCanvas.clusterMarkerTitle`과 같은 4경우.
+ * 주어는 칩 라벨(`THEME_META[theme].label`), 칩이 없으면 "점령 격자".
+ */
+describe("clusterMarkerLabel (L11)", () => {
+  const base = {
+    id: "x",
+    position: { lat: 0, lng: 0 },
+    unit: "DONG" as const,
+  };
+
+  it("theme이 없으면 '{name} 점령 격자 N개'다 — 종전 접근명 보존", () => {
+    expect(clusterMarkerLabel({ ...base, name: "부전2동", count: 31 })).toBe(
+      "부전2동 점령 격자 31개",
+    );
+  });
+
+  it("theme이 있으면 주어가 칩 라벨이다 — 핫구역·지역축제·팝업스토어", () => {
+    expect(
+      clusterMarkerLabel({ ...base, name: "부전2동", count: 4, theme: "hot" }),
+    ).toBe("부전2동 핫구역 4개");
+    expect(
+      clusterMarkerLabel({
+        ...base,
+        name: "동구",
+        count: 2,
+        theme: "festival",
+      }),
+    ).toBe("동구 지역축제 2개");
+    expect(
+      clusterMarkerLabel({ ...base, name: "서구", count: 7, theme: "popup" }),
+    ).toBe("서구 팝업스토어 7개");
+  });
+
+  it("name이 null이면 이름을 생략한다 — 테마 유무 양쪽", () => {
+    expect(clusterMarkerLabel({ ...base, name: null, count: 3 })).toBe(
+      "점령 격자 3개",
+    );
+    expect(
+      clusterMarkerLabel({ ...base, name: null, count: 3, theme: "festival" }),
+    ).toBe("지역축제 3개");
   });
 });
