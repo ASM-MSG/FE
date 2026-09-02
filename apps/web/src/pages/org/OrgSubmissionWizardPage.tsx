@@ -33,12 +33,15 @@ export const OrgSubmissionWizardPage = () => {
 
   useEffect(() => {
     reset();
-    // 이탈 시 미리보기 blob 해제 — 비영속 스토어라 재진입은 항상 리셋이므로(추정 4)
-    // 남겨둘 이유가 없다 (codex 리뷰 P2)
+    // 이탈 시 blob 해제 → 스토어 리셋 (codex 리뷰 P2 ×2) — 언마운트에서 리셋해야
+    // 재진입 첫 프레임에 이전 스텝·값이 잠깐 렌더되지 않는다(마운트 effect는 post-paint).
+    // 마운트 리셋은 방어용으로 유지한다(정리 후 재진입에선 no-op). 해제가 리셋보다
+    // 먼저여야 previewUrl이 지워지기 전에 blob을 놓아준다.
     return () => {
       revokeBlobPreviewUrl(
         useSubmissionWizardStore.getState().image.previewUrl,
       );
+      reset();
     };
   }, [reset]);
 

@@ -97,3 +97,39 @@ describe("미리보기 blob URL 해제 (codex 리뷰 P2)", () => {
     expect(revoked).toEqual(["blob:x"]);
   });
 });
+
+describe("위저드 이탈 시 정리 (codex 리뷰 P2 — 재진입 첫 프레임 잔상 차단)", () => {
+  it("페이지를 떠나면 blob 해제 후 스토어가 초기화된다", async () => {
+    const revoked: string[] = [];
+    URL.createObjectURL = vi.fn(() => "blob:leaving");
+    URL.revokeObjectURL = vi.fn((url: string) => {
+      revoked.push(url);
+    });
+
+    const store = useSubmissionWizardStore.getState();
+    store.reset();
+    const { OrgSubmissionWizardPage } =
+      await import("../OrgSubmissionWizardPage");
+    const { RouterProvider, createMemoryRouter } =
+      await import("react-router-dom");
+    const router = createMemoryRouter(
+      [
+        { path: "/org/submissions/new", element: <OrgSubmissionWizardPage /> },
+        { path: "/org", element: <p>운영자 홈</p> },
+      ],
+      { initialEntries: ["/org/submissions/new"] },
+    );
+    render(<RouterProvider router={router} />, { wrapper });
+
+    // 스토어를 더럽힌다 — 유형 확정 + 미리보기 blob 보관
+    useSubmissionWizardStore.getState().startImageUpload("blob:leaving");
+
+    await router.navigate("/org");
+    await screen.findByText("운영자 홈");
+
+    expect(revoked).toContain("blob:leaving");
+    const after = useSubmissionWizardStore.getState();
+    expect(after.step).toBe("type");
+    expect(after.image.previewUrl).toBeNull();
+  });
+});
