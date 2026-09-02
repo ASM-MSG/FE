@@ -93,7 +93,37 @@ describe("useUnpublishEvent — 노출 중지 (AC 8·9·10)", () => {
 
     await waitFor(() => expect(onFailed).toHaveBeenCalledTimes(1));
     expect(onFailed.mock.calls[0][0].alreadyUnpublished).toBe(true);
-    // 실패한 중지는 캐시를 건드리지 않는다 — 목록은 그대로다 (AC 9)
+    // 이미 중지 = 서버 진실이 바뀐 신호 — 스테일 행이 남지 않게 목록·상세를 재조회한다
+    // (codex 리뷰 P2: 종전 "실패는 캐시 불변" 단정을 교정)
+    expect(queryClient.getQueryState(LIST_KEY)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(DETAIL_KEY)?.isInvalidated).toBe(true);
+  });
+
+  it("404(13430, 대상 소멸)도 스테일 서버 상태로 보고 목록·상세를 재조회한다 (codex 리뷰 P2)", async () => {
+    stubFetch(async () => errorEnvelope(13430, "승인 행사가 아닙니다", 404));
+    const onFailed = vi.fn();
+    const { result } = renderHook(() => useUnpublishEvent({ onFailed }), {
+      wrapper,
+    });
+
+    result.current.mutate({ submissionId: 41, reason: "행사 정보 오류" });
+
+    await waitFor(() => expect(onFailed).toHaveBeenCalledTimes(1));
+    expect(onFailed.mock.calls[0][0].staleServerState).toBe(true);
+    expect(queryClient.getQueryState(LIST_KEY)?.isInvalidated).toBe(true);
+  });
+
+  it("그 외 실패(네트워크 등)는 캐시를 건드리지 않는다 (AC 9)", async () => {
+    stubFetch(async () => errorEnvelope(500, "서버 오류", 500));
+    const onFailed = vi.fn();
+    const { result } = renderHook(() => useUnpublishEvent({ onFailed }), {
+      wrapper,
+    });
+
+    result.current.mutate({ submissionId: 41, reason: "행사 정보 오류" });
+
+    await waitFor(() => expect(onFailed).toHaveBeenCalledTimes(1));
+    expect(onFailed.mock.calls[0][0].alreadyUnpublished).toBe(false);
     expect(queryClient.getQueryState(LIST_KEY)?.isInvalidated).toBe(false);
   });
 });

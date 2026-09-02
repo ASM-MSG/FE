@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DialogShell, ModalCard } from "@fillmap/ui-web";
 import { canSubmitUnpublish } from "@/features/admin-events/model/approved-event";
 
@@ -33,6 +33,13 @@ export const UnpublishDialog = ({
   onConfirm,
 }: UnpublishDialogProps) => {
   const [reason, setReason] = useState("");
+
+  // 부모가 open을 직접 내리는 경로(중지 성공·스테일 종료)에서는 handleOpenChange가
+  // 불리지 않는다 — 닫힘 전이 자체를 보고 초기화해야 다음 행사에 이전 사유가
+  // 프리필되지 않는다 (codex 리뷰 P2)
+  useEffect(() => {
+    if (!open) setReason("");
+  }, [open]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) setReason("");

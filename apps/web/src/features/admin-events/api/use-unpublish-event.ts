@@ -29,8 +29,9 @@ export interface UnpublishEventInput {
  * 탭별 status·size가 키에 실려 있어 정확 키로는 다른 탭 캐시가 남는다
  * (use-event-video-mutations 관례).
  *
- * 실패는 캐시를 건드리지 않고 분기 안내(`unpublishFailureNotice`)만 올려 보낸다 —
- * 모달이 유지된 채 재시도하거나(일반 실패) 목록 재조회를 유도한다(409/13453).
+ * 일반 실패는 캐시를 건드리지 않고 안내만 올려 보낸다(모달 유지·재시도).
+ * 단 **스테일 서버 상태(409/13453 이미 중지 · 404/13430 대상 소멸)는 성공과 같은 무효화를 건다** —
+ * 스테일 행이 남아 같은 요청을 반복하는 헛 루프를 막는다 (codex 리뷰 P2).
  * 콜백은 훅 레벨 옵션으로 받는다 — mutate per-call 콜백은 관찰자 언마운트 시 유실된다
  * (MSG-325 선례).
  */
@@ -40,17 +41,25 @@ export const useUnpublishEvent = (callbacks?: {
 }) => {
   const queryClient = useQueryClient();
 
+  const invalidateEventCaches = (submissionId: number) => {
+    const [listKey] = getEventsQueryKey();
+    void queryClient.invalidateQueries({ queryKey: [{ _id: listKey._id }] });
+    void queryClient.invalidateQueries({
+      queryKey: getSubmission1QueryKey({ path: { submissionId } }),
+    });
+  };
+
   return useMutation({
     mutationFn: ({ submissionId, reason }: UnpublishEventInput, context) =>
       unpublishFn({ path: { submissionId }, body: { reason } }, context),
     onSuccess: (response, { submissionId }) => {
-      const [listKey] = getEventsQueryKey();
-      void queryClient.invalidateQueries({ queryKey: [{ _id: listKey._id }] });
-      void queryClient.invalidateQueries({
-        queryKey: getSubmission1QueryKey({ path: { submissionId } }),
-      });
+      invalidateEventCaches(submissionId);
       callbacks?.onUnpublished?.(unwrapEnvelope(response));
     },
-    onError: (error) => callbacks?.onFailed?.(unpublishFailureNotice(error)),
+    onError: (error, { submissionId }) => {
+      const notice = unpublishFailureNotice(error);
+      if (notice.staleServerState) invalidateEventCaches(submissionId);
+      callbacks?.onFailed?.(notice);
+    },
   });
 };

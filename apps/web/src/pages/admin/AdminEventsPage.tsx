@@ -53,7 +53,17 @@ export const AdminEventsPage = () => {
       setFailureMessage(null);
       setEmailNotice(result.emailSent ? null : EMAIL_FAILED_NOTICE);
     },
-    onFailed: (notice) => setFailureMessage(notice.message),
+    onFailed: (notice) => {
+      // 스테일 서버 상태(이미 중지·대상 소멸)면 모달을 닫고 카드 안내로 알린다 —
+      // 훅이 목록·상세를 재조회하므로 스테일 행에서 같은 확정을 반복할 수 없다 (codex 리뷰 P2)
+      if (notice.staleServerState) {
+        setDialogOpen(false);
+        setFailureMessage(null);
+        setEmailNotice(notice.message);
+        return;
+      }
+      setFailureMessage(notice.message);
+    },
   });
 
   const handleTabSelect = (next: ApprovedEventStatus) => {

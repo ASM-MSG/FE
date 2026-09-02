@@ -216,6 +216,8 @@ export interface UnpublishFailureNotice {
   message: string;
   /** true면 확정 재시도 대신 목록 재조회를 유도한다 (AC 9) */
   alreadyUnpublished: boolean;
+  /** 서버 진실이 바뀐 실패(13453 이미 중지 · 13430 대상 소멸) — 캐시 재조회 + 모달 종료 대상 (codex 리뷰 P2) */
+  staleServerState: boolean;
 }
 
 /** 중지 실패 안내 분기 (AC 9) */
@@ -227,18 +229,21 @@ export const unpublishFailureNotice = (
       return {
         message: "이미 중지된 행사예요. 목록을 다시 불러와 확인해 주세요.",
         alreadyUnpublished: true,
+        staleServerState: true,
       };
     }
     if (error.developCode === NOT_APPROVED_CODE) {
       return {
         message: "행사를 찾을 수 없어요. 목록을 다시 불러와 확인해 주세요.",
         alreadyUnpublished: false,
+        staleServerState: true,
       };
     }
   }
   return {
     message: "노출을 중지하지 못했어요. 잠시 후 다시 시도해 주세요.",
     alreadyUnpublished: false,
+    staleServerState: false,
   };
 };
 

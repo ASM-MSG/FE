@@ -237,6 +237,24 @@ describe("승인 행사 관리 — 노출 중지 모달 (AC 7·8·9·10)", () =>
     fireEvent.click(screen.getByRole("button", { name: "중지 확정" }));
   };
 
+  it("중지 성공 후 다시 열면 사유가 비어 있다 (codex 리뷰 P2 — 이전 사유 프리필 차단)", async () => {
+    stubAdminEvents();
+    renderPage();
+
+    await confirmUnpublish();
+    // 성공 경로 — 부모가 open을 직접 내려 모달이 닫힌다
+    await waitFor(() =>
+      expect(screen.queryByLabelText("중지 사유")).toBeNull(),
+    );
+
+    fireEvent.click(
+      await waitFor(() => screen.getByRole("button", { name: "노출 중지" })),
+    );
+
+    const textarea = screen.getByLabelText("중지 사유") as HTMLTextAreaElement;
+    expect(textarea.value).toBe("");
+  });
+
   it("사유가 비어 있으면 확정할 수 없고 통지 안내가 보인다 (AC 7)", async () => {
     stubAdminEvents();
     renderPage();
@@ -283,18 +301,28 @@ describe("승인 행사 관리 — 노출 중지 모달 (AC 7·8·9·10)", () =>
     expect(unpublishCall?.body).toEqual({ reason: REASON });
   });
 
-  it("409(13453)면 모달이 유지된 채 '이미 중지' 안내가 보인다 (AC 9)", async () => {
-    stubAdminEvents({
+  it("409(13453)면 모달을 닫고 카드 안내로 알리며 목록을 재조회한다 (AC 9 + codex 리뷰 P2)", async () => {
+    const received = stubAdminEvents({
       unpublishResponse: () =>
         errorEnvelope(13453, "이미 중지된 행사입니다", 409),
     });
     renderPage();
-
+    const listCallsBefore = () =>
+      received.filter(({ request }) =>
+        new URL(request.url).pathname.endsWith("/api/admin/events"),
+      ).length;
     await confirmUnpublish();
+    const before = listCallsBefore();
 
-    await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());
-    expect(screen.getByRole("alert").textContent).toContain("이미 중지");
-    expect(screen.getByLabelText("중지 사유")).toBeDefined();
+    // 모달이 닫히고(사유 입력 소멸) 카드 안내에 '이미 중지'가 보인다
+    await waitFor(() =>
+      expect(screen.queryByLabelText("중지 사유")).toBeNull(),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain("이미 중지"),
+    );
+    // 서버 진실이 바뀐 신호라 목록이 재조회된다 — 스테일 행 재확정 루프 차단
+    await waitFor(() => expect(listCallsBefore()).toBeGreaterThan(before - 1));
   });
 
   it("emailSent=false면 중지는 유지된다는 안내가 보인다 (AC 10)", async () => {

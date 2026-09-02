@@ -229,6 +229,7 @@ describe("unpublishFailureNotice — 중지 실패 안내 분기 (AC 9)", () => 
     );
 
     expect(notice.alreadyUnpublished).toBe(true);
+    expect(notice.staleServerState).toBe(true);
     expect(notice.message).toContain("이미 중지");
   });
 
@@ -241,6 +242,7 @@ describe("unpublishFailureNotice — 중지 실패 안내 분기 (AC 9)", () => 
     );
 
     expect(notice.alreadyUnpublished).toBe(false);
+    expect(notice.staleServerState).toBe(true);
     expect(notice.message).toContain("찾을 수 없");
   });
 
@@ -248,6 +250,7 @@ describe("unpublishFailureNotice — 중지 실패 안내 분기 (AC 9)", () => 
     const notice = unpublishFailureNotice(new Error("network down"));
 
     expect(notice.alreadyUnpublished).toBe(false);
+    expect(notice.staleServerState).toBe(false);
     expect(notice.message).toContain("다시 시도");
   });
 
