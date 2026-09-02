@@ -3180,6 +3180,32 @@
       ]
     },
     {
+      "id": "31fb7378210cb69b",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (11 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "1754d68b2b87d4f0",
+          "source_digest": "fnv1a64:b226c0e68bf4b8ac",
+          "file": "apps/mobile/src/features/ai-route/ui/ai-route-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 282,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "7f86c385c4003ed2",
+          "source_digest": "fnv1a64:0220a79433bc07df",
+          "file": "apps/mobile/src/features/notifications/api/use-push-registration.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 162,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "3233c1b6e37d7286",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (9 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -8910,32 +8936,6 @@
       ]
     },
     {
-      "id": "87afe140deafcd63",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (11 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "d91690153a30b188",
-          "source_digest": "fnv1a64:11e765591055487b",
-          "file": "apps/mobile/src/features/ai-route/ui/ai-route-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 274,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "7f86c385c4003ed2",
-          "source_digest": "fnv1a64:0220a79433bc07df",
-          "file": "apps/mobile/src/features/notifications/api/use-push-registration.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 162,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "87d3efa591458f54",
       "note": "consolidate `view` — 2 copies",
       "members": [
@@ -9388,6 +9388,32 @@
           "end_line": 336,
           "kind": "Function",
           "name": "resetFlow",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "8d9888434274d909",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "f30af2fda7c9e533",
+          "source_digest": "fnv1a64:0a9eaf824302223c",
+          "file": "apps/mobile/src/features/map-home/ui/map-home-screen.tsx",
+          "lang": "typescript",
+          "start_line": 291,
+          "end_line": 318,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "07d0396a5b48858b",
+          "source_digest": "fnv1a64:8637f676564ed6a0",
+          "file": "apps/mobile/src/features/ai-route/ui/ai-route-screen.tsx",
+          "lang": "typescript",
+          "start_line": 185,
+          "end_line": 196,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -17665,32 +17691,6 @@
           "end_line": 12,
           "kind": "Function",
           "name": "boxAt",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "f1b2da2617689829",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "f30af2fda7c9e533",
-          "source_digest": "fnv1a64:0a9eaf824302223c",
-          "file": "apps/mobile/src/features/map-home/ui/map-home-screen.tsx",
-          "lang": "typescript",
-          "start_line": 291,
-          "end_line": 318,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "5e41a266a691ddeb",
-          "source_digest": "fnv1a64:8637f676564ed6a0",
-          "file": "apps/mobile/src/features/ai-route/ui/ai-route-screen.tsx",
-          "lang": "typescript",
-          "start_line": 177,
-          "end_line": 188,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
