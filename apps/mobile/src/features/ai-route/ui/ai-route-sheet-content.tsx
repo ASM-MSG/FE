@@ -31,7 +31,7 @@ const RESULT_FOOTNOTE =
  */
 interface AiRouteSheetContentProps extends HomeSheetContentContext {
   state: AiRouteState;
-  /** 요청 뷰포트를 만들 수 있는가 — 화면 `viewport.bounds !== null` */
+  /** 요청 뷰포트를 만들 수 있는가 — 화면 `viewport.bounds !== null` && 초기 중심 정착(D1) */
   mapReady: boolean;
   onChangeText: (text: string) => void;
   onSubmit: () => void;

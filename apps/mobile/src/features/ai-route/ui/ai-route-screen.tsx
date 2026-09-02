@@ -23,6 +23,11 @@ import { GridMap, type GridMapRef } from "../../map-home/ui/grid-map";
 import { HomeSheet, type HomeSheetRef } from "../../map-home/ui/home-sheet";
 import { useRouteRecommend } from "../api/use-route-recommend";
 import { aiRouteStore, useAiRouteState } from "../model/ai-route-store";
+import {
+  type InitialCenterEvent,
+  type InitialCenterPhase,
+  nextInitialCenterPhase,
+} from "../model/initial-center";
 import { buildRecommendBody } from "../model/route-request";
 import { AiRouteSheetContent } from "./ai-route-sheet-content";
 import { useAiRouteOverlays } from "./use-ai-route-overlays";
@@ -39,7 +44,9 @@ const NAV_BAR_HEIGHT = 64;
  * - 결과(`loading`/`result`/`error`) — ← + 내 위치, 시트 half, 바텀 내비 숨김
  *
  * 초기 카메라는 진입 1회 현재 위치 + 1km 축척이다 (D1) — `initialZoom`이 1km 상수라
- * `moveTo`가 그 줌으로 정착한다. 결과 도착 시 카메라는 움직이지 않는다 (D2, 웹 S6).
+ * `moveTo`가 그 줌으로 정착한다. 그 정착 전에는 제출을 막는다(`centerSettled`, codex 재리뷰
+ * P2 — 폴백 뷰포트로 요청이 나간 뒤 늦은 측위가 지도를 옮기는 창 제거). 결과 도착 시
+ * 카메라는 움직이지 않는다 (D2, 웹 S6).
  * [MSG-489 확장점] 요청 전 1km 축척 정규화·mentionedArea 이동 — 지금은 진입 1회 1km 세팅뿐,
  * 제출은 현재 뷰포트 그대로다 (`submit`).
  */
@@ -50,6 +57,9 @@ export const AiRouteScreen = () => {
 
   /** 지도 이동이 끝날 때마다 갱신되는 현재 뷰포트 (지도 준비 전 null) — 홈 관례 */
   const [viewport, setViewport] = useState<Viewport | null>(null);
+  /** 초기 중심 정착 상태기계 — 판정은 `nextInitialCenterPhase`(순수), 여기는 현재 단계만 든다 */
+  const centerPhaseRef = useRef<InitialCenterPhase>("seeding");
+  const [centerSettled, setCenterSettled] = useState(false);
   /** 내 위치 권한 안내 (MSG-447) — null이면 닫힘 */
   const [locationNotice, setLocationNotice] = useState<PermissionState | null>(
     null,
@@ -86,13 +96,37 @@ export const AiRouteScreen = () => {
     onWaypointTap: selectFromMarker,
   });
 
+  const advanceCenter = useCallback(
+    (event: InitialCenterEvent): InitialCenterPhase => {
+      const next = nextInitialCenterPhase(centerPhaseRef.current, event);
+      centerPhaseRef.current = next;
+      if (next === "settled") setCenterSettled(true);
+      return next;
+    },
+    [],
+  );
+
+  /** 뷰포트 갱신 — 첫 호출은 씨딩, 이후는 idle(측위 이동 완료 또는 사용자 조작) */
+  const handleViewportChange = useCallback(
+    (next: Viewport) => {
+      setViewport(next);
+      advanceCenter({ type: "viewport" });
+    },
+    [advanceCenter],
+  );
+
   // 진입 1회 현재 위치 (D1) — 폴백(서면)은 초기 카메라와 같은 객체 참조라 이동 생략 (홈 관례).
+  // 사용자가 먼저 지도를 움직였으면(settled) 늦은 측위는 이동시키지 않는다 (codex 재리뷰 P2).
   // 권한 프롬프트는 resolveMapCenter의 in-flight 공유를 타 홈과 동시에 떠도 한 번뿐이다 (R2)
   useEffect(() => {
     void resolveMapCenter().then((center) => {
-      if (center !== SEOMYEON_CENTER) mapRef.current?.moveTo(center);
+      const phase = advanceCenter({
+        type: "located",
+        moves: center !== SEOMYEON_CENTER,
+      });
+      if (phase === "moving") mapRef.current?.moveTo(center);
     });
-  }, []);
+  }, [advanceCenter]);
 
   /** ← / Android 뒤로가기 — 결과 모드면 대기로, 대기면 false로 화면을 벗어난다 (§1-2) */
   const goBack = useCallback((): boolean => {
@@ -166,7 +200,7 @@ export const AiRouteScreen = () => {
             themeCells={overlays.themeCells}
             hatchCells={overlays.hatchCells}
             route={overlays.route}
-            onViewportChange={setViewport}
+            onViewportChange={handleViewportChange}
             onCellTap={peekSheet}
           />
         </View>
@@ -212,7 +246,7 @@ export const AiRouteScreen = () => {
             <AiRouteSheetContent
               {...context}
               state={state}
-              mapReady={bounds !== null}
+              mapReady={bounds !== null && centerSettled}
               onChangeText={aiRouteStore.setText}
               onSubmit={submit}
               onInputFocus={() => sheetRef.current?.snapTo(1)}

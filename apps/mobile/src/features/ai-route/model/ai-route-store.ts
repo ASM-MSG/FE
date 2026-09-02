@@ -49,6 +49,11 @@ export interface AiRouteStore {
   dismissResult: () => void;
   /** 전부 초기화 — text까지 비운다. featureDisabled는 세션 플래그라 남긴다 */
   reset: () => void;
+  /**
+   * 로컬 세션 종료(로그아웃·계정 삭제, `endLocalSession`) 전용 — `reset()` + featureDisabled까지
+   * 지운다. 14503은 "이 세션 동안"의 신호라 다음 세션은 서버에 다시 물어야 한다 (codex 재리뷰 P2)
+   */
+  resetForSessionEnd: () => void;
 }
 
 /** 결과·선택·에러가 비워진 상태 — startRequest·dismissResult·reset이 공유한다 (매번 새 배열) */
@@ -105,6 +110,10 @@ export const createAiRouteStore = (): AiRouteStore => {
     reset: () => {
       requestToken += 1;
       set({ ...cleared(), text: "" });
+    },
+    resetForSessionEnd: () => {
+      requestToken += 1;
+      set({ ...cleared(), text: "", featureDisabled: false });
     },
   };
 };

@@ -111,6 +111,23 @@ describe("ai-route-store — 요청·결과 상태 전이 (L9)", () => {
     expect(store.getState().featureDisabled).toBe(true);
   });
 
+  it("resetForSessionEnd()는 featureDisabled까지 지운다 — 로그아웃·계정 삭제 뒤 다음 세션은 서버에 다시 묻는다 (codex 재리뷰 P2)", () => {
+    const store = createAiRouteStore();
+    store.setText("서면 동선");
+    const token = store.startRequest();
+    store.fail(FEATURE_OFF);
+
+    store.resetForSessionEnd();
+
+    expect(store.getState()).toMatchObject({
+      text: "",
+      status: "idle",
+      errorNotice: null,
+      featureDisabled: false,
+    });
+    expect(store.isCurrentRequest(token)).toBe(false);
+  });
+
   it("selectOrder(n)이 선택을 바꾸고 null로 해제한다 (웹 L7)", () => {
     const store = createAiRouteStore();
     store.succeed(ROUTE_POINTS, null);

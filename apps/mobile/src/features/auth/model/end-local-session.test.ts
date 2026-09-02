@@ -44,4 +44,19 @@ describe("endLocalSession — 로그아웃·계정 삭제의 로컬 정리", () 
     await pending;
     expect(storageCleared).toBe(true);
   });
+
+  it("14503으로 꺼진 featureDisabled도 세션 종료와 함께 풀린다 — 다음 세션의 버튼이 영구 비활성으로 남지 않는다 (codex 재리뷰 P2)", async () => {
+    aiRouteStore.startRequest();
+    aiRouteStore.fail({
+      message: "지금은 경로 추천을 쓸 수 없어요",
+      retryable: false,
+      disablesFeature: true,
+      requiresLogin: false,
+    });
+    expect(aiRouteStore.getState().featureDisabled).toBe(true);
+
+    await endLocalSession(() => Promise.resolve(), new QueryClient());
+
+    expect(aiRouteStore.getState().featureDisabled).toBe(false);
+  });
 });
