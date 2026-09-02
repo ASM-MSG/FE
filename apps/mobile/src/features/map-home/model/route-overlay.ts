@@ -12,6 +12,7 @@ export interface RouteWaypoint {
   /** 1부터 시작하는 방문 순번 — 번호 마커 표기 */
   seq: number;
   coord: LatLng;
+  active?: boolean; // 선택 강조 (MSG-556 D8, AI 추천 전용 — 코스 파생은 채우지 않는다)
 }
 
 /** 경로 좌표 배열 → 번호 웨이포인트. [E14] */
