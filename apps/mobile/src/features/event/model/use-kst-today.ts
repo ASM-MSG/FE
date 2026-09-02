@@ -15,18 +15,20 @@ export const msUntilNextKstMidnight = (nowMs: number): number =>
  */
 export const useKstToday = (): string => {
   const [today, setToday] = useState(() => todayKstDate());
+  const [armed, rearm] = useState(0);
 
+  // 이펙트 1회가 타이머 1개를 소유하고 클린업이 그것을 걷는다. 다음 자정 타이머는 `armed`가
+  // 바뀌어 이펙트가 다시 돌 때 건다 — 중첩 재예약 체인(웹 원본)은 react-doctor
+  // effect-needs-cleanup이 클린업을 못 따라가 CI error로 잡혀 이 형태로 바꿨다 (PR #123).
+  // `today`가 아니라 `armed`로 재무장하는 이유: 타이머가 자정 직전에 깨어나 날짜가 같으면
+  // `today`는 안 바뀌어 체인이 끊기기 때문이다.
   useEffect(() => {
-    let id: ReturnType<typeof setTimeout>;
-    const schedule = () => {
-      id = setTimeout(() => {
-        setToday(todayKstDate());
-        schedule();
-      }, msUntilNextKstMidnight(Date.now()));
-    };
-    schedule();
+    const id = setTimeout(() => {
+      setToday(todayKstDate());
+      rearm((n) => n + 1);
+    }, msUntilNextKstMidnight(Date.now()));
     return () => clearTimeout(id);
-  }, []);
+  }, [armed]);
 
   return today;
 };

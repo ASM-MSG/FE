@@ -65,7 +65,10 @@ const setState = (next: EventSelectionState): void => {
 export const getEventSelection = (): EventSelectionState => state;
 
 /** 칩 탭(비활성 → 활성) — 목록 시트 */
-export const activateEvent = (): void => setState({ active: true, room: null });
+export const activateEvent = (): void => {
+  if (state.active) return; // 이미 활성이면 새 객체를 만들지 않아 리스너 통지 없음 (PR #123 리뷰)
+  setState({ active: true, room: null });
+};
 
 /** ✕·칩 재탭·테마 칩 탭 — 이벤트 모드 종료 [D5·D14] */
 export const deactivateEvent = (): void => setState(INACTIVE);

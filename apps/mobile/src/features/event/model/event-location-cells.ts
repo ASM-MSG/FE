@@ -17,8 +17,7 @@ import { toMissionCells } from "../../map-home/model/mission-cells";
 /** 전 위치 `gridIds` 합집합 → 모바일 셀. 중복 격자(위치 간 공유)는 1회만 파생한다 */
 export const eventLocationCells = (
   locations: EventLocationResponseDto[],
-): GridCellIndex[] =>
-  toMissionCells([...new Set(locations.flatMap((loc) => loc.gridIds))]);
+): GridCellIndex[] => toMissionCells(locations.flatMap((loc) => loc.gridIds)); // 중복 제거는 toMissionCells가 셀 키 기준으로 한다
 
 /** 위치 대표 격자 중심들의 평균점 — 개요 진입 시 `moveTo` 목표. 위치가 없으면 null */
 export const eventLocationsCenter = (
