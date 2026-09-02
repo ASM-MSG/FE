@@ -3,12 +3,7 @@
  * 플랫폼(window·router) 무의존 — RN 재사용 대상.
  */
 
-/** KST는 DST 없는 고정 UTC+9 — Intl 없이 상수 오프셋으로 변환한다 (RN 호환) */
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
-
-/** 시각부 끝의 타임존 마커(Z 또는 ±hh:mm/±hhmm) 존재 여부 */
-const hasTimezoneMarker = (timePart: string): boolean =>
-  /(?:Z|[+-]\d{2}:?\d{2})$/.test(timePart);
+import { hasTimezoneMarker, KST_OFFSET_MS } from "@/shared/kst-date";
 
 const two = (n: number): string => String(n).padStart(2, "0");
 

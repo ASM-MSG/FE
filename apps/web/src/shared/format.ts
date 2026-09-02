@@ -43,6 +43,58 @@ export const formatDuration = (sec?: number): string | null => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
+const HANGUL_BASE = 0xac00;
+const HANGUL_LAST = 0xd7a3;
+/** 종성 ㄹ의 인덱스 — 받침이 ㄹ이면 "으로"가 아니라 "로"를 쓴다 */
+const JONGSEONG_RIEUL = 8;
+
+/**
+ * 조사 "(으)로" 확정 — 받침 없음·ㄹ 받침은 "로", 나머지 받침은 "으로".
+ * 한글 음절이 아닌 끝 글자는 받침 없음으로 본다(이름은 한글이 정본이라 폴백 경로다).
+ * MSG-489의 route-mentioned-area 로컬 함수였고, MSG-546 위저드 CTA
+ * ("{이벤트명}으로 계속")가 두 번째 소비처가 되며 shared로 올렸다 (formatDuration 선례).
+ */
+export const euroJosa = (name: string): string => {
+  const code = name.charCodeAt(name.length - 1);
+  if (Number.isNaN(code) || code < HANGUL_BASE || code > HANGUL_LAST) {
+    return "로";
+  }
+  const jongseong = (code - HANGUL_BASE) % 28;
+  return jongseong === 0 || jongseong === JONGSEONG_RIEUL ? "로" : "으로";
+};
+
+const KST_OFFSET_MS = 9 * HOUR;
+
+/** epoch ms → KST 기준 일수 정수 (실행 환경 TZ 무관) */
+const kstDayIndex = (epochMs: number): number =>
+  Math.floor((epochMs + KST_OFFSET_MS) / DAY);
+
+const pad2 = (value: number): string => value.toString().padStart(2, "0");
+
+/**
+ * 접수 시각을 KST 기준 상대/절대 혼합 표기로 변환한다 (MSG-552 AC 1).
+ * 오늘 → "오늘 HH:mm" · 어제 → "어제 HH:mm" · 그 외 → "M.D HH:mm"(월·일 앞자리 0 없음).
+ *
+ * 위 `formatRelativeTime`·`formatMonthDay`는 **로컬 타임존** 기준이라 관리자 콘솔의
+ * KST 고정 표기에 쓸 수 없다 — KST 오프셋을 더한 epoch 산술 + `getUTC*` 판독으로
+ * 실행 환경 타임존과 무관하게 결정적이다 (upload-grass의 KST epoch 일수 산술 선례).
+ * `now`를 주입받아 테스트가 "오늘"을 고정한다. 연도는 표기하지 않는다 (추정 8).
+ */
+export const formatKstReceiptTime = (
+  iso: string,
+  now: Date = new Date(),
+): string => {
+  const receiptMs = new Date(iso).getTime();
+  // KST 오프셋을 더한 뒤 UTC 판독기로 읽으면 KST 벽시계가 된다
+  const kst = new Date(receiptMs + KST_OFFSET_MS);
+  const clock = `${pad2(kst.getUTCHours())}:${pad2(kst.getUTCMinutes())}`;
+
+  const elapsedDays = kstDayIndex(now.getTime()) - kstDayIndex(receiptMs);
+  if (elapsedDays === 0) return `오늘 ${clock}`;
+  if (elapsedDays === 1) return `어제 ${clock}`;
+  return `${kst.getUTCMonth() + 1}.${kst.getUTCDate()} ${clock}`;
+};
+
 /**
  * 조회수를 한국어 만 단위로 축약한다 (MSG-277 AC 6 — 홈 피드 카드 "조회 {축약}").
  * - 1만 미만: 콤마 표기 (8410 → "8,410")

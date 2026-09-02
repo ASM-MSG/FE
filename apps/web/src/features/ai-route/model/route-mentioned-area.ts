@@ -1,6 +1,8 @@
 import type { LatLng } from "@/entities/cell";
 import { MAP_SCALE_1KM_ZOOM } from "@/features/map-home/model/map-scale";
 import type { MentionedAreaDto } from "@/shared/api/generated";
+// 조사 판정은 MSG-546(위저드 CTA)이 두 번째 소비처가 되며 shared/format으로 올렸다
+import { euroJosa } from "@/shared/format";
 
 /**
  * 언급 지역 자동 이동 판정 + 안내 토스트 문구 (MSG-489 L6~L10).
@@ -37,24 +39,6 @@ export const resolveAutoMove = ({
 
 /** Figma 15675:3267의 "약 2km"는 축척 고정 결정에 따라 1km로 정정해 구현한다 (D7) */
 export const MOVED_TOAST_DESCRIPTION = "지도 범위 약 1km 기준으로 동선을 짜요";
-
-const HANGUL_BASE = 0xac00;
-const HANGUL_LAST = 0xd7a3;
-/** 종성 ㄹ의 인덱스 — 받침이 ㄹ이면 "으로"가 아니라 "로"를 쓴다 */
-const JONGSEONG_RIEUL = 8;
-
-/**
- * 조사 "(으)로" 확정 — 받침 없음·ㄹ 받침은 "로", 나머지 받침은 "으로".
- * 한글 음절이 아닌 끝 글자는 받침 없음으로 본다(지역명은 한글이 정본이라 폴백 경로다).
- */
-const euroJosa = (name: string): string => {
-  const code = name.charCodeAt(name.length - 1);
-  if (Number.isNaN(code) || code < HANGUL_BASE || code > HANGUL_LAST) {
-    return "로";
-  }
-  const jongseong = (code - HANGUL_BASE) % 28;
-  return jongseong === 0 || jongseong === JONGSEONG_RIEUL ? "로" : "으로";
-};
 
 /** 이동 안내 토스트 제목 — "{지역명}(으)로 이동했어요" (D3) */
 export const movedToastTitle = (areaName: string): string =>
