@@ -19,6 +19,10 @@ import { routeErrorNotice } from "../model/route-error";
  * 쿼리 무효화가 없는 것은 의도다 — body가 필요해 POST일 뿐 **읽기형**이라 낡아질 캐시가 없다
  * (웹 2026-08-29 판정).
  *
+ * 응답은 `onMutate`가 돌려준 요청 토큰(mutation context)을 스토어와 대조한 뒤에만 게시한다 —
+ * 로딩 중 뒤로가기(`dismissResult`)·로그아웃(`reset`)·재제출 뒤에 도착한 응답은 버린다.
+ * mutation 자체는 취소하지 않는다(생성 SDK 옵션에 abort 배선이 없고, 버리는 것으로 충분하다).
+ *
  * [MSG-489 확장점] mentionedArea 자동 이동 분기 — 지금은 `data.points`·`notice`만 읽는다.
  */
 // 생성 팩토리는 mutationFn을 항상 채운다 — UseMutationOptions 타입만 optional이라 !로 좁힌다
@@ -34,16 +38,20 @@ export const recommendMutationOptions = ({
 }): UseMutationOptions<
   Awaited<ReturnType<typeof recommendFn>>,
   Error,
-  RouteRecommendRequestDto
+  RouteRecommendRequestDto,
+  number
 > => ({
   mutationFn: (body, context) => recommendFn({ body }, context),
-  // 이전 결과·선택은 요청 시작 시점에 비운다 — 로딩 화면에 잔상이 남지 않는다 (L9)
+  // 이전 결과·선택은 요청 시작 시점에 비운다 — 로딩 화면에 잔상이 남지 않는다 (L9).
+  // 반환값(요청 토큰)이 onSuccess·onError의 context로 돌아온다
   onMutate: () => store.startRequest(),
-  onSuccess: (response) => {
+  onSuccess: (response, _body, token) => {
+    if (!store.isCurrentRequest(token)) return;
     const data = unwrapEnvelope(response);
     store.succeed(data.points, data.notice);
   },
-  onError: (error) => {
+  onError: (error, _body, token) => {
+    if (!store.isCurrentRequest(token)) return;
     const notice = routeErrorNotice(error);
     store.fail(notice);
     if (notice.requiresLogin) onLoginRequired();

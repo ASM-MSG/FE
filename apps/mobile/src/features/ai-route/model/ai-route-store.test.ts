@@ -168,3 +168,24 @@ describe("ai-route-store — 요청·결과 상태 전이 (L9)", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("ai-route-store — 요청 토큰 (MSG-556 리뷰 P2)", () => {
+  it("startRequest가 돌려준 토큰은 dismissResult·reset·새 startRequest 뒤에는 현재 요청이 아니다 — 스테일 응답 판별 키", () => {
+    const store = createAiRouteStore();
+
+    const first = store.startRequest();
+    expect(store.isCurrentRequest(first)).toBe(true);
+
+    store.dismissResult();
+    expect(store.isCurrentRequest(first)).toBe(false);
+
+    const second = store.startRequest();
+    expect(store.isCurrentRequest(first)).toBe(false);
+    expect(store.isCurrentRequest(second)).toBe(true);
+
+    store.reset();
+    expect(store.isCurrentRequest(second)).toBe(false);
+    // onError는 onMutate가 던졌을 때 context가 undefined다 — 현재 요청으로 보지 않는다
+    expect(store.isCurrentRequest(undefined)).toBe(false);
+  });
+});

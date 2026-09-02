@@ -31,8 +31,17 @@ export interface AiRouteStore {
   getState: () => AiRouteState;
   subscribe: (listener: () => void) => () => void;
   setText: (text: string) => void;
-  /** 요청 시작 — 이전 결과·안내·선택·에러를 **먼저** 비운다 (로딩 중 잔상 0) */
-  startRequest: () => void;
+  /**
+   * 요청 시작 — 이전 결과·안내·선택·에러를 **먼저** 비운다 (로딩 중 잔상 0).
+   * 돌려주는 요청 토큰은 응답 게시 전 `isCurrentRequest`로 대조한다 (mutation context).
+   */
+  startRequest: () => number;
+  /**
+   * 토큰이 현재 요청인가 — dismissResult·reset·새 startRequest 뒤에 도착한 응답은 스테일라
+   * 게시하지 않는다(뒤로가기로 대기에 돌아왔는데 결과로 되튀거나, 이전 응답이 최신을 덮는 것을
+   * 막는다). auth-store의 sessionGeneration과 같은 세대 대조다
+   */
+  isCurrentRequest: (token: number | undefined) => boolean;
   succeed: (points: RoutePointDto[], notice: string | null) => void;
   fail: (notice: RouteErrorNotice) => void;
   selectOrder: (order: number | null) => void;
@@ -54,6 +63,8 @@ const cleared = (): Omit<AiRouteState, "text" | "featureDisabled"> => ({
 /** 스토어 팩토리 — 테스트는 격리 인스턴스를, 앱은 아래 단일 인스턴스를 쓴다 */
 export const createAiRouteStore = (): AiRouteStore => {
   let state: AiRouteState = { text: "", featureDisabled: false, ...cleared() };
+  /** 요청 세대 — startRequest마다 증가, dismissResult·reset이 진행 중 요청을 무효화한다 */
+  let requestToken = 0;
   const listeners = new Set<() => void>();
 
   // 스냅샷은 불변 교체 — useSyncExternalStore가 참조 동일성으로 리렌더를 거른다
@@ -71,7 +82,12 @@ export const createAiRouteStore = (): AiRouteStore => {
       };
     },
     setText: (text) => set({ text }),
-    startRequest: () => set({ ...cleared(), status: "loading" }),
+    startRequest: () => {
+      requestToken += 1;
+      set({ ...cleared(), status: "loading" });
+      return requestToken;
+    },
+    isCurrentRequest: (token) => token === requestToken,
     succeed: (points, notice) =>
       set({ status: "result", points, notice, errorNotice: null }),
     fail: (notice) =>
@@ -82,8 +98,14 @@ export const createAiRouteStore = (): AiRouteStore => {
         featureDisabled: state.featureDisabled || notice.disablesFeature,
       }),
     selectOrder: (order) => set({ selectedOrder: order }),
-    dismissResult: () => set(cleared()),
-    reset: () => set({ ...cleared(), text: "" }),
+    dismissResult: () => {
+      requestToken += 1;
+      set(cleared());
+    },
+    reset: () => {
+      requestToken += 1;
+      set({ ...cleared(), text: "" });
+    },
   };
 };
 

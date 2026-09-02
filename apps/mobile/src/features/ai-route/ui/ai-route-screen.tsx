@@ -68,6 +68,11 @@ export const AiRouteScreen = () => {
   const occupied = useOccupiedGridsQuery(bounds);
   const recommend = useRouteRecommend({ onLoginRequired: goToLogin });
 
+  /** 지도 탭 — 시트 peek (D6). 4단(숨김)에서도 peek로 복귀. GridMap의 셀 탭 계약을 그대로 탄다 */
+  const peekSheet = useCallback(() => {
+    sheetRef.current?.snapTo(3);
+  }, []);
+
   /** 마커 탭 — 선택 + 시트 half (카드 스크롤은 시트 콘텐츠가 selectedOrder에 반응) (D8) */
   const selectFromMarker = useCallback((seq: number) => {
     aiRouteStore.selectOrder(seq);
@@ -162,6 +167,7 @@ export const AiRouteScreen = () => {
             hatchCells={overlays.hatchCells}
             route={overlays.route}
             onViewportChange={setViewport}
+            onCellTap={peekSheet}
           />
         </View>
 

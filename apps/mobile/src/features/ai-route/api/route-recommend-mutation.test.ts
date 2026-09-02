@@ -197,3 +197,64 @@ describe("recommendMutationOptions — 추천 1회 요청 배선 (L10)", () => {
     expect(onLoginRequired).not.toHaveBeenCalled();
   });
 });
+
+describe("recommendMutationOptions — 스테일 응답 무시 (MSG-556 리뷰 P2)", () => {
+  it("로딩 중 dismissResult()로 대기로 돌아간 뒤 도착한 응답은 게시되지 않는다 — idle 유지", async () => {
+    const { store, observer } = await loadRecommend();
+    let respond!: () => void;
+    stubFetch(
+      () =>
+        new Promise<Response>((resolve) => {
+          respond = () =>
+            resolve(
+              envelopeResponse({
+                points: ROUTE_POINTS,
+                notice: null,
+                mentionedArea: null,
+              }),
+            );
+        }),
+    );
+
+    const pending = observer.mutate(BODY);
+    await vi.waitFor(() => expect(respond).toBeDefined()); // 요청이 나간 뒤
+    expect(store.getState().status).toBe("loading");
+    store.dismissResult(); // ← / Android 뒤로가기
+    respond();
+    await pending;
+
+    expect(store.getState().status).toBe("idle");
+    expect(store.getState().points).toEqual([]);
+  });
+
+  it("두 번 제출해 이전 응답이 나중에 도착해도 최신 요청의 결과만 남는다", async () => {
+    const { store, observer } = await loadRecommend();
+    const responders: Array<() => void> = [];
+    stubFetch(
+      () =>
+        new Promise<Response>((resolve) => {
+          const count = responders.length + 1; // n번째 요청 = n곳
+          responders.push(() =>
+            resolve(
+              envelopeResponse({
+                points: ROUTE_POINTS.slice(0, count),
+                notice: null,
+                mentionedArea: null,
+              }),
+            ),
+          );
+        }),
+    );
+
+    const first = observer.mutate(BODY);
+    const second = observer.mutate(BODY);
+    await vi.waitFor(() => expect(responders).toHaveLength(2));
+    responders[1]!(); // 최신(2번째) 응답 = 2곳
+    await second;
+    responders[0]!(); // 이전(1번째) 응답 = 1곳 — 늦게 도착
+    await first.catch(() => undefined);
+
+    expect(store.getState().status).toBe("result");
+    expect(store.getState().points).toHaveLength(2);
+  });
+});
