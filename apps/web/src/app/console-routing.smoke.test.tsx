@@ -36,7 +36,8 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.orgPasswordSetup, "비밀번호 설정"],
   [CONSOLE_ROUTES.orgPasswordReset, "비밀번호 재설정"],
   [CONSOLE_ROUTES.orgAccountRequest, "계정 발급 요청"],
-  [CONSOLE_ROUTES.orgHome, "신청 현황"],
+  // MSG-545가 이 스텁을 실구현으로 교체하며 h1이 "내 행사 신청"이 됐다 (사이드바 메뉴는 "신청 현황")
+  [CONSOLE_ROUTES.orgHome, "내 행사 신청"],
   [CONSOLE_ROUTES.orgSubmissionNew, "새 행사 등록"],
   [CONSOLE_ROUTES.orgSubmissions, "내 신청 목록"],
   ["/org/submissions/1204", "신청 상세"],
@@ -100,7 +101,7 @@ describe("콘솔 robots 메타 (AC 10)", () => {
   it("/org 마운트 중 robots 메타가 noindex이고 메타는 하나뿐이다 (AC 10)", async () => {
     renderConsoleAt(CONSOLE_ROUTES.orgHome);
 
-    await screen.findByRole("heading", { name: "신청 현황", level: 1 });
+    await screen.findByRole("heading", { name: "내 행사 신청", level: 1 });
     expect(robotsContents()).toEqual(["noindex"]);
   });
 
