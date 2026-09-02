@@ -8,6 +8,7 @@ import {
   submissionImageErrorMessage,
 } from "@/features/event-submission/model/submission-image";
 import { useSubmissionWizardStore } from "@/features/event-submission/model/submission-wizard-store";
+import { revokeBlobPreviewUrl } from "./preview-url";
 
 interface SubmissionImageFieldProps {
   /** 유형별 라벨 — "대표 이미지" / EVENT는 "커버 이미지" (AC 6) */
@@ -35,10 +36,18 @@ export const SubmissionImageField = ({ label }: SubmissionImageFieldProps) => {
   const { mutate } = useSubmissionImageUpload();
 
   const handleFile = (file: File) => {
-    startImageUpload(URL.createObjectURL(file));
+    // 교체 시 이전 blob, 실패 시(스토어가 미리보기를 비움) 방금 만든 blob을 해제한다
+    // — 해제하지 않으면 10MB급 파일이 탭 수명 동안 누적된다 (codex 리뷰 P2)
+    const previous = image.previewUrl;
+    const next = URL.createObjectURL(file);
+    startImageUpload(next);
+    revokeBlobPreviewUrl(previous);
     mutate(file, {
       onSuccess: completeImageUpload,
-      onError: (error) => failImageUpload(submissionImageErrorMessage(error)),
+      onError: (error) => {
+        failImageUpload(submissionImageErrorMessage(error));
+        revokeBlobPreviewUrl(next);
+      },
     });
   };
 

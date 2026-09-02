@@ -5,6 +5,7 @@ import {
 } from "@/features/event-submission/model/submission-wizard-store";
 import { formatDocumentTitle } from "@/shared/document-title";
 import { useDocumentTitle } from "@/shared/use-document-title";
+import { revokeBlobPreviewUrl } from "./ui/preview-url";
 import { WizardExitGuard } from "./ui/WizardExitGuard";
 import { WizardProgress } from "./ui/WizardProgress";
 import { WizardStepSwitch } from "./ui/WizardStepSwitch";
@@ -32,6 +33,13 @@ export const OrgSubmissionWizardPage = () => {
 
   useEffect(() => {
     reset();
+    // 이탈 시 미리보기 blob 해제 — 비영속 스토어라 재진입은 항상 리셋이므로(추정 4)
+    // 남겨둘 이유가 없다 (codex 리뷰 P2)
+    return () => {
+      revokeBlobPreviewUrl(
+        useSubmissionWizardStore.getState().image.previewUrl,
+      );
+    };
   }, [reset]);
 
   return (
