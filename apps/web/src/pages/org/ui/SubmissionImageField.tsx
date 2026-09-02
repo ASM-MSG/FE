@@ -42,6 +42,10 @@ export const SubmissionImageField = ({ label }: SubmissionImageFieldProps) => {
     const next = URL.createObjectURL(file);
     startImageUpload(next);
     revokeBlobPreviewUrl(previous);
+    // 스테일 정착 레이스는 react-query가 막는다: mutate의 per-call 콜백은 같은
+    // observer에서 최신 호출만 발화하고(빠른 교체 — 이전 업로드의 늦은 정착 무시),
+    // 관찰자 언마운트 시 버려진다(이탈 후 정착 — 새 세션 스토어 오염 없음).
+    // 두 경로 모두 submission-image-revoke.test.tsx가 회귀로 고정한다 (codex 리뷰 P2 기각 근거)
     mutate(file, {
       onSuccess: completeImageUpload,
       onError: (error) => {

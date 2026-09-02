@@ -1520,6 +1520,42 @@
       ]
     },
     {
+      "id": "16d6766c1de87377",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "545cd010a1921b36",
+          "source_digest": "fnv1a64:bb547da104d95a32",
+          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 208,
+          "end_line": 217,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "906ce339eee95ed3",
+          "source_digest": "fnv1a64:4e4fd283eff532a0",
+          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 82,
+          "end_line": 88,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "22b92c84b6ad3a3a",
+          "source_digest": "fnv1a64:278410bd6e5b10b9",
+          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 68,
+          "end_line": 73,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "1867babb34724b67",
       "note": "consolidate `span` — 3 copies",
       "members": [
@@ -4474,6 +4510,42 @@
           "lang": "typescript",
           "start_line": 1,
           "end_line": 52,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "4a216fc18128ffc0",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "f99e28c526a884f9",
+          "source_digest": "fnv1a64:9ce4b4c39628a30c",
+          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 144,
+          "end_line": 168,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "56759072e9557ef5",
+          "source_digest": "fnv1a64:036369ef9e66339a",
+          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 189,
+          "end_line": 205,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "aacd9cbec7b8379c",
+          "source_digest": "fnv1a64:0d96494553f51f96",
+          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 53,
+          "end_line": 66,
           "kind": "Block",
           "is_fragment": false
         }
@@ -7903,32 +7975,6 @@
           "lang": "typescript",
           "start_line": 152,
           "end_line": 156,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "86e63bcf3e2491aa",
-      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "906ce339eee95ed3",
-          "source_digest": "fnv1a64:4e4fd283eff532a0",
-          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 82,
-          "end_line": 88,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "22b92c84b6ad3a3a",
-          "source_digest": "fnv1a64:278410bd6e5b10b9",
-          "file": "apps/web/src/pages/org/ui/submission-image-revoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 68,
-          "end_line": 73,
           "kind": "Block",
           "is_fragment": false
         }

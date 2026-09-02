@@ -133,3 +133,99 @@ describe("위저드 이탈 시 정리 (codex 리뷰 P2 — 재진입 첫 프레�
     expect(after.image.previewUrl).toBeNull();
   });
 });
+
+describe("스테일 업로드 콜백 무시 (codex 리뷰 P2 — 정착 레이스)", () => {
+  it("교체 후 뒤늦게 정착한 이전 업로드가 새 업로드 상태를 덮지 않는다", async () => {
+    let seq = 0;
+    URL.createObjectURL = vi.fn(() => `blob:race-${(seq += 1)}`);
+    URL.revokeObjectURL = vi.fn();
+    const releaseFirst: { fn: (() => void) | null } = { fn: null };
+    let presignCall = 0;
+    vi.stubGlobal(
+      "fetch",
+      async (input: Request | string, init?: RequestInit) => {
+        void init;
+        const url = typeof input === "string" ? input : input.url;
+        if (new URL(url).pathname.endsWith("/image/presigned-url")) {
+          presignCall += 1;
+          if (presignCall === 1) {
+            await new Promise<void>((resolve) => {
+              releaseFirst.fn = resolve;
+            });
+            return envelopeResponse({
+              uploadUrl: "https://s3.example.com/put-a",
+              s3Key: "key-a",
+              expiresInSec: 300,
+            });
+          }
+          return envelopeResponse({
+            uploadUrl: "https://s3.example.com/put-b",
+            s3Key: "key-b",
+            expiresInSec: 300,
+          });
+        }
+        return new Response(null, { status: 200 });
+      },
+    );
+    useSubmissionWizardStore.getState().reset();
+    render(<SubmissionImageField label="대표 이미지" />, { wrapper });
+
+    pickFile("a.png");
+    pickFile("b.png");
+    await waitFor(() =>
+      expect(useSubmissionWizardStore.getState().image.s3Key).toBe("key-b"),
+    );
+
+    // A가 뒤늦게 정착 — B의 상태를 덮으면 안 된다
+    releaseFirst.fn?.();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(useSubmissionWizardStore.getState().image.s3Key).toBe("key-b");
+  });
+
+  it("이탈 후 정착한 성공 콜백은 새 세션 스토어에 s3Key를 붙이지 않는다", async () => {
+    URL.createObjectURL = vi.fn(() => "blob:stale");
+    URL.revokeObjectURL = vi.fn();
+    const release: { fn: (() => void) | null } = { fn: null };
+    vi.stubGlobal(
+      "fetch",
+      async (input: Request | string, init?: RequestInit) => {
+        void init;
+        const url = typeof input === "string" ? input : input.url;
+        if (new URL(url).pathname.endsWith("/image/presigned-url")) {
+          await new Promise<void>((resolve) => {
+            release.fn = resolve;
+          });
+          return envelopeResponse({
+            uploadUrl: "https://s3.example.com/put",
+            s3Key: "stale-key",
+            expiresInSec: 300,
+          });
+        }
+        return new Response(null, { status: 200 });
+      },
+    );
+    useSubmissionWizardStore.getState().reset();
+    const { unmount } = render(<SubmissionImageField label="대표 이미지" />, {
+      wrapper,
+    });
+
+    pickFile("a.png");
+    await waitFor(() =>
+      expect(useSubmissionWizardStore.getState().image.status).toBe(
+        "uploading",
+      ),
+    );
+
+    // 이탈 시뮬레이션 — 페이지 정리(blob 해제 → 리셋)와 동일한 순서
+    unmount();
+    useSubmissionWizardStore.getState().reset();
+
+    // 뒤늦게 presign·PUT 정착
+    release.fn?.();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    const after = useSubmissionWizardStore.getState().image;
+    expect(after.s3Key).toBeNull();
+    expect(after.status).not.toBe("uploaded");
+  });
+});
