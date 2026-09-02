@@ -445,19 +445,24 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         ))}
       {/* 지역 집계 마커 (MSG-428 S2·S3·S4) — 저줌에서만 채워져 들어온다.
           key는 regionCode 기반 안정 키라 재조회에도 같은 지역이면 마커가 유지된다 */}
-      {clusters?.map((cluster) => (
-        <NaverMapMarkerOverlay
-          key={`cluster:${cluster.id}`}
-          latitude={cluster.position.lat}
-          longitude={cluster.position.lng}
-          width={clusterBubbleSize(cluster).box.width}
-          height={clusterBubbleSize(cluster).box.height}
-          anchor={{ x: 0.5, y: 0.5 }}
-          onTap={() => zoomToCluster(cluster)}
-        >
-          <ClusterMarker marker={cluster} />
-        </NaverMapMarkerOverlay>
-      ))}
+      {clusters?.map((cluster) => {
+        // 카메라 프레임마다 리렌더되는 컴포넌트다(onCameraChanged → setCells가 새 배열).
+        // 마커당 한 번만 계산해 쓴다 — 파일의 useMemo 관례와 같은 이유다.
+        const { width, height } = clusterBubbleSize(cluster).box;
+        return (
+          <NaverMapMarkerOverlay
+            key={`cluster:${cluster.id}`}
+            latitude={cluster.position.lat}
+            longitude={cluster.position.lng}
+            width={width}
+            height={height}
+            anchor={{ x: 0.5, y: 0.5 }}
+            onTap={() => zoomToCluster(cluster)}
+          >
+            <ClusterMarker marker={cluster} />
+          </NaverMapMarkerOverlay>
+        );
+      })}
       {/* 선택 미션 이름표 (승인 Q4) — 마커 서브뷰라 nativewind 대신 토큰 값을 style로
           직접 주입한다 (번호 마커와 같은 관례). Android 서브뷰 평탄화 방지 collapsable={false} */}
       {themeColor && missionLabel && (
