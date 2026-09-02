@@ -49,9 +49,11 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.orgSettings, "계정 설정"],
   [CONSOLE_ROUTES.orgGuide, "등록 가이드"],
   // /admin 인덱스는 /admin/review로 replace 리다이렉트 (추정 4)
-  [CONSOLE_ROUTES.adminHome, "행사 심사"],
+  // MSG-552가 심사 큐 스텁을 실화면으로 교체하며 제목이 "행사 심사" → "행사 등록 심사"로
+  // 바뀌었다(MSG-552 AC 5) — 라우트 등록 자체를 고정하는 단정이므로 제목만 갱신한다
+  [CONSOLE_ROUTES.adminHome, "행사 등록 심사"],
   [CONSOLE_ROUTES.adminAccounts, "계정 운영"],
-  [CONSOLE_ROUTES.adminReview, "행사 심사"],
+  [CONSOLE_ROUTES.adminReview, "행사 등록 심사"],
   ["/admin/review/1204", "심사 상세"],
   [CONSOLE_ROUTES.adminEvents, "승인 행사"],
 ];
@@ -112,7 +114,7 @@ describe("콘솔 robots 메타 (AC 10)", () => {
   it("/admin 마운트 중에도 noindex이며 언마운트 시 원값으로 복원된다 (AC 10)", async () => {
     const { unmount } = renderConsoleAt(CONSOLE_ROUTES.adminReview);
 
-    await screen.findByRole("heading", { name: "행사 심사", level: 1 });
+    await screen.findByRole("heading", { name: "행사 등록 심사", level: 1 });
     expect(robotsContents()).toEqual(["noindex"]);
 
     unmount();
