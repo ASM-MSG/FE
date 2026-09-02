@@ -77,8 +77,8 @@ export const toRegionClusterMarkers = (
  * 겹침 병합 임계(px) — 마커 중심 간 화면 거리가 이보다 가까우면 하나로 합친다.
  * 임계 = 해당 단위의 **마커 지름**(Figma 14599:7041 1x 실측 68/80/92 — 흰 링 포함 전체
  * 지름): 중심 거리가 지름 미만이면 두 원이 실제로 겹치고, 이상이면 시각적으로 분리된다.
- * cluster-marker.tsx가 이 표를 마커 지름으로 그대로 읽는다 — 값이 갈라지면 "겹쳐 보이는데
- * 안 합쳐지는" 상태가 생기므로 출처를 하나로 둔다.
+ * MSG-558부터 마커 렌더는 말풍선(크기 단일, cluster-bubble-size)이라 이 표를 더는 읽지
+ * 않는다 — 값은 웹 parity 리터럴이라 불변이고, 재보정은 웹과 함께 별도 티켓.
  */
 export const MARKER_MERGE_PX: Record<AggregationUnit, number> = {
   DONG: 68,

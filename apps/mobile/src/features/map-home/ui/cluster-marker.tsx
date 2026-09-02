@@ -1,14 +1,18 @@
 import { Text, View } from "react-native";
-import { semantic, typography } from "@fillmap/design-tokens";
-import { formatClusterCount } from "../model/cluster-format";
+import { semantic, spacing, typography } from "@fillmap/design-tokens";
 import {
-  MARKER_MERGE_PX,
-  type RegionClusterMarker,
-} from "../model/region-cluster-overlay";
+  BUBBLE_PADDING_BOTTOM,
+  BUBBLE_PADDING_TOP,
+  clusterBubbleSize,
+} from "../model/cluster-bubble-size";
+import { formatClusterCount } from "../model/cluster-format";
+import type { RegionClusterMarker } from "../model/region-cluster-overlay";
 
 /**
- * SOURCE: Figma "클러스터 마커" (node 14599:7041 — variant 단위=동/구/시).
- * 저줌 지역 집계 마커의 원형 뷰 (MSG-428 S2·S3) — 위 지역명 / 아래 점령 격자 수.
+ * SOURCE: 웹 `apps/web/src/pages/map-home/ui/MapCanvas.tsx` `clusterMarkerContent` (MSG-475).
+ * 저줌 지역 집계 마커의 말풍선 뷰 (MSG-558 S1~S3) — 위 지역명 / 아래 점령 격자 수.
+ * 라운드 10 · 패딩 6/12/7 · 링 없음 · 그림자 · 크기 단일(지명 길이 hug, 단위별 3단 폐기).
+ * 겹침 병합 임계 `MARKER_MERGE_PX`(68/80/92)는 렌더와 분리돼 값 불변이다.
  *
  * **화면 로컬 컴포넌트다.** 지도 마커라는 도메인 형태가 강하고 사용처가 지도 홈 하나뿐이라
  * `packages/ui-native`로 승격하지 않는다(승격은 두 번째 사용처가 생길 때 — 빌드 리포트
@@ -19,15 +23,8 @@ import {
  * `@fillmap/design-tokens` 시맨틱 토큰이고 임의 hex는 없다.
  */
 
-/**
- * 마커 지름(px) = 병합 임계와 같은 표 — Figma 1x 실측 68/80/92(흰 링 포함 전체 지름).
- * 임계와 지름이 갈라지면 "겹쳐 보이는데 안 합쳐지는" 상태가 생기므로 출처를 하나로 둔다.
- * SIDO(92)는 줌 하한(MAP_MIN_ZOOM) 때문에 실사용 경로가 없다 — 전국 확장 시 되살아난다.
- */
-export const CLUSTER_MARKER_PX = MARKER_MERGE_PX;
-
-/** 흰 링 두께 — Figma 정본 3px 백색 스트로크 (지도 타일과 마커를 분리한다) */
-const RING_WIDTH = 3;
+/** 웹 `rounded-[10px]` — radius 토큰 sm 8 / md 12 사이라 웹도 임의값 예외 */
+const BUBBLE_RADIUS = 10;
 
 /**
  * `shadow.raised` 토큰(`0 2px 10px rgba(25,31,40,0.12)`)의 RN 분해 — RN style은 CSS
@@ -46,10 +43,13 @@ interface ClusterMarkerProps {
 }
 
 export const ClusterMarker = ({ marker }: ClusterMarkerProps) => {
-  const size = CLUSTER_MARKER_PX[marker.unit];
+  const { box } = clusterBubbleSize(marker);
   return (
-    /* Android 서브뷰 평탄화 방지 — 평탄화되면 원·테두리가 사라진다 (MSG-298 경로 마커 선례) */
+    /* 바깥 박스 = 마커 뷰 크기(그림자 여백 포함, 투명). Android 서브뷰 평탄화 방지
+       collapsable={false} (MSG-298 경로 마커 선례). key는 라이브러리 계약 — 생김새 의존성을
+       최상위 자식 key로 넘겨야 같은 지역 재조회 시 개수가 갱신된다 (MSG-558 Q6·S9) */
     <View
+      key={`${marker.name}/${marker.count}`}
       collapsable={false}
       accessibilityLabel={
         marker.name !== null
@@ -57,41 +57,53 @@ export const ClusterMarker = ({ marker }: ClusterMarkerProps) => {
           : `점령 격자 ${marker.count}개`
       }
       style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: semantic.primary,
-        borderWidth: RING_WIDTH,
-        borderColor: semantic.canvas,
+        width: box.width,
+        height: box.height,
         alignItems: "center",
         justifyContent: "center",
-        ...RAISED_SHADOW,
       }}
     >
-      {/* 병합 마커·미판정 버킷은 이름이 없다 — 개수만 표시 (S5) */}
-      {marker.name !== null && (
+      <View
+        collapsable={false}
+        style={{
+          alignSelf: "center",
+          alignItems: "center",
+          borderRadius: BUBBLE_RADIUS,
+          paddingHorizontal: spacing.sm,
+          paddingTop: BUBBLE_PADDING_TOP,
+          paddingBottom: BUBBLE_PADDING_BOTTOM,
+          backgroundColor: semantic.secondary,
+          ...RAISED_SHADOW,
+        }}
+      >
+        {/* 병합 마커·미판정 버킷은 이름이 없다 — 개수만 표시. 웹 `text-fm-label text-primary-foreground/85` */}
+        {marker.name !== null && (
+          <Text
+            numberOfLines={1}
+            style={{
+              color: semantic.onPrimary,
+              opacity: 0.85,
+              fontSize: typography.label.fontSize,
+              lineHeight: typography.label.lineHeight,
+              fontWeight: "500",
+            }}
+          >
+            {marker.name}
+          </Text>
+        )}
+        {/* 웹 `text-fm-heading font-bold text-primary-foreground` */}
         <Text
           numberOfLines={1}
           style={{
             color: semantic.onPrimary,
-            fontSize: typography.caption.fontSize,
-            lineHeight: typography.caption.lineHeight,
-            fontWeight: "400",
+            fontSize: typography.heading.fontSize,
+            lineHeight: typography.heading.lineHeight,
+            fontWeight: "700",
           }}
         >
-          {marker.name}
+          {formatClusterCount(marker.count)}
         </Text>
-      )}
-      <Text
-        style={{
-          color: semantic.onPrimary,
-          fontSize: typography["body-strong"].fontSize,
-          lineHeight: typography["body-strong"].lineHeight,
-          fontWeight: "600",
-        }}
-      >
-        {formatClusterCount(marker.count)}
-      </Text>
+      </View>
     </View>
   );
 };

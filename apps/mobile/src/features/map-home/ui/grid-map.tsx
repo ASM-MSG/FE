@@ -30,7 +30,8 @@ import type { RouteWaypoint } from "../model/route-overlay";
 import { drillInZoomForUnit } from "../model/aggregation-unit";
 import { gateOccupiedFill, isBelowGridZoom } from "../model/cluster-overlay";
 import type { RegionClusterMarker } from "../model/region-cluster-overlay";
-import { CLUSTER_MARKER_PX, ClusterMarker } from "./cluster-marker";
+import { clusterBubbleSize } from "../model/cluster-bubble-size";
+import { ClusterMarker } from "./cluster-marker";
 
 /**
  * 지도 SDK 격리 경계 — @mj-studio/react-native-naver-map 참조는 이 파일 안에서만 한다
@@ -449,8 +450,8 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
           key={`cluster:${cluster.id}`}
           latitude={cluster.position.lat}
           longitude={cluster.position.lng}
-          width={CLUSTER_MARKER_PX[cluster.unit]}
-          height={CLUSTER_MARKER_PX[cluster.unit]}
+          width={clusterBubbleSize(cluster).box.width}
+          height={clusterBubbleSize(cluster).box.height}
           anchor={{ x: 0.5, y: 0.5 }}
           onTap={() => zoomToCluster(cluster)}
         >
