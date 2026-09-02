@@ -8,23 +8,45 @@ import { signInForTest, signOutForTest } from "@/test/auth-session";
 import { consoleSessionFetch } from "@/test/console-session";
 import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
 import { stubFetch } from "@/test/stub-fetch";
+// 생성 쿼리 키는 barrel 미재수출 — 직접 경로 import (MSG-323 관례)
+import { getStatusQueryKey } from "@/shared/api/generated/@tanstack/react-query.gen";
 import { useMustChangeGate } from "./use-must-change-gate";
 
-const wrapperAt = (route: string) => {
+const createClient = () =>
+  new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+const wrapperAt = (route: string, client: QueryClient) => {
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+    <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
     </QueryClientProvider>
   );
   return Wrapper;
 };
 
-const renderGate = (route: string, enabled?: boolean) =>
-  renderHook(() => useMustChangeGate(enabled), { wrapper: wrapperAt(route) });
+/**
+ * 클라이언트를 함께 돌려준다 — "게이트가 발동하지 않는다" 케이스는 초기값 null로도 통과하는
+ * 오탐이 가능해서, 상태 쿼리가 **정착한 뒤에도** null인지 확인해야 한다 (MSG-542 환류 4).
+ */
+const renderGate = (route: string, enabled?: boolean) => {
+  const client = createClient();
+  return {
+    client,
+    ...renderHook(() => useMustChangeGate(enabled), {
+      wrapper: wrapperAt(route, client),
+    }),
+  };
+};
+
+/** 상태 쿼리가 성공·실패로 정착할 때까지 기다린다 */
+const waitForStatusSettled = async (
+  client: QueryClient,
+  expected: "success" | "error",
+) => {
+  await waitFor(() =>
+    expect(client.getQueryState(getStatusQueryKey())?.status).toBe(expected),
+  );
+};
 
 describe("useMustChangeGate — 첫 로그인 비밀번호 강제 설정 게이트 (AC 9)", () => {
   afterEach(() => {
@@ -63,16 +85,17 @@ describe("useMustChangeGate — 첫 로그인 비밀번호 강제 설정 게이�
     await waitFor(() => expect(result.current).toBeNull());
   });
 
-  it("mustChange=false면 게이트가 발동하지 않는다 (AC 9)", async () => {
+  it("mustChange=false면 상태 쿼리 정착 후에도 게이트가 발동하지 않는다 (AC 9)", async () => {
     signInForTest();
     consoleSessionFetch("ORG", { mustChange: false });
 
-    const { result } = renderGate(CONSOLE_ROUTES.orgHome);
+    const { result, client } = renderGate(CONSOLE_ROUTES.orgHome);
 
-    await waitFor(() => expect(result.current).toBeNull());
+    await waitForStatusSettled(client, "success");
+    expect(result.current).toBeNull();
   });
 
-  it("상태 조회가 실패하면 게이트가 발동하지 않는다 — 서버 확답에서만 발동 (AC 9)", async () => {
+  it("상태 조회가 실패로 정착해도 게이트가 발동하지 않는다 — 서버 확답에서만 발동 (AC 9)", async () => {
     signInForTest();
     stubFetch((request) => {
       const { pathname } = new URL(request.url);
@@ -89,9 +112,10 @@ describe("useMustChangeGate — 첫 로그인 비밀번호 강제 설정 게이�
       });
     });
 
-    const { result } = renderGate(CONSOLE_ROUTES.orgHome);
+    const { result, client } = renderGate(CONSOLE_ROUTES.orgHome);
 
-    await waitFor(() => expect(result.current).toBeNull());
+    await waitForStatusSettled(client, "error");
+    expect(result.current).toBeNull();
   });
 
   it("enabled=false면 콘솔 세션이라도 상태 조회를 발사하지 않는다 — 가드가 거부할 세션의 여분 요청 차단 (PR #116 리뷰)", async () => {
