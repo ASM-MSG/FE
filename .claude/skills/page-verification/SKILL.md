@@ -82,8 +82,8 @@ pnpm openapi-ts && git diff --exit-code apps/web/src/shared/api/generated  # 생
 
 1. **dev client 상태 확인**: `adb devices`(기기) + `adb shell pm list packages | grep fillmap`(설치 여부)
 2. **재빌드 필요 판단**: 이번 티켓이 새 네이티브 의존성·Expo 플러그인·`app.config.js`의 android 블록·네이티브 주입 env 키(`EXPO_PUBLIC_NAVER_MAP_CLIENT_ID`)를 건드렸으면 prebuild가 필요하다. JS/TS만 바뀌었으면 Metro 갱신으로 충분하다 (런북 2)
-3. **실행**: `pnpm --filter mobile android:dev` — 빌드·설치 → Metro(8081 고정) → 패키지 명시 진입까지 한 명령이다. JS만 바뀌었으면 `-- --skip-build`, 네이티브가 바뀌었으면 `-- --clean`, Metro에 안 붙으면 `-- --clear`
-4. **화면 확인**: 프로파일 범위의 수용 기준을 기기에서 재현한다. 스크린샷은 `adb exec-out screencap -p > _workspace/MSG-{번호}/screenshots/{이름}.png`
+3. **실행**: `pnpm --filter mobile android:dev` — 빌드·설치 → Metro(8081 고정) → 패키지 명시 진입까지 한 명령이다. JS만 바뀌었으면 `--skip-build`, 네이티브가 바뀌었으면 `--clean`, Metro에 안 붙으면 `--clear` (pnpm은 `--`를 스크립트에 그대로 넘기므로 붙이지 않는다 — 2026-09-02 실측 "알 수 없는 플래그: --"). 오케스트레이터가 Metro를 이미 띄워 넘겼으면 그대로 쓴다
+4. **화면 확인 — 시간 예산 안에서**: 기준을 하나씩 기기에서 탐색하지 않는다. **핵심 사용자 경로를 1회 통과하며 상태별 스크린샷 1장씩(≤6장), 실기 상한 15분**이 기본이다. 경로를 지나며 관찰된 기준은 그 스크린샷을 증적으로 판정하고, 경로 밖의 화면 기준은 vitest 매핑이 있으면 그것으로, 없으면 "미실행(범위 축소)"으로 표기한다 — 확인불가(환경 요인)와 구분한다. 스크린샷은 `adb exec-out screencap -p > _workspace/MSG-{번호}/screenshots/{이름}.png`. 실기 중에는 생성물 재생성(openapi-ts)·`git stash`/`checkout`·워크스페이스 루트 파일/심링크 생성을 하지 않는다 — Metro 파일 맵이 죽는다(2026-09-02 실측 2건)
 5. **스모크**: `adb logcat -s ReactNativeJS:V`에 에러 없음, 화면 진입·이탈 정상
 
 모바일에서 달라지는 판정 기준:

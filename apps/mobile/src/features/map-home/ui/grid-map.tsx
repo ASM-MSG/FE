@@ -66,6 +66,9 @@ const HATCH_LINE_WIDTH = 2;
 /** 코스 경로 (MSG-427 E14) — Figma 14094:5417/5419: 폴리라인 4px + 28px 번호 마커 */
 const ROUTE_LINE_WIDTH = 4;
 const ROUTE_MARKER_SIZE = 28;
+/** 선택 경유지 강조 (MSG-556 D8) — 28→36 확대 + 흰 링 2→3 */
+const ROUTE_MARKER_ACTIVE_SIZE = 36;
+const ROUTE_MARKER_ACTIVE_RING = 3;
 
 /** 선택 미션 이름표 마커 치수 (MSG-427 승인 Q4) — 한 줄 pill */
 const MISSION_LABEL_WIDTH = 140;
@@ -74,6 +77,8 @@ const MISSION_LABEL_HEIGHT = 24;
 export interface GridMapRef {
   /** 카메라를 해당 좌표로 애니메이션 이동 — 내 위치 버튼 (AC 8) */
   moveTo: (center: LatLng) => void;
+  /** 줌은 그대로 두고 중심만 이동 — AI 추천 카드 탭 (MSG-556 D8, 웹 `moveTo` 대응) */
+  panTo: (center: LatLng) => void;
 }
 
 interface GridMapProps {
@@ -122,8 +127,13 @@ interface GridMapProps {
   themeColor?: string;
   /** 교집합(테마 ∩ 점령) 셀 — 테마 색 빗금 추가 (MSG-427 D9) */
   hatchCells?: GridCellIndex[];
-  /** 코스 경로 — 폴리라인 좌표 + 번호 경유지 마커 (MSG-427 E14, 경로추천 전용) */
-  route?: { path: LatLng[]; waypoints: RouteWaypoint[] };
+  /** 코스 경로 — 폴리라인 좌표 + 번호 경유지 마커 (MSG-427 E14, 경로추천 전용).
+      `onWaypointTap`은 AI 추천의 마커→카드 선택 (MSG-556 D8) — 없으면 마커는 탭 불가 */
+  route?: {
+    path: LatLng[];
+    waypoints: RouteWaypoint[];
+    onWaypointTap?: (seq: number) => void;
+  };
   /**
    * 선택된 미션의 이름표 마커 (MSG-427 승인 Q4) — **선택된 미션에만** 붙인다.
    * Figma 9개 프레임 어디에도 이름표가 없고 RN에는 hover가 없어(스펙 R4), 티켓
@@ -299,6 +309,13 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         duration: 500,
       });
     },
+    panTo: (center) => {
+      mapRef.current?.animateCameraTo({
+        latitude: center.lat,
+        longitude: center.lng,
+        duration: 500,
+      });
+    },
   }));
 
   return (
@@ -405,14 +422,15 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         />
       )}
       {themeColor &&
-        route?.waypoints.map(({ seq, coord }) => (
+        route?.waypoints.map(({ seq, coord, active }) => (
           <NaverMapMarkerOverlay
             key={seq}
             latitude={coord.lat}
             longitude={coord.lng}
-            width={ROUTE_MARKER_SIZE}
-            height={ROUTE_MARKER_SIZE}
+            width={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
+            height={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
             anchor={{ x: 0.5, y: 0.5 }}
+            onTap={route?.onWaypointTap && (() => route?.onWaypointTap?.(seq))}
           >
             {/* 커스텀 뷰 마커 — Figma 14094:5419: 테마 색 원 + 흰 테두리 2px + 흰 번호.
                 네이티브 마커 서브뷰라 nativewind 클래스 대신 토큰 값을 style로 직접 주입,
@@ -421,11 +439,11 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             <View
               collapsable={false}
               style={{
-                width: ROUTE_MARKER_SIZE,
-                height: ROUTE_MARKER_SIZE,
-                borderRadius: ROUTE_MARKER_SIZE / 2,
+                width: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
+                height: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
+                borderRadius: ROUTE_MARKER_SIZE,
                 backgroundColor: themeColor,
-                borderWidth: 2,
+                borderWidth: active ? ROUTE_MARKER_ACTIVE_RING : 2,
                 borderColor: semantic.onPrimary,
                 alignItems: "center",
                 justifyContent: "center",
