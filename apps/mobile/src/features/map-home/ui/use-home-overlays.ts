@@ -16,6 +16,10 @@ import {
   toMissionCells,
   type CellClassification,
 } from "../model/mission-cells";
+import {
+  hotCellsVisible,
+  missionCellsVisible,
+} from "../model/occupancy-visibility";
 import { toOccupiedCells } from "../model/occupied-grids";
 import { courseRouteOf, type RouteWaypoint } from "../model/route-overlay";
 import type { ThemeId } from "../model/themes";
@@ -32,6 +36,8 @@ interface HomeOverlaysInput {
   themeId: ThemeId | null;
   /** 현재 뷰포트 — 미션 타일 클리핑 범위 (F-12) */
   bounds: Bounds | null;
+  /** 현재 줌 — 칩 활성 저줌의 테마 격자 낱개 게이트 입력 (MSG-558 C4). 지도 준비 전 null */
+  zoom: number | null;
   /** 이 동의 핫구역 격자 id (B1) */
   hotGridIds: string[];
   missions: HomeMissions;
@@ -57,6 +63,7 @@ export interface HomeOverlays {
 export const useHomeOverlays = ({
   themeId,
   bounds,
+  zoom,
   hotGridIds,
   missions,
   occupiedGrids,
@@ -78,11 +85,21 @@ export const useHomeOverlays = ({
    * 강조 격자 id — 핫구역은 서버 응답 그대로, 미션 3종은 **뷰포트 범위로 클리핑**해
    * 펼친다 (F-12). 웹에서 전 영역을 펼치던 것이 줌·이동 때마다 지도를 멈추게 했다.
    * 선택된 미션이 있으면 그 미션만 그린다 — 상세에서 다른 미션 타일이 겹치지 않게.
+   * 칩 활성 저줌에서는 낱개를 걷고 집계 말풍선이 그 자리를 대신한다 (MSG-558 C4, 웹
+   * `occupancy-visibility`) — 핫은 예외 없음, 축제·팝업은 상세를 연 대상만 남김, 경로
+   * 칩은 라인 표시라 게이트 대상이 아니다.
    */
   const themeGridIds = useMemo(() => {
-    if (themeId === "hot") return hotGridIds;
+    if (themeId === "hot")
+      return zoom !== null && !hotCellsVisible({ zoom }) ? [] : hotGridIds;
     if (bounds === null) return [];
     const target = selectedCourse ?? selectedMission;
+    if (
+      zoom !== null &&
+      !missions.isRouteChip &&
+      !missionCellsVisible({ zoom, hasDetailTarget: target !== null })
+    )
+      return [];
     const source = target
       ? [target]
       : missions.isRouteChip
@@ -93,6 +110,7 @@ export const useHomeOverlays = ({
     themeId,
     hotGridIds,
     bounds,
+    zoom,
     selectedCourse,
     selectedMission,
     missions.isRouteChip,
