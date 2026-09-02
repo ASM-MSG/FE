@@ -107,3 +107,16 @@ const STATUS_VIEWS: Record<
 export const submissionStatusView = (
   status: SubmissionStatus,
 ): { label: string; tone: SubmissionStatusTone } => STATUS_VIEWS[status];
+
+/**
+ * 선택 id 파생 (AC 8 + codex 리뷰 P2) — 고정한 행이 백그라운드 재조회로 현재 목록에서
+ * 빠지면(다른 관리자가 상태를 바꾼 경우) 고정을 무시하고 첫 행으로 폴백한다.
+ * 그러지 않으면 테이블은 선택 행이 없는데 미리보기는 옛 신청을 계속 보여준다.
+ */
+export const resolveSelectedId = (
+  pinnedId: number | null,
+  submissions: readonly { id: number }[],
+): number | null =>
+  pinnedId !== null && submissions.some((s) => s.id === pinnedId)
+    ? pinnedId
+    : (submissions[0]?.id ?? null);

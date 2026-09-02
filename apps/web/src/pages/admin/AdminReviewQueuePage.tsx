@@ -5,6 +5,7 @@ import { CONSOLE_ROUTES } from "@/app/console-routes";
 import { useSubmissionDetailQuery } from "@/features/admin-review/api/use-submission-detail-query";
 import { useSubmissionsQuery } from "@/features/admin-review/api/use-submissions-query";
 import {
+  resolveSelectedId,
   submissionStatusView,
   type SubmissionStatus,
 } from "@/features/admin-review/model/submission-view";
@@ -43,7 +44,7 @@ export const AdminReviewQueuePage = () => {
   const list = useSubmissionsQuery(status);
   // 탭 전환 중(placeholderData)의 직전 목록은 행으로 쓰지 않는다 — counts만 유지된다(추정 9)
   const submissions = list.isPlaceholder ? [] : list.submissions;
-  const selectedId = pinnedId ?? submissions[0]?.id ?? null;
+  const selectedId = resolveSelectedId(pinnedId, submissions);
   const detail = useSubmissionDetailQuery(selectedId);
 
   const isListLoading = list.isPending || list.isPlaceholder;

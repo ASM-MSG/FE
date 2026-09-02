@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { EventSubmissionLocationResponseDto } from "@/shared/api/generated/types.gen";
 import {
   formatLocationCountLabel,
+  resolveSelectedId,
   formatPreviewAreaSummary,
   formatPreviewPeriod,
   formatScheduleLabel,
@@ -102,5 +103,21 @@ describe("submissionStatusView — 신청 상태 라벨·톤 (AC 2-f, 추정 7)"
       label: "반려됨",
       tone: "error",
     });
+  });
+});
+
+describe("resolveSelectedId — 선택 id 파생 (AC 8 + codex P2: 고정 행 이탈 폴백)", () => {
+  it("고정한 id가 현재 목록에 있으면 그대로 선택한다", () => {
+    expect(resolveSelectedId(2, [{ id: 1 }, { id: 2 }])).toBe(2);
+  });
+
+  it("고정한 id가 재조회로 목록에서 빠지면 첫 행으로 폴백한다", () => {
+    expect(resolveSelectedId(9, [{ id: 1 }, { id: 2 }])).toBe(1);
+  });
+
+  it("고정이 없으면 첫 행, 목록이 비면 null이다", () => {
+    expect(resolveSelectedId(null, [{ id: 3 }])).toBe(3);
+    expect(resolveSelectedId(null, [])).toBeNull();
+    expect(resolveSelectedId(9, [])).toBeNull();
   });
 });
