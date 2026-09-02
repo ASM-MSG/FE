@@ -5220,6 +5220,45 @@
       ]
     },
     {
+      "id": "523e3bc46271eeb7",
+      "note": "consolidate `p` — 3 copies",
+      "members": [
+        {
+          "id": "06c8bec34ec1751a",
+          "source_digest": "fnv1a64:7da194d878a43477",
+          "file": "apps/web/src/pages/org/ui/OrgSubmissionSummaryCard.tsx",
+          "lang": "typescript",
+          "start_line": 84,
+          "end_line": 90,
+          "kind": "Block",
+          "name": "p",
+          "is_fragment": false
+        },
+        {
+          "id": "559a181735a04008",
+          "source_digest": "fnv1a64:00c7752fb87659e6",
+          "file": "apps/web/src/pages/map-home/ui/HotRegionPanel.tsx",
+          "lang": "typescript",
+          "start_line": 94,
+          "end_line": 99,
+          "kind": "Block",
+          "name": "p",
+          "is_fragment": false
+        },
+        {
+          "id": "e1a64eaa0bf63fed",
+          "source_digest": "fnv1a64:966452bb4e332f25",
+          "file": "apps/web/src/pages/dex/ui/GalleryTabBody.tsx",
+          "lang": "typescript",
+          "start_line": 84,
+          "end_line": 87,
+          "kind": "Block",
+          "name": "p",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "526ff3a8258fe630",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -6457,6 +6496,58 @@
           "end_line": 10,
           "kind": "Block",
           "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "6635ed203fe6203b",
+      "note": "repeated across 3 directories — extract a shared abstraction — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "eca00d0003e0b31e",
+          "source_digest": "fnv1a64:1a851e2cfbf2aee1",
+          "file": "apps/web/src/pages/org/org-login.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 50,
+          "end_line": 68,
+          "kind": "Function",
+          "name": "renderLogin",
+          "is_fragment": false
+        },
+        {
+          "id": "338282dc2d6f1728",
+          "source_digest": "fnv1a64:257042715506dd99",
+          "file": "apps/web/src/app/console-routing.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 20,
+          "end_line": 31,
+          "kind": "Function",
+          "name": "renderConsoleAt",
+          "is_fragment": false
+        },
+        {
+          "id": "791430b05453e3f0",
+          "source_digest": "fnv1a64:cf41ff1393ca2947",
+          "file": "apps/web/src/app/layouts/app-layout-consent-gate.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 74,
+          "end_line": 82,
+          "kind": "Block",
+          "is_fragment": true,
+          "fragment_kind": "expr-effect",
+          "reason_code": "exact-expr-effect"
+        },
+        {
+          "id": "550ac75c0ecb4208",
+          "source_digest": "fnv1a64:cf41ff1393ca2947",
+          "file": "apps/web/src/pages/org/org-must-change.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 51,
+          "end_line": 59,
+          "kind": "Block",
+          "is_fragment": true,
+          "fragment_kind": "expr-effect",
+          "reason_code": "exact-expr-effect"
         }
       ]
     },
@@ -11844,34 +11935,6 @@
       ]
     },
     {
-      "id": "b9eacbae2f9c3d50",
-      "note": "consolidate `p` — 2 copies",
-      "members": [
-        {
-          "id": "559a181735a04008",
-          "source_digest": "fnv1a64:00c7752fb87659e6",
-          "file": "apps/web/src/pages/map-home/ui/HotRegionPanel.tsx",
-          "lang": "typescript",
-          "start_line": 94,
-          "end_line": 99,
-          "kind": "Block",
-          "name": "p",
-          "is_fragment": false
-        },
-        {
-          "id": "e1a64eaa0bf63fed",
-          "source_digest": "fnv1a64:966452bb4e332f25",
-          "file": "apps/web/src/pages/dex/ui/GalleryTabBody.tsx",
-          "lang": "typescript",
-          "start_line": 84,
-          "end_line": 87,
-          "kind": "Block",
-          "name": "p",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "baacdd8d65657ca5",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -15077,58 +15140,6 @@
           "kind": "Function",
           "name": "submitNewPassword",
           "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "e6052a1746a505ff",
-      "note": "repeated across 3 directories — extract a shared abstraction — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "eca00d0003e0b31e",
-          "source_digest": "fnv1a64:1a851e2cfbf2aee1",
-          "file": "apps/web/src/pages/org/org-login.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 50,
-          "end_line": 68,
-          "kind": "Function",
-          "name": "renderLogin",
-          "is_fragment": false
-        },
-        {
-          "id": "338282dc2d6f1728",
-          "source_digest": "fnv1a64:257042715506dd99",
-          "file": "apps/web/src/app/console-routing.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 20,
-          "end_line": 31,
-          "kind": "Function",
-          "name": "renderConsoleAt",
-          "is_fragment": false
-        },
-        {
-          "id": "791430b05453e3f0",
-          "source_digest": "fnv1a64:cf41ff1393ca2947",
-          "file": "apps/web/src/app/layouts/app-layout-consent-gate.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 74,
-          "end_line": 82,
-          "kind": "Block",
-          "is_fragment": true,
-          "fragment_kind": "expr-effect",
-          "reason_code": "exact-expr-effect"
-        },
-        {
-          "id": "6e83676ec3d8b174",
-          "source_digest": "fnv1a64:cf41ff1393ca2947",
-          "file": "apps/web/src/pages/org/org-must-change.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 54,
-          "end_line": 62,
-          "kind": "Block",
-          "is_fragment": true,
-          "fragment_kind": "expr-effect",
-          "reason_code": "exact-expr-effect"
         }
       ]
     },

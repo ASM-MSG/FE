@@ -10,12 +10,26 @@ import { stubFetch } from "./stub-fetch";
  * MSG-545: 운영자 홈이 실구현되며 콘솔 마운트가 `/api/org/profile`(사이드바)과
  * `/api/org/event-submissions/my`(대시보드)도 부른다 — 두 응답을 빈 상태 형태로 더했다.
  * 대시보드 자체의 데이터 분기는 페이지 스모크가 자기 스텁으로 검증한다.
+ *
+ * `overrides`는 특정 경로만 다르게 응답해야 하는 스모크(예: mustChange를 동적으로
+ * 뒤집는 MSG-542 게이트 협업 테스트)가 공통 응답을 복제하지 않고 얹는 자리다 —
+ * null을 돌려주면 공통 분기로 떨어진다.
  */
 export const consoleSessionFetch = (
   role: "USER" | "ORG" | "ADMIN",
-  { mustChange = false }: { mustChange?: boolean } = {},
+  {
+    mustChange = false,
+    overrides,
+  }: {
+    mustChange?: boolean;
+    overrides?: (request: Request) => Response | null;
+  } = {},
 ) =>
   stubFetch((request) => {
+    const overridden = overrides?.(request);
+    if (overridden) {
+      return overridden;
+    }
     const { pathname } = new URL(request.url);
     if (pathname === "/api/auth/password/status") {
       return envelopeResponse({ mustChange });

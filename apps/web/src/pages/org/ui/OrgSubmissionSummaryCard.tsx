@@ -82,6 +82,7 @@ export const OrgSubmissionSummaryCard = ({
         </span>
         <p className="text-fm-title text-foreground">{submission.title}</p>
         <p className="text-fm-body text-foreground-muted">
+          {/* history는 대표가 REJECTED일 때만 상세 조회로 채워진다(OrgHomePage 게이팅) — 비반려 대표는 항상 null */}
           {submissionTimelineText(
             submission.updatedAt,
             detail.detail?.history ?? null,
