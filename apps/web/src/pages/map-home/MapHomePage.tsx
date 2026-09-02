@@ -32,6 +32,7 @@ import { useHomeChipEntry } from "./ui/use-home-chip-entry";
 import { useHomeCloseHandlers } from "./ui/use-home-close-handlers";
 import { useEventOverlayPublish } from "./ui/use-event-overlay-publish";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
+import { useMapFocusEntry } from "./ui/use-map-focus-entry";
 import { useHomeOverlayPublish } from "./ui/use-home-overlay-publish";
 import { useHomePanelState } from "./ui/use-home-panel-state";
 
@@ -214,6 +215,9 @@ export const MapHomePage = () => {
   });
 
   useHomeEntryLifecycle();
+  // focus 딥링크 진입 (MSG-554 AC 6) — 관리자 콘솔 "지도에서 보기"가 여는 `/?focus=lat,lng`.
+  // 파라미터가 없으면 무동작이라 기존 진입 경로는 그대로다
+  useMapFocusEntry({ moveTo, zoomTo });
 
   // 격자 상세 (MSG-325·326) — 쿼리 3종 + 맥락 줄 파생은 훅이 소유한다 (리뷰 반영: 페이지 분할).
   // MSG-474: 비로그인은 grids/{gridId} 미발사 — 핫구역 응답의 이름 재료로 조립한다

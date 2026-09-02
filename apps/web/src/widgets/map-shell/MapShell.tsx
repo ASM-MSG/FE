@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/app/routes";
-import type { LatLng } from "@/entities/cell";
 import { eventGridIdSet } from "@/features/event/model/event-location-overlay";
 import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { useEventLocationsQuery } from "@/features/event/model/use-event-locations-query";
@@ -32,9 +31,10 @@ import { useCommittedRegionBootstrap } from "@/features/region/model/use-committ
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
 import { MapControls } from "@/pages/map-home/ui/MapControls";
 import { ThemeChipsBar } from "@/pages/map-home/ui/ThemeChipsBar";
-import { SEOMYEON_CENTER, getCurrentPosition } from "@/shared/geolocation";
+import { getCurrentPosition } from "@/shared/geolocation";
 import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
 import { useSidebarStore } from "./sidebar-store";
+import { useMapEntryCenter } from "./use-map-entry-center";
 import type { MapShellContext } from "./use-map-shell";
 
 /**
@@ -208,18 +208,10 @@ export const MapShell = () => {
   const isHome = pathname === ROUTES.home;
 
   const mapRef = useRef<MapCanvasHandle>(null);
-  const [initialCenter, setInitialCenter] = useState<LatLng>(SEOMYEON_CENTER);
-
-  // 진입 시 현재 위치로 초기 중심 설정 (권한 거부/실패 시 서면 폴백)
-  useEffect(() => {
-    let active = true;
-    getCurrentPosition().then((coords) => {
-      if (active) setInitialCenter(coords);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+  // 진입 시 현재 위치로 초기 중심 설정 (권한 거부/실패 시 서면 폴백) —
+  // focus 딥링크 진입에서는 위치 조회를 건너뛴다 (MSG-554 AC 6: 늦게 도착한 위치가
+  // focus 이동을 덮어쓰지 않게 한다)
+  const initialCenter = useMapEntryCenter();
 
   const context = useMemo<MapShellContext>(
     () => ({
