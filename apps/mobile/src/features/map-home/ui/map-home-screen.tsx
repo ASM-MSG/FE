@@ -312,6 +312,9 @@ export const MapHomeScreen = () => {
    * 역인덱스에 없는 셀과 게이트(canOpenDetail)에 걸린 셀은 no-op이다.
    */
   const handleCellTap = (_cellId: string, index: GridCellIndex) => {
+    // 이벤트 모드 중 홈 격자 탭 무시 (codex P2) — 웹은 방 열림 중 홈 게시 훅 suspended.
+    // 여기서 선택을 세우면 ✕·하드웨어 백으로 모드를 나갈 때 기본 시트 대신 격자 상세가 드러난다 (D14)
+    if (event.active) return;
     const gridId = gridIdOfCell(overlays.gridIdIndex, index);
     if (gridId === null) return;
     if (
