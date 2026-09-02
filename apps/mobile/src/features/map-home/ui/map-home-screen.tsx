@@ -153,6 +153,7 @@ export const MapHomeScreen = () => {
   const overlays = useHomeOverlays({
     themeId,
     bounds,
+    zoom: viewport?.zoom ?? null,
     hotGridIds: hotRegion.hotGridIds,
     missions,
     occupiedGrids: occupied.grids,

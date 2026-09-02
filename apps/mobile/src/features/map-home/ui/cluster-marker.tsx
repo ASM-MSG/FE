@@ -5,13 +5,19 @@ import {
   BUBBLE_PADDING_TOP,
   clusterBubbleSize,
 } from "../model/cluster-bubble-size";
-import { formatClusterCount } from "../model/cluster-format";
+import {
+  clusterMarkerLabel,
+  formatClusterCount,
+} from "../model/cluster-format";
 import type { RegionClusterMarker } from "../model/region-cluster-overlay";
+import { THEME_META } from "../model/themes";
 
 /**
  * SOURCE: 웹 `apps/web/src/pages/map-home/ui/MapCanvas.tsx` `clusterMarkerContent` (MSG-475).
  * 저줌 지역 집계 마커의 말풍선 뷰 (MSG-558 S1~S3) — 위 지역명 / 아래 점령 격자 수.
  * 라운드 10 · 패딩 6/12/7 · 링 없음 · 그림자 · 크기 단일(지명 길이 hug, 단위별 3단 폐기).
+ * 칩 집계 마커(MSG-558 확장)는 **채움색만** `THEME_META[theme].color`로 갈린다 — 웹
+ * `THEME_FILL_CLASS`(토큰 `theme-*`) 대응. 형태·타이포·패딩·글자색은 테마와 무관하게 동일.
  * 겹침 병합 임계 `MARKER_MERGE_PX`(68/80/92)는 렌더와 분리돼 값 불변이다.
  *
  * **화면 로컬 컴포넌트다.** 지도 마커라는 도메인 형태가 강하고 사용처가 지도 홈 하나뿐이라
@@ -51,11 +57,7 @@ export const ClusterMarker = ({ marker }: ClusterMarkerProps) => {
     <View
       key={`${marker.name}/${marker.count}`}
       collapsable={false}
-      accessibilityLabel={
-        marker.name !== null
-          ? `${marker.name} 점령 격자 ${marker.count}개`
-          : `점령 격자 ${marker.count}개`
-      }
+      accessibilityLabel={clusterMarkerLabel(marker)}
       style={{
         width: box.width,
         height: box.height,
@@ -72,7 +74,9 @@ export const ClusterMarker = ({ marker }: ClusterMarkerProps) => {
           paddingHorizontal: spacing.sm,
           paddingTop: BUBBLE_PADDING_TOP,
           paddingBottom: BUBBLE_PADDING_BOTTOM,
-          backgroundColor: semantic.secondary,
+          backgroundColor: marker.theme
+            ? THEME_META[marker.theme].color
+            : semantic.secondary,
           ...RAISED_SHADOW,
         }}
       >

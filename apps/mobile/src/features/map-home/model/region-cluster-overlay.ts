@@ -1,6 +1,11 @@
 import type { LatLng } from "../../../entities/cell/model/grid";
-import type { RegionAggregateResponseDto } from "../../../shared/api/sdk";
+import type {
+  HotZoneRegionAggregateResponseDto,
+  MissionRegionAggregateResponseDto,
+  RegionAggregateResponseDto,
+} from "../../../shared/api/sdk";
 import type { AggregationUnit } from "./aggregation-unit";
+import type { ThemeId } from "./themes";
 
 /**
  * 서버 집계 `items[]` → 지역명+점령 격자 수 마커 파생 — 웹
@@ -19,6 +24,26 @@ export interface RegionClusterMarker {
   count: number;
   position: LatLng;
   unit: AggregationUnit;
+  /**
+   * 집계 마커의 소속 칩 (웹 MSG-451 AC 6 → MSG-475 hot 합류, 모바일 MSG-558 확장) —
+   * 채움색과 접근성 문구의 근거. 없으면 도감 점령 집계 마커다(기본형 렌더).
+   */
+  theme?: ClusterMarkerTheme;
+}
+
+/** 집계 마커를 갖는 칩 — 축제·팝업·핫구역. 코스는 라인이라 대상이 아니다 */
+export type ClusterMarkerTheme = Extract<ThemeId, "hot" | "festival" | "popup">;
+
+/** 미션 집계 칩(축제·팝업) — ClusterMarkerTheme의 부분집합 */
+export type MissionMarkerTheme = Extract<ThemeId, "festival" | "popup">;
+
+/** 파생에 필요한 집계 항목의 최소 형태 — 점령·미션·핫 세 응답의 공통부 */
+interface ClusterAggregateItem {
+  regionCode: string | null;
+  name: string | null;
+  lat: number;
+  lng: number;
+  count: number;
 }
 
 /** 시도 접미 축약 대상 — 긴 접미부터 검사한다("특별자치시"가 "광역시"보다 먼저) */
@@ -51,16 +76,18 @@ const abbreviateSidoName = (name: string): string => {
  * - 좌표·count는 응답 값 그대로 — 서버가 격자 중심 평균으로 대표 좌표를 준다
  * - 시 단위 이름만 표기 축약한다("부산광역시 214" → "부산 214")
  */
-export const toRegionClusterMarkers = (
-  items: RegionAggregateResponseDto[],
+const toClusterMarkers = (
+  items: ClusterAggregateItem[],
   unit: AggregationUnit,
+  keyPrefix: string,
+  theme?: ClusterMarkerTheme,
 ): RegionClusterMarker[] => {
   let nullBucketSeq = 0;
   return items.map((item) => ({
     id:
       item.regionCode !== null
-        ? `agg-${unit}-${item.regionCode}`
-        : `agg-${unit}-unassigned-${nullBucketSeq++}`,
+        ? `${keyPrefix}-${unit}-${item.regionCode}`
+        : `${keyPrefix}-${unit}-unassigned-${nullBucketSeq++}`,
     name:
       item.name === null
         ? null
@@ -70,8 +97,37 @@ export const toRegionClusterMarkers = (
     count: item.count,
     position: { lat: item.lat, lng: item.lng },
     unit,
+    // 키 자체를 만들지 않는다(`theme: undefined` 아님) — parity가 toStrictEqual로 대조한다
+    ...(theme ? { theme } : {}),
   }));
 };
+
+export const toRegionClusterMarkers = (
+  items: RegionAggregateResponseDto[],
+  unit: AggregationUnit,
+): RegionClusterMarker[] => toClusterMarkers(items, unit, "agg");
+
+/**
+ * 미션 집계 항목 → 마커 파생 — `GET /api/missions/aggregation` (MSG-558 확장, 웹 MSG-451).
+ * 점령 집계와 같은 산술을 공유하고 **칩별 키 접두**로 층 간 렌더 키가 겹치지 않게 한다 —
+ * 칩을 바꾸면 키가 통째로 달라져 이전 칩의 마커 뷰가 재사용되지 않는다.
+ * 응답의 `missionIds`는 싣지 않는다(웹 MSG-475 결정 ③).
+ */
+export const toMissionClusterMarkers = (
+  items: MissionRegionAggregateResponseDto[],
+  unit: AggregationUnit,
+  theme: MissionMarkerTheme,
+): RegionClusterMarker[] =>
+  toClusterMarkers(items, unit, `mission-${theme}`, theme);
+
+/**
+ * 핫구역 집계 항목 → 마커 파생 — `GET /api/hotzones/aggregation` (MSG-558 확장, 웹 MSG-475).
+ * 키 접두 `hot`. 응답의 `gridIds`는 싣지 않는다.
+ */
+export const toHotZoneClusterMarkers = (
+  items: HotZoneRegionAggregateResponseDto[],
+  unit: AggregationUnit,
+): RegionClusterMarker[] => toClusterMarkers(items, unit, "hot", "hot");
 
 /**
  * 겹침 병합 임계(px) — 마커 중심 간 화면 거리가 이보다 가까우면 하나로 합친다.
@@ -168,6 +224,9 @@ export const mergeOverlappingMarkers = (
           count,
           position: anchor.position,
           unit: anchor.unit,
+          // 한 병합 입력은 단일 층(점령 또는 한 칩)이므로 앵커의 테마가 곧 묶음의 테마다.
+          // 빠뜨리면 합쳐진 칩 마커만 점령 색으로 렌더된다
+          ...(anchor.theme ? { theme: anchor.theme } : {}),
         },
   );
 };
