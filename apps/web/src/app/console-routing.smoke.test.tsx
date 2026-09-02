@@ -30,10 +30,14 @@ const renderConsoleAt = (route: string) =>
     </QueryClientProvider>,
   );
 
-/** 경로 → 자리표시 제목 (스펙 "스텁 라우트 정본" 16경로) */
+/**
+ * 경로 → 화면 제목 (스펙 "스텁 라우트 정본" 16경로).
+ * MSG-542가 인증 3장을 실구현으로 교체하며 그 화면의 h1이 자리표시 제목에서 실제 화면
+ * 제목으로 바뀌었다(`/org/password/reset`은 동일) — 라우트↔파일 1:1과 등록 자체는 불변이다.
+ */
 const STUB_TITLES: [path: string, title: string][] = [
-  [CONSOLE_ROUTES.orgLogin, "콘솔 로그인"],
-  [CONSOLE_ROUTES.orgPasswordSetup, "비밀번호 설정"],
+  [CONSOLE_ROUTES.orgLogin, "행사 운영자 로그인"],
+  [CONSOLE_ROUTES.orgPasswordSetup, "비밀번호를 새로 설정하세요"],
   [CONSOLE_ROUTES.orgPasswordReset, "비밀번호 재설정"],
   [CONSOLE_ROUTES.orgAccountRequest, "계정 발급 요청"],
   // MSG-545가 이 스텁을 실구현으로 교체하며 h1이 "내 행사 신청"이 됐다 (사이드바 메뉴는 "신청 현황")
