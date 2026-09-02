@@ -13,6 +13,9 @@ import {
 import type { PermissionState } from "../../../shared/permission-state";
 import { splashGate } from "../../../shared/splash";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
+import { useEventHome } from "../../event/api/use-event-home";
+import { EventChip } from "../../event/ui/event-chip";
+import { EventSheetSwitch } from "../../event/ui/event-sheet-switch";
 import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
 import { useCollectedGridsQuery } from "../api/use-collected-grids-query";
 import { useGridAggregationQuery } from "../api/use-grid-aggregation-query";
@@ -49,7 +52,6 @@ import type { GridMapRef } from "./grid-map";
 import { HomeSheet } from "./home-sheet";
 import type { HomeSheetRef } from "./home-sheet";
 import { ClusterErrorNotice } from "./cluster-error-notice";
-import { HomeSheetSwitch } from "./home-sheet-switch";
 import { HomeTopBar } from "./home-top-bar";
 import { useHomeOverlays } from "./use-home-overlays";
 
@@ -231,28 +233,35 @@ export const MapHomeScreen = () => {
    * Figma 실측상 목록 3종에는 ✕가 없고, 분기마다 기억해서 넣으면 한 곳이 어긋난다.
    */
   const closeAction = showsCloseButton(panelKind) ? handleClose : undefined;
+  /** 이벤트 모드 (MSG-557) — 칩·시트·지도 층 재료. 칩 활성은 테마·선택을 함께 비운다 (D5) */
+  const event = useEventHome({
+    bounds,
+    moveTo: (center) => mapRef.current?.moveTo(center),
+    onActivate: handleClose,
+  });
 
   // Android 하드웨어 뒤로가기 (A5) — 헤더 `‹`와 같은 규칙을 타고, 최상위에서만 화면을 벗어난다
   useFocusEffect(
     useCallback(() => {
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        goBack,
+        () => event.handlers.back() || goBack(),
       );
       return () => subscription.remove();
-    }, [goBack]),
+    }, [goBack, event.handlers]),
   );
 
   // 시트 단계 (A6) — 목록·요약은 2단계(절반), 상세는 1단계(전체 확장)로 스냅한다.
   // 탭 왕복 복귀(포커스)와 단계 전환(panelKind 변경)이 같은 규칙을 타야 하므로 한 곳이다
   useFocusEffect(
     useCallback(() => {
-      sheetRef.current?.snapTo(sheetStageFor(panelKind));
-    }, [panelKind]),
+      sheetRef.current?.snapTo(event.sheetStage ?? sheetStageFor(panelKind));
+    }, [panelKind, event.sheetStage]),
   );
 
   /** 칩 탭 (MSG-423 요구 4) — 같은 칩 재탭은 해제, 다른 칩은 전환. 선택도 함께 초기화 (A2) */
   const handleToggleTheme = (id: ThemeId) => {
+    event.handlers.close();
     applySelection({
       activeTheme: toggleTheme(themeId, id),
       selectedMissionId: null,
@@ -304,6 +313,9 @@ export const MapHomeScreen = () => {
    * 역인덱스에 없는 셀과 게이트(canOpenDetail)에 걸린 셀은 no-op이다.
    */
   const handleCellTap = (_cellId: string, index: GridCellIndex) => {
+    // 이벤트 모드 중 홈 격자 탭 무시 (codex P2) — 웹은 방 열림 중 홈 게시 훅 suspended.
+    // 여기서 선택을 세우면 ✕·하드웨어 백으로 모드를 나갈 때 기본 시트 대신 격자 상세가 드러난다 (D14)
+    if (event.active) return;
     const gridId = gridIdOfCell(overlays.gridIdIndex, index);
     if (gridId === null) return;
     if (
@@ -323,6 +335,10 @@ export const MapHomeScreen = () => {
 
   /** 시트 컨테이너·바텀 내비 하단 오프셋 — 내비 바는 전 단계 상시 노출 */
   const bottomOffset = insets.bottom + NAV_BAR_HEIGHT;
+  const themeColor = themeId ? THEME_META[themeId].color : undefined;
+  const eventChip = event.chipVisible ? (
+    <EventChip active={event.active} onPress={event.handlers.toggleChip} />
+  ) : null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -337,8 +353,10 @@ export const MapHomeScreen = () => {
             onReady={() => setMapReady(true)}
             onCellTap={handleCellTap}
             occupiedCells={overlays.occupiedCells}
-            themeCells={overlays.classification?.themeOnly}
-            themeColor={themeId ? THEME_META[themeId].color : undefined}
+            themeCells={
+              event.overlayCells ?? overlays.classification?.themeOnly
+            }
+            themeColor={event.overlayColor ?? themeColor}
             hatchCells={overlays.classification?.both}
             route={overlays.route}
             missionLabel={overlays.missionLabel}
@@ -353,6 +371,7 @@ export const MapHomeScreen = () => {
           onToggleTheme={handleToggleTheme}
           onOpenSearch={() => router.push("/search")}
           onOpenProfile={() => router.navigate("/profile")}
+          chipsTrailing={eventChip}
         />
         {aggregation.isError && (
           <ClusterErrorNotice onRetry={aggregation.retry} />
@@ -383,7 +402,8 @@ export const MapHomeScreen = () => {
           }
         >
           {(context) => (
-            <HomeSheetSwitch
+            <EventSheetSwitch
+              event={event}
               kind={panelKind}
               sheet={context}
               missions={missions}
