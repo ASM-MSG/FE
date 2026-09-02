@@ -155,8 +155,16 @@ export const AiRouteScreen = () => {
     }, []),
   );
 
+  /**
+   * 제출 가능 판정의 단일 소스 — 시트의 `canSubmit`(버튼 활성)과 `submit()`(실제 실행)이 같은
+   * 값을 본다. 둘이 갈리면 UI 게이트 없이 부르는 경로(딥링크·타이머·프로그램적 재요청)가
+   * 초기 중심 정착 전에 요청을 낼 수 있다 (PR #124 리뷰 — 웹 488 codex 반영과 같은 교훈).
+   */
+  const mapReady = bounds !== null && centerSettled;
+
   /** "동선 짜기"/"다시 짜기" — 입력 카드의 현재 문장 + 현재 뷰포트 (D4) */
   const submit = () => {
+    if (!mapReady) return;
     const body = buildRecommendBody({
       text: aiRouteStore.getState().text,
       bounds,
@@ -246,7 +254,7 @@ export const AiRouteScreen = () => {
             <AiRouteSheetContent
               {...context}
               state={state}
-              mapReady={bounds !== null && centerSettled}
+              mapReady={mapReady}
               onChangeText={aiRouteStore.setText}
               onSubmit={submit}
               onInputFocus={() => sheetRef.current?.snapTo(1)}
