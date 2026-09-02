@@ -37,6 +37,7 @@
 - **oauth-callback** — `KakaoCallbackPage` (ui/ 없음)
 - **org** (MSG-541 신설) — 콘솔 스텁 10종: `OrgLoginPage`(콘솔 로그인) · `OrgPasswordSetupPage`(비밀번호 설정) · `OrgPasswordResetPage`(비밀번호 재설정) · `OrgAccountRequestPage`(계정 발급 요청) · `OrgHomePage`(신청 현황) · `OrgSubmissionWizardPage`(새 행사 등록 — `/org/submissions/new`와 `:submissionId/edit` 공용) · `OrgSubmissionsPage`(내 신청 목록) · `OrgSubmissionDetailPage`(신청 상세) · `OrgSettingsPage`(계정 설정) · `OrgGuidePage`(등록 가이드). 전부 `ConsoleStub`(제목 텍스트만) 한 줄 래핑 — 후속 티켓(542~550)이 자기 파일만 실구현으로 교체한다
 - **admin** (MSG-541 신설) — 콘솔 스텁 4종: `AdminAccountsPage`(계정 운영) · `AdminReviewQueuePage`(행사 심사) · `AdminReviewDetailPage`(심사 상세) · `AdminEventsPage`(승인 행사). 후속 551~554 대상
+- MSG-552: `AdminReviewQueuePage` 스텁 → 실화면(헤더 + 상태 탭 + 대기 신청 테이블 + 선택 신청 미리보기, 선택 id는 `pinnedId ?? 첫 행` 파생 — 자동 선택 effect 없음) + `pages/admin/ui/` 신설 3종(`ReviewStatusTabs`(로컬 pill — ui-web Chip은 Check 강제라 부적합) · `ReviewQueueTable`(시맨틱 table, 행 선택은 행사명 버튼으로 키보드 접근) · `ReviewPreviewCard`(로컬 `<img>` + onError 자리표시, 미선택/로딩/실패 분기 소유)), `features/admin-review/` 신설(model `submission-view`(일정·위치·기간·영역 요약·type 라벨·status 톤 파생, 순수·RN 재사용) · api `use-submissions-query`(status 키 분기 + page=0·size=100 + counts 유지용 `keepPreviousData`·`isPlaceholder` 노출)·`use-submission-detail-query`(선택 시에만 발사, presigned 만료 대비 전역 30초 staleTime 유지)), `shared/format.formatKstReceiptTime`(KST epoch 산술 — 오늘/어제/M.D HH:mm), `src/test/admin-review-fixture.ts`(목록·상세 DTO + fetch 라우터)
 
 ## widgets/ (6)
 
