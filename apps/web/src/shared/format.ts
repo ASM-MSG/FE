@@ -63,6 +63,38 @@ export const euroJosa = (name: string): string => {
   return jongseong === 0 || jongseong === JONGSEONG_RIEUL ? "로" : "으로";
 };
 
+const KST_OFFSET_MS = 9 * HOUR;
+
+/** epoch ms → KST 기준 일수 정수 (실행 환경 TZ 무관) */
+const kstDayIndex = (epochMs: number): number =>
+  Math.floor((epochMs + KST_OFFSET_MS) / DAY);
+
+const pad2 = (value: number): string => value.toString().padStart(2, "0");
+
+/**
+ * 접수 시각을 KST 기준 상대/절대 혼합 표기로 변환한다 (MSG-552 AC 1).
+ * 오늘 → "오늘 HH:mm" · 어제 → "어제 HH:mm" · 그 외 → "M.D HH:mm"(월·일 앞자리 0 없음).
+ *
+ * 위 `formatRelativeTime`·`formatMonthDay`는 **로컬 타임존** 기준이라 관리자 콘솔의
+ * KST 고정 표기에 쓸 수 없다 — KST 오프셋을 더한 epoch 산술 + `getUTC*` 판독으로
+ * 실행 환경 타임존과 무관하게 결정적이다 (upload-grass의 KST epoch 일수 산술 선례).
+ * `now`를 주입받아 테스트가 "오늘"을 고정한다. 연도는 표기하지 않는다 (추정 8).
+ */
+export const formatKstReceiptTime = (
+  iso: string,
+  now: Date = new Date(),
+): string => {
+  const receiptMs = new Date(iso).getTime();
+  // KST 오프셋을 더한 뒤 UTC 판독기로 읽으면 KST 벽시계가 된다
+  const kst = new Date(receiptMs + KST_OFFSET_MS);
+  const clock = `${pad2(kst.getUTCHours())}:${pad2(kst.getUTCMinutes())}`;
+
+  const elapsedDays = kstDayIndex(now.getTime()) - kstDayIndex(receiptMs);
+  if (elapsedDays === 0) return `오늘 ${clock}`;
+  if (elapsedDays === 1) return `어제 ${clock}`;
+  return `${kst.getUTCMonth() + 1}.${kst.getUTCDate()} ${clock}`;
+};
+
 /**
  * 조회수를 한국어 만 단위로 축약한다 (MSG-277 AC 6 — 홈 피드 카드 "조회 {축약}").
  * - 1만 미만: 콤마 표기 (8410 → "8,410")

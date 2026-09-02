@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "@fillmap/ui-web";
 import type { ConsoleNavItem } from "./console-nav";
 
@@ -8,6 +9,10 @@ interface ConsoleSidebarProps {
   /** 현재 경로의 활성 항목 key (activeConsoleNavKey 결과) */
   activeKey?: string;
   onSelect: (path: string) => void;
+  /** 제목 아래 계정 정보 슬롯 — 미지정 시 렌더 불변 (MSG-545 AC 10·11) */
+  header?: ReactNode;
+  /** 사이드바 하단 안내 슬롯 — 미지정 시 렌더 불변 (MSG-545 AC 10·11) */
+  footer?: ReactNode;
 }
 
 /**
@@ -19,17 +24,23 @@ interface ConsoleSidebarProps {
  * heading으로 만들면 문서 개요가 h2 → h1 순서로 뒤집힌다. 대신 `<nav>`의 접근 가능한
  * 이름에 콘솔 이름을 싣는다.
  *
- * 조직명·이메일·"ORG 계정" 뱃지·하단 "행사 등록 권한" 카드는 실데이터가 필요해
- * 후속(MSG-544·545) 범위다 (MSG-541 추정 6) — 시안의 예시 값을 하드코딩하지 않는다.
+ * 실데이터(계정 뱃지·이메일·하단 "행사 등록 권한" 카드)는 `header`·`footer` **슬롯**으로
+ * 받는다 (MSG-545) — 사이드바는 그 내용을 모르고, 슬롯을 주지 않는 관리자 콘솔의 렌더는
+ * MSG-541 계약(제목 + 메뉴)에서 달라지지 않는다(비파괴 확장, ui-web SideRail `footer` 선례).
  */
 export const ConsoleSidebar = ({
   title,
   items,
   activeKey,
   onSelect,
+  header,
+  footer,
 }: ConsoleSidebarProps) => (
   <aside className="flex w-70 shrink-0 flex-col gap-lg border-r border-border bg-background px-md py-lg">
-    <p className="px-sm text-fm-title text-primary">{title}</p>
+    <div className="flex flex-col gap-sm">
+      <p className="px-sm text-fm-title text-primary">{title}</p>
+      {header}
+    </div>
     <nav aria-label={`${title} 메뉴`} className="flex flex-col gap-xxs">
       {items.map((item) => {
         const isActive = item.key === activeKey;
@@ -51,5 +62,6 @@ export const ConsoleSidebar = ({
         );
       })}
     </nav>
+    {footer !== undefined && <div className="mt-auto">{footer}</div>}
   </aside>
 );

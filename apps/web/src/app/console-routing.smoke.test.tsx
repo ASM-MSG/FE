@@ -30,13 +30,18 @@ const renderConsoleAt = (route: string) =>
     </QueryClientProvider>,
   );
 
-/** 경로 → 자리표시 제목 (스펙 "스텁 라우트 정본" 16경로) */
+/**
+ * 경로 → 화면 제목 (스펙 "스텁 라우트 정본" 16경로).
+ * MSG-542가 인증 3장을 실구현으로 교체하며 그 화면의 h1이 자리표시 제목에서 실제 화면
+ * 제목으로 바뀌었다(`/org/password/reset`은 동일) — 라우트↔파일 1:1과 등록 자체는 불변이다.
+ */
 const STUB_TITLES: [path: string, title: string][] = [
-  [CONSOLE_ROUTES.orgLogin, "콘솔 로그인"],
-  [CONSOLE_ROUTES.orgPasswordSetup, "비밀번호 설정"],
+  [CONSOLE_ROUTES.orgLogin, "행사 운영자 로그인"],
+  [CONSOLE_ROUTES.orgPasswordSetup, "비밀번호를 새로 설정하세요"],
   [CONSOLE_ROUTES.orgPasswordReset, "비밀번호 재설정"],
   [CONSOLE_ROUTES.orgAccountRequest, "계정 발급 요청"],
-  [CONSOLE_ROUTES.orgHome, "신청 현황"],
+  // MSG-545가 이 스텁을 실구현으로 교체하며 h1이 "내 행사 신청"이 됐다 (사이드바 메뉴는 "신청 현황")
+  [CONSOLE_ROUTES.orgHome, "내 행사 신청"],
   [CONSOLE_ROUTES.orgSubmissionNew, "새 행사 등록"],
   [CONSOLE_ROUTES.orgSubmissions, "내 신청 목록"],
   ["/org/submissions/1204", "신청 상세"],
@@ -44,9 +49,11 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.orgSettings, "계정 설정"],
   [CONSOLE_ROUTES.orgGuide, "등록 가이드"],
   // /admin 인덱스는 /admin/review로 replace 리다이렉트 (추정 4)
-  [CONSOLE_ROUTES.adminHome, "행사 심사"],
+  // MSG-552가 심사 큐 스텁을 실화면으로 교체하며 제목이 "행사 심사" → "행사 등록 심사"로
+  // 바뀌었다(MSG-552 AC 5) — 라우트 등록 자체를 고정하는 단정이므로 제목만 갱신한다
+  [CONSOLE_ROUTES.adminHome, "행사 등록 심사"],
   [CONSOLE_ROUTES.adminAccounts, "계정 운영"],
-  [CONSOLE_ROUTES.adminReview, "행사 심사"],
+  [CONSOLE_ROUTES.adminReview, "행사 등록 심사"],
   ["/admin/review/1204", "심사 상세"],
   [CONSOLE_ROUTES.adminEvents, "승인 행사"],
 ];
@@ -100,14 +107,14 @@ describe("콘솔 robots 메타 (AC 10)", () => {
   it("/org 마운트 중 robots 메타가 noindex이고 메타는 하나뿐이다 (AC 10)", async () => {
     renderConsoleAt(CONSOLE_ROUTES.orgHome);
 
-    await screen.findByRole("heading", { name: "신청 현황", level: 1 });
+    await screen.findByRole("heading", { name: "내 행사 신청", level: 1 });
     expect(robotsContents()).toEqual(["noindex"]);
   });
 
   it("/admin 마운트 중에도 noindex이며 언마운트 시 원값으로 복원된다 (AC 10)", async () => {
     const { unmount } = renderConsoleAt(CONSOLE_ROUTES.adminReview);
 
-    await screen.findByRole("heading", { name: "행사 심사", level: 1 });
+    await screen.findByRole("heading", { name: "행사 등록 심사", level: 1 });
     expect(robotsContents()).toEqual(["noindex"]);
 
     unmount();
