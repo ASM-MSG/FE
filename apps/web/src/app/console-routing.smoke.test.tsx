@@ -48,7 +48,9 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.adminAccounts, "계정 운영"],
   [CONSOLE_ROUTES.adminReview, "행사 심사"],
   ["/admin/review/1204", "심사 상세"],
-  [CONSOLE_ROUTES.adminEvents, "승인 행사"],
+  // MSG-554에서 스텁이 실구현으로 교체되며 화면 제목이 "승인 행사 관리"가 됐다
+  // (스펙 AC 1 · Figma 15579:2385). 사이드바 메뉴 라벨("승인 행사")은 그대로다
+  [CONSOLE_ROUTES.adminEvents, "승인 행사 관리"],
 ];
 
 describe("콘솔 스텁 라우팅 (AC 2)", () => {
