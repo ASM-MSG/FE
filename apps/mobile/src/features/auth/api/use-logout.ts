@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logout } from "../../../shared/api/sdk";
 import { fcmTokenStorage } from "../../../shared/fcm-token-storage";
 import { authStore } from "../model/auth-session";
+import { endLocalSession } from "../model/end-local-session";
 import { settleLogoutToken } from "./logout-fcm-token";
 
 /**
@@ -33,13 +34,8 @@ export const useLogout = (callbacks?: { onSettled?: () => void }) => {
         throwOnError: true,
       }),
     onSettled: async () => {
-      // authStore.logout()은 상태 전이(토큰 null)를 **동기로** 끝내고 보안 저장소 정리만
-      // await한다 — 그 await를 먼저 기다리면 비로그인으로 전환된 뒤 캐시가 비워지기 전까지
-      // 이전 사용자 데이터가 렌더되는 창이 생긴다(codex 리뷰 Medium). 같은 tick에서 비워
-      // 창을 없애되, await는 유지해 저장소 정리 실패가 미처리 거부로 새지 않게 한다.
-      const cleared = authStore.logout();
-      queryClient.clear();
-      await cleared;
+      // 세션 종료 + 같은 tick 캐시·세션 스토어 정리 — 순서·이유는 endLocalSession 주석
+      await endLocalSession(authStore.logout, queryClient);
       callbacks?.onSettled?.();
     },
   });
