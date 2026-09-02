@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import { Avatar, SearchBar } from "@fillmap/ui-native";
 import type { ThemeId } from "../model/themes";
@@ -16,6 +17,8 @@ interface HomeTopBarProps {
   onToggleTheme: (id: ThemeId) => void;
   onOpenSearch: () => void;
   onOpenProfile: () => void;
+  /** 테마 칩 4종 뒤 슬롯 — 이벤트 칩 (MSG-557) */
+  chipsTrailing?: ReactNode;
 }
 
 export const HomeTopBar = ({
@@ -24,6 +27,7 @@ export const HomeTopBar = ({
   onToggleTheme,
   onOpenSearch,
   onOpenProfile,
+  chipsTrailing,
 }: HomeTopBarProps) => (
   <View
     pointerEvents="box-none"
@@ -54,6 +58,10 @@ export const HomeTopBar = ({
       </Pressable>
     </View>
     {/* 칩 행은 테마 선택과 무관하게 항상 보인다 (MSG-423 요구 4) */}
-    <ThemeChipsBar selected={selectedTheme} onToggle={onToggleTheme} />
+    <ThemeChipsBar
+      selected={selectedTheme}
+      onToggle={onToggleTheme}
+      trailing={chipsTrailing}
+    />
   </View>
 );
