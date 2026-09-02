@@ -46,8 +46,15 @@ export const EventParentModal = ({
     initialOccurrenceId,
   );
   const { debounced } = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
-  const { totalCount, cityCounts, events, isPending, isError, retry } =
-    useApprovedEventsQuery({ city, name: debounced, enabled: open });
+  const {
+    totalCount,
+    cityCounts,
+    events,
+    isPending,
+    isFetching,
+    isError,
+    retry,
+  } = useApprovedEventsQuery({ city, name: debounced, enabled: open });
 
   const selected =
     events.find((event) => event.occurrenceId === selectedId) ?? null;
@@ -76,7 +83,9 @@ export const EventParentModal = ({
         confirmText={
           selected === null ? "이벤트 선택" : continueWithLabel(selected.name)
         }
-        confirmDisabled={selected === null}
+        // 필터 재조회 중에는 확정 잠금 — keepPreviousData의 직전 목록으로
+        // 새 필터 라벨 아래에서 확정되는 것을 막는다 (codex 리뷰 P2)
+        confirmDisabled={selected === null || isFetching}
         onCancel={onClose}
         onConfirm={() => {
           if (selected === null) return;
@@ -141,6 +150,7 @@ export const EventParentModal = ({
             <EventParentList
               events={events}
               selectedId={selectedId}
+              disabled={isFetching}
               onSelect={(event) => setSelectedId(event.occurrenceId)}
             />
           )}

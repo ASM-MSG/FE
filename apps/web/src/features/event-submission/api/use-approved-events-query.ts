@@ -52,6 +52,8 @@ export const useApprovedEventsQuery = ({
   cityCounts: OrgEventCityCountResponseDto[];
   events: OrgEventItemResponseDto[];
   isPending: boolean;
+  /** 필터 전환 재조회 중 — keepPreviousData로 직전 목록이 남아 있는 구간 (codex 리뷰 P2) */
+  isFetching: boolean;
   isError: boolean;
   retry: () => void;
 } => {
@@ -69,6 +71,7 @@ export const useApprovedEventsQuery = ({
     cityCounts: query.data?.cityCounts ?? EMPTY_CITY_COUNTS,
     events: query.data?.events ?? EMPTY_EVENTS,
     isPending: query.isPending,
+    isFetching: query.isFetching,
     isError: query.isError,
     retry: query.refetch,
   };

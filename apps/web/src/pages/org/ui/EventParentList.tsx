@@ -6,6 +6,8 @@ interface EventParentListProps {
   events: OrgEventItemResponseDto[];
   selectedId: number | null;
   onSelect: (event: OrgEventItemResponseDto) => void;
+  /** 필터 재조회 중 — 직전 목록(keepPreviousData)에서의 선택을 막는다 (codex 리뷰 P2) */
+  disabled?: boolean;
 }
 
 /**
@@ -19,11 +21,13 @@ export const EventParentList = ({
   events,
   selectedId,
   onSelect,
+  disabled = false,
 }: EventParentListProps) => (
   <div
     role="radiogroup"
     aria-label="승인 이벤트 목록"
-    className="flex flex-col gap-xs"
+    aria-busy={disabled || undefined}
+    className={cn("flex flex-col gap-xs", disabled && "opacity-60")}
   >
     {events.map((event) => {
       const selected = event.occurrenceId === selectedId;
@@ -40,6 +44,7 @@ export const EventParentList = ({
           type="button"
           role="radio"
           aria-checked={selected}
+          disabled={disabled}
           onClick={() => onSelect(event)}
           className={cn(
             "flex items-center gap-sm rounded-md border p-sm text-left transition-colors",
