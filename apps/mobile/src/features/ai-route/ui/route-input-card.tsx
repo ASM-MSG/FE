@@ -1,4 +1,5 @@
-import { TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
+import { Navigation } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { Button } from "@fillmap/ui-native";
 import { MAX_ROUTE_TEXT_LENGTH } from "../model/route-request";
@@ -17,9 +18,11 @@ interface RouteInputCardProps {
   onFocus: () => void;
   /** 제출 가능 여부 — 판정은 route-request.canSubmit(순수) 소유 */
   canSubmit: boolean;
-  /** 버튼 문구 — 입력 대기 "동선 짜기" / 결과·실패 "다시 짜기" (로딩은 아래에서 덮는다) */
+  /** 버튼 문구 — 판정은 route-request.submitLabel(순수) 소유 (로딩은 아래에서 덮는다) */
   submitLabel: string;
   loading: boolean;
+  /** 이번 요청에 출발지가 실리는가 — 참일 때만 상태 행이 뜬다 (MSG-559 S1) */
+  originActive: boolean;
 }
 
 export const RouteInputCard = ({
@@ -30,6 +33,7 @@ export const RouteInputCard = ({
   canSubmit,
   submitLabel,
   loading,
+  originActive,
 }: RouteInputCardProps) => (
   <View className="gap-sm rounded-md border border-border bg-surface-soft p-3.5">
     <TextInput
@@ -49,8 +53,20 @@ export const RouteInputCard = ({
       className="min-h-10 p-0 text-fm-base text-foreground"
     />
     <View className="flex-row items-center justify-between gap-sm">
-      {/* [MSG-489 확장점] 출발지 상태 행 슬롯 — 지금은 null (Figma 15750:486은 489 몫) */}
-      <View />
+      {/* 출발지가 실릴 때만 상태 행이 뜬다 (Figma 15750:486). 없으면 자리만 (S2) */}
+      {originActive ? (
+        <View className="flex-row items-center gap-1.25">
+          {/* 아이콘은 옆 텍스트의 장식이라 낭독에서 뺀다 (S10) */}
+          <View accessibilityElementsHidden importantForAccessibility="no">
+            <Navigation size={13} color={semantic.muted} />
+          </View>
+          <Text className="text-fm-label text-foreground-muted">
+            현재 위치에서 출발
+          </Text>
+        </View>
+      ) : (
+        <View />
+      )}
       {/* 로딩 중은 Figma 지정대로 primary 면 + 50% 불투명 + 흰 글자 — ui-native Button의
           disabled는 흰 면·muted 글자로 바뀌므로 disabled 대신 onPress를 떼고 opacity만 덮는다
           (빈 입력 비활성은 ui-native 기본). canSubmit이 이미 false라 제출 경로는 없다 */}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BackHandler, Keyboard, View } from "react-native";
+import { BackHandler, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
@@ -7,7 +7,6 @@ import { palette } from "@fillmap/design-tokens";
 import { MapIconButton } from "@fillmap/ui-native";
 import {
   SEOMYEON_CENTER,
-  resolveMapCenter,
   resolveMapCenterWithPermission,
 } from "../../../shared/geolocation";
 import { goToLogin } from "../../../shared/navigation";
@@ -17,23 +16,30 @@ import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-mo
 import { useOccupiedGridsQuery } from "../../map-home/api/use-occupied-grids-query";
 import { locateBottomOffset } from "../../map-home/model/locate-offset";
 import { MAP_SCALE_1KM_ZOOM } from "../../map-home/model/map-scale";
+import type { LatLng } from "../../../entities/cell/model/grid";
 import type { SheetStage } from "../../map-home/model/sheet-snap";
 import type { Viewport } from "../../map-home/model/viewport";
 import { GridMap, type GridMapRef } from "../../map-home/ui/grid-map";
 import { HomeSheet, type HomeSheetRef } from "../../map-home/ui/home-sheet";
-import { useRouteRecommend } from "../api/use-route-recommend";
 import { aiRouteStore, useAiRouteState } from "../model/ai-route-store";
 import {
   type InitialCenterEvent,
   type InitialCenterPhase,
   nextInitialCenterPhase,
 } from "../model/initial-center";
-import { buildRecommendBody } from "../model/route-request";
 import { AiRouteSheetContent } from "./ai-route-sheet-content";
+import { RouteToastHost } from "./route-toast-host";
+import { useAiRouteAutoMove } from "./use-ai-route-auto-move";
 import { useAiRouteOverlays } from "./use-ai-route-overlays";
 
 /** BottomNav 바 실높이(h-16=64px) — map-home-screen과 같은 값 */
 const NAV_BAR_HEIGHT = 64;
+
+/**
+ * 이동 안내 토스트의 상단 오프셋 (Figma 15751:553, §6 A5) — ← 버튼(MapIconButton size-10)
+ * 바로 아래. 인셋 + 버튼 패딩 8 + 버튼 40 + 간격 8. 노치 기기의 수 px 편차는 의도다.
+ */
+const TOAST_TOP_GAP = 56;
 
 /**
  * AI 경로 추천 화면 (MSG-556) — 전용 라우트 `/ai-route`에 자체 `GridMap` + `HomeSheet` +
@@ -46,9 +52,12 @@ const NAV_BAR_HEIGHT = 64;
  * 초기 카메라는 진입 1회 현재 위치 + 1km 축척이다 (D1) — `initialZoom`이 1km 상수라
  * `moveTo`가 그 줌으로 정착한다. 그 정착 전에는 제출을 막는다(`centerSettled`, codex 재리뷰
  * P2 — 폴백 뷰포트로 요청이 나간 뒤 늦은 측위가 지도를 옮기는 창 제거). 결과 도착 시
- * 카메라는 움직이지 않는다 (D2, 웹 S6).
- * [MSG-489 확장점] 요청 전 1km 축척 정규화·mentionedArea 이동 — 지금은 진입 1회 1km 세팅뿐,
- * 제출은 현재 뷰포트 그대로다 (`submit`).
+ * 카메라는 움직이지 않는다 (D2, 웹 S6) — 이동은 1차 응답 직후 1회뿐이다.
+ *
+ * MSG-559: 제출·요청 발사는 `useAiRouteAutoMove`(뷰-레이어 훅)가 소유한다 — 1km 축척
+ * 정규화·출발지 판정·언급 지역 이동·2차 자동 재요청이 한 사이클로 얽혀 있어서다. 화면은
+ * 재료(뷰포트·`mapReady`·현위치·카메라 명령)만 넘긴다. **`initialZoom`은
+ * `MAP_SCALE_1KM_ZOOM`이어야 한다** — `moveTo`가 그 줌으로 정착시키는 것이 정규화의 전제다.
  */
 export const AiRouteScreen = () => {
   const insets = useSafeAreaInsets();
@@ -60,6 +69,8 @@ export const AiRouteScreen = () => {
   /** 초기 중심 정착 상태기계 — 판정은 `nextInitialCenterPhase`(순수), 여기는 현재 단계만 든다 */
   const centerPhaseRef = useRef<InitialCenterPhase>("seeding");
   const [centerSettled, setCenterSettled] = useState(false);
+  /** 진입 1회 측위로 확보한 현위치 — 출발지 자동 판정의 재료 (§6 A1). 거부·폴백은 null */
+  const [coords, setCoords] = useState<LatLng | null>(null);
   /** 내 위치 권한 안내 (MSG-447) — null이면 닫힘 */
   const [locationNotice, setLocationNotice] = useState<PermissionState | null>(
     null,
@@ -76,7 +87,6 @@ export const AiRouteScreen = () => {
 
   // 점령 격자는 홈과 같은 쿼리키라 캐시 히트 — 교집합 빗금의 재료 (§1-3)
   const occupied = useOccupiedGridsQuery(bounds);
-  const recommend = useRouteRecommend({ onLoginRequired: goToLogin });
 
   /** 지도 탭 — 시트 peek (D6). 4단(숨김)에서도 peek로 복귀. GridMap의 셀 탭 계약을 그대로 탄다 */
   const peekSheet = useCallback(() => {
@@ -117,14 +127,22 @@ export const AiRouteScreen = () => {
 
   // 진입 1회 현재 위치 (D1) — 폴백(서면)은 초기 카메라와 같은 객체 참조라 이동 생략 (홈 관례).
   // 사용자가 먼저 지도를 움직였으면(settled) 늦은 측위는 이동시키지 않는다 (codex 재리뷰 P2).
-  // 권한 프롬프트는 resolveMapCenter의 in-flight 공유를 타 홈과 동시에 떠도 한 번뿐이다 (R2)
+  // 권한 프롬프트는 in-flight 공유를 타 홈과 동시에 떠도 한 번뿐이다 (R2).
+  // MSG-559 §6 A1·A3: 같은 호출로 좌표를 함께 받아 출발지 판정에 쓴다 — 폴백(서면)은 동일
+  // 참조라 참조 비교만으로 실측 좌표를 가려낼 수 있어 측위를 한 번 더 하지 않는다.
   useEffect(() => {
-    void resolveMapCenter().then((center) => {
+    void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      const located = permission === "granted" && center !== SEOMYEON_CENTER;
+      if (located) setCoords(center);
+      // 2차 대기 중 탭을 떠났다 돌아온 재마운트 — 카메라는 현위치가 아니라 이동한 지역으로
+      // 되돌린다 (§6 A6). 복원하지 않으면 예약된 2차가 엉뚱한 지역 뷰포트로 나간다
+      const restored = aiRouteStore.getState();
+      const target = restored.secondaryPending ? restored.movedCenter : null;
       const phase = advanceCenter({
         type: "located",
-        moves: center !== SEOMYEON_CENTER,
+        moves: target !== null || located,
       });
-      if (phase === "moving") mapRef.current?.moveTo(center);
+      if (phase === "moving") mapRef.current?.moveTo(target ?? center);
     });
   }, [advanceCenter]);
 
@@ -162,17 +180,17 @@ export const AiRouteScreen = () => {
    */
   const mapReady = bounds !== null && centerSettled;
 
-  /** "동선 짜기"/"다시 짜기" — 입력 카드의 현재 문장 + 현재 뷰포트 (D4) */
-  const submit = () => {
-    if (!mapReady) return;
-    const body = buildRecommendBody({
-      text: aiRouteStore.getState().text,
-      bounds,
-    });
-    if (body === null) return;
-    Keyboard.dismiss();
-    recommend.mutate(body);
-  };
+  /**
+   * 제출·자동 동작 (MSG-559) — 1km 축척 정규화 → 요청 → 언급 지역 이동 → 2차 재요청까지
+   * 훅이 소유한다. 카메라 명령은 `moveTo`(중심 + 1km 줌) 하나만 넘긴다.
+   */
+  const { submit, originActive } = useAiRouteAutoMove({
+    viewport,
+    mapReady,
+    coords,
+    moveTo: (center) => mapRef.current?.moveTo(center),
+    onLoginRequired: goToLogin,
+  });
 
   /** 카드 탭 — 선택 + 그 지점으로 이동, 줌은 그대로 (D8, 웹 S8) */
   const selectFromCard = (order: number) => {
@@ -259,9 +277,13 @@ export const AiRouteScreen = () => {
               onSubmit={submit}
               onInputFocus={() => sheetRef.current?.snapTo(1)}
               onSelectCard={selectFromCard}
+              originActive={originActive}
             />
           )}
         </HomeSheet>
+
+        {/* 자동 이동 안내 토스트 — ← 버튼 아래, 3초 자동 소멸 (Figma 15751:553) */}
+        <RouteToastHost topOffset={insets.top + TOAST_TOP_GAP} />
 
         <PermissionNoticeModal
           axis="location"

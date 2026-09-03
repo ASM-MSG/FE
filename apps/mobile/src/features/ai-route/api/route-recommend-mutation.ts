@@ -4,6 +4,10 @@ import { recommendMutation } from "../../../shared/api/query-options";
 import type { RouteRecommendRequestDto } from "../../../shared/api/sdk";
 import type { AiRouteStore } from "../model/ai-route-store";
 import { routeErrorNotice } from "../model/route-error";
+import {
+  type RouteAutoMove,
+  resolveAutoMove,
+} from "../model/route-mentioned-area";
 
 /**
  * AI 경로 추천 mutation 옵션 (L10, MSG-556) — `POST /api/routes/recommend`를 1회 쏜다.
@@ -23,7 +27,9 @@ import { routeErrorNotice } from "../model/route-error";
  * 로딩 중 뒤로가기(`dismissResult`)·로그아웃(`reset`)·재제출 뒤에 도착한 응답은 버린다.
  * mutation 자체는 취소하지 않는다(생성 SDK 옵션에 abort 배선이 없고, 버리는 것으로 충분하다).
  *
- * [MSG-489 확장점] mentionedArea 자동 이동 분기 — 지금은 `data.points`·`notice`만 읽는다.
+ * MSG-559: 응답에 `mentionedArea`가 실리면 **결과를 게시하지 않고**(웹 D5) 2차 요청을
+ * 예약한다. 2차 인스턴스(`secondary: true`)는 예약 플래그를 보존한 채 로딩만 이어 간다 —
+ * `startRequest`를 쓰면 `autoMoved`가 초기화돼 2차 응답에서 또 이동하는 무한 루프가 된다.
  */
 // 생성 팩토리는 mutationFn을 항상 채운다 — UseMutationOptions 타입만 optional이라 !로 좁힌다
 const recommendFn = recommendMutation().mutationFn!;
@@ -31,10 +37,16 @@ const recommendFn = recommendMutation().mutationFn!;
 export const recommendMutationOptions = ({
   store,
   onLoginRequired,
+  onAutoMove,
+  secondary = false,
 }: {
   store: AiRouteStore;
   /** 401(2403) — 입력을 유지한 채 대기로 돌아가고 로그인 화면으로 보낸다 (§1-4) */
   onLoginRequired: () => void;
+  /** 언급 지역 신호 도착 — 카메라 이동·2차 발사는 뷰-레이어 훅이 맡는다 (L10) */
+  onAutoMove?: (move: RouteAutoMove) => void;
+  /** 2차 자동 재요청 인스턴스인가 — 요청 시작 처리가 갈린다 */
+  secondary?: boolean;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof recommendFn>>,
   Error,
@@ -43,12 +55,29 @@ export const recommendMutationOptions = ({
 > => ({
   mutationFn: (body, context) => recommendFn({ body }, context),
   // 이전 결과·선택은 요청 시작 시점에 비운다 — 로딩 화면에 잔상이 남지 않는다 (L9).
-  // 반환값(요청 토큰)이 onSuccess·onError의 context로 돌아온다
-  onMutate: () => store.startRequest(),
+  // 반환값(요청 토큰)이 onSuccess·onError의 context로 돌아온다.
+  // 2차는 사이클을 새로 열지 않고 예약만 소비한다 — 같은 토큰을 이어받는다
+  onMutate: (body) => {
+    const originSent = body.origin !== undefined;
+    return secondary
+      ? store.markSecondarySent(originSent)
+      : store.startRequest(originSent);
+  },
   onSuccess: (response, _body, token) => {
     if (!store.isCurrentRequest(token)) return;
     const data = unwrapEnvelope(response);
-    store.succeed(data.points, data.notice);
+    // 이동 여부는 스토어 현재값으로 판정한다 — 2차 응답은 alreadyMoved라 항상 null (L10)
+    const move = resolveAutoMove({
+      mentionedArea: data.mentionedArea,
+      alreadyMoved: store.getState().autoMoved,
+    });
+    if (move === null) {
+      store.succeed(data.points, data.notice);
+      return;
+    }
+    // 1차 결과는 스토어에도 오버레이에도 게시하지 않고 로딩을 유지한다 (웹 D5)
+    store.startSecondaryRequest(move.areaName, move.center);
+    onAutoMove?.(move);
   },
   onError: (error, _body, token) => {
     if (!store.isCurrentRequest(token)) return;

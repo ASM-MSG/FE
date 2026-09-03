@@ -103,3 +103,23 @@ export const formatKstDate = (iso: string): string => {
   const kst = new Date(utcMs + KST_OFFSET_MS);
   return `${kst.getUTCFullYear()}.${two(kst.getUTCMonth() + 1)}.${two(kst.getUTCDate())}`;
 };
+
+const HANGUL_BASE = 0xac00;
+const HANGUL_LAST = 0xd7a3;
+/** 종성 ㄹ의 인덱스 — 받침이 ㄹ이면 "으로"가 아니라 "로"를 쓴다 */
+const JONGSEONG_RIEUL = 8;
+
+/**
+ * 조사 "(으)로" 확정 — 받침 없음·ㄹ 받침은 "로", 나머지 받침은 "으로".
+ * 한글 음절이 아닌 끝 글자는 받침 없음으로 본다(이름은 한글이 정본이라 폴백 경로다).
+ * 웹 `apps/web/src/shared/format.ts`의 복제본 (MSG-559, 동등성은 format.parity.test.ts) —
+ * 자동 이동 안내 토스트 "{지역명}(으)로 이동했어요"가 소비처다.
+ */
+export const euroJosa = (name: string): string => {
+  const code = name.charCodeAt(name.length - 1);
+  if (Number.isNaN(code) || code < HANGUL_BASE || code > HANGUL_LAST) {
+    return "로";
+  }
+  const jongseong = (code - HANGUL_BASE) % 28;
+  return jongseong === 0 || jongseong === JONGSEONG_RIEUL ? "로" : "으로";
+};
