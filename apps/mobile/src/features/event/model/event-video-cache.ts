@@ -23,23 +23,28 @@ export const seedHelpful = (
 
 /**
  * 작성 응답 댓글을 첫 페이지 맨 아래에 붙이고 commentCount를 +1 한다 (AC 6).
- * 같은 commentId가 이미 있으면 목록은 그대로다(중복 방어 — 웹 동일).
+ * 같은 commentId가 이미 있으면 목록·카운트 모두 그대로다(중복 방어 — codex 리뷰: 카운트만 올리면 목록과 어긋남).
  */
 export const appendComment = (
   detail: EventVideoDetailResponseDto,
   comment: EventVideoCommentResponseDto,
-): EventVideoDetailResponseDto => ({
-  ...detail,
-  commentCount: detail.commentCount + 1,
-  comments: {
-    ...detail.comments,
-    comments: detail.comments.comments.some(
+): EventVideoDetailResponseDto => {
+  if (
+    detail.comments.comments.some(
       (existing) => existing.commentId === comment.commentId,
     )
-      ? detail.comments.comments
-      : [...detail.comments.comments, comment],
-  },
-});
+  ) {
+    return detail;
+  }
+  return {
+    ...detail,
+    commentCount: detail.commentCount + 1,
+    comments: {
+      ...detail.comments,
+      comments: [...detail.comments.comments, comment],
+    },
+  };
+};
 
 export interface EventVideoInteraction {
   helpfulDisabled: boolean;

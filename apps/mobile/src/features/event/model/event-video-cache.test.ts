@@ -40,10 +40,11 @@ describe("appendComment — 작성 응답 seed (AC 6)", () => {
     expect(seeded.comments.hasNext).toBe(false);
   });
 
-  it("같은 commentId가 이미 있으면 두 번 붙이지 않는다 (중복 방어)", () => {
+  it("같은 commentId가 이미 있으면 두 번 붙이지 않고 commentCount도 그대로다 (중복 방어)", () => {
     const seeded = appendComment(EVENT_VIDEO_DETAIL, eventComment(2));
 
     expect(seeded.comments.comments.map((c) => c.commentId)).toEqual([1, 2]);
+    expect(seeded.commentCount).toBe(EVENT_VIDEO_DETAIL.commentCount);
   });
 });
 
