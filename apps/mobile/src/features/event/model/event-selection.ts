@@ -32,29 +32,34 @@ export interface EventSelectionState {
   room: EventRoomSelection | null;
   /** 선택된 행사 위치 — null이면 개요. 지도 강조·라벨의 단일 근원 [MSG-560 D1·D3] */
   location: EventLocationSelection | null;
+  /** 선택된 현장 영상 id — null이면 위치 상세. 위치 안에서만 의미가 있다 [MSG-562 D1] */
+  video: number | null;
 }
 
 const INACTIVE: EventSelectionState = {
   active: false,
   room: null,
   location: null,
+  video: null,
 };
 
 /**
- * 뒤로가기 한 단계 — 위치 → 개요 → 목록 → 해제 4단 [D14 · MSG-560 D1].
+ * 뒤로가기 한 단계 — 영상 → 위치 → 개요 → 목록 → 해제 5단 [D14 · MSG-560 D1 · MSG-562 D1].
  * 이벤트 모드가 아니면 null(화면 규칙으로 넘긴다).
  */
 export const eventBack = (
   state: EventSelectionState,
 ): EventSelectionState | null => {
+  if (state.video !== null) return { ...state, video: null };
   if (state.location !== null)
-    return { active: true, room: state.room, location: null };
-  if (state.room !== null) return { active: true, room: null, location: null };
+    return { active: true, room: state.room, location: null, video: null };
+  if (state.room !== null)
+    return { active: true, room: null, location: null, video: null };
   if (state.active) return INACTIVE;
   return null;
 };
 
-/** 시트 스냅 — 목록 2단계(절반), 개요·위치 상세 1단계(전체) [D15 · MSG-560 D1] */
+/** 시트 스냅 — 목록 2단계(절반), 개요·위치·영상 상세 1단계(전체) [D15 · MSG-560 D1] */
 export const eventSheetStage = (state: EventSelectionState): SheetStage =>
   state.room !== null ? 1 : 2;
 
@@ -68,7 +73,7 @@ export const withEventRoom = (
 ): EventSelectionState =>
   state.room?.occurrenceId === selection.occurrenceId
     ? state
-    : { active: true, room: selection, location: null };
+    : { active: true, room: selection, location: null, video: null };
 
 let state: EventSelectionState = INACTIVE;
 const listeners = new Set<() => void>();
@@ -84,7 +89,7 @@ export const getEventSelection = (): EventSelectionState => state;
 /** 칩 탭(비활성 → 활성) — 목록 시트 */
 export const activateEvent = (): void => {
   if (state.active) return; // 이미 활성이면 새 객체를 만들지 않아 리스너 통지 없음 (PR #123 리뷰)
-  setState({ active: true, room: null, location: null });
+  setState({ active: true, room: null, location: null, video: null });
 };
 
 /** ✕·칩 재탭·테마 칩 탭 — 이벤트 모드 종료 [D5·D14] */
@@ -93,9 +98,13 @@ export const deactivateEvent = (): void => setState(INACTIVE);
 export const openEventRoom = (selection: EventRoomSelection): void =>
   setState(withEventRoom(state, selection));
 
-/** 위치 행 탭·지도 셀 탭 — 위치 상세 시트로 [MSG-560 D1·D2] */
+/** 위치 행 탭·지도 셀 탭 — 위치 상세 시트로. 영상 선택은 리셋 [MSG-560 D1·D2 · MSG-562 D1] */
 export const selectEventLocation = (location: EventLocationSelection): void =>
-  setState({ ...state, location });
+  setState({ ...state, location, video: null });
+
+/** 위치 상세의 영상 카드 탭 — 현장 영상 상세 시트로 [MSG-562 D1·D12] */
+export const selectEventVideo = (videoId: number): void =>
+  setState({ ...state, video: videoId });
 
 /** `‹`·하드웨어 백 — 소비했으면 true, 이벤트 모드가 아니면 false [D14] */
 export const stepBackEvent = (): boolean => {
