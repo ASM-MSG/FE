@@ -85,4 +85,33 @@ describe("processing-store — 대기 목록 반응형 스토어 (기준 8)", ()
     await store.untrack(999);
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it("clear는 상태와 저장소를 한 번에 비운다 — 세션 종료 시 다음 계정이 이전 계정의 대기 영상을 폴링하지 않는다 (MSG-561)", async () => {
+    const shared = memoryStorage(
+      JSON.stringify([
+        { videoId: 1, startedAtMs: 10 },
+        { videoId: 2, startedAtMs: 20 },
+      ]),
+    );
+    const store = createProcessingStore(createPendingVideoStorage(shared));
+    await store.hydrate();
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    await store.clear();
+
+    expect(store.getPending()).toEqual([]);
+    expect(listener).toHaveBeenCalledTimes(1);
+    const restarted = createProcessingStore(createPendingVideoStorage(shared));
+    await restarted.hydrate();
+    expect(restarted.getPending()).toEqual([]);
+  });
+
+  it("빈 목록의 clear는 통지하지 않는다", async () => {
+    const store = storeOn();
+    const listener = vi.fn();
+    store.subscribe(listener);
+    await store.clear();
+    expect(listener).not.toHaveBeenCalled();
+  });
 });
