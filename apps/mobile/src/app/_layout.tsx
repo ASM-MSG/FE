@@ -1,6 +1,10 @@
 import "../global.css";
 import { View } from "react-native";
 import { Stack } from "expo-router";
+import {
+  isRouteGuardOpen,
+  PROTECTED_ROUTES,
+} from "../features/auth/model/app-entry";
 import { bootstrapAuth, useAuth } from "../features/auth/model/auth-session";
 import { useConsentGate } from "../features/auth/model/use-consent-gate";
 import { SignupConsentScreen } from "../features/auth/ui/signup-consent-screen";
@@ -30,7 +34,7 @@ if (process.env.EXPO_PUBLIC_STORYBOOK !== "1") {
  */
 const AppShell = () => {
   const showConsentGate = useConsentGate();
-  const { isAuthenticated } = useAuth();
+  const { hydrated, isAuthenticated } = useAuth();
 
   /**
    * 푸시 배선 (MSG-429 기준 14·16) — 게이트 **바깥**에 둔다. 알림 탭은 동의 게이트가
@@ -58,7 +62,21 @@ const AppShell = () => {
       걸지 않으려고 RN 기본 스타일로 고정한다(기능 차이는 없다).
     */
     <View style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        {/*
+          홈 로그인 게이트 (MSG-561) — 앱은 로그인 필수. guard가 꺼지면 보호 화면이 네비게이터에서
+          제거돼 딥링크·푸시 탭·업로드 이어가기 어느 경로로도 우회되지 않고, 보호 화면에 있던
+          스택도 통째로 사라져 뒤로가기로 홈에 못 돌아간다. 공개 라우트(index·login·dev)는
+          등재하지 않아도 자동 추가된다. 재수화 전에 열어 두는 이유는 `isRouteGuardOpen` JSDoc.
+        */}
+        <Stack.Protected
+          guard={isRouteGuardOpen({ hydrated, isAuthenticated })}
+        >
+          {PROTECTED_ROUTES.map((name) => (
+            <Stack.Screen key={name} name={name} />
+          ))}
+        </Stack.Protected>
+      </Stack>
       {/* 블러 완료 인앱 통지 (기준 11) — 루트 상주라 어느 화면에 있든 보인다 */}
       <ProcessingNoticeHost />
     </View>

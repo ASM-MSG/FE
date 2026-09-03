@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { unwrapEnvelope } from "../../../shared/api/envelope";
 import { getPlayback } from "../../../shared/api/sdk";
+import { useAuth } from "../../auth/model/auth-session";
 import { processingStore } from "../model/processing-persistence";
 import {
   dismissProcessingNotice,
@@ -28,6 +29,7 @@ import { invalidateGridQueries } from "./invalidate-grid-queries";
  */
 export const useProcessingWatcher = () => {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const pending = usePendingVideos(processingStore);
   const [notices, setNotices] = useState<ProcessingNotice[]>([]);
   // 폴 핸들 맵 lazy 초기화 — useRef(new Map())은 렌더마다 버려지는 Map을 만든다(웹 환류)
@@ -43,9 +45,21 @@ export const useProcessingWatcher = () => {
     void processingStore.hydrate();
   }, []);
 
-  // 대기 목록 ↔ 폴 핸들 동기화 — 새 항목은 폴링 시작(+즉시 1회), 사라진 항목은 중지
+  // 대기 목록 ↔ 폴 핸들 동기화 — 새 항목은 폴링 시작(+즉시 1회), 사라진 항목은 중지.
+  // 인증이 꺼지면(로그아웃·계정 삭제·세션 만료) 전부 중지하고 떠 있는 통지도 걷는다 — 통지의
+  // [확인하기]는 로그인 게이트(MSG-561) 밖으로 빠진 보호 라우트라 조용히 무시되고, 폴은
+  // `getPlayback`이 공개 영상이면 비로그인도 통과해 로그인 화면 위로 통지를 띄울 수 있다.
+  // 대기 목록(저장소)은 지우지 않는다 — 재로그인 시 그대로 재개. 목록이 기기 전역 키라 다른
+  // 계정이 이어받는 경로가 있지만 **한 폰에 여러 계정은 제품이 고려하지 않는다**(사용자 결정,
+  // MSG-561 DECISIONS). 웹은 대기 목록을 영속화하지 않아(MSG-476) 대응 동작이 없다.
   useEffect(() => {
     const handles = getHandles();
+    if (!isAuthenticated) {
+      for (const handle of handles.values()) handle.stop();
+      handles.clear();
+      setNotices([]);
+      return;
+    }
     for (const entry of pending) {
       if (handles.has(entry.videoId)) continue;
       // 마지막 조회의 gridId 보관 — READY 시 격자 쿼리 갱신용 (기준 13)
@@ -89,7 +103,7 @@ export const useProcessingWatcher = () => {
         handles.delete(videoId);
       }
     }
-  }, [pending, addNotice, queryClient]);
+  }, [isAuthenticated, pending, addNotice, queryClient]);
 
   // 포그라운드 복귀 — 대기 목록 재수화 + 즉시 조회 (기준 10)
   useEffect(() => {
