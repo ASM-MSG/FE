@@ -5,7 +5,7 @@ import type { HomeSheetContentContext } from "../../map-home/ui/home-sheet";
 import type { AiRouteState } from "../model/ai-route-store";
 import { buildRouteLegs } from "../model/route-legs";
 import { partialBannerText } from "../model/route-point-view";
-import { canSubmit } from "../model/route-request";
+import { canSubmit, submitLabel } from "../model/route-request";
 import { RouteEmptyState } from "./route-empty-state";
 import { RouteErrorNotice } from "./route-error-notice";
 import { RouteInputCard } from "./route-input-card";
@@ -39,6 +39,8 @@ interface AiRouteSheetContentProps extends HomeSheetContentContext {
   onInputFocus: () => void;
   /** 카드 탭 — 선택 + 지도 이동 (D8) */
   onSelectCard: (order: number) => void;
+  /** 현위치가 지금 뷰포트 안인가 — 출발지 상태 행의 근거 (MSG-559 S1) */
+  originActive: boolean;
 }
 
 export const AiRouteSheetContent = ({
@@ -51,6 +53,7 @@ export const AiRouteSheetContent = ({
   onSubmit,
   onInputFocus,
   onSelectCard,
+  originActive,
 }: AiRouteSheetContentProps) => {
   const { text, status, points, notice, selectedOrder, errorNotice } = state;
   const featureDisabled = state.featureDisabled;
@@ -84,8 +87,10 @@ export const AiRouteSheetContent = ({
       onSubmit={onSubmit}
       onFocus={onInputFocus}
       canSubmit={canSubmit({ text, status, featureDisabled, mapReady })}
-      submitLabel={status === "idle" ? "동선 짜기" : "다시 짜기"}
+      submitLabel={submitLabel({ status, originSent: state.originSent })}
       loading={loading}
+      // 결과 화면은 버튼 문구로만 출발지를 알린다 — 상태 행은 대기·로딩에만 (W9)
+      originActive={originActive && status !== "result"}
     />
   );
 

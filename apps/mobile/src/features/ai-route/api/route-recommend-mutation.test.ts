@@ -24,7 +24,7 @@ const BODY = {
   },
 };
 
-const loadRecommend = async () => {
+const loadRecommend = async (options: { secondary?: boolean } = {}) => {
   vi.stubEnv("EXPO_PUBLIC_API_BASE_URL", API_BASE);
   vi.resetModules();
   // 앱 부트스트랩과 같은 에러 정규화 — 실패 바디가 `ApiError`로 매핑돼야 §1-4 표가 성립한다
@@ -36,11 +36,29 @@ const loadRecommend = async () => {
     await import("./route-recommend-mutation");
   const store = createAiRouteStore();
   const onLoginRequired = vi.fn();
+  const onAutoMove = vi.fn();
   const observer = new MutationObserver(
     new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-    recommendMutationOptions({ store, onLoginRequired }),
+    recommendMutationOptions({
+      store,
+      onLoginRequired,
+      onAutoMove,
+      secondary: options.secondary,
+    }),
   );
-  return { store, observer, onLoginRequired };
+  return { store, observer, onLoginRequired, onAutoMove };
+};
+
+/** 언급 지역 신호가 실린 1차 응답 페이로드 (L10) */
+const MENTIONED_AREA = {
+  name: "부산 해운대",
+  centerLat: 35.1618,
+  centerLng: 129.1618,
+  minLat: 35.1523,
+  minLng: 129.1521,
+  maxLat: 35.1712,
+  maxLng: 129.1712,
+  kind: "MOVE",
 };
 
 const stubFetch = (
@@ -120,29 +138,55 @@ describe("recommendMutationOptions — 추천 1회 요청 배선 (L10)", () => {
     expect(store.getState().points.map((p) => p.order)).toEqual([1]);
   });
 
-  it("응답의 mentionedArea는 읽지 않는다 — 실려 와도 points·notice만 게시한다 ([MSG-489 확장점])", async () => {
-    const { store, observer } = await loadRecommend();
+  it("1차 응답에 mentionedArea가 실리면 결과를 게시하지 않고 2차를 예약한다 — succeed 미호출·로딩 유지 (L10, MSG-556 확장점 소비)", async () => {
+    const { store, observer, onAutoMove } = await loadRecommend();
     stubFetch(() =>
       envelopeResponse({
         points: ROUTE_POINTS,
         notice: null,
-        mentionedArea: {
-          name: "부산 해운대",
-          centerLat: 35.1618,
-          centerLng: 129.1618,
-          minLat: 35.1523,
-          minLng: 129.1521,
-          maxLat: 35.1712,
-          maxLng: 129.1712,
-          kind: "MOVE",
-        },
+        mentionedArea: MENTIONED_AREA,
       }),
     );
 
     await observer.mutate(BODY);
 
+    expect(store.getState().status).toBe("loading");
+    expect(store.getState().points).toHaveLength(0);
+    expect(store.getState()).toMatchObject({
+      autoMoved: true,
+      movedAreaName: "부산 해운대",
+      movedCenter: { lat: 35.1618, lng: 129.1618 },
+      secondaryPending: true,
+    });
+    expect(onAutoMove).toHaveBeenCalledTimes(1);
+    expect(onAutoMove).toHaveBeenCalledWith(
+      expect.objectContaining({
+        center: { lat: 35.1618, lng: 129.1618 },
+        areaName: "부산 해운대",
+      }),
+    );
+  });
+
+  it("이미 자동 이동한 사이클(2차 응답)에서는 mentionedArea가 또 실려 와도 결과를 게시한다 — 무한 루프 차단 (L10)", async () => {
+    const { store, observer, onAutoMove } = await loadRecommend({
+      secondary: true,
+    });
+    stubFetch(() =>
+      envelopeResponse({
+        points: ROUTE_POINTS,
+        notice: null,
+        mentionedArea: MENTIONED_AREA,
+      }),
+    );
+    store.startRequest();
+    store.startSecondaryRequest("부산 해운대", { lat: 35.1618, lng: 129.1618 });
+    onAutoMove.mockClear();
+
+    await observer.mutate(BODY);
+
     expect(store.getState().status).toBe("result");
     expect(store.getState().points).toHaveLength(3);
+    expect(onAutoMove).not.toHaveBeenCalled();
   });
 
   it("실패는 routeErrorNotice 매핑으로 fail에 실린다 — 입력 문장은 유지된다 (§1-4 14400)", async () => {
@@ -256,5 +300,63 @@ describe("recommendMutationOptions — 스테일 응답 무시 (MSG-556 리뷰 P
 
     expect(store.getState().status).toBe("result");
     expect(store.getState().points).toHaveLength(2);
+  });
+});
+
+describe("recommendMutationOptions — 2차 자동 재요청 인스턴스 (L10)", () => {
+  it("secondary 인스턴스의 onMutate는 markSecondarySent를 부르고 startRequest를 부르지 않는다 — autoMoved·예약 토큰이 보존된다", async () => {
+    const { store, observer } = await loadRecommend({ secondary: true });
+    stubFetch(() =>
+      envelopeResponse({
+        points: ROUTE_POINTS,
+        notice: null,
+        mentionedArea: null,
+      }),
+    );
+    const token = store.startRequest();
+    store.startSecondaryRequest("부산 해운대", { lat: 35.1618, lng: 129.1618 });
+
+    await observer.mutate({ ...BODY, origin: { lat: 35.16, lng: 129.16 } });
+
+    expect(store.isCurrentRequest(token)).toBe(true);
+    expect(store.getState()).toMatchObject({
+      status: "result",
+      autoMoved: true,
+      secondaryPending: false,
+      // body에 origin이 실려 있었으므로 결과 화면 버튼은 "현재 위치에서 다시 짜기"
+      originSent: true,
+    });
+    expect(store.getState().points).toHaveLength(3);
+  });
+
+  it("origin 없는 2차 body는 originSent를 false로 되돌린다 — 이동 후 뷰포트 재판정 결과", async () => {
+    const { store, observer } = await loadRecommend({ secondary: true });
+    stubFetch(() =>
+      envelopeResponse({
+        points: ROUTE_POINTS,
+        notice: null,
+        mentionedArea: null,
+      }),
+    );
+    store.startRequest(true);
+    store.startSecondaryRequest("부산 해운대", { lat: 35.1618, lng: 129.1618 });
+
+    await observer.mutate(BODY);
+
+    expect(store.getState().originSent).toBe(false);
+  });
+
+  it("2차가 401(2403)을 받으면 1차와 같은 onLoginRequired가 불린다 — 지연된 2차 사이의 세션 만료 (P1)", async () => {
+    const { store, observer, onLoginRequired } = await loadRecommend({
+      secondary: true,
+    });
+    stubFetch(() => errorEnvelope(2403, "로그인 필요", 401));
+    store.startRequest();
+    store.startSecondaryRequest("부산 해운대", { lat: 35.1618, lng: 129.1618 });
+
+    await expect(observer.mutate(BODY)).rejects.toThrow();
+
+    expect(onLoginRequired).toHaveBeenCalledTimes(1);
+    expect(store.getState().status).toBe("idle");
   });
 });

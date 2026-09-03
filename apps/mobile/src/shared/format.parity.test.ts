@@ -15,6 +15,7 @@ const webPath = (rel: string) =>
 
 const loadWebFormat = (): Promise<{
   formatRelativeTime: typeof mobileFormat.formatRelativeTime;
+  euroJosa: typeof mobileFormat.euroJosa;
 }> => import(webPath("shared/format.ts"));
 
 const loadWebCellDetail = (): Promise<{
@@ -49,5 +50,31 @@ describe("format 동등성 (AC 5·7)", () => {
         web.formatViewCount(count),
       );
     }
+  });
+});
+
+describe("euroJosa 동등성 (MSG-559 L3)", () => {
+  it("조사 '(으)로' 판정이 웹 원본과 같다 — 무받침·ㄹ 받침은 '로', 그 밖의 받침은 '으로', 비한글은 '로'", async () => {
+    const web = await loadWebFormat();
+    const samples = [
+      "강남",
+      "부산 서면",
+      "서울",
+      "해운대",
+      "을지로",
+      "판교",
+      "Seomyeon",
+      "1",
+      "",
+    ];
+
+    for (const name of samples) {
+      expect(mobileFormat.euroJosa(name)).toBe(web.euroJosa(name));
+    }
+    expect(mobileFormat.euroJosa("해운대")).toBe("로");
+    expect(mobileFormat.euroJosa("을지로")).toBe("로");
+    expect(mobileFormat.euroJosa("서울")).toBe("로");
+    expect(mobileFormat.euroJosa("강남")).toBe("으로");
+    expect(mobileFormat.euroJosa("Seomyeon")).toBe("로");
   });
 });

@@ -40,6 +40,13 @@ describe("ai-route-store — 요청·결과 상태 전이 (L9)", () => {
       selectedOrder: null,
       errorNotice: null,
       featureDisabled: false,
+      autoMoved: false,
+      originSent: false,
+      movedAreaName: null,
+      movedCenter: null,
+      secondaryPending: false,
+      normalizePending: false,
+      requestedAt: null,
     });
   });
 
@@ -204,5 +211,136 @@ describe("ai-route-store — 요청 토큰 (MSG-556 리뷰 P2)", () => {
     expect(store.isCurrentRequest(second)).toBe(false);
     // onError는 onMutate가 던졌을 때 context가 undefined다 — 현재 요청으로 보지 않는다
     expect(store.isCurrentRequest(undefined)).toBe(false);
+  });
+});
+
+describe("ai-route-store — 자동 동작 사이클 (L9, MSG-559)", () => {
+  const AREA_CENTER = { lat: 35.1579, lng: 129.0594 };
+
+  it("startNormalize()는 즉시 로딩으로 바꾸고 결과를 비우되 requestedAt은 건드리지 않는다 — 정규화 대기가 서버 10초 창을 먹으면 2차가 조기 발사된다", () => {
+    const store = createAiRouteStore();
+    store.succeed(ROUTE_POINTS, "부족 안내");
+
+    store.startNormalize();
+
+    expect(store.getState()).toMatchObject({
+      status: "loading",
+      points: [],
+      notice: null,
+      normalizePending: true,
+      requestedAt: null,
+    });
+  });
+
+  it("startRequest(originSent)는 사이클 플래그를 전부 초기화하고 requestedAt을 찍으며 토큰을 올린다 (L15)", () => {
+    const store = createAiRouteStore();
+    const before = store.startRequest();
+    store.startSecondaryRequest("부산 서면", AREA_CENTER);
+
+    const token = store.startRequest(true);
+
+    expect(store.getState()).toMatchObject({
+      status: "loading",
+      originSent: true,
+      autoMoved: false,
+      movedAreaName: null,
+      movedCenter: null,
+      secondaryPending: false,
+      normalizePending: false,
+    });
+    expect(store.getState().requestedAt).not.toBeNull();
+    expect(store.isCurrentRequest(before)).toBe(false);
+    expect(store.isCurrentRequest(token)).toBe(true);
+  });
+
+  it("startSecondaryRequest(name, center)는 1차 결과를 게시하지 않고 로딩을 유지한 채 2차를 예약한다 (D5·L14)", () => {
+    const store = createAiRouteStore();
+    store.startRequest();
+
+    store.startSecondaryRequest("부산 서면", AREA_CENTER);
+
+    expect(store.getState()).toMatchObject({
+      status: "loading",
+      autoMoved: true,
+      movedAreaName: "부산 서면",
+      movedCenter: AREA_CENTER,
+      secondaryPending: true,
+    });
+    expect(store.getState().points).toHaveLength(0);
+  });
+
+  it("startSecondaryRequest는 requestedAt을 1차 **응답 도착 시각**으로 다시 찍는다 (L9, 재작업 2)", () => {
+    vi.useFakeTimers();
+    try {
+      const store = createAiRouteStore();
+      vi.setSystemTime(1_000);
+      store.startRequest();
+      expect(store.getState().requestedAt).toBe(1_000);
+
+      // 1차 응답이 9초 뒤 도착 — 2차 창은 이 시각부터 다시 잰다
+      vi.setSystemTime(10_000);
+      store.startSecondaryRequest("부산 서면", AREA_CENTER);
+
+      expect(store.getState().requestedAt).toBe(10_000);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("markSecondarySent(originSent)는 예약을 소비하고 출발지 재판정 결과를 반영한다 — 토큰은 그대로다", () => {
+    const store = createAiRouteStore();
+    const token = store.startRequest();
+    store.startSecondaryRequest("부산 서면", AREA_CENTER);
+
+    expect(store.markSecondarySent(true)).toBe(token);
+    expect(store.getState().secondaryPending).toBe(false);
+    expect(store.getState().originSent).toBe(true);
+    expect(store.isCurrentRequest(token)).toBe(true);
+  });
+
+  it("abortPending(notice)은 두 대기를 함께 풀고 안내로 종결한다 — 영구 로딩도 확정 400도 아니다 (§12)", () => {
+    const store = createAiRouteStore();
+    store.startNormalize();
+    store.startSecondaryRequest("부산 서면", AREA_CENTER);
+
+    store.abortPending(RETRYABLE);
+
+    expect(store.getState()).toMatchObject({
+      status: "error",
+      errorNotice: RETRYABLE,
+      normalizePending: false,
+      secondaryPending: false,
+    });
+  });
+
+  it("dismissResult()·reset()이 사이클 플래그와 두 대기도 비운다 — 대기 중 뒤로가기로 예약이 소멸한다 (S9)", () => {
+    const store = createAiRouteStore();
+    store.startRequest(true);
+    store.startSecondaryRequest("부산 서면", AREA_CENTER);
+
+    store.dismissResult();
+    expect(store.getState()).toMatchObject({
+      status: "idle",
+      autoMoved: false,
+      originSent: false,
+      movedAreaName: null,
+      movedCenter: null,
+      secondaryPending: false,
+      normalizePending: false,
+    });
+
+    store.startRequest(true);
+    store.startSecondaryRequest("부산 서면", AREA_CENTER);
+    store.reset();
+    expect(store.getState()).toMatchObject({
+      text: "",
+      autoMoved: false,
+      originSent: false,
+      movedAreaName: null,
+      movedCenter: null,
+      secondaryPending: false,
+      normalizePending: false,
+      requestedAt: null,
+    });
   });
 });

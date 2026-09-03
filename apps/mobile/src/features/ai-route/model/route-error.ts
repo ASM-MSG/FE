@@ -4,7 +4,6 @@ import { ApiError } from "../../../shared/api/api-error";
  * 추천 요청 실패 → UI 반응 매핑 (§1-4) — 웹 `features/ai-route/model/route-error.ts` 복제본
  * (MSG-556, 동등성은 route-error.parity.test.ts). 정규화는 모바일 `shared/api/api-error`의
  * `ApiError`(status·developCode)를 그대로 쓴다. 로그인 이동·스토어 전이는 호출부가 한다.
- * 웹의 `VIEWPORT_TOO_WIDE_NOTICE`(MSG-489 §12 산물)는 복제하지 않았다.
  *
  * mutation은 TanStack 기본 `retry: 0`이라 14429(10초 제한)가 자동 재시도로 악화되지 않는다.
  */
@@ -49,6 +48,14 @@ const BY_DEVELOP_CODE: Record<number, RouteErrorNotice> = {
   }),
   2403: notice(null, { retryable: false, requiresLogin: true }),
 };
+
+/**
+ * 뷰포트가 서버 상한을 넘어 **보내지 않고** 종결하는 경로의 안내 (MSG-559 §12).
+ * 지도가 정착하지 못해 정착 상한이 만료됐을 때 확정 400(14401)을 대신 맞아 주는 대신
+ * 같은 안내로 끝낸다 — 사용자가 할 일(확대 후 재시도)이 서버 응답 때와 동일하다.
+ */
+export const VIEWPORT_TOO_WIDE_NOTICE: RouteErrorNotice =
+  BY_DEVELOP_CODE[14401];
 
 export const routeErrorNotice = (error: unknown): RouteErrorNotice => {
   if (!(error instanceof ApiError)) return GENERIC;
