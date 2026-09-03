@@ -24,8 +24,6 @@ export interface ProcessingStore {
   track: (videoId: number, startedAtMs: number) => Promise<void>;
   /** READY/FAILED/만료 처리 후 제거 */
   untrack: (videoId: number) => Promise<void>;
-  /** 세션 종료 시 전부 제거 (MSG-561) — 대기 목록은 기기 전역 키라 계정을 넘어 재개되면 안 된다 */
-  clear: () => Promise<void>;
 }
 
 const sameList = (a: PendingVideo[], b: PendingVideo[]): boolean =>
@@ -64,7 +62,6 @@ export const createProcessingStore = (
     track: async (videoId, startedAtMs) =>
       setPending(await storage.add({ videoId, startedAtMs })),
     untrack: async (videoId) => setPending(await storage.remove(videoId)),
-    clear: async () => setPending(await storage.clear()),
   };
 };
 

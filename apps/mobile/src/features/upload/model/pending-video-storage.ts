@@ -66,8 +66,6 @@ export interface PendingVideoStorage {
   /** 기록 후 갱신된 목록을 돌려준다 — 호출부(스토어)가 재조회 없이 상태를 맞춘다 */
   add: (entry: PendingVideo) => Promise<PendingVideo[]>;
   remove: (videoId: number) => Promise<PendingVideo[]>;
-  /** 전부 제거 — 세션 종료용. 항목별 remove 병렬 호출은 read→write 경합으로 일부가 남는다 */
-  clear: () => Promise<PendingVideo[]>;
 }
 
 export const createPendingVideoStorage = (
@@ -101,6 +99,5 @@ export const createPendingVideoStorage = (
     list: read,
     add: async (entry) => write(addPendingVideo(await read(), entry)),
     remove: async (videoId) => write(removePendingVideo(await read(), videoId)),
-    clear: () => write([]),
   };
 };

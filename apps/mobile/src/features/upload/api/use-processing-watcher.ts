@@ -29,7 +29,7 @@ import { invalidateGridQueries } from "./invalidate-grid-queries";
  */
 export const useProcessingWatcher = () => {
   const queryClient = useQueryClient();
-  const { hydrated, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const pending = usePendingVideos(processingStore);
   const [notices, setNotices] = useState<ProcessingNotice[]>([]);
   // 폴 핸들 맵 lazy 초기화 — useRef(new Map())은 렌더마다 버려지는 Map을 만든다(웹 환류)
@@ -46,20 +46,18 @@ export const useProcessingWatcher = () => {
   }, []);
 
   // 대기 목록 ↔ 폴 핸들 동기화 — 새 항목은 폴링 시작(+즉시 1회), 사라진 항목은 중지.
-  // 세션이 끝나면(로그아웃·계정 삭제·만료 — 셋 다 isAuthenticated=false로 수렴) 폴 전부 중지,
-  // 떠 있는 통지 제거, **대기 목록도 비운다** (MSG-561). 목록은 기기 전역 AsyncStorage 키라
-  // 남겨 두면 다음 계정이 이전 계정의 videoId를 폴링한다 — `getPlayback`은 전체 공개 영상이면
-  // 타인·비로그인도 통과하므로 오귀속 통지가 실제로 뜬다. 웹은 대기 목록을 영속화하지
-  // 않아(MSG-476) 세션을 넘는 재개가 애초에 없다. 재수화 전에는 아무것도 하지 않는다 —
-  // 콜드 스타트에서 인증 판정 전에 로그인 사용자의 목록을 지우면 안 된다.
+  // 인증이 꺼지면(로그아웃·계정 삭제·세션 만료) 전부 중지하고 떠 있는 통지도 걷는다 — 통지의
+  // [확인하기]는 로그인 게이트(MSG-561) 밖으로 빠진 보호 라우트라 조용히 무시되고, 폴은
+  // `getPlayback`이 공개 영상이면 비로그인도 통과해 로그인 화면 위로 통지를 띄울 수 있다.
+  // 대기 목록(저장소)은 지우지 않는다 — 재로그인 시 그대로 재개. 목록이 기기 전역 키라 다른
+  // 계정이 이어받는 경로가 있지만 **한 폰에 여러 계정은 제품이 고려하지 않는다**(사용자 결정,
+  // MSG-561 DECISIONS). 웹은 대기 목록을 영속화하지 않아(MSG-476) 대응 동작이 없다.
   useEffect(() => {
-    if (!hydrated) return;
     const handles = getHandles();
     if (!isAuthenticated) {
       for (const handle of handles.values()) handle.stop();
       handles.clear();
       setNotices([]);
-      void processingStore.clear();
       return;
     }
     for (const entry of pending) {
@@ -105,7 +103,7 @@ export const useProcessingWatcher = () => {
         handles.delete(videoId);
       }
     }
-  }, [hydrated, isAuthenticated, pending, addNotice, queryClient]);
+  }, [isAuthenticated, pending, addNotice, queryClient]);
 
   // 포그라운드 복귀 — 대기 목록 재수화 + 즉시 조회 (기준 10)
   useEffect(() => {
