@@ -8,10 +8,11 @@ import { EventLocationRow } from "./event-location-row";
 import { EventStatusBadge } from "./event-status-badge";
 
 /**
- * 행사 개요 시트 (MSG-557 D9·D10·D11·D14, Figma 15767:657) — 헤더(‹ 행사명 [배지] ✕) ·
- * 기간 · `행사 위치 N곳` · 위치 행 · 안내 1줄. 웹 `EventRoomOverview` 참조본.
- * 미렌더(D10): 시청 인원·부제·안내 1행(`지도에서도 …`)·행 탭 — 1단계에 그 동작이 없어
- * 문구가 거짓이 된다. 상세·위치 실패는 본문 자리에 재시도, 헤더는 유지한다 (D11).
+ * 행사 개요 시트 (MSG-557 D9~D11·D14 → MSG-560 D9·D10, Figma 15767:657) —
+ * 헤더(‹ 행사명 [배지] ✕) · 기간 + 시청 인원 · `행사 위치 N곳` · 위치 행(탭 가능) · 안내 2줄.
+ * 웹 `EventRoomOverview` 참조본. 상세·위치 실패는 본문 자리에 재시도, 헤더는 유지한다 (D11).
+ *
+ * 미렌더: 부제 `팝업·퍼레이드 현장을 선택해…`(사용자 결정 — 시트 문구 밀도).
  */
 interface EventOverviewSheetContentProps extends HomeSheetContentContext {
   overview: EventOverview;
@@ -39,21 +40,39 @@ export const EventOverviewSheetContent = ({
 
     {overview.state === "list" && (
       <SheetScrollView {...sheet} resetKey={overview.occurrenceId}>
-        <Text className="text-fm-caption text-foreground-muted">
-          {overview.periodLabel}
-        </Text>
+        {/* 기간 좌 · 시청 인원 우 (D9) — 헤더 행에는 ‹·제목·배지·✕가 이미 차 있다 */}
+        <View className="flex-row items-center justify-between gap-sm">
+          <Text className="text-fm-caption text-foreground-muted">
+            {overview.periodLabel}
+          </Text>
+          {overview.viewerLabel !== null && (
+            <View className="flex-row items-center gap-xxs">
+              <View className="size-1.5 rounded-full bg-primary" />
+              <Text className="text-fm-caption text-primary">
+                {overview.viewerLabel}
+              </Text>
+            </View>
+          )}
+        </View>
 
         <View className="gap-xs">
           <Text className="text-fm-body-strong text-foreground">
             행사 위치 {overview.cards.length}곳
           </Text>
           {overview.cards.map((card) => (
-            <EventLocationRow key={card.locationId} card={card} />
+            <EventLocationRow
+              key={card.locationId}
+              card={card}
+              onSelect={handlers.selectLocation}
+            />
           ))}
         </View>
 
-        {/* 지도 안내 — 웹 배너 2행 중 1단계에 참인 문장만 (D10) */}
-        <View className="rounded-md bg-event-tint px-md py-sm">
+        {/* 지도 안내 — 셀 탭이 위치 상세로 이어지므로 두 문장 모두 참이다 (D2·D10) */}
+        <View className="gap-xxs rounded-md bg-event-tint px-md py-sm">
+          <Text className="text-fm-caption text-primary">
+            지도에서도 행사 위치를 누를 수 있어요
+          </Text>
           <Text className="text-fm-caption text-foreground-muted">
             파란 격자는 {overview.title} 관련 장소예요
           </Text>

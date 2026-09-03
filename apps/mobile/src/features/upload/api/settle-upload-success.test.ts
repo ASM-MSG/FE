@@ -151,3 +151,42 @@ describe("settleUploadSuccess — 블러 처리 대기 등록 (MSG-429 기준 8)
     );
   });
 });
+
+/**
+ * AC 9 (D12): 행사 귀속 확정이 성공하면 기존 격자 무효화에 더해 **그 위치의 영상 목록**과
+ * **행사 위치 목록**(videoCount)을 무효화한다 — 올린 영상이 위치 상세에 바로 보인다.
+ */
+describe("settleUploadSuccess — 행사 확정 무효화 확장 (AC 9·D12)", () => {
+  const event = { occurrenceId: 5, locationId: 11 };
+
+  /** 무효화 호출에 실린 생성 쿼리 키의 식별자(`_id`)들 */
+  const invalidatedIds = (calls: unknown[][]): (string | undefined)[] =>
+    calls.flatMap((call) => {
+      const filters = call[0] as { queryKey?: { _id?: string }[] } | undefined;
+      return (filters?.queryKey ?? []).map((key) => key._id);
+    });
+
+  it("행사 대상이 있으면 위치 영상 목록·위치 목록을 추가로 무효화한다", () => {
+    primeConfirmedFlow();
+    const queryClient = new QueryClient();
+    const invalidated = vi.spyOn(queryClient, "invalidateQueries");
+
+    settleUploadSuccess(queryClient, uploaded, Date.now, event);
+
+    const ids = invalidatedIds(invalidated.mock.calls);
+    expect(ids).toContain("getLocationVideos");
+    expect(ids).toContain("getLocations");
+  });
+
+  it("일반 업로드는 행사 키를 무효화하지 않는다 — 기본값 = 기존 동작", () => {
+    primeConfirmedFlow();
+    const queryClient = new QueryClient();
+    const invalidated = vi.spyOn(queryClient, "invalidateQueries");
+
+    settleUploadSuccess(queryClient, uploaded);
+
+    const ids = invalidatedIds(invalidated.mock.calls);
+    expect(ids).not.toContain("getLocationVideos");
+    expect(ids).not.toContain("getLocations");
+  });
+});

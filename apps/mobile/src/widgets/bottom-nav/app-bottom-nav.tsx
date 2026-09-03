@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { semantic } from "@fillmap/design-tokens";
 import { BottomNav, type BottomNavItem } from "@fillmap/ui-native";
+import { enterGeneralUpload } from "../../features/upload/model/upload-flow-store";
 
 /** 탭 키 → 라우트 (AC 12) — 촬영은 BottomNav 내장 카메라 버튼: onCamera → /upload (MSG-302 AC 1) */
 const TAB_ROUTES = {
@@ -86,7 +87,7 @@ export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
         activeKey={activeKey}
         onSelect={handleSelect}
         // 중앙 카메라 버튼 → 영상 업로드 플로우 진입 (MSG-302 AC 1 — MSG-296 제외 범위였던 연결)
-        onCamera={() => router.navigate("/upload")}
+        onCamera={() => enterGeneralUpload(() => router.navigate("/upload"))}
       />
       {/* 시스템 제스처 인셋 배경 채움 (AC 16 4차) — 바 배경(canvas)의 연장 */}
       <View

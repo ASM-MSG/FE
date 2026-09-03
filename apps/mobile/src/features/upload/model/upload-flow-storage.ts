@@ -1,3 +1,4 @@
+import { isEventUploadTarget } from "./event-upload-target";
 import type { PersistedUploadFlow } from "./upload-flow-store";
 
 /**
@@ -93,7 +94,11 @@ const isPersistedUploadFlow = (value: unknown): value is PersistedUploadFlow =>
   value.suggestions.every(isSuggestion) &&
   isNullOr(value.selection, isSelection) &&
   isOrchestration(value.analysis) &&
-  isOrchestration(value.confirm);
+  isOrchestration(value.confirm) &&
+  // MSG-560 D11: 필드가 **없는** 구버전 저장값은 통과시켜 아래에서 null로 정규화한다 —
+  // 앱 업데이트가 진행 중인 업로드를 삼키지 않게 한다. 있는데 형상이 깨진 값만 거부.
+  (value.eventTarget === undefined ||
+    isNullOr(value.eventTarget, isEventUploadTarget));
 
 export const createUploadFlowStorage = (
   storage: KeyValueStorage,
@@ -103,7 +108,9 @@ export const createUploadFlowStorage = (
       const raw = await storage.getItem(UPLOAD_FLOW_STORAGE_KEY);
       if (raw === null) return null;
       const parsed: unknown = JSON.parse(raw);
-      return isPersistedUploadFlow(parsed) ? parsed : null;
+      if (!isPersistedUploadFlow(parsed)) return null;
+      // 구버전 저장값(필드 부재) 정규화 — 재개가 일반 업로드로 시작한다 (MSG-560 D11)
+      return { ...parsed, eventTarget: parsed.eventTarget ?? null };
     } catch {
       return null;
     }

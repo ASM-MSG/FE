@@ -253,3 +253,58 @@ describe("buildAnalyzeEffects — 선분석 단계열 (기준 23)", () => {
     vi.useRealTimers();
   });
 });
+
+/**
+ * AC 9 (D12): 행사 모드 확정은 `POST /api/event-occurrences/{id}/locations/{id}/videos`로
+ * path 귀속하고 body는 `s3Key·durationSec·recordedAt` 3필드뿐이다(좌표 없음).
+ * presign 단계는 일반 확정과 같다(purpose 미전송 = UPLOAD).
+ */
+const eventConfirmInput = {
+  uri: "file:///clip.mp4",
+  fileName: "clip.mp4",
+  fileSize: 2048,
+  contentType: "video/mp4",
+  durationSec: 5,
+  event: { occurrenceId: 5, locationId: 11 },
+};
+
+describe("buildConfirmEffects — 행사 귀속 확정 단계열 (AC 9·D12)", () => {
+  it("확정 요청이 행사 위치 경로로 나간다", async () => {
+    const { buildConfirmEffects, createOrchestration, runUploadFlow } =
+      await loadEffects();
+    const observed = stubFetch(respondUpload);
+
+    await runUploadFlow(
+      createOrchestration(),
+      buildConfirmEffects(eventConfirmInput),
+    );
+
+    expect(
+      observed.map((call) => `${call.method} ${new URL(call.url).pathname}`),
+    ).toEqual([
+      "POST /api/videos/presigned-url",
+      "GET /clip.mp4",
+      "PUT /key",
+      "POST /api/event-occurrences/5/locations/11/videos",
+    ]);
+  });
+
+  it("행사 확정 body는 s3Key·durationSec·recordedAt뿐 — 좌표를 싣지 않는다", async () => {
+    const { buildConfirmEffects, createOrchestration, runUploadFlow } =
+      await loadEffects();
+    const observed = stubFetch(respondUpload);
+
+    await runUploadFlow(
+      createOrchestration(),
+      buildConfirmEffects(eventConfirmInput),
+    );
+
+    const body = observed.at(-1)!.body as Record<string, unknown>;
+    expect(Object.keys(body).sort()).toEqual([
+      "durationSec",
+      "recordedAt",
+      "s3Key",
+    ]);
+    expect(body).toMatchObject({ s3Key: "videos/clip.mp4", durationSec: 5 });
+  });
+});
