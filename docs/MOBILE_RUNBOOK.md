@@ -353,6 +353,23 @@ adb shell am start -n kr.fillmap.app/.MainActivity \
 `android:dev` 스크립트는 진입 직전에 항상 `force-stop`을 건다. 2026-08-21에 빌드·설치·Metro가 전부 정상인데
 화면만 검게 나와 한참 헤맨 원인이 정확히 이것이었다.
 
+### 함정 9. 입력창을 눌러도 소프트 키보드 자판이 안 뜬다 (플로팅 툴바만 뜬다)
+
+**증상** — `TextInput` 포커스 시 `dumpsys input_method`는 `mInputShown=true`인데 화면에는 자판 없이 Gboard **좌측 플로팅 툴바**(지우기·엔터·이모지·≡)만 뜨고, `settings put secure show_ime_with_hard_keyboard 1`도 효과가 없다. uiautomator 덤프에 `com.google.android.inputmethod.latin` 노드 0개.
+
+**원인** — 하드웨어 키보드가 아니다(`getevent -p`에 키보드 장치 없음). Gboard가 **스타일러스 필기 모드**로 동작한다 — 에뮬레이터 virtio 멀티터치가 스타일러스로 등록돼(`dumpsys input_method`의 `isStylusHandwritingEnabled=true`, `mStylusIds=[2..12]`) 자판 대신 필기 툴바를 띄운다. MSG-562 R2 검증에서 두 검증자가 "하드웨어 키보드 모드"로 오판해 확인불가로 남겼던 항목.
+
+**대응** — 시스템 필기 설정을 끄고 Gboard 상태를 초기화한다. 검증 후 원복.
+
+```bash
+adb shell settings put secure stylus_handwriting_enabled 0
+adb shell pm clear com.google.android.inputmethod.latin     # 필기 온보딩 패널이 뜨면 Cancel
+# … 입력창 탭 → 도킹 자판 확인 …
+adb shell settings delete secure stylus_handwriting_enabled  # 원복
+```
+
+**덤으로 주의** — `adb shell dumpsys window windows | head`처럼 큰 덤프를 파이프로 끊으면 그 직후 몇 초간 `device offline`이 나고 `adb reverse`가 풀린다. 덤프는 `grep`으로만 걸러 끝까지 읽히게 하고, offline 뒤에는 `adb reverse tcp:8081 tcp:8081`을 다시 건다.
+
 ### 에뮬레이터 재현 성공 경로 (막혔을 때 통째로 다시 밟을 순서)
 
 2026-08-20에 실제로 통한 경로다. 개별 대응이 안 먹으면 이 순서로 초기화한다.

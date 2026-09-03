@@ -11,6 +11,7 @@ import {
 } from "../api/use-event-video-sheet";
 import { eventVideoMetaLine, eventVideoTitle } from "../model/event-video-view";
 import { EventVideoCommentInput } from "./event-video-comment-input";
+import { useKeyboardAvoidPadding } from "./use-keyboard-avoid-padding";
 import { EventVideoCommentRow } from "./event-video-comment-row";
 import { EventVideoPlayer } from "./event-video-player";
 
@@ -53,9 +54,15 @@ export const EventVideoSheetContent = ({
   } = useEventVideoSheet(video.videoId);
   const helpfulByMe = detail?.helpfulByMe ?? false;
   const helpfulDisabled = interaction?.helpfulDisabled ?? true;
+  // 키보드 회피 (A2 대안 — R2 실기에서 footer가 자판 뒤에 가려져 채택)
+  const keyboard = useKeyboardAvoidPadding();
 
   return (
-    <View className="flex-1 gap-sm">
+    <View
+      ref={keyboard.ref}
+      className="flex-1 gap-sm"
+      style={{ paddingBottom: keyboard.paddingBottom }}
+    >
       <SheetHeader
         title={detail?.locationName ?? video.locationName}
         onBack={back}
