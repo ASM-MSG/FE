@@ -17,6 +17,7 @@ import { useEventHome } from "../../event/api/use-event-home";
 import { EventChip } from "../../event/ui/event-chip";
 import { EventSheetSwitch } from "../../event/ui/event-sheet-switch";
 import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
+import { enterGeneralUpload } from "../../upload/model/upload-flow-store";
 import { useCollectedGridsQuery } from "../api/use-collected-grids-query";
 import { useGridAggregationQuery } from "../api/use-grid-aggregation-query";
 import { useHomeGridDetail } from "../api/use-home-grid-detail";
@@ -238,6 +239,7 @@ export const MapHomeScreen = () => {
     bounds,
     moveTo: (center) => mapRef.current?.moveTo(center),
     onActivate: handleClose,
+    onUpload: () => router.push("/upload"),
   });
 
   // Android 하드웨어 뒤로가기 (A5) — 헤더 `‹`와 같은 규칙을 타고, 최상위에서만 화면을 벗어난다
@@ -313,9 +315,8 @@ export const MapHomeScreen = () => {
    * 역인덱스에 없는 셀과 게이트(canOpenDetail)에 걸린 셀은 no-op이다.
    */
   const handleCellTap = (_cellId: string, index: GridCellIndex) => {
-    // 이벤트 모드 중 홈 격자 탭 무시 (codex P2) — 웹은 방 열림 중 홈 게시 훅 suspended.
-    // 여기서 선택을 세우면 ✕·하드웨어 백으로 모드를 나갈 때 기본 시트 대신 격자 상세가 드러난다 (D14)
-    if (event.active) return;
+    // 이벤트 모드 중 셀 탭은 행사 위치 상세로 위임한다 (MSG-560 D2 — 홈 격자 선택은 안 세운다)
+    if (event.active) return event.handlers.tapCell(index);
     const gridId = gridIdOfCell(overlays.gridIdIndex, index);
     if (gridId === null) return;
     if (
@@ -358,8 +359,10 @@ export const MapHomeScreen = () => {
             }
             themeColor={event.overlayColor ?? themeColor}
             hatchCells={overlays.classification?.both}
+            accentCells={event.accentCells}
+            accentColor={event.accentColor}
             route={overlays.route}
-            missionLabel={overlays.missionLabel}
+            missionLabel={event.mapLabel ?? overlays.missionLabel}
             clusters={aggregation.clusters}
             onViewportChange={setViewport}
           />
@@ -420,7 +423,7 @@ export const MapHomeScreen = () => {
               onSelectGrid={setSelectedGridId}
               onBack={goBack}
               onClose={closeAction}
-              onUpload={() => router.push("/upload")}
+              onUpload={() => enterGeneralUpload(() => router.push("/upload"))}
               onRetryDefault={handleRetryDefault}
             />
           )}

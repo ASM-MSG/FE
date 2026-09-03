@@ -435,3 +435,63 @@ describe("구독 계약", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * AC 9 (D11): 행사 업로드 대상은 스토어 슬롯 + 영속이다 — 콜드 스타트 재개가 일반 업로드로
+ * 둔갑해 뷰포트 좌표에 오귀속되는 경로를 막는다. 플로우 내부 복귀는 유지하고, 완료(reset)만 비운다.
+ */
+const eventTarget = {
+  occurrenceId: 5,
+  locationId: 11,
+  occurrenceTitle: "서면 목데이터 축제",
+  locationName: "서면 목데이터 포토존",
+};
+
+describe("setEventTarget — 행사 업로드 대상 슬롯 (AC 9·D11)", () => {
+  it("초기 상태는 일반 업로드(null)다", () => {
+    expect(createUploadFlowStore().getState().eventTarget).toBeNull();
+  });
+
+  it("행사 진입이 대상을 세우고 일반 진입이 비운다 — 상호 배타", () => {
+    const store = createUploadFlowStore();
+
+    store.setEventTarget(eventTarget);
+    expect(store.getState().eventTarget).toEqual(eventTarget);
+
+    store.setEventTarget(null);
+    expect(store.getState().eventTarget).toBeNull();
+  });
+
+  it("영상 확보(startAnalysis)·선택 화면 복귀(backToSelect)는 대상을 유지한다 — 같은 흐름 안의 이동", () => {
+    const store = createUploadFlowStore();
+    store.setEventTarget(eventTarget);
+
+    store.startAnalysis(video);
+    expect(store.getState().eventTarget).toEqual(eventTarget);
+
+    store.backToSelect();
+    expect(store.getState().eventTarget).toEqual(eventTarget);
+  });
+
+  it("완료 후 reset은 대상을 비운다 — 다음 진입이 행사 모드를 이어받지 않는다", () => {
+    const store = createUploadFlowStore();
+    store.setEventTarget(eventTarget);
+
+    store.reset();
+
+    expect(store.getState().eventTarget).toBeNull();
+  });
+
+  it("영속 스냅숏에 대상이 실리고 재수화로 돌아온다 (AC 9)", () => {
+    const store = createUploadFlowStore();
+    store.setEventTarget(eventTarget);
+    store.startAnalysis(video);
+
+    const snapshot = store.toPersisted();
+    expect(snapshot.eventTarget).toEqual(eventTarget);
+
+    const restored = createUploadFlowStore();
+    restored.hydrate(snapshot);
+    expect(restored.getState().eventTarget).toEqual(eventTarget);
+  });
+});

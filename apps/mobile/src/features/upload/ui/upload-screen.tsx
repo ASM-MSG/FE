@@ -13,6 +13,7 @@ import { palette } from "@fillmap/design-tokens";
 import { AppHeader, Button, Chip, Toast } from "@fillmap/ui-native";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useUploadLocation } from "../api/use-upload-location";
+import { eventUploadLabel } from "../model/event-upload-target";
 import { resolvePickOutcome, type PickOutcome } from "../model/pick-result";
 import { resolveSelectionRejection } from "../model/select-validation";
 import { FILE_CONSTRAINT_TEXT } from "../model/upload-copy";
@@ -40,8 +41,13 @@ export const UploadScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const hydrated = useUploadFlowHydrated();
-  const { selectFailureMessage } = useUploadFlow();
+  const { selectFailureMessage, eventTarget } = useUploadFlow();
   const location = useUploadLocation();
+  // 행사 귀속 진입은 좌표 대신 `{행사명} · {위치명}`을 태그로 보인다 (MSG-560 D12)
+  const locationLabel =
+    eventTarget === null
+      ? location.label
+      : eventUploadLabel(eventTarget.occurrenceTitle, eventTarget.locationName);
   const [notice, setNotice] = useState<string | null>(null);
 
   /** 판정 결과 적용 — 거부: 안내 / 취소: 무동작 / 확보: 검증 후 분석 전진 */
@@ -132,7 +138,7 @@ export const UploadScreen = () => {
               위치 태그
             </Text>
             <Chip
-              text={location.label}
+              text={locationLabel}
               className="bg-primary/10"
               icon={<MapPin size={14} color={palette["red-500"]} />}
             />

@@ -3,9 +3,9 @@ import { kstDateOf } from "./event-chip";
 import { eventLocationTypeLabel } from "./event-location";
 
 /**
- * 행사 개요 파생 — 웹 `features/event/model/event-overview.ts` 부분 포팅 (MSG-557 D9).
- * `viewerCountLabel`(시청 인원)과 카드 뷰의 `dto` 슬롯(카드 탭 → 위치 상세)은 1단계 제외
- * 범위라 옮기지 않았다 (D10). 순수 함수.
+ * 행사 개요 파생 — 웹 `features/event/model/event-overview.ts` 포팅 (MSG-557 D9 · MSG-560 D9).
+ * 카드 뷰의 `dto` 슬롯은 옮기지 않는다 — 위치 행 탭은 조립 훅이 원본 DTO 목록과 짝지어
+ * 스냅숏을 만든다(웹은 뷰에 DTO를 실어 넘긴다). 순수 함수.
  */
 
 /** "YYYY-MM-DD" → "M.D" (선행 0 제거) */
@@ -18,7 +18,14 @@ const monthDayLabel = (date: string): string => {
 export const eventPeriodLabel = (startsAt: string, endsAt: string): string =>
   `${monthDayLabel(kstDateOf(startsAt))}–${monthDayLabel(kstDateOf(endsAt))}`;
 
-/** 위치 행 하나의 뷰 재료 — 1단계는 비인터랙티브 (D10) */
+/**
+ * 시청 인원 라벨 (MSG-560 D9) — 0은 "0명 보는 중"(아무도 없음도 정보),
+ * null(캐시 장애·조회 실패)은 라벨 없음(표시만 생략).
+ */
+export const viewerCountLabel = (viewerCount: number | null): string | null =>
+  viewerCount === null ? null : `${viewerCount}명 보는 중`;
+
+/** 위치 행 하나의 뷰 재료 — 탭하면 위치 상세로 (MSG-560 D10) */
 export interface EventLocationCardView {
   locationId: number;
   name: string;

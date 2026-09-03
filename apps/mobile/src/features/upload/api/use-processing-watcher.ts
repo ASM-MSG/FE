@@ -14,6 +14,7 @@ import {
   type ProcessingPollHandle,
 } from "../model/processing-poll";
 import { usePendingVideos } from "../model/processing-store";
+import { invalidateEventSurfaces } from "./invalidate-event-surfaces";
 import { invalidateGridQueries } from "./invalidate-grid-queries";
 
 /**
@@ -69,6 +70,9 @@ export const useProcessingWatcher = () => {
           if (lastGridId.current !== null) {
             invalidateGridQueries(queryClient, lastGridId.current);
           }
+          // 행사 영상도 READY 전엔 위치 목록에서 제외된다 — 확정 시점 무효화만으론 위치 상세가
+          // 옛 목록에 머문다. 워처는 귀속을 모르므로 부분 키로 전 위치 (MSG-560 codex P1)
+          invalidateEventSurfaces(queryClient, null);
           settle("ready");
         },
         onFailed: () => settle("failed"),
