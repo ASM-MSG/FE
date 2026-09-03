@@ -103,3 +103,62 @@ describe("canPublishUpload — [업로드하기] 발사 가능 판정 (기준 19
     expect(canPublishUpload({ ...ready, submitting: true })).toBe(false);
   });
 });
+
+/**
+ * AC 9 (D12): 행사 모드 확정 — 귀속이 URL path로 결정되므로 body에 좌표를 싣지 않고,
+ * `center`(비동기 측위) 없이도 [업로드하기]가 활성이다.
+ */
+const eventTarget = {
+  occurrenceId: 5,
+  locationId: 11,
+  occurrenceTitle: "서면 목데이터 축제",
+  locationName: "서면 목데이터 포토존",
+};
+
+describe("buildConfirmInput — 행사 귀속 확정 입력 (AC 9·D12)", () => {
+  it("행사 대상이 있으면 event를 싣고 좌표를 싣지 않는다", () => {
+    const input = buildConfirmInput(
+      video,
+      { start: 3, end: 8 },
+      null,
+      eventTarget,
+    );
+
+    expect(input.event).toEqual({ occurrenceId: 5, locationId: 11 });
+    expect(input.lat).toBeUndefined();
+    expect(input.lng).toBeUndefined();
+    expect(input.durationSec).toBe(5);
+  });
+
+  it("행사 대상이 없으면 종전대로 좌표를 싣는다 — 기본값 = 기존 동작", () => {
+    const input = buildConfirmInput(video, { start: 3, end: 8 }, center);
+
+    expect(input.event).toBeUndefined();
+    expect(input).toMatchObject({ lat: center.lat, lng: center.lng });
+  });
+});
+
+describe("canPublishUpload — 행사 모드는 좌표 대기가 없다 (AC 9·D12)", () => {
+  it("행사 대상이 있으면 center가 null이어도 발사 가능하다", () => {
+    expect(
+      canPublishUpload({
+        video,
+        segment: { start: 3, end: 8 },
+        center: null,
+        submitting: false,
+        eventTarget,
+      }),
+    ).toBe(true);
+  });
+
+  it("일반 업로드는 종전대로 center를 기다린다", () => {
+    expect(
+      canPublishUpload({
+        video,
+        segment: { start: 3, end: 8 },
+        center: null,
+        submitting: false,
+      }),
+    ).toBe(false);
+  });
+});

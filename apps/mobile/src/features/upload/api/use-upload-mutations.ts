@@ -1,16 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
-import type { VideoUploadResponseDto } from "../../../shared/api/sdk";
-import type { ConfirmUploadInput } from "../model/confirm-input";
+import type {
+  ConfirmUploadInput,
+  EventConfirmTarget,
+} from "../model/confirm-input";
 import { withFlowProgress } from "../model/flow-progress";
 import { processingStore } from "../model/processing-persistence";
 import { runUploadFlow, UploadFlowError } from "../model/upload-orchestration";
 import { uploadFlowStore } from "../model/upload-flow-store";
+import { invalidateEventSurfaces } from "./invalidate-event-surfaces";
 import { invalidateGridQueries } from "./invalidate-grid-queries";
 import {
   buildAnalyzeEffects,
   buildConfirmEffects,
+  type ConfirmUploadResult,
   type UploadSource,
 } from "./upload-effects";
 
@@ -97,8 +101,14 @@ export const settleUploadSuccess = (
   queryClient: QueryClient,
   video: { videoId: number; gridId: string },
   now: () => number = Date.now,
+  event: EventConfirmTarget | null = null,
 ): void => {
   invalidateGridQueries(queryClient, video.gridId);
+  /**
+   * MSG-560 D12 — 행사 귀속 확정에만: 그 위치의 영상 목록(infinite)과 행사 위치 목록
+   * (videoCount)을 함께 무효화한다. 웹 `invalidate-upload-surfaces.ts`의 행사 분기 대응.
+   */
+  if (event !== null) invalidateEventSurfaces(queryClient, event);
   /**
    * MSG-429 기준 8 — 여기가 대기 등록의 **유일한 지점**이다. 확정 응답을 손에 쥔 시점이
    * videoId를 아는 첫 순간이고, 바로 아래 `reset()`이 플로우를 비우므로 나중에는 알 방법이
@@ -131,7 +141,8 @@ export const useConfirmUpload = () => {
         throw error;
       }
     },
-    onSuccess: (video) => settleUploadSuccess(queryClient, video),
+    onSuccess: (video, input) =>
+      settleUploadSuccess(queryClient, video, Date.now, input.event ?? null),
     onSettled: () => uploadFlowStore.endFlight(),
   });
 
@@ -140,7 +151,7 @@ export const useConfirmUpload = () => {
     /** 확정 발사 — 같은 틱의 두 번째 탭은 무시된다, 중복 게시 차단 (기준 35) */
     publish: (
       input: ConfirmUploadInput,
-      options?: MutateOptions<VideoUploadResponseDto, ConfirmUploadInput>,
+      options?: MutateOptions<ConfirmUploadResult, ConfirmUploadInput>,
     ) => {
       if (!uploadFlowStore.beginFlight("confirm")) return;
       mutation.mutate(input, options);

@@ -60,6 +60,8 @@ const THEME_FILL_ALPHA = "2E";
 const THEME_OUTLINE_ALPHA = "73";
 const THEME_OUTLINE_WIDTH = 1.5;
 
+/** 강조 셀 외곽선 (MSG-560 D3) — 웹 emphasized(진한 실선) 대응, 테마 셀보다 굵다 */
+const ACCENT_OUTLINE_WIDTH = 2;
 /** 교집합 빗금 (MSG-298 AC 9) — 테마 원색 실선 세그먼트 */
 const HATCH_LINE_WIDTH = 2;
 
@@ -127,6 +129,14 @@ interface GridMapProps {
   themeColor?: string;
   /** 교집합(테마 ∩ 점령) 셀 — 테마 색 빗금 추가 (MSG-427 D9) */
   hatchCells?: GridCellIndex[];
+  /**
+   * 강조 셀 — `accentColor` 채움 + 굵은 외곽선 (MSG-560 D3). 테마 층 위에 얹는 두 번째 색
+   * 층이다(행사 위치 상세가 열린 동안 그 위치 셀). 선택 1곳의 격자(실데이터 9칸)뿐이라
+   * 테마 층과 달리 파생을 memo하지 않는다. 미지정 시 렌더 불변.
+   */
+  accentCells?: GridCellIndex[];
+  /** 강조 원색 hex — `accentCells`와 같은 수명 (미지정이면 강조 층 미렌더) */
+  accentColor?: string;
   /** 코스 경로 — 폴리라인 좌표 + 번호 경유지 마커 (MSG-427 E14, 경로추천 전용).
       `onWaypointTap`은 AI 추천의 마커→카드 선택 (MSG-556 D8) — 없으면 마커는 탭 불가 */
   route?: {
@@ -139,7 +149,7 @@ interface GridMapProps {
    * Figma 9개 프레임 어디에도 이름표가 없고 RN에는 hover가 없어(스펙 R4), 티켓
    * [동작 요구]의 "이름표가 붙는다"를 지도가 글자로 덮이지 않는 최소 범위로 충족한다.
    */
-  missionLabel?: { text: string; coord: LatLng };
+  missionLabel?: { text: string; coord: LatLng; color?: string };
   /**
    * 카메라 **이동 종료** 시 현재 뷰포트 통지 (MSG-423 요구 5) — 조회 재발사 트리거다.
    * SDK의 `onCameraIdle`에 물린다: 제스처가 완전히 끝나야 발화하므로 드래그·줌 중에는
@@ -214,6 +224,8 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     themeCells,
     themeColor,
     hatchCells,
+    accentCells,
+    accentColor,
     route,
     missionLabel,
     onViewportChange,
@@ -397,6 +409,17 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             outlineWidth={THEME_OUTLINE_WIDTH}
           />
         ))}
+      {/* 강조 셀 — 테마 층 위에 얹는 두 번째 색 (MSG-560 D3) */}
+      {accentColor &&
+        (accentCells ?? []).map((cell) => (
+          <NaverMapPolygonOverlay
+            key={`accent:${cellKey(cell)}`}
+            coords={rectCoords(cellBoundsAt(cell))}
+            color={`${accentColor}${THEME_FILL_ALPHA}`}
+            outlineColor={accentColor}
+            outlineWidth={ACCENT_OUTLINE_WIDTH}
+          />
+        ))}
       {/* 교집합 셀 빗금 — primary 채움(occupiedCells에 포함) 위에 테마 색 대각선 (AC 9) */}
       {themeColor &&
         hatchLines.map(({ key, segment: [from, to] }) => (
@@ -497,7 +520,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
               width: MISSION_LABEL_WIDTH,
               height: MISSION_LABEL_HEIGHT,
               borderRadius: MISSION_LABEL_HEIGHT / 2,
-              backgroundColor: themeColor,
+              backgroundColor: missionLabel.color ?? themeColor,
               alignItems: "center",
               justifyContent: "center",
               paddingHorizontal: 8,

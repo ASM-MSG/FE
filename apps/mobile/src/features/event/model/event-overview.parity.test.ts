@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { EventLocationResponseDto } from "../../../shared/api/sdk";
-import { eventPeriodLabel, toLocationCardViews } from "./event-overview";
+import {
+  eventPeriodLabel,
+  toLocationCardViews,
+  viewerCountLabel,
+} from "./event-overview";
 
 /**
  * AC 6 (D9): `eventPeriodLabel`·`toLocationCardViews`가 웹 원본과 동등하다.
@@ -14,6 +18,7 @@ const WEB_PATH = new URL(
 
 interface WebOverview {
   eventPeriodLabel: typeof eventPeriodLabel;
+  viewerCountLabel: typeof viewerCountLabel;
   toLocationCardViews: (
     locations: EventLocationResponseDto[],
   ) => (ReturnType<typeof toLocationCardViews>[number] & { dto: unknown })[];
@@ -97,5 +102,17 @@ describe("event-overview 웹 원본 동등성 (AC 6)", () => {
         imageUrl: null,
       },
     ]);
+  });
+
+  /** AC 8 (MSG-560 D9) — 0은 값이고("0명 보는 중"), null(조회 실패·캐시 장애)은 미표시다 */
+  it("viewerCountLabel이 0을 `0명 보는 중`으로, null을 미표시(null)로 낸다", async () => {
+    const web = await loadWeb();
+
+    for (const count of [null, 0, 1, 42]) {
+      expect(viewerCountLabel(count)).toBe(web.viewerCountLabel(count));
+    }
+    expect(viewerCountLabel(0)).toBe("0명 보는 중");
+    expect(viewerCountLabel(42)).toBe("42명 보는 중");
+    expect(viewerCountLabel(null)).toBeNull();
   });
 });

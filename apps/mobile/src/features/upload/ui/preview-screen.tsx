@@ -9,6 +9,7 @@ import { useUploadLocation } from "../api/use-upload-location";
 import { useConfirmUpload } from "../api/use-upload-mutations";
 import { STAGE_FAILURE_MESSAGES } from "../model/analysis-copy";
 import { buildConfirmInput, canPublishUpload } from "../model/confirm-input";
+import { eventUploadLabel } from "../model/event-upload-target";
 import { formatSegmentLabel } from "../model/highlight-selection";
 import { useUploadFlowHydrated } from "../model/upload-flow-persistence";
 import { backRouteFromPreview } from "../model/upload-flow-resume";
@@ -44,12 +45,21 @@ export const PreviewScreen = () => {
   const [completed, setCompleted] = useState(false);
 
   const segment = selectSelectedSegment(flow);
+  // 행사 귀속 업로드는 좌표를 보내지 않아 측위를 기다리지 않는다 (MSG-560 D12)
   const canPublish = canPublishUpload({
     video: flow.video,
     segment,
     center: location.center,
     submitting: confirm.isPending,
+    eventTarget: flow.eventTarget,
   });
+  const locationLabel =
+    flow.eventTarget === null
+      ? location.label
+      : eventUploadLabel(
+          flow.eventTarget.occurrenceTitle,
+          flow.eventTarget.locationName,
+        );
 
   /** [확인] — 스택 해제 + 홈 복귀 + 플로우 초기화(영속 값 제거 포함) (기준 29·39) */
   const finish = () => {
@@ -99,18 +109,14 @@ export const PreviewScreen = () => {
    * 실제로 서버에 중복 영상이 생성됐다(실측 videoId 287+288 / 289+290).
    */
   const publish = () => {
-    if (
-      !canPublish ||
-      flow.video === null ||
-      segment === null ||
-      location.center === null
-    ) {
-      return;
-    }
-    confirm.publish(buildConfirmInput(flow.video, segment, location.center), {
-      onSuccess: () => setCompleted(true),
-      // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
-    });
+    if (!canPublish || flow.video === null || segment === null) return;
+    confirm.publish(
+      buildConfirmInput(flow.video, segment, location.center, flow.eventTarget),
+      {
+        onSuccess: () => setCompleted(true),
+        // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
+      },
+    );
   };
 
   const failureMessage = confirm.isError
@@ -151,7 +157,7 @@ export const PreviewScreen = () => {
           <View className="mt-xxs flex-row items-center gap-xs">
             <MapPin size={14} color={palette["red-500"]} />
             <Text className="text-fm-body-strong text-foreground">
-              {location.label}
+              {locationLabel}
             </Text>
           </View>
         </View>
@@ -173,7 +179,7 @@ export const PreviewScreen = () => {
           text={
             confirm.isPending
               ? "업로드 중…"
-              : location.center === null
+              : !canPublish && location.center === null
                 ? "위치 확인 중…"
                 : "업로드하기"
           }
