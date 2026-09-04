@@ -123,7 +123,9 @@ export const watchPosition = (
       else subscription = result;
     })
     .catch(() => {
-      // 권한 판독·구독 자체 실패 — 점·원 없이 끝난다 (기존 MSG-447 안내 흐름은 탭이 담당)
+      // 권한 판독·구독 자체 실패 — 이전 픽스를 지우고 점 없이 끝난다 (기존 MSG-447 안내 흐름은
+      // 탭이 담당). 미승인 분기와 같은 신호라 화면은 추적도 함께 끈다 (Claude 리뷰 🟢)
+      if (!cancelled) onPosition(null);
     });
   return () => {
     cancelled = true;

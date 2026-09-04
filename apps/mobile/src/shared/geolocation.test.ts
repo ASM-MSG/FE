@@ -409,13 +409,15 @@ describe("watchPosition — 위치 구독 어댑터 (L3·L4)", () => {
     expect(control.removeCalls).toBe(1);
   });
 
-  it("권한 판독 자체가 던져도 예외가 전파되지 않고 구독 없음으로 끝난다 (L4)", async () => {
+  it("권한 판독 자체가 던져도 예외가 전파되지 않고 onPosition(null)로 이전 픽스를 지운 뒤 구독 없음으로 끝난다 (L4)", async () => {
     control.permissionError = true;
+    const onPosition = vi.fn();
 
-    const unsubscribe = watchPosition(() => {});
+    const unsubscribe = watchPosition(onPosition);
     await flush();
 
     expect(control.watchCalls).toBe(0);
+    expect(onPosition).toHaveBeenCalledWith(null);
     expect(() => unsubscribe()).not.toThrow();
   });
 

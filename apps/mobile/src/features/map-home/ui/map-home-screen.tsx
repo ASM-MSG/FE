@@ -7,7 +7,6 @@ import { MapIconButton } from "@fillmap/ui-native";
 import type { GridCellIndex } from "../../../entities/cell/model/grid";
 import {
   SEOMYEON_CENTER,
-  resolveMapCenter,
   resolveMapCenterWithPermission,
 } from "../../../shared/geolocation";
 import type { PermissionState } from "../../../shared/permission-state";
@@ -295,20 +294,26 @@ export const MapHomeScreen = () => {
   useEffect(() => {
     // 초기 중심 결정: 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만
     // 현재 위치로 이동한다 — 폴백(SEOMYEON_CENTER)은 동일 객체 참조라 이동 생략.
-    void resolveMapCenter().then((center) => {
-      // 초기 요청이 승인으로 끝났으면 그 시점에 위치 구독을 (재)시작한다 (MSG-565 D5)
-      restartLocation();
+    void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      // 초기 요청이 승인으로 끝났을 때만 위치 구독을 (재)시작한다 (MSG-565 D5) — 마운트 구독은
+      // 프롬프트 전에 "미승인"으로 끝나 있으므로, 승인이 아니면 재구독할 이유가 없다 (Claude 리뷰 🟢)
+      if (permission === "granted") restartLocation();
       if (movedToSearchTargetRef.current) return;
       if (center !== SEOMYEON_CENTER) mapRef.current?.moveTo(center);
     });
   }, [restartLocation]);
 
-  // 추적 중 카메라 추종 (MSG-565 A1) — 위치가 갱신되면 줌은 두고 중심만 따라간다.
-  // 위치가 지워지면(권한 회수 → 어댑터가 null) 추적도 끈다 (codex 리뷰)
+  // 추적 중 카메라 추종 (MSG-565 A1) — 위치가 갱신되면 줌은 두고 중심만 따라간다
+  useEffect(() => {
+    if (tracking && location) mapRef.current?.panTo(location);
+  }, [tracking, location]);
+
+  // 위치가 **있다가 지워지면**(권한 회수 → 어댑터가 null) 추적도 끈다 (codex 리뷰). `location`만
+  // 의존해야 한다 — `tracking`까지 걸면 최초 권한 승인 직후(위치 도착 전) 켜진 추적을 곧바로
+  // 되돌리는 레이스가 생긴다 (Claude 리뷰 🔴)
   useEffect(() => {
     if (location === null) setTracking(false);
-    else if (tracking) mapRef.current?.panTo(location);
-  }, [tracking, location]);
+  }, [location]);
 
   /**
    * 내 위치 버튼 — 현재 위치로 카메라 이동(줌 유지, MSG-565 D6) + 추적 시작.
@@ -322,8 +327,10 @@ export const MapHomeScreen = () => {
     // 구독 위치가 이미 있으면(= 권한 승인) 신규 조회(최대 3s·타임아웃 시 서면 폴백)를 기다리지
     // 않고 즉시 이동한다 — 실기에서 첫 탭은 폴백/옛 위치로 가고 두 번째 탭에야 도착하던 증상
     if (location) {
-      setTracking(true);
-      mapRef.current?.panTo(location);
+      // 꺼져 있으면 켜기만 한다 — 추종 effect가 이동을 맡아 panTo 중복 호출을 피한다 (Claude 리뷰 🟡).
+      // 이미 추적 중이면(Developer 이동으로 중심이 벗어났을 수 있음) 직접 되돌린다
+      if (tracking) mapRef.current?.panTo(location);
+      else setTracking(true);
       return;
     }
     void resolveMapCenterWithPermission().then(({ center, permission }) => {
