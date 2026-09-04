@@ -6,10 +6,22 @@ interface SubmitConfirmDialogProps {
   isPending: boolean;
   /** 실패 안내 — 있으면 모달을 유지한 채 보여 준다 (AC 11) */
   errorMessage: string | null;
+  /**
+   * 모달 제목 — 생략하면 신규 등록 문구다 (MSG-550: 수정 모드가 재제출 CTA와 같은 문구를
+   * 넘긴다). 사용자가 누른 버튼과 모달 제목이 어긋나면 다른 동작으로 읽힌다.
+   */
+  title?: string;
   onConfirm: () => void;
 }
 
-/** 확정 직전 재고지 — 시안 부재라 FE 확정 문구다 (스펙 추정 5) */
+const CREATE_TITLE = "행사 등록 신청 제출";
+
+/**
+ * 확정 직전 재고지 — 시안 부재라 FE 확정 문구다 (스펙 추정 5).
+ * 재제출도 같은 문구를 쓴다: 재제출은 상태를 다시 "심사 중"으로 되돌리므로 "심사 중에는
+ * 수정할 수 없다"는 고지가 그대로 참이고(AC 5 각주와 같은 사실), 확인 버튼도 액션 동사가
+ * 같다 — 모드는 제목이 이미 밝힌다.
+ */
 const GUIDE =
   "최종적으로 제출하시겠습니까? 제출 후에는 심사 중에 내용을 수정할 수 없어요.";
 
@@ -26,6 +38,7 @@ export const SubmitConfirmDialog = ({
   onOpenChange,
   isPending,
   errorMessage,
+  title = CREATE_TITLE,
   onConfirm,
 }: SubmitConfirmDialogProps) => (
   <DialogShell
@@ -35,10 +48,10 @@ export const SubmitConfirmDialog = ({
       if (isPending) return;
       onOpenChange(next);
     }}
-    srTitle="행사 등록 신청 제출"
+    srTitle={title}
   >
     <ModalCard
-      title="행사 등록 신청 제출"
+      title={title}
       description={GUIDE}
       cancelText="취소"
       confirmText={isPending ? "제출 중" : "제출하기"}

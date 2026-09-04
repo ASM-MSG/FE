@@ -18,6 +18,16 @@ export const SUBMISSION_TYPE_LABELS: Record<SubmissionType, string> = {
   EVENT: "이벤트",
 };
 
+/**
+ * 열린 문자열 → 등록 유형 가드 (MSG-550 AC 8, 추정 6).
+ *
+ * 신청 상세·목록 DTO의 `type`은 plain string이라(실측) 서버가 유형을 추가하면 폼 설정
+ * 3벌(`SUBMISSION_FORM_CONFIGS`)에 대응이 없다 — 수정 모드는 렌더 자체가 불가하므로 이
+ * 가드로 좁힌다. 표시 전용 경로는 원문 라벨로 강등한다(`submissionTypeLabel` 선례).
+ */
+export const isSubmissionType = (type: string): type is SubmissionType =>
+  Object.hasOwn(SUBMISSION_TYPE_LABELS, type);
+
 /** 유형 전용 필드 키 — 유형 밖 필드가 실리면 서버 13439 */
 export type SubmissionTypeFieldKey =
   | "programDescription"
@@ -159,6 +169,11 @@ export interface SubmissionDraftState {
   /** 유형 전용 필드 값 — 유형별로 각자 보관한다 (AC 13) */
   typeFieldValues: Record<SubmissionType, string>;
   imageS3Key: string | null;
+  /**
+   * 서버에 이미 있는 대표 이미지를 그대로 쓰는 상태 (MSG-550 AC 4) — 수정 모드 프리필의
+   * 산물이다. 신규 등록은 항상 false이고, 재제출 본문에서는 `imageS3Key` 생략으로 나타난다.
+   */
+  imageKept: boolean;
   /** 위치 1의 확정 영역 (MSG-547 인계 계약) — 제출 본문 locations의 재료 (MSG-548) */
   areaRects: AreaRect[];
 }
@@ -169,11 +184,15 @@ const isFilled = (value: string): boolean => value.trim() !== "";
  * 기본 정보 스텝의 필수값이 모두 찼는가 (AC 10) — 공통 5필드 + 선택 유형의 전용 필드 +
  * 이미지 s3Key, EVENT는 parentOccurrenceId까지. 다른 유형의 전용 필드는 판정에 넣지 않는다
  * (유형별 보관 — AC 13).
+ *
+ * 이미지는 **새 업로드(s3Key) 또는 서버 이미지 유지** 중 하나면 갖춰진 것이다
+ * (MSG-550 AC 4) — 수정 모드는 `imageS3Key`를 생략해 기존 이미지를 유지하므로,
+ * s3Key만 보면 재제출 경로가 기본 정보 스텝에서 영구히 막힌다.
  */
 export const isBasicStepComplete = (state: SubmissionDraftState): boolean => {
   if (state.type === null) return false;
   if (state.type === "EVENT" && state.parentOccurrenceId === null) return false;
-  if (state.imageS3Key === null) return false;
+  if (state.imageS3Key === null && !state.imageKept) return false;
   if (!isFilled(state.typeFieldValues[state.type])) return false;
   const { title, organizerName, startsOn, endsOn, description } = state.common;
   return [title, organizerName, startsOn, endsOn, description].every(isFilled);
