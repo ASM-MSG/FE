@@ -162,6 +162,25 @@ describe("계정 발급 요청 선검증 (AC 2)", () => {
     ).toBeDefined();
   });
 
+  it("오류가 뜬 필드를 고치면 재제출 전에 그 필드 오류만 즉시 사라진다 (AC 2 · codex 리뷰)", () => {
+    // 선검증 실패 후 값을 고쳐도 다음 submit까지 오류·aria-invalid가 남아 있으면
+    // 필드 7개 폼에서 이미 해결한 안내가 계속 사용자를 잡는다 — 고친 필드만 지운다.
+    acceptedFetch();
+    renderPage();
+
+    submit();
+
+    expect(screen.getByText("기관명을 입력해주세요")).toBeDefined();
+    fireEvent.change(screen.getByLabelText("기관명"), {
+      target: { value: "부산진구청" },
+    });
+    expect(screen.queryByText("기관명을 입력해주세요")).toBeNull();
+    expect(
+      screen.getByLabelText("기관명").getAttribute("aria-invalid"),
+    ).toBeNull();
+    expect(screen.getByText("담당자명을 2~20자로 입력해주세요")).toBeDefined();
+  });
+
   it("동의 오류는 체크박스에 프로그램적으로 연결된다 (AC 2 · codex P2)", () => {
     // 텍스트 6필드와 달리 동의 체크박스는 문구만 렌더돼 스크린리더가 "이 컨트롤이
     // 무효이고 옆 문구가 그 사유"라는 것을 알 수 없었다 — 오류 표출이 곧 접근성
@@ -288,9 +307,12 @@ describe("계정 발급 요청 제출 (AC 3·5)", () => {
     submit();
 
     await screen.findByRole("heading", { name: "계정 발급 요청 완료" });
+    // 좌측 헤드라인은 브랜딩 문구라 헤딩이 아니다 — h1(본문 제목)보다 먼저 오는
+    // h2를 만들지 않는다 (codex 리뷰 — 스크린리더 헤딩 아웃라인)
+    expect(screen.getByText(/요청이 접수되어/)).toBeDefined();
     expect(
-      screen.getByRole("heading", { name: /요청이 접수되어/, level: 2 }),
-    ).toBeDefined();
+      screen.queryByRole("heading", { name: /요청이 접수되어/ }),
+    ).toBeNull();
     expect(
       screen.getByRole("listitem", { current: "step" }).textContent,
     ).toContain("운영팀 검토");

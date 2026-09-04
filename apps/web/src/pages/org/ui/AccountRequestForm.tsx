@@ -91,7 +91,17 @@ export const AccountRequestForm = ({
   const update = <Field extends keyof AccountRequestDraft>(
     field: Field,
     value: AccountRequestDraft[Field],
-  ) => setDraft((previous) => ({ ...previous, [field]: value }));
+  ) => {
+    setDraft((previous) => ({ ...previous, [field]: value }));
+    // 고친 필드의 선검증 오류는 즉시 걷는다 — 다음 submit까지 남기면 이미 해결한
+    // 안내가 계속 무효 표시로 잡는다. 판정 자체는 여전히 submit에서만 한다.
+    setErrors((previous) => {
+      if (previous[field] === undefined) return previous;
+      const next = { ...previous };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

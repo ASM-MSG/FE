@@ -32,9 +32,11 @@ export const AccountRequestFrame = ({
       <p className="mt-xs text-fm-caption text-foreground-muted">
         행사 운영자 계정
       </p>
-      <h2 className="mt-xxl whitespace-pre-line text-fm-display text-foreground">
+      {/* 헤딩이 아니라 p — 본문 h1보다 먼저 렌더되는 위치라 h2를 주면 헤딩
+          아웃라인이 h2→h1로 뒤집힌다 (ConsoleAuthFrame 부제와 같은 처리) */}
+      <p className="mt-xxl whitespace-pre-line text-fm-display text-foreground">
         {headline}
-      </h2>
+      </p>
       <p className="mt-md text-fm-body text-foreground-body">{description}</p>
       <div className="mt-xxl">
         <AccountRequestSteps currentStep={currentStep} />
