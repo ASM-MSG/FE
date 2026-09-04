@@ -306,18 +306,23 @@ const ReviewNaverMapView = ({
                 })}
               </NaverMap>
             </Container>
+            {/*
+             * 줌 컨트롤은 **경계 안쪽 · ready 분기 안**이다 (codex 3R P2).
+             * `sdkStatus === "ready"`로 밖에서 걸면 "SDK가 로드됐다"만 뜻하므로,
+             * 프리플라이트 성공 뒤 렌더·SDK cleanup 에러로 `MapLoadErrorBoundary`가
+             * 폴백으로 넘어가도 상태가 그대로 `ready`라 **폴백 위에 살아 있는 줌 버튼**이
+             * 얹힌다. 그 버튼은 폐기된 지도 인스턴스에 `setZoom`을 불러 이벤트 핸들러에서
+             * 또 던지고(경계가 못 잡는 자리) 조작은 아무 효과도 없다.
+             * 경계의 children으로 두면 폴백 전환이 줌 컨트롤까지 함께 걷어 간다.
+             */}
+            <ZoomControl
+              className="absolute right-md bottom-md z-10"
+              onZoomIn={() => zoomBy(1)}
+              onZoomOut={() => zoomBy(-1)}
+            />
           </NavermapsProvider>
         )}
       </MapLoadErrorBoundary>
-
-      {/* 줌 컨트롤은 지도가 실제로 떠 있을 때만 — 폴백·로딩 화면에는 얹지 않는다 */}
-      {sdkStatus === "ready" && (
-        <ZoomControl
-          className="absolute right-md bottom-md z-10"
-          onZoomIn={() => zoomBy(1)}
-          onZoomOut={() => zoomBy(-1)}
-        />
-      )}
     </>
   );
 };

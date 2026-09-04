@@ -12,6 +12,7 @@ import type {
   EventSubmissionHistoryResponseDto,
   EventSubmissionLocationResponseDto,
 } from "@/shared/api/generated/types.gen";
+import { parsePositiveIntParam } from "@/shared/route-param";
 import {
   submissionStatusView,
   type SubmissionStatusTone,
@@ -234,16 +235,7 @@ export const isSubmissionNotFound = (error: unknown): boolean =>
   (error.status === 404 || error.developCode === NOT_FOUND_CODE);
 
 /**
- * 경로 파라미터 → 신청 id (AC 12) — 양의 정수 문자열만 인정하고 그 외는 null이다.
- * `Number("")`는 0, `Number("12.5")`는 12.5라 자릿수 패턴으로 먼저 거른다.
- *
- * 패턴만으로는 부족하다: `/^\d+$/`는 `0`과 안전 정수를 넘는 숫자열을 통과시키는데,
- * `Number()`가 그 값을 반올림하거나(9007199254740993 → …992 = **다른 신청**) Infinity로 만들어
- * 의도와 다른 id로 조회가 나간다. 유효하지 않은 경로는 요청 없이 미발견 안내로 수렴해야 한다.
- * (MSG-549 `submission-detail-view.parseSubmissionId`와 같은 계약 — 통합은 후속)
+ * 경로 파라미터 → 신청 id (AC 12) — 양의 정수만 인정하고 그 외는 null이라 쿼리가 안 나간다.
+ * 판정 자체는 `shared/route-param`이 정본이다(MSG-553 codex 3R — 복제 2벌 통합).
  */
-export const parseSubmissionId = (raw: string | undefined): number | null => {
-  if (raw === undefined || !/^\d+$/.test(raw)) return null;
-  const id = Number(raw);
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-};
+export const parseSubmissionId = parsePositiveIntParam;

@@ -186,32 +186,6 @@
       ]
     },
     {
-      "id": "02c46682d429b590",
-      "note": "local duplication — extract a method from the repeated block — high-parameter (20 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "bfc0e1fdc2053952",
-          "source_digest": "fnv1a64:846b2ad10386e52c",
-          "file": "apps/web/src/pages/admin/admin-review-detail.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 309,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "1a481409fc0791ad",
-          "source_digest": "fnv1a64:3302587dce2956de",
-          "file": "apps/web/src/pages/admin/admin-review-queue.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 129,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "02d10082f499695c",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -8014,45 +7988,6 @@
       ]
     },
     {
-      "id": "5fe4d5fe5efa405b",
-      "note": "duplicated across 2 directories — extract a helper",
-      "members": [
-        {
-          "id": "27d1e834a39897fa",
-          "source_digest": "fnv1a64:cb5633f3c458135f",
-          "file": "apps/mobile/src/features/map-home/model/cluster-overlay.ts",
-          "lang": "typescript",
-          "start_line": 39,
-          "end_line": 40,
-          "kind": "Function",
-          "name": "isZoomGatedLayer",
-          "is_fragment": false
-        },
-        {
-          "id": "1b31f492aea5f184",
-          "source_digest": "fnv1a64:ff522f044465321a",
-          "file": "apps/mobile/src/features/map-home/model/location-overlay.ts",
-          "lang": "typescript",
-          "start_line": 16,
-          "end_line": 17,
-          "kind": "Function",
-          "name": "isGestureCameraChange",
-          "is_fragment": false
-        },
-        {
-          "id": "a5f26039e1befbb5",
-          "source_digest": "fnv1a64:f67165af28955dbe",
-          "file": "apps/web/src/features/admin-review/model/review-decision.ts",
-          "lang": "typescript",
-          "start_line": 106,
-          "end_line": 106,
-          "kind": "Function",
-          "name": "isInReview",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "602529dd06d3079d",
       "note": "consolidate `label` — 3 copies",
       "members": [
@@ -15500,6 +15435,45 @@
       ]
     },
     {
+      "id": "ab1f001b9168e97f",
+      "note": "duplicated across 2 directories — extract a helper",
+      "members": [
+        {
+          "id": "27d1e834a39897fa",
+          "source_digest": "fnv1a64:cb5633f3c458135f",
+          "file": "apps/mobile/src/features/map-home/model/cluster-overlay.ts",
+          "lang": "typescript",
+          "start_line": 39,
+          "end_line": 40,
+          "kind": "Function",
+          "name": "isZoomGatedLayer",
+          "is_fragment": false
+        },
+        {
+          "id": "1b31f492aea5f184",
+          "source_digest": "fnv1a64:ff522f044465321a",
+          "file": "apps/mobile/src/features/map-home/model/location-overlay.ts",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 17,
+          "kind": "Function",
+          "name": "isGestureCameraChange",
+          "is_fragment": false
+        },
+        {
+          "id": "39d7615915419989",
+          "source_digest": "fnv1a64:f67165af28955dbe",
+          "file": "apps/web/src/features/admin-review/model/review-decision.ts",
+          "lang": "typescript",
+          "start_line": 107,
+          "end_line": 107,
+          "kind": "Function",
+          "name": "isInReview",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "ab9dd62af6054d10",
       "note": "consolidate `view` — 2 copies",
       "members": [
@@ -18379,6 +18353,32 @@
       ]
     },
     {
+      "id": "cb65350df7a56f54",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (20 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "acbdfe4fb654ae0e",
+          "source_digest": "fnv1a64:9986b892b263909e",
+          "file": "apps/web/src/pages/admin/admin-review-detail.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 361,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1a481409fc0791ad",
+          "source_digest": "fnv1a64:3302587dce2956de",
+          "file": "apps/web/src/pages/admin/admin-review-queue.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 129,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "cb718f1c48937438",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -20416,32 +20416,30 @@
       ]
     },
     {
-      "id": "defd47f22bbdb4e6",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "id": "df023190316e0034",
+      "note": "duplicated across 2 directories — extract a helper — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
         {
-          "id": "3f57f36501738338",
+          "id": "ce02bf0ff80ba53d",
           "source_digest": "fnv1a64:c9f1318a2260d321",
           "file": "apps/web/src/features/event/model/use-event-occurrences-query.test.tsx",
           "lang": "typescript",
           "start_line": 12,
           "end_line": 15,
-          "kind": "Block",
-          "is_fragment": true,
-          "fragment_kind": "direct-return",
-          "reason_code": "exact-direct-return"
+          "kind": "Function",
+          "name": "bounds",
+          "is_fragment": false
         },
         {
-          "id": "987b46fe13df90d1",
+          "id": "89cc7276620f2c4c",
           "source_digest": "fnv1a64:a31a9ac992ade7e9",
           "file": "apps/web/src/features/map-home/model/viewport-query.test.ts",
           "lang": "typescript",
           "start_line": 15,
           "end_line": 18,
-          "kind": "Block",
-          "is_fragment": true,
-          "fragment_kind": "direct-return",
-          "reason_code": "exact-direct-return"
+          "kind": "Function",
+          "name": "boundsWithSpan",
+          "is_fragment": false
         }
       ]
     },
