@@ -93,7 +93,9 @@ export const buildAnalyzeEffects = (
 
 /**
  * 업로드 확정 (기준 24) — presign(purpose 미전송=UPLOAD) → 원본 S3 PUT →
- * `POST /api/videos`(s3Key·lat·lng·durationSec·recordedAt=업로드 시각, visibility 미전송).
+ * `POST /api/videos`(s3Key·lat·lng·durationSec·recordedAt=업로드 시각·visibility).
+ * visibility는 PUBLIC도 **명시 전송**한다(MSG-572 D6) — 서버 "생략 시 PUBLIC"에 기대지 않아
+ * 선택값=전송값이 단정 하나로 고정된다.
  *
  * 환류 F1 — **선택 구간을 전달할 필드가 없다.** `VideoUploadRequestDto`에 startSec/endSec
  * (또는 highlight: [start, end])이 없다. 그래서 여기서 올리는 것은 잘라낸 구간이 아니라
@@ -151,6 +153,7 @@ export const buildConfirmEffects = (
         durationSec: input.durationSec,
         // recordedAt = 업로드 시각 (파일 메타 추출은 범위 제외 — 웹 결정 B 준용)
         recordedAt: new Date().toISOString(),
+        visibility: input.visibility,
       },
       throwOnError: true,
     });

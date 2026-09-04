@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MapPin, Sparkles } from "lucide-react-native";
 import { palette, semantic } from "@fillmap/design-tokens";
-import { AppHeader, Button } from "@fillmap/ui-native";
+import { AppHeader, Button, Selector } from "@fillmap/ui-native";
+import { VISIBILITY_OPTIONS } from "../../video-actions/model/video-menu";
 import { useUploadLocation } from "../api/use-upload-location";
 import { useConfirmUpload } from "../api/use-upload-mutations";
 import { STAGE_FAILURE_MESSAGES } from "../model/analysis-copy";
@@ -111,7 +112,13 @@ export const PreviewScreen = () => {
   const publish = () => {
     if (!canPublish || flow.video === null || segment === null) return;
     confirm.publish(
-      buildConfirmInput(flow.video, segment, location.center, flow.eventTarget),
+      buildConfirmInput(
+        flow.video,
+        segment,
+        location.center,
+        flow.eventTarget,
+        flow.visibility,
+      ),
       {
         onSuccess: () => setCompleted(true),
         // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
@@ -128,12 +135,17 @@ export const PreviewScreen = () => {
     : null;
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View
+      className="flex-1 bg-background"
+      // 하단 인셋은 스크롤 콘텐츠가 아니라 바깥 View가 갖는다 — react-doctor
+      // `rn-scrollview-dynamic-padding`이 contentContainerStyle의 인셋 패딩을 막는다
+      // (인셋은 기기 고정값이라 오탐이지만 규칙 off가 v0.9.3 스캐너에 안 먹는다, CLAUDE.md 08-28)
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+    >
       <AppHeader title="업로드 미리보기" onBack={goBack} />
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-5 pt-md"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        contentContainerClassName="px-5 pt-md pb-6"
       >
         {/* 실 영상 프리뷰 (기준 19) — 최종 확인이라 재생 컨트롤을 연다 */}
         <UploadVideoPreview uri={flow.video?.uri ?? null} nativeControls />
@@ -161,6 +173,53 @@ export const PreviewScreen = () => {
             </Text>
           </View>
         </View>
+
+        {/* 공개 범위 카드 (MSG-572 D7) — 일반 업로드만. 행사 귀속은 DTO에 필드가 없어 미노출.
+            행 Pressable을 `accessible`로 묶어 내부 Selector와 한 a11y 노드(radio)로 낭독되게 하고,
+            Selector에도 같은 핸들러를 달아 20dp 원을 직접 눌러도 동작한다(중첩 Pressable은
+            안쪽이 이벤트를 먹는다). 그룹 의미는 RN에 Radix 대응 프리미티브가 없어 radiogroup 컨테이너로 */}
+        {flow.eventTarget === null && (
+          <View className="mt-sm rounded-lg border border-border bg-surface-soft p-md">
+            <Text className="text-fm-label text-foreground-muted">
+              공개 범위
+            </Text>
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel="공개 범위"
+              className="mt-xxs flex-row items-center gap-lg"
+            >
+              {VISIBILITY_OPTIONS.map((option) => {
+                const checked = flow.visibility === option.value;
+                const select = () =>
+                  uploadFlowStore.setVisibility(option.value);
+                return (
+                  <Pressable
+                    key={option.value}
+                    accessible
+                    accessibilityRole="radio"
+                    accessibilityState={{
+                      checked,
+                      disabled: confirm.isPending,
+                    }}
+                    disabled={confirm.isPending}
+                    onPress={select}
+                    className="min-h-11 flex-row items-center gap-xs"
+                  >
+                    <Selector
+                      type="radio"
+                      checked={checked}
+                      disabled={confirm.isPending}
+                      onCheckedChange={select}
+                    />
+                    <Text className="text-fm-body text-foreground">
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* 단계 구분 실패 안내 (기준 34) */}
         {failureMessage !== null && (

@@ -97,6 +97,43 @@ adb devices          # R3CT...  device   ("unauthorized"면 팝업 승인이 안
 
 ---
 
+### 1-D. 두 번째 에뮬레이터로 병렬 실기 (다른 세션이 5554·8081을 쓰고 있을 때 — MSG-572 실측)
+
+`emulator-5554`와 8081 Metro가 다른 워크트리 세션 것이면 **종료·재사용하지 않는다**(그쪽 실기가 끊긴다). AVD를 하나 더 띄우고 Metro를 8082에 올린 뒤, **앱 dev 메뉴에서 번들 주소를 8082로 바꿔 준다**.
+
+> **`adb reverse tcp:8081 tcp:8082`는 에뮬레이터에서 효과가 없다** (MSG-572 실측 — 7분 허비). RN 디버그 호스트 기본값이 `localhost`가 아니라 **호스트 루프백 `10.0.2.2:8081`** 이라 reverse를 우회해 **타 세션의 8081 Metro 번들(다른 브랜치 코드)** 을 조용히 실행한다 — 내 변경이 화면에 안 보이면 코드 결함이 아니라 이 함정을 먼저 의심한다. 딥링크 `url=10.0.2.2:8082`도 RN 번들 호스트는 바꾸지 못한다.
+
+```bash
+# 0) 누가 쓰는지 확인 — cwd가 내 워크트리가 아니면 남의 것
+lsof -nP -iTCP:8081 -sTCP:LISTEN            # pid
+lsof -p <pid> | awk '$4=="cwd"{print $9}'
+adb -s emulator-5554 emu avd name
+
+# 1) 두 번째 AVD (FillMap_Pixel8 ↔ FillMap_Pixel8_verify 중 비어 있는 것)
+$ANDROID_HOME/emulator/emulator -avd FillMap_Pixel8 -no-snapshot-load &
+adb devices                                  # emulator-5556  device
+
+# 2) dev client APK가 없으면 기존 AVD에서 이식 (재빌드 0, 약 1초 — 네이티브 의존성 변경이 없을 때만)
+adb -s emulator-5554 pull "$(adb -s emulator-5554 shell pm path kr.fillmap.app | sed 's/^package://')" "$TMPDIR/fillmap-dev.apk"
+adb -s emulator-5556 install -r "$TMPDIR/fillmap-dev.apk"
+
+# 3) 워크트리 .env — gitignore라 비어 있다. 없으면 EXPO_PUBLIC_API_BASE_URL 부트 throw
+cp /Users/kang/projects/FE/apps/mobile/.env apps/mobile/.env
+
+# 4) Metro를 8082로
+cd apps/mobile && npx expo start --dev-client --port 8082 &
+adb -s emulator-5556 shell am start -n kr.fillmap.app/.MainActivity
+
+# 5) 앱 dev 메뉴(keyevent 82) → "Change Bundle Location" → 10.0.2.2:8082 → APPLY
+adb -s emulator-5556 shell input keyevent 82
+```
+
+- 번들 주소 설정은 그 AVD의 앱 데이터에 남는다 — 다음 실기에서 8082 Metro가 없으면 앱이 못 붙으니, 이 AVD는 "8082 전용"으로 기억해 두거나 같은 메뉴에서 되돌린다.
+- 새 AVD는 로그인·로케일·geo fix가 비어 있다 — 로그인은 사용자가 직접(카카오 웹 로그인, 자격 증명 입력은 사용자 몫), 지도 티켓이면 ko-KR·서면역 fix를 다시 건다.
+- 내 번들이 서빙되는지 확증: 8082 Metro 로그에 연결이 찍히는지 보거나(`CI=1`로 띄우면 로그가 거의 없다), 번들을 직접 받아 변경 문자열을 grep한다: `curl -s 'http://localhost:8082/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&transform.routerRoot=src%2Fapp' | grep -c '<변경 문자열>'`
+- 비로그인 대조(웹 격자 목록 등)는 브라우저보다 웹이 부르는 공개 API를 토큰 없이 `curl`하는 쪽이 빠르고 정확하다.
+- 끝나면 내 것만 정리한다: 8082 Metro pid kill + `adb -s emulator-5556 emu kill`. 5554·8081은 건드리지 않는다.
+
 ## 2. 빌드가 필요한지 판단
 
 기기에 이미 최신 dev client APK가 깔려 있으면 3단계를 건너뛰고 [4. Metro](#4-metro-기동-빌드와-별도-프로세스로)로 간다. 아래에 하나라도 해당하면 빌드해야 한다.
@@ -158,7 +195,7 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 
 ## 4. Metro 기동 (빌드와 별도 프로세스로)
 
-**포트는 8081로 고정한다.** dev client는 콜드 스타트에서 저장된 서버 주소를 무시하고 8081로 되돌아간다 — 8082로 띄우면 앱이 붙지 않는다.
+**포트는 8081로 고정한다.** dev client는 콜드 스타트에서 저장된 서버 주소를 무시하고 8081로 되돌아간다 — 8082로 띄우면 앱이 붙지 않는다. 8081을 다른 세션이 쓰고 있어 8082에 올려야 하면 앱 dev 메뉴 "Change Bundle Location"으로 `10.0.2.2:8082`를 지정한다(1-D — `adb reverse`로는 안 된다).
 
 ```bash
 cd apps/mobile
