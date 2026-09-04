@@ -117,8 +117,9 @@ adb devices                                  # emulator-5556  device
 adb -s emulator-5554 pull "$(adb -s emulator-5554 shell pm path kr.fillmap.app | sed 's/^package://')" "$TMPDIR/fillmap-dev.apk"
 adb -s emulator-5556 install -r "$TMPDIR/fillmap-dev.apk"
 
-# 3) 워크트리 .env — gitignore라 비어 있다. 없으면 EXPO_PUBLIC_API_BASE_URL 부트 throw
-cp /Users/kang/projects/FE/apps/mobile/.env apps/mobile/.env
+# 3) 워크트리 .env — gitignore라 비어 있다. 없으면 EXPO_PUBLIC_API_BASE_URL 부트 throw.
+#    기존 체크아웃의 것을 복사하거나 0-2절대로 새로 만든다
+cp <기존 체크아웃 경로>/apps/mobile/.env apps/mobile/.env
 
 # 4) Metro를 8082로
 cd apps/mobile && npx expo start --dev-client --port 8082 &
