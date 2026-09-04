@@ -58,7 +58,10 @@ export const ReviewDecisionActions = ({
       <Button
         text="승인·지도 노출"
         className="flex-1"
-        disabled={isPending}
+        // `nextStep: "none"`(13451 종료일 경과)은 승인이 **영구 불가**라는 판정이다 —
+        // 버튼을 열어 두면 관리자가 확실히 실패하는 요청을 반복해 보낸다. 반려는
+        // 여전히 유효한 조작이라 잠그지 않는다 (codex 2R P2)
+        disabled={isPending || notice?.nextStep === "none"}
         onClick={onApproveClick}
       />
     </div>

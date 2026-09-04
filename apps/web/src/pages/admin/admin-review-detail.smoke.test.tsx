@@ -240,6 +240,58 @@ describe("관리자 심사 상세 (AC 5·8·9·10·11·12·13)", () => {
     ).toBe("true");
   });
 
+  it("승인이 13451(종료일 경과)로 실패하면 승인 버튼이 잠기고 반려는 열려 있다 (AC 11, codex 2R P2)", async () => {
+    renderDetail({ decisionError: [13451, 409] });
+    await screen.findByRole("heading", { name: "광안리 M 드론쇼" });
+    fireEvent.click(approveButton());
+    fireEvent.click(
+      within(confirmDialog()).getByRole("button", { name: "승인·지도 노출" }),
+    );
+
+    const alert = await screen.findByRole("alert");
+
+    expect(alert.textContent).toContain("종료");
+    // 승인은 영구 불가(nextStep "none")라 재확정 시도를 막는다 — 확실히 실패하는 요청이다
+    expect(approveButton().hasAttribute("disabled")).toBe(true);
+    // 반려는 여전히 유효한 조작이다
+    fireEvent.click(screen.getByRole("checkbox", { name: "위치 영역" }));
+    fireEvent.change(screen.getByLabelText("반려 사유"), {
+      target: { value: "기간이 지난 신청입니다." },
+    });
+    expect(
+      screen.getByRole("button", { name: "반려" }).hasAttribute("disabled"),
+    ).toBe(false);
+  });
+
+  it("승인됨 신청의 이력에 옛 반려 행이 있어도 반려 항목·사유를 보여주지 않는다 (AC 13, codex 2R P2)", async () => {
+    // 반려 후 재신청되어 승인된 신청 — 이력에는 REJECTED 행이 남아 있다
+    renderDetail({
+      detail: submissionDetail({
+        status: "APPROVED",
+        history: [
+          submissionHistory({ changedAt: "2026-09-01T01:00:00Z" }),
+          submissionHistory({
+            status: "REJECTED",
+            reasonCodes: ["IMAGE"],
+            reasonText: "옛 반려 사유 — 승인 화면에 새면 안 된다.",
+            changedAt: "2026-09-02T01:00:00Z",
+          }),
+          submissionHistory({
+            status: "APPROVED",
+            changedAt: "2026-09-03T01:00:00Z",
+          }),
+        ],
+      }),
+    });
+
+    expect(await screen.findByText("승인됨")).toBeDefined();
+    expect(screen.queryByText("반려 항목")).toBeNull();
+    expect(screen.queryByText("반려 사유")).toBeNull();
+    expect(
+      screen.queryByText("옛 반려 사유 — 승인 화면에 새면 안 된다."),
+    ).toBeNull();
+  });
+
   it("승인됨 신청으로 진입하면 확정 조작 대신 처리 결과가 보인다 (AC 13)", async () => {
     renderDetail({ detail: APPROVED });
 

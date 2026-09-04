@@ -121,7 +121,14 @@ export const AdminReviewDetailPage = () => {
                 submissionStatusChip(submission.status)?.label ??
                 submission.status
               }
-              rejection={lastRejection(submission.history)}
+              // 반려 항목·사유는 REJECTED에서만 — 반려 후 재신청돼 승인된 신청도
+              // 이력에 REJECTED 행을 남기므로, 무조건 파생하면 승인 결과 아래에
+              // 옛 반려 사유가 새어 나온다 (codex 2R P2)
+              rejection={
+                submission.status === "REJECTED"
+                  ? lastRejection(submission.history)
+                  : null
+              }
             />
           ))}
       </ReviewDetailPanel>
