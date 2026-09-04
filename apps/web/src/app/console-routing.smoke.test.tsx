@@ -57,7 +57,9 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.adminHome, "행사 등록 심사"],
   [CONSOLE_ROUTES.adminAccounts, "계정 운영"],
   [CONSOLE_ROUTES.adminReview, "행사 등록 심사"],
-  ["/admin/review/1204", "심사 상세"],
+  // MSG-553이 심사 상세 스텁을 실화면으로 교체하며 h1이 Figma 정본 "행사 등록 심사"가 됐다
+  // (큐와 같은 문구 — 추정 10 승인). 라우트↔파일 1:1과 등록 자체는 불변이다
+  ["/admin/review/1204", "행사 등록 심사"],
   // MSG-554에서 스텁이 실구현으로 교체되며 화면 제목이 "승인 행사 관리"가 됐다
   // (스펙 AC 1 · Figma 15579:2385). 사이드바 메뉴 라벨("승인 행사")은 그대로다
   [CONSOLE_ROUTES.adminEvents, "승인 행사 관리"],

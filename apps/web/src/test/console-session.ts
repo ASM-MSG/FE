@@ -1,3 +1,4 @@
+import { submissionDetail as adminSubmissionDetail } from "./admin-review-fixture";
 import { envelopeResponse } from "./envelope-response";
 import { submissionDetail, submissionHistory } from "./org-submission-fixture";
 import { stubFetch } from "./stub-fetch";
@@ -89,6 +90,17 @@ export const consoleSessionFetch = (
     const detailMatch = /^\/api\/org\/event-submissions\/(\d+)$/.exec(pathname);
     if (detailMatch) {
       return envelopeResponse(consoleSessionDetail(Number(detailMatch[1])));
+    }
+    // MSG-553: 관리자 심사 상세가 실화면이 되며 콘솔 마운트가 이 경로도 부른다.
+    // 없으면 아래 `me` 폴백이 계정 응답을 상세로 흘려보내 화면이 깨진 값으로 렌더된다
+    // (MSG-549가 org 상세 경로를 더한 것과 같은 이유)
+    const adminDetailMatch = /^\/api\/admin\/event-submissions\/(\d+)$/.exec(
+      pathname,
+    );
+    if (adminDetailMatch) {
+      return envelopeResponse(
+        adminSubmissionDetail({ id: Number(adminDetailMatch[1]) }),
+      );
     }
     return envelopeResponse({
       email: "tourism@busan.go.kr",
