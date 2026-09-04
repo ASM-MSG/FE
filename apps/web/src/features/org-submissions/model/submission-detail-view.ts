@@ -14,11 +14,17 @@ import { isOrgSubmissionStatus } from "./submission-status";
  * 첫 entry = 접수, 마지막 전이 = 승인/처리일 (추정 3 — MSG-545 추정 5와 같은 규칙).
  */
 
-/** 경로 파라미터 → 신청 id (AC 10). 숫자가 아니면 null이라 쿼리가 발사되지 않는다 */
+/**
+ * 경로 파라미터 → 신청 id (AC 10). 숫자가 아니면 null이라 쿼리가 발사되지 않는다.
+ *
+ * 자릿수 상한도 함께 막는다: `/^\d+$/`만 보면 안전 정수를 넘는 숫자열이 통과하는데,
+ * `Number()`가 그 값을 반올림하거나(9007199254740993 → …992 = 다른 신청) Infinity로 만들어
+ * **의도와 다른 id로 조회가 나간다**. 유효하지 않은 경로는 요청 없이 안내로 수렴해야 한다.
+ */
 export const parseSubmissionId = (raw: string | undefined): number | null => {
   if (raw === undefined || !/^\d+$/.test(raw)) return null;
   const id = Number(raw);
-  return id > 0 ? id : null;
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
 };
 
 /** 접수일 — history 첫 entry의 시각 (AC 5, 추정 3). 이력이 없으면 필드를 생략한다 */

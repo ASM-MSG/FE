@@ -31,6 +31,15 @@ describe("parseSubmissionId — 경로 파라미터 숫자 파싱 (MSG-549 AC 10
     expect(parseSubmissionId(undefined)).toBeNull();
     expect(parseSubmissionId("0")).toBeNull();
   });
+
+  it("안전 정수 범위를 넘는 숫자열은 null이다 — 반올림된 다른 id로 조회하지 않는다 (AC 10 경계, codex 리뷰)", () => {
+    // 전부 숫자라 정규식은 통과하지만 Number()가 값을 반올림한다:
+    // 9007199254740993 → 9007199254740992 (다른 신청), 1e400 자리수 → Infinity.
+    expect(parseSubmissionId("9007199254740993")).toBeNull();
+    expect(parseSubmissionId("9".repeat(400))).toBeNull();
+    // 상한 자체는 유효한 id다 (경계 보존)
+    expect(parseSubmissionId("9007199254740991")).toBe(Number.MAX_SAFE_INTEGER);
+  });
 });
 
 describe("receivedAt·processedAt — 접수·처리 시각 history 파생 (MSG-549 AC 5·6·7, 추정 3)", () => {
