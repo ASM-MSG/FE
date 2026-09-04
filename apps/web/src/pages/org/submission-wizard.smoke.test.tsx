@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { Link, RouterProvider, createMemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CONSOLE_ROUTES } from "@/app/console-routes";
@@ -41,6 +47,17 @@ const CITY_COUNTS = [
   { cityName: "서울특별시", count: 1 },
 ];
 
+/** 신청 접수 결과 (MSG-548) */
+const RECEIPT = { id: 1204, submissionNo: "FM-2026-0007", status: "IN_REVIEW" };
+
+/** 확정 영역 3×3 — 지도 없이 review 스텝을 채우는 재료 (MSG-548) */
+const RECT_3X3 = {
+  minGridX: 11420,
+  maxGridX: 11422,
+  minGridY: 16858,
+  maxGridY: 16860,
+};
+
 /** 승인 이벤트 조회 · presign 발급 · S3 PUT을 한 자리에서 응답한다 */
 const wizardFetch = ({ eventsStatus = 200 }: { eventsStatus?: number } = {}) =>
   vi.stubGlobal(
@@ -72,6 +89,10 @@ const wizardFetch = ({ eventsStatus = 200 }: { eventsStatus?: number } = {}) =>
           s3Key: "pending/submissions/abc.jpg",
           expiresInSec: 300,
         });
+      }
+      // MSG-548: 확인·제출 스텝의 신청 제출 — 접수 결과 봉투를 돌려준다
+      if (pathname === "/api/org/event-submissions" && method === "POST") {
+        return envelopeResponse(RECEIPT);
       }
       if (method === "PUT") return new Response("", { status: 200 });
       return new Response("", { status: 404 });
@@ -491,6 +512,41 @@ describe("이탈 경고와 재진입 (AC 14·15)", () => {
     expect(
       screen.getByRole("heading", { name: "어떤 형태를 등록하시나요?" }),
     ).toBeDefined();
+  });
+
+  it("제출 성공 시 이탈 경고 없이 내 신청 목록으로 이동한다 (MSG-548 AC 9)", async () => {
+    wizardFetch();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWizard();
+    // 페이지가 마운트 시 스토어를 리셋하므로 렌더 뒤에 review 스텝 상태를 심는다
+    // (지도 드래그로 영역을 확정하는 경로는 브라우저 실동작 검증 몫 — MSG-547 선례)
+    act(() => {
+      const store = useSubmissionWizardStore.getState();
+      store.selectType("FESTIVAL");
+      store.setCommonField("title", "광안리 M 드론쇼");
+      store.setCommonField("organizerName", "부산광역시 관광마이스과");
+      store.setCommonField("startsOn", "2027-09-05");
+      store.setCommonField("endsOn", "2027-09-07");
+      store.setCommonField("description", "정기 드론 공연입니다.");
+      store.setTypeFieldValue("드론 공연 · 체험 부스");
+      store.startImageUpload("blob:preview-1");
+      store.completeImageUpload("pending/submissions/abc.jpg");
+      store.addAreaRect(RECT_3X3);
+      store.goToStep("review");
+    });
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "입력한 내용이 사실과 다르지 않음을 확인합니다.",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "행사 등록 신청 제출" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "제출하기" }));
+
+    expect(await screen.findByText("내 신청 목록")).toBeDefined();
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 
   it("재진입하면 위저드가 초기 상태다 (AC 14)", () => {
