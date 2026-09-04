@@ -58,7 +58,9 @@ export const exploreRegionsResult = (
   isError: query.isError && !query.isFetchNextPageError,
   hasNext: query.hasNextPage,
   isLoadingMore: query.isFetchingNextPage,
-  loadMoreFailed: query.isFetchNextPageError,
+  // 재시도 중에는 TanStack이 isFetchingNextPage와 함께 실패 상태를 유지한다 — 로더와
+  // 실패 안내가 동시에 그려지지 않도록 로딩이 우선한다 (codex 재리뷰 P2, 웹과 다른 지점)
+  loadMoreFailed: query.isFetchNextPageError && !query.isFetchingNextPage,
 });
 
 /**

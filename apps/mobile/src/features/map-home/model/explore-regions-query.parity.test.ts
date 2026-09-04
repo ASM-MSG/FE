@@ -119,6 +119,21 @@ describe("exploreRegionsResult — 시트 재료 파생 (AC 9·10)", () => {
     expect(result.loadMoreFailed).toBe(true);
     expect(result.regions?.map((r) => r.regionName)).toEqual(["부전2동"]);
   });
+
+  it("이어받기 실패 후 재시도 중에는 로더만 — 실패 안내와 동시에 그리지 않는다 (codex 재리뷰 P2)", () => {
+    const result = exploreRegionsResult(
+      surface({
+        data: { pages: [PAGE_1] },
+        isError: true,
+        isFetchNextPageError: true,
+        isFetchingNextPage: true,
+        hasNextPage: true,
+      }),
+    );
+
+    expect(result.isLoadingMore).toBe(true);
+    expect(result.loadMoreFailed).toBe(false);
+  });
 });
 
 describe("autoLoadMoreEnabled — 스크롤 자동 이어받기 가드 (AC 8)", () => {
