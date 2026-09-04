@@ -7,6 +7,20 @@ import {
 
 const store = () => useSubmissionWizardStore.getState();
 
+/** 확정 영역 사각형 2개 — 서면 격자 인덱스 (MSG-547) */
+const RECT_A = {
+  minGridX: 11420,
+  maxGridX: 11422,
+  minGridY: 16858,
+  maxGridY: 16860,
+};
+const RECT_B = {
+  minGridX: 11430,
+  maxGridX: 11431,
+  minGridY: 16868,
+  maxGridY: 16869,
+};
+
 describe("useSubmissionWizardStore — 위저드 상태 소유 (AC 12·13·14)", () => {
   beforeEach(() => {
     useSubmissionWizardStore.setState(
@@ -104,6 +118,129 @@ describe("useSubmissionWizardStore — 위저드 상태 소유 (AC 12·13·14)",
   });
 });
 
+describe("useSubmissionWizardStore — 위치 영역 확정 (MSG-547 AC 5·6·11·12)", () => {
+  beforeEach(() => {
+    useSubmissionWizardStore.setState(
+      useSubmissionWizardStore.getInitialState(),
+      true,
+    );
+  });
+
+  /** 지역축제로 공통·유형 전용·이미지·영역까지 다 채운 상태 — 유형 변경 초기화의 전제 */
+  const fillFestivalDraftWithArea = () => {
+    store().selectType("FESTIVAL");
+    store().setCommonField("title", "광안리 M 드론쇼");
+    store().setTypeFieldValue("드론 공연 · 체험 부스");
+    store().startImageUpload("blob:preview-1");
+    store().completeImageUpload("pending/submissions/abc.jpg");
+    store().addAreaRect(RECT_A);
+  };
+
+  /** 초기화 규칙이 적용됐는지 — 입력·유형 전용·이미지·영역 전부 (AC 12) */
+  const expectDraftCleared = () => {
+    expect(store().areaRects).toEqual([]);
+    expect(store().common.title).toBe("");
+    expect(store().typeFieldValues.FESTIVAL).toBe("");
+    expect(store().image.s3Key).toBeNull();
+  };
+
+  it("초기 상태에는 확정된 영역이 없다 (AC 1)", () => {
+    expect(store().areaRects).toEqual([]);
+  });
+
+  it("영역을 추가하면 확정 목록에 순서대로 쌓인다 (AC 5)", () => {
+    store().addAreaRect(RECT_A);
+    store().addAreaRect(RECT_B);
+
+    expect(store().areaRects).toEqual([RECT_A, RECT_B]);
+  });
+
+  it("영역을 삭제하면 그 인덱스의 사각형만 빠진다 (AC 6)", () => {
+    store().addAreaRect(RECT_A);
+    store().addAreaRect(RECT_B);
+
+    store().removeAreaRect(0);
+
+    expect(store().areaRects).toEqual([RECT_B]);
+  });
+
+  it("스텝을 오가도 확정 영역은 보존된다 (AC 11)", () => {
+    store().selectType("FESTIVAL");
+    store().goToStep("area");
+    store().addAreaRect(RECT_A);
+
+    store().goToStep("basic");
+    store().goToStep("area");
+
+    expect(store().areaRects).toEqual([RECT_A]);
+  });
+
+  it("reset은 확정 영역까지 비운다 (AC 14 — 재진입)", () => {
+    store().addAreaRect(RECT_A);
+
+    store().reset();
+
+    expect(store().areaRects).toEqual([]);
+  });
+
+  it("확정 영역이 있는 상태에서 다른 유형을 선택하면 입력·이미지·영역이 초기화된다 (AC 12)", () => {
+    fillFestivalDraftWithArea();
+
+    store().selectType("POPUP");
+
+    expect(store().type).toBe("POPUP");
+    expectDraftCleared();
+  });
+
+  it("확정 영역이 있어도 같은 유형을 다시 선택하면 초기화되지 않는다 (AC 12 경계)", () => {
+    store().selectType("FESTIVAL");
+    store().setCommonField("title", "광안리 M 드론쇼");
+    store().addAreaRect(RECT_A);
+
+    store().selectType("FESTIVAL");
+
+    expect(store().areaRects).toEqual([RECT_A]);
+    expect(store().common.title).toBe("광안리 M 드론쇼");
+  });
+
+  it("확정 영역이 0개면 유형 변경은 기존 보존 동작을 유지한다 (AC 12 · MSG-546 AC 13)", () => {
+    store().selectType("FESTIVAL");
+    store().setCommonField("title", "광안리 M 드론쇼");
+
+    store().selectType("POPUP");
+
+    expect(store().common.title).toBe("광안리 M 드론쇼");
+  });
+
+  // EVENT는 카드 클릭이 selectType을 부르지 않는다 — 모달을 열고 확정이 곧 유형 확정이다
+  // (TypeSelectStep: `if (next === "EVENT") { setModalOpen(true); return; }`).
+  // 그래서 초기화 규칙이 selectType에만 있으면 EVENT로 갈아탈 때 통째로 새어나간다
+  // (codex 리뷰 P1 — 회귀 테스트).
+  it("확정 영역이 있는 상태에서 EVENT를 확정하면 입력·이미지·영역이 초기화된다 (AC 12 — EVENT 경로)", () => {
+    fillFestivalDraftWithArea();
+
+    store().confirmEventParent({ occurrenceId: 412, name: "광안리 M 드론쇼" });
+
+    expect(store().type).toBe("EVENT");
+    expectDraftCleared();
+    // 확정한 소속 행사와 스텝 전이는 유지된다 (MSG-546 추정 3)
+    expect(store().parentOccurrence?.occurrenceId).toBe(412);
+    expect(store().step).toBe("basic");
+  });
+
+  it("이미 EVENT인 상태에서 소속 행사만 바꿔 확정하면 초기화되지 않는다 (AC 12 경계 — selectType과 대칭)", () => {
+    store().confirmEventParent({ occurrenceId: 412, name: "광안리 M 드론쇼" });
+    store().setCommonField("title", "광안리 M 드론쇼");
+    store().addAreaRect(RECT_A);
+
+    store().confirmEventParent({ occurrenceId: 777, name: "해운대 불꽃축제" });
+
+    expect(store().areaRects).toEqual([RECT_A]);
+    expect(store().common.title).toBe("광안리 M 드론쇼");
+    expect(store().parentOccurrence?.occurrenceId).toBe(777);
+  });
+});
+
 describe("toDraftState — 폼 판정용 파생 (AC 10)", () => {
   beforeEach(() => {
     useSubmissionWizardStore.setState(
@@ -151,6 +288,13 @@ describe("isSubmissionDirty — 이탈 경고 판정 (AC 14)", () => {
   it("기본 정보 스텝으로 넘어가면 작성 중이다 (AC 14)", () => {
     store().selectType("FESTIVAL");
     store().goToStep("basic");
+
+    expect(isSubmissionDirty(store())).toBe(true);
+  });
+
+  it("확정한 위치 영역이 있으면 작성 중이다 (MSG-547 AC 13)", () => {
+    // 스텝은 초기값(type) 그대로 — 영역 자체가 dirty 근거임을 분리해 본다
+    store().addAreaRect(RECT_A);
 
     expect(isSubmissionDirty(store())).toBe(true);
   });
