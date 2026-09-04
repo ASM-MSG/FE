@@ -152,6 +152,8 @@ export const ProfileEditScreen = () => {
       return;
     }
     if (outcome.kind === "permission") {
+      // 직전 형식·크기 거부 캡션이 권한 모달 뒤에 남지 않게 (Claude 리뷰 🟢)
+      setPickError(null);
       setGalleryNotice(outcome.permission);
       return;
     }
