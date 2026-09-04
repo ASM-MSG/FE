@@ -43,6 +43,14 @@ import { ClusterMarker } from "./cluster-marker";
 /** 지도 홈 기본 줌 — 100m 격자가 동네 스케일로 십수 개 보이는 수준 (AC 6) */
 export const DEFAULT_ZOOM = 16;
 
+/**
+ * 네이버 지도 커스텀 스타일 (MSG-566) — NCP 콘솔 Map Studio "FillMap" 발행본 My Style ID.
+ * 발행 Version 20260904102914. SDK는 ID만 받고 재발행해도 ID는 유지되므로 콘솔에서
+ * 다시 발행하면 코드 변경 없이 최신본이 적용된다. 로드 실패 시 SDK가 기본 스타일을
+ * 유지한다(래퍼 `onCustomStyleLoadFailed`로 메시지만 온다). 공개 식별자라 env 아님.
+ */
+const NAVER_MAP_CUSTOM_STYLE_ID = "990d8dd2-8d6d-41e6-ae17-6f7e7a594730";
+
 /** 격자 셀 테두리/채움 — 시맨틱 primary + 알파 (SDK color prop은 hex 문자열만 받는다) */
 const CELL_OUTLINE_COLOR = `${semantic.primary}80`;
 const CELL_FILL_COLOR = `${semantic.primary}0D`;
@@ -348,6 +356,10 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
       minZoom={minZoom}
+      customStyleId={NAVER_MAP_CUSTOM_STYLE_ID}
+      onCustomStyleLoadFailed={({ message }) => {
+        console.warn("[GridMap] custom style load failed:", message);
+      }}
       onCameraChanged={(camera) => {
         setBelowGridZoom(isBelowGridZoom(camera.zoom ?? initialZoom));
         if (showCellGrid) {
