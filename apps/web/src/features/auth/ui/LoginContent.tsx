@@ -1,4 +1,4 @@
-import type { ElementType } from "react";
+import type { ElementType, MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { CONSOLE_ROUTES } from "@/app/console-routes";
 // MSG-464: 자산을 투명 배경 416px 알파 PNG로 교체(파일 내용만 갱신 — 렌더 104px의 4배,
@@ -29,6 +29,21 @@ export const LoginContent = ({ titleAs: Title }: LoginContentProps) => {
   // 콘솔 라우트는 AppLayout 형제라 모달이 언마운트만 될 뿐 open=true가 남고,
   // 유저 앱으로 복귀하면 유령 모달로 다시 떠 버린다 (MSG-555 AC 2).
   const closeModal = useLoginModalStore((state) => state.closeModal);
+
+  /**
+   * 현재 탭이 실제로 콘솔로 떠날 때만 모달을 내린다 (codex 리뷰 P2).
+   * Cmd/Ctrl/Shift+클릭은 react-router가 브라우저 기본 동작에 넘겨 새 탭·새 창으로
+   * 열고 **현재 탭은 그대로 둔다** — 이때 닫으면 원래 탭의 모달만 사라져 링크의
+   * 계약이 깨진다(`Link`를 쓴 이유가 우클릭·새 탭 보존이다).
+   */
+  const handleConsoleLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.defaultPrevented) return;
+    if (event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    closeModal();
+  };
 
   return (
     <div className="flex w-full flex-col items-center gap-md">
@@ -63,7 +78,7 @@ export const LoginContent = ({ titleAs: Title }: LoginContentProps) => {
         행사 운영자이신가요?
         <Link
           to={CONSOLE_ROUTES.orgLogin}
-          onClick={closeModal}
+          onClick={handleConsoleLinkClick}
           className="font-semibold text-primary"
         >
           운영자 콘솔 로그인 →

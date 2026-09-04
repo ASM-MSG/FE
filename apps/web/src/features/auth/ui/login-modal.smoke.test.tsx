@@ -104,6 +104,27 @@ describe("로그인 모달 스모크", () => {
     expect(useLoginModalStore.getState().open).toBe(false);
   });
 
+  // codex 리뷰 P2 (2026-09-04): 새 탭 이동은 현재 탭을 그대로 두는 것이 링크의 계약이다.
+  // 조건 없이 닫으면 새 탭에서 콘솔이 열리는 동안 원래 탭의 모달만 사라진다 —
+  // `Link`를 쓴 이유(우클릭·새 탭 보존)와 정면으로 어긋난다.
+  it.each([
+    ["Cmd(meta)", { metaKey: true }],
+    ["Ctrl", { ctrlKey: true }],
+    ["Shift", { shiftKey: true }],
+  ])(
+    "%s+클릭(새 탭·새 창 이동)에는 현재 탭의 모달이 열린 채 남는다 (MSG-555 AC 2 보수)",
+    (_label, modifier) => {
+      renderModal();
+
+      fireEvent.click(
+        screen.getByRole("link", { name: "운영자 콘솔 로그인 →" }),
+        modifier,
+      );
+
+      expect(useLoginModalStore.getState().open).toBe(true);
+    },
+  );
+
   it("✕ 버튼으로 닫힌다 — 원래 화면 그대로, URL 불변 (G3)", () => {
     renderModal();
 
