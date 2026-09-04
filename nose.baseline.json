@@ -15628,7 +15628,7 @@
       ]
     },
     {
-      "id": "2eea1aa9c2831f39",
+      "id": "c8fcfa884ece5599",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
@@ -15642,12 +15642,12 @@
           "is_fragment": false
         },
         {
-          "id": "2ade175ebd93ee2a",
+          "id": "27faac99dcd4e43a",
           "source_digest": "fnv1a64:652016e0ff50d17a",
           "file": "apps/mobile/src/features/profile/ui/profile-edit-screen.tsx",
           "lang": "typescript",
-          "start_line": 242,
-          "end_line": 247,
+          "start_line": 106,
+          "end_line": 111,
           "kind": "Block",
           "is_fragment": false
         }
