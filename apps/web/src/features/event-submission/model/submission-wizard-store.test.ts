@@ -259,6 +259,13 @@ describe("toDraftState — 폼 판정용 파생 (AC 10)", () => {
     expect(draft.parentOccurrenceId).toBe(412);
     expect(draft.imageS3Key).toBe("pending/submissions/abc.jpg");
   });
+
+  it("확정한 위치 영역이 제출 조립 재료로 실린다 (MSG-548 AC 4·7)", () => {
+    store().addAreaRect(RECT_A);
+    store().addAreaRect(RECT_B);
+
+    expect(toDraftState(store()).areaRects).toEqual([RECT_A, RECT_B]);
+  });
 });
 
 describe("isSubmissionDirty — 이탈 경고 판정 (AC 14)", () => {

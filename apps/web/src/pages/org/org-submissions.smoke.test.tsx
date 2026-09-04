@@ -23,7 +23,11 @@ const EMPTY_LIST: EventSubmissionMyListResponseDto = {
   submissions: [],
 };
 
-const renderList = () =>
+const renderList = (
+  route:
+    | string
+    | { pathname: string; state: unknown } = CONSOLE_ROUTES.orgSubmissions,
+) =>
   renderWithProviders(
     <Routes>
       <Route
@@ -43,7 +47,7 @@ const renderList = () =>
         element={<p>재신청 스텁</p>}
       />
     </Routes>,
-    CONSOLE_ROUTES.orgSubmissions,
+    route,
   );
 
 const stubList = (list: EventSubmissionMyListResponseDto) =>
@@ -180,6 +184,27 @@ describe("내 신청 목록 (MSG-549)", () => {
     renderList();
 
     expect(await screen.findByText("신청 목록을 불러오는 중")).toBeDefined();
+  });
+
+  it("제출 직후 진입하면 신청 번호가 담긴 접수 안내가 보인다 (MSG-548 AC 10)", async () => {
+    stubList(MY_LIST);
+    renderList({
+      pathname: CONSOLE_ROUTES.orgSubmissions,
+      state: { submittedNo: "FM-2026-0007" },
+    });
+
+    expect(
+      await screen.findByText("신청 접수 완료 · FM-2026-0007"),
+    ).toBeDefined();
+    expect(screen.getByText(/1~2영업일/)).toBeDefined();
+  });
+
+  it("접수 안내 state 없이 들어오면 안내가 없다 (MSG-548 AC 10 — 직접 방문·재방문)", async () => {
+    stubList(MY_LIST);
+    renderList();
+    await rows();
+
+    expect(screen.queryByText(/신청 접수 완료/)).toBeNull();
   });
 
   it("조회가 실패하면 재시도 안내가 보이고 재시도로 목록이 복구된다 (AC 4)", async () => {
