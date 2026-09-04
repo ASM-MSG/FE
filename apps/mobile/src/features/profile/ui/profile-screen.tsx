@@ -10,10 +10,13 @@ import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
 import { goToLogin, goToTermsDocument } from "../../../shared/navigation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
+import { formatProgressRate } from "../../dex/model/region-label";
 import { PermissionSettingsNotice } from "../../permissions/ui/permission-settings-notice";
 import { usePushRegistration } from "../../notifications/api/use-push-registration";
+import { useActivityQuery } from "../api/use-activity-query";
 import { useNotificationToggle } from "../api/use-notification-toggle";
 import { useProfileQuery } from "../api/use-profile-query";
+import { formatStreakDays } from "../model/activity-summary";
 import { resolveNotificationNotice } from "../model/notification-toggle";
 import { formatJoinedDate } from "../model/profile-format";
 import { DeleteAccountModal } from "./delete-account-modal";
@@ -68,6 +71,7 @@ export const ProfileScreen = () => {
   const { data: profile } = useProfileQuery();
   // 조회 전·실패 시 mock 폴백 — 게이트를 세우지 않는다 (결정 E2)
   const identity = profile ?? MOCK_PROFILE;
+  const activity = useActivityQuery();
   const notifications = useNotificationToggle();
   const push = usePushRegistration();
   const notificationNotice = resolveNotificationNotice({
@@ -133,16 +137,25 @@ export const ProfileScreen = () => {
             />
           </View>
 
-          {/* 내 활동 — 좌측 스트릭 · 우측 수집률 (mock 유지, 대응 API 연동은 범위 밖) */}
+          {/* 내 활동 (MSG-564 기준 14) — 좌측 스트릭 · 우측 수집률. 실값은 `useActivityQuery`,
+              조회 전·실패 축은 `—`(별도 오류 UI 없음 — 웹 `ActivityCard` 미러, 결정 D9) */}
           <ProfileSection title="내 활동">
             <View className="flex-row items-center justify-between rounded-md border border-border bg-surface-soft p-md">
               <ActivityStat
                 label="스트릭"
-                value={`${MOCK_PROFILE.streakDays}일 연속`}
+                value={
+                  activity.streakDays === null
+                    ? "—"
+                    : formatStreakDays(activity.streakDays)
+                }
               />
               <ActivityStat
                 label="수집률"
-                value={`${MOCK_PROFILE.collectionRate.regionLabel} ${MOCK_PROFILE.collectionRate.pct}%`}
+                value={
+                  activity.collectionRate === null
+                    ? "—"
+                    : formatProgressRate(activity.collectionRate)
+                }
                 alignEnd
               />
             </View>
