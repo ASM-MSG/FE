@@ -39,7 +39,8 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.orgLogin, "행사 운영자 로그인"],
   [CONSOLE_ROUTES.orgPasswordSetup, "비밀번호를 새로 설정하세요"],
   [CONSOLE_ROUTES.orgPasswordReset, "비밀번호 재설정"],
-  [CONSOLE_ROUTES.orgAccountRequest, "계정 발급 요청"],
+  // MSG-543이 이 스텁을 실구현으로 교체하며 h1이 Figma 정본 "행사 운영자 계정 발급 요청"이 됐다
+  [CONSOLE_ROUTES.orgAccountRequest, "행사 운영자 계정 발급 요청"],
   // MSG-545가 이 스텁을 실구현으로 교체하며 h1이 "내 행사 신청"이 됐다 (사이드바 메뉴는 "신청 현황")
   [CONSOLE_ROUTES.orgHome, "내 행사 신청"],
   [CONSOLE_ROUTES.orgSubmissionNew, "새 행사 등록"],
@@ -88,7 +89,10 @@ describe("콘솔 스텁 라우팅 (AC 2)", () => {
     renderConsoleAt(CONSOLE_ROUTES.orgAccountRequest);
 
     expect(
-      await screen.findByRole("heading", { name: "계정 발급 요청", level: 1 }),
+      await screen.findByRole("heading", {
+        name: "행사 운영자 계정 발급 요청",
+        level: 1,
+      }),
     ).toBeDefined();
   });
 });
