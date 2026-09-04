@@ -370,6 +370,24 @@ adb shell settings delete secure stylus_handwriting_enabled  # 원복
 
 **덤으로 주의** — `adb shell dumpsys window windows | head`처럼 큰 덤프를 파이프로 끊으면 그 직후 몇 초간 `device offline`이 나고 `adb reverse`가 풀린다. 덤프는 `grep`으로만 걸러 끝까지 읽히게 하고, offline 뒤에는 `adb reverse tcp:8081 tcp:8081`을 다시 건다.
 
+### 함정 10. 핀치 줌이 안 된다 — `adb shell input`은 단일 포인터다
+
+**증상** — 줌아웃 클러스터 마커처럼 **줌 단이 달라야 보이는 기준**을 에뮬레이터에서 확인하려는데 `input swipe`로는 핀치가 안 되고, `input` 서브커맨드에 멀티터치가 없다. MSG-566 1차 실기가 이 이유로 클러스터 항목을 "미실행"으로 남겼다.
+
+**원인** — `input`은 포인터 1개만 합성한다. 지도 SDK 줌은 두 손가락 거리 변화만 본다(더블탭 줌인은 되지만 줌아웃은 두 손가락 탭이라 역시 불가).
+
+**대응** — 멀티터치 프로토콜 B를 `sendevent`로 직접 쏜다. 스크립트가 있다: `apps/mobile/scripts/emu-pinch.sh`.
+
+```bash
+adb root                                                              # google_apis 이미지만 됨(Play 이미지 불가)
+adb push apps/mobile/scripts/emu-pinch.sh /data/local/tmp/pinch.sh
+adb shell sh /data/local/tmp/pinch.sh 320 60                          # 간격 320→60px = 줌아웃 약 1단, 2회면 격자→클러스터 층
+adb shell sh /data/local/tmp/pinch.sh 60 320                          # 줌인
+adb unroot; adb reverse tcp:8081 tcp:8081                             # root 토글마다 adbd가 재시작돼 reverse가 풀린다
+```
+
+**두 번 걸린 함정** — (1) 일반 셸은 `/dev/input/event1` 쓰기 권한이 없어 `Permission denied`가 이벤트 수만큼 찍힌다 → `adb root` 선행. (2) root 뒤에도 무반응이면 툴타입이다 — 에뮬레이터 virtio 터치 장치는 `BTN_TOUCH`가 없고 `BTN_STYLUS`만 있어(함정 9의 스타일러스 오인과 같은 뿌리) `ABS_MT_TOOL_TYPE=0`(finger)·`ABS_MT_PRESSURE`를 명시해야 제스처로 인식된다. 스크립트는 둘 다 반영돼 있다.
+
 ### 에뮬레이터 재현 성공 경로 (막혔을 때 통째로 다시 밟을 순서)
 
 2026-08-20에 실제로 통한 경로다. 개별 대응이 안 먹으면 이 순서로 초기화한다.
