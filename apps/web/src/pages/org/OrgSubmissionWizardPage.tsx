@@ -45,13 +45,27 @@ export const OrgSubmissionWizardPage = () => {
     };
   }, [reset]);
 
+  // 위치 영역 스텝은 지도 전면이다 (MSG-547 추정 2·5): 셸 본문 패딩(p-10)을 음수 마진으로
+  // 상쇄해 패널+지도가 본문을 꽉 채우고, 등록 절차 카드는 렌더하지 않는다(시안 부재 +
+  // 지도 전면과 양립 불가 — 복귀 동선은 패널의 "‹ 기본 정보"가 담당). 셸(console-shell)은
+  // 건드리지 않는다.
+  const isAreaStep = step === "area";
+
   return (
-    <div className="flex flex-1 flex-col gap-xl">
+    <div
+      className={
+        isAreaStep
+          ? "-m-10 flex min-h-0 flex-1 flex-col"
+          : "flex flex-1 flex-col gap-xl"
+      }
+    >
       <h1 className="sr-only">새 행사 등록</h1>
       <WizardStepSwitch step={step} />
-      <div className="mt-auto pt-xl">
-        <WizardProgress current={step} onSelect={goToStep} />
-      </div>
+      {!isAreaStep && (
+        <div className="mt-auto pt-xl">
+          <WizardProgress current={step} onSelect={goToStep} />
+        </div>
+      )}
       <WizardExitGuard dirty={dirty} />
     </div>
   );

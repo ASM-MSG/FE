@@ -6,8 +6,10 @@ import {
 import {
   filterSubmissions,
   isOrgSubmissionStatus,
+  submissionCountsSummary,
   submissionStatusLabel,
   submissionStatusTone,
+  submissionTypeLabel,
   totalSubmissionCount,
 } from "./submission-status";
 
@@ -99,5 +101,31 @@ describe("filterSubmissions — 상태 필터 칩의 클라이언트 필터 (AC 
 
   it("해당 상태가 없으면 빈 배열이다 — 필터 결과 0건 문구의 조건 (추정 7)", () => {
     expect(filterSubmissions([submissionSummary()], "REJECTED")).toEqual([]);
+  });
+});
+
+describe("submissionCountsSummary — 목록 부제의 counts 요약 (MSG-549 AC 1)", () => {
+  it("전체 건수와 상태별 건수를 한 줄로 요약한다 (AC 1)", () => {
+    expect(
+      submissionCountsSummary({ inReview: 1, approved: 1, rejected: 1 }),
+    ).toBe("신청 3건 (심사 중 1 · 승인 1 · 반려 1)");
+  });
+
+  it("전부 0이면 0건 요약이다 (빈 상태 경계 — AC 4)", () => {
+    expect(
+      submissionCountsSummary({ inReview: 0, approved: 0, rejected: 0 }),
+    ).toBe("신청 0건 (심사 중 0 · 승인 0 · 반려 0)");
+  });
+});
+
+describe("submissionTypeLabel — 목록 행 유형 라벨 (MSG-549 AC 1)", () => {
+  it("등록 유형 3종을 위저드와 같은 표시명으로 옮긴다 (AC 1)", () => {
+    expect(submissionTypeLabel("FESTIVAL")).toBe("지역축제");
+    expect(submissionTypeLabel("POPUP")).toBe("팝업스토어");
+    expect(submissionTypeLabel("EVENT")).toBe("이벤트");
+  });
+
+  it("미지 유형은 원문을 그대로 싣는다 (AC 1 경계)", () => {
+    expect(submissionTypeLabel("MARKET")).toBe("MARKET");
   });
 });

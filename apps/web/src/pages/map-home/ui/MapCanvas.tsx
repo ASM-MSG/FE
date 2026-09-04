@@ -42,7 +42,7 @@ import {
   loadNaverMapsScript,
   markNaverMapsPoisoned,
   resetNaverMapsPreflight,
-} from "./naver-sdk-loader";
+} from "@/shared/naver-maps/naver-sdk-loader";
 
 declare global {
   interface Window {

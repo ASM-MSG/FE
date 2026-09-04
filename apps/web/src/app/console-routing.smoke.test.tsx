@@ -39,12 +39,15 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.orgLogin, "행사 운영자 로그인"],
   [CONSOLE_ROUTES.orgPasswordSetup, "비밀번호를 새로 설정하세요"],
   [CONSOLE_ROUTES.orgPasswordReset, "비밀번호 재설정"],
-  [CONSOLE_ROUTES.orgAccountRequest, "계정 발급 요청"],
+  // MSG-543이 이 스텁을 실구현으로 교체하며 h1이 Figma 정본 "행사 운영자 계정 발급 요청"이 됐다
+  [CONSOLE_ROUTES.orgAccountRequest, "행사 운영자 계정 발급 요청"],
   // MSG-545가 이 스텁을 실구현으로 교체하며 h1이 "내 행사 신청"이 됐다 (사이드바 메뉴는 "신청 현황")
   [CONSOLE_ROUTES.orgHome, "내 행사 신청"],
   [CONSOLE_ROUTES.orgSubmissionNew, "새 행사 등록"],
   [CONSOLE_ROUTES.orgSubmissions, "내 신청 목록"],
-  ["/org/submissions/1204", "신청 상세"],
+  // MSG-549가 상세 스텁을 실화면으로 교체하며 h1이 "신청 상세" → "심사 결과"가 됐다
+  // (MSG-549 AC 5 · Figma 15525:8923). 라우트↔파일 1:1과 등록 자체는 불변이다
+  ["/org/submissions/1204", "심사 결과"],
   ["/org/submissions/1204/edit", "새 행사 등록"],
   [CONSOLE_ROUTES.orgSettings, "계정 설정"],
   [CONSOLE_ROUTES.orgGuide, "등록 가이드"],
@@ -88,7 +91,10 @@ describe("콘솔 스텁 라우팅 (AC 2)", () => {
     renderConsoleAt(CONSOLE_ROUTES.orgAccountRequest);
 
     expect(
-      await screen.findByRole("heading", { name: "계정 발급 요청", level: 1 }),
+      await screen.findByRole("heading", {
+        name: "행사 운영자 계정 발급 요청",
+        level: 1,
+      }),
     ).toBeDefined();
   });
 });

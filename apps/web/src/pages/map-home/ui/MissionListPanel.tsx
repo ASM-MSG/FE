@@ -2,6 +2,7 @@ import { RetryNotice } from "@fillmap/ui-web";
 import type { MissionView } from "@/features/map-home/model/mission-view";
 import { THEME_META, type ThemeId } from "@/features/map-home/model/theme";
 import { ChipListPanel } from "./ChipListPanel";
+import { ConsoleEntryBanner } from "./ConsoleEntryBanner";
 import { MissionCard } from "./MissionCard";
 
 interface MissionListPanelProps {
@@ -46,6 +47,8 @@ export const MissionListPanel = ({
       ) : undefined
     }
     onClose={onClose}
+    // 운영자 콘솔 진입 배너 (MSG-555 AC 3) — 껍데기가 아니라 소비처가 주입한다
+    footer={<ConsoleEntryBanner />}
   >
     <ul className="flex flex-col gap-sm">
       {views.map((view) => (
