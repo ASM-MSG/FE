@@ -17281,32 +17281,6 @@
       ]
     },
     {
-      "id": "c95227b6fd79f226",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "752791316dc28cef",
-          "source_digest": "fnv1a64:7a2fcdc1d6fb7e2d",
-          "file": "apps/web/src/features/region/model/use-explore-regions-query.ts",
-          "lang": "typescript",
-          "start_line": 65,
-          "end_line": 78,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "b73367868be98200",
-          "source_digest": "fnv1a64:866426fabbcf0101",
-          "file": "apps/mobile/src/features/map-home/model/explore-regions-query.ts",
-          "lang": "typescript",
-          "start_line": 52,
-          "end_line": 62,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "c9dec770586a0180",
       "note": "consolidate `text` — 13 copies",
       "members": [
@@ -22976,6 +22950,32 @@
           "end_line": 31,
           "kind": "Function",
           "name": "loadWeb",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "004730ed8f000434",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "752791316dc28cef",
+          "source_digest": "fnv1a64:7a2fcdc1d6fb7e2d",
+          "file": "apps/web/src/features/region/model/use-explore-regions-query.ts",
+          "lang": "typescript",
+          "start_line": 65,
+          "end_line": 78,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "4e231453396c7106",
+          "source_digest": "fnv1a64:eda24554eb873173",
+          "file": "apps/mobile/src/features/map-home/model/explore-regions-query.ts",
+          "lang": "typescript",
+          "start_line": 52,
+          "end_line": 64,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
