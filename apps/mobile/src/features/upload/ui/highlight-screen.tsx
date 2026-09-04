@@ -143,7 +143,7 @@ export const HighlightScreen = () => {
             </Text>
           </View>
 
-          {/* CTA (기준 18) — 미리보기로 전진, /upload/blur는 거치지 않는다 */}
+          {/* CTA (기준 18) — 미리보기로 전진 */}
           <Button
             text="이 구간으로 다음 단계"
             shape="pill"

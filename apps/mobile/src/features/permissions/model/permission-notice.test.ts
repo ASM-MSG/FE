@@ -100,6 +100,13 @@ describe("derivePermissionNotice — 본문이 복구 수단과 일치한다 (MS
     expect(
       derivePermissionNotice("notification", "undetermined")?.message,
     ).not.toContain("설정");
+    // MSG-567 AC 3 — 블러 파이프라인 삭제로 재요청 문구가 "영상 준비 완료"로 바뀐다
+    expect(
+      derivePermissionNotice("notification", "undetermined")?.message,
+    ).toBe("영상 준비 완료 알림을 받으려면 알림 권한을 허용해주세요");
+    expect(
+      derivePermissionNotice("notification", "undetermined")?.message,
+    ).not.toContain("블러");
     expect(derivePermissionNotice("notification", "denied")?.message).toContain(
       "설정",
     );

@@ -34,8 +34,8 @@ type PickSource = keyof typeof DENIED_NOTICE;
  * 전환한다(기준 1). `router.replace`로 가는 이유: 분석 중에는 뒤로 돌아올 수단이 없어야
  * 하고(기준 4), 실패 복귀는 분석 화면이 스스로 replace로 수행한다.
  *
- * 위치 태그는 mock 상수가 아니라 역지오코딩 실데이터이고(기준 20), AI 안내 카드 문구는
- * 실제 처리 구조에 맞게 정정했다 — 블러는 업로드 **전**이 아니라 후처리다.
+ * 위치 태그는 mock 상수가 아니라 역지오코딩 실데이터이고(기준 20), AI 안내 카드는 실제
+ * 처리 구조에 맞춘 2장이다 — 자동 블러 카드는 서버가 블러를 끄며 삭제됐다(MSG-567 AC 1).
  */
 export const UploadScreen = () => {
   const router = useRouter();
@@ -150,11 +150,6 @@ export const UploadScreen = () => {
               variant="light"
               title="AI 하이라이트 자동 추천"
               description="영상을 올리면 AI가 최적 구간을 분석해 최대 3개 구간을 추천해요"
-            />
-            <Toast
-              variant="light"
-              title="AI 자동 블러 처리"
-              description="업로드가 끝나면 얼굴과 번호판을 자동 감지해 블러 처리합니다"
             />
             <Toast
               title="업로드 전 최종 확인"
