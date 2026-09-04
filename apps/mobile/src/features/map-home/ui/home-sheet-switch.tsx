@@ -4,6 +4,7 @@ import type { HomeMissions } from "../api/use-home-missions";
 import type { HotRegionSummaryResult } from "../api/use-hot-region-summary";
 import type { SheetState } from "../model/home-sheet-state";
 import type { HomePanelKind } from "../model/panel-branch";
+import type { SelectedRegion } from "../model/region-panel-selection";
 import { CourseDetailSheetContent } from "./course-detail-sheet-content";
 import { CourseListSheetContent } from "./course-list-sheet-content";
 import { DefaultSheetContent } from "./default-sheet-content";
@@ -12,6 +13,7 @@ import type { HomeSheetContentContext } from "./home-sheet";
 import { HotRegionSheetContent } from "./hot-region-sheet-content";
 import { MissionDetailSheetContent } from "./mission-detail-sheet-content";
 import { MissionListSheetContent } from "./mission-list-sheet-content";
+import { RegionListSheetContent } from "./region-list-sheet-content";
 import { SheetDetailFallback } from "./sheet-detail-fallback";
 
 /**
@@ -35,6 +37,8 @@ interface HomeSheetSwitchProps {
   /** 기본 시트(칩 미선택) 입력 — MSG-423 산출물 무수정 존치 */
   grids: ExploreGridResponseDto[];
   defaultSheetState: SheetState;
+  /** 기본 시트의 "전체 보기" 모드 (MSG-571) — true면 기본 케이스가 전체 지역 목록을 그린다 */
+  regionListOpen: boolean;
   /** action-row 표시 여부 — 핫구역 격자 상세에만 (C9) */
   showGridActions: boolean;
   onSelectMission: (missionId: number) => void;
@@ -44,6 +48,9 @@ interface HomeSheetSwitchProps {
   onClose?: () => void;
   onUpload: () => void;
   onRetryDefault: () => void;
+  onOpenRegionList: () => void;
+  /** 지역 행 탭 — 표시 지역 교체 + 격자 모드 복귀 (MSG-571 AC 11) */
+  onSelectRegion: (region: SelectedRegion) => void;
 }
 
 export const HomeSheetSwitch = ({
@@ -56,6 +63,7 @@ export const HomeSheetSwitch = ({
   regionName,
   grids,
   defaultSheetState,
+  regionListOpen,
   showGridActions,
   onSelectMission,
   onSelectGrid,
@@ -63,6 +71,8 @@ export const HomeSheetSwitch = ({
   onClose,
   onUpload,
   onRetryDefault,
+  onOpenRegionList,
+  onSelectRegion,
 }: HomeSheetSwitchProps) => {
   switch (kind) {
     case "grid-detail":
@@ -145,13 +155,22 @@ export const HomeSheetSwitch = ({
         />
       );
     default:
-      return (
+      // 전체 지역 모드(MSG-571)는 `panelKind` 밖의 상태다 — 기본 케이스 안에서만 갈린다
+      return regionListOpen ? (
+        <RegionListSheetContent
+          {...sheet}
+          onBack={onBack}
+          onSelectRegion={onSelectRegion}
+        />
+      ) : (
         <DefaultSheetContent
           {...sheet}
           regionName={regionName}
           grids={grids}
           state={defaultSheetState}
           onRetry={onRetryDefault}
+          onSelectGrid={onSelectGrid}
+          onOpenRegionList={onOpenRegionList}
         />
       );
   }
