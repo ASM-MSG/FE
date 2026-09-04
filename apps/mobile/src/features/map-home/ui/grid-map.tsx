@@ -31,7 +31,13 @@ import { drillInZoomForUnit } from "../model/aggregation-unit";
 import { gateOccupiedFill, isBelowGridZoom } from "../model/cluster-overlay";
 import type { RegionClusterMarker } from "../model/region-cluster-overlay";
 import { clusterBubbleSize } from "../model/cluster-bubble-size";
+import {
+  isGestureCameraChange,
+  locationOverlayProps,
+  type CurrentLocation,
+} from "../model/location-overlay";
 import { ClusterMarker } from "./cluster-marker";
+import userLocationImage from "../../../../assets/images/user-location.png";
 
 /**
  * 지도 SDK 격리 경계 — @mj-studio/react-native-naver-map 참조는 이 파일 안에서만 한다
@@ -83,6 +89,20 @@ const ROUTE_MARKER_ACTIVE_RING = 3;
 /** 선택 미션 이름표 마커 치수 (MSG-427 승인 Q4) — 한 줄 pill */
 const MISSION_LABEL_WIDTH = 140;
 const MISSION_LABEL_HEIGHT = 24;
+
+/**
+ * 현재 위치 점 (MSG-565 D1·D3·A3·A6) — SDK 내장 `locationOverlay`로 그린다. **원을
+ * `NaverMapCircleOverlay`로 바꾸지 말 것**: RN 래퍼는 모든 shape 오버레이에 클릭 리스너를
+ * 강제로 걸어(`RNCNaverMapCircle.kt:17`) 원 안쪽 격자 탭을 죽인다. locationOverlay는
+ * 리스너가 없고 globalZIndex가 마커보다 위라 "기존 오버레이 위 + 탭 비가로채기"가 SDK 보장.
+ * 이미지는 `assets/images/user-location.png` 72×72dp — 점(파란 r8 + 흰 링 r11 + 그림자)과
+ * **방사형 그라데이션 glow(primary 40% → 0, r11 → r36)** 를 한 PNG에 구웠다(Figma
+ * `UserLocation` glow 64×64·blur 대응). SDK 원(`circleRadius`)은 단색만 지원해 그라데이션이
+ * 불가하므로 0으로 끄고, 원의 크기는 이미지 dp라 줌과 무관하게 고정된다 (사용자 결정 2026-09-04).
+ * 점이 이미지 중앙이라 앵커는 0.5/0.5.
+ */
+const USER_LOCATION_IMAGE_SIZE = 72;
+const USER_LOCATION_ANCHOR = { x: 0.5, y: 0.5 };
 
 export interface GridMapRef {
   /** 카메라를 해당 좌표로 애니메이션 이동 — 내 위치 버튼 (AC 8) */
@@ -171,6 +191,13 @@ interface GridMapProps {
    * 탭 시 카메라 이동만 맡는다.
    */
   clusters?: RegionClusterMarker[];
+  /**
+   * 현재 위치 점 + 정확도 원 (MSG-565) — 지도 홈만 넘긴다. **미지정(undefined)이면 렌더
+   * 불변**(AI 추천·격자 상세): 줌 상태 추적도 하지 않는다. null은 "홈이지만 아직 측위 없음".
+   */
+  currentLocation?: CurrentLocation | null;
+  /** 사용자 제스처(드래그·핀치)로 카메라가 움직일 때 — 추적 해제 신호 (MSG-565 D7). 제스처 중 매 프레임 발화 */
+  onGestureCameraChange?: () => void;
 }
 
 /** 셀 bounds → 폴리곤 꼭짓점 4점 (sw → se → ne → nw) */
@@ -239,6 +266,8 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     onViewportChange,
     clusters,
     onReady,
+    currentLocation,
+    onGestureCameraChange,
   },
   ref,
 ) {
@@ -356,12 +385,26 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
       minZoom={minZoom}
+      locationOverlay={
+        currentLocation === undefined
+          ? undefined
+          : {
+              ...locationOverlayProps(currentLocation),
+              image: userLocationImage,
+              imageWidth: USER_LOCATION_IMAGE_SIZE,
+              imageHeight: USER_LOCATION_IMAGE_SIZE,
+              anchor: USER_LOCATION_ANCHOR,
+            }
+      }
       customStyleId={NAVER_MAP_CUSTOM_STYLE_ID}
       onCustomStyleLoadFailed={({ message }) => {
         console.warn("[GridMap] custom style load failed:", message);
       }}
       onCameraChanged={(camera) => {
         setBelowGridZoom(isBelowGridZoom(camera.zoom ?? initialZoom));
+        if (onGestureCameraChange && isGestureCameraChange(camera.reason)) {
+          onGestureCameraChange();
+        }
         if (showCellGrid) {
           setCells(
             buildVisibleCells(

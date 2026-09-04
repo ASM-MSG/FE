@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 // 생성 mutation 옵션·쿼리 키는 barrel(generated/index.ts) 미재수출 — 직접 경로 import (MSG-323 관례)
 import {
+  changePasswordMutation,
   getStatusQueryKey,
   requestResetMutation,
   resetPasswordMutation,
@@ -23,6 +24,7 @@ import { useAuthStore } from "../model/auth-store";
 const setInitialPasswordFn = setInitialPasswordMutation().mutationFn!;
 const requestResetFn = requestResetMutation().mutationFn!;
 const resetPasswordFn = resetPasswordMutation().mutationFn!;
+const changePasswordFn = changePasswordMutation().mutationFn!;
 
 /**
  * 초기 비밀번호 설정 (AC 7) — `POST /api/auth/password/initial`. 현재 비밀번호는 보내지
@@ -71,5 +73,26 @@ export const useConfirmPasswordReset = () => {
     mutationFn: (variables: { token: string; newPassword: string }, context) =>
       resetPasswordFn({ body: variables }, context),
     onSuccess: () => clearLocalSession(),
+  });
+};
+
+/**
+ * 비밀번호 변경 (MSG-544 AC 7) — `POST /api/auth/password/change`, 로그인 경로.
+ * 현재 비밀번호를 확인한 뒤 새 비밀번호로 바꾼다.
+ *
+ * 성공 시 서버가 **강제 변경 상태를 풀므로** 비밀번호 상태 캐시를 무효화한다
+ * (`useSetInitialPassword`와 같은 이유 — 게이트가 옛 mustChange를 읽지 않게 한다).
+ * reset과 달리 **다른 기기 세션이 유지**되고 현 세션도 유효하므로 로컬 세션은 건드리지
+ * 않는다(명세 실측 — 재로그인 요구 없음).
+ */
+export const useChangePassword = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      variables: { currentPassword: string; newPassword: string },
+      context,
+    ) => changePasswordFn({ body: variables }, context),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: getStatusQueryKey() }),
   });
 };
