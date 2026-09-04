@@ -30,17 +30,18 @@ export const deriveSheetState = (
 };
 
 /**
- * 기본 시트가 의존하는 쿼리 목록 (MSG-571 codex 리뷰 P2-1). 지역 행 탭으로 선택 지역
- * 오버라이드가 걸려 있으면 격자 조회는 그 지역 코드로 직접 가므로 역지오코딩은 표시의
- * 전제가 아니다 — 목록에서 빼야 geocode 실패가 선택 지역의 격자 목록을 오류 뷰로 덮지
- * 않는다. 시트 상태 파생과 재시도가 같은 목록을 써야 하므로 여기서 한 번만 정한다.
+ * 기본 시트가 의존하는 쿼리 목록 (MSG-571 codex 리뷰 P2-1·재리뷰 P2). 지역 행 탭으로
+ * 선택 지역 오버라이드가 걸려 있으면 격자 조회는 그 지역 코드로 직접 가므로 역지오코딩도
+ * 뷰포트 점령 조회도 표시의 전제가 아니다 — 둘 다 빼야 무관한 쿼리의 로딩·실패가
+ * 선택 지역의 격자 목록을 덮지 않는다(선택 지역은 대개 뷰포트 밖이다). 시트 상태
+ * 파생과 재시도가 같은 목록을 써야 하므로 여기서 한 번만 정한다.
  */
 export const defaultSheetQueries = (
   queries: Record<"occupied" | "geocode" | "regionGrids", GatedQueryStatus>,
   selectedRegionActive: boolean,
 ): GatedQueryStatus[] =>
   selectedRegionActive
-    ? [queries.occupied, queries.regionGrids]
+    ? [queries.regionGrids]
     : [queries.occupied, queries.geocode, queries.regionGrids];
 
 /** 조회 훅이 화면에 내주는 공통 꼬리 — 시트 상태 입력 + 재시도 핸들 (요구 7) */

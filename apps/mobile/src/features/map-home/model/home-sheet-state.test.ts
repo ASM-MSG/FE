@@ -147,7 +147,7 @@ describe("미판정 상태가 빈 상태로 새지 않는다 (PR #72 리뷰 — 
   });
 });
 
-describe("defaultSheetQueries — 선택 지역 오버라이드 중에는 geocode를 시트 상태에서 뺀다 (MSG-571 codex 리뷰 P2-1)", () => {
+describe("defaultSheetQueries — 선택 지역 오버라이드 중에는 geocode·occupied를 시트 상태에서 뺀다 (MSG-571 codex 리뷰 P2-1·재리뷰 P2)", () => {
   const withRetry = (status: SheetQueryStatus) => ({
     ...status,
     retry: vi.fn(),
@@ -164,19 +164,30 @@ describe("defaultSheetQueries — 선택 지역 오버라이드 중에는 geocod
     );
   });
 
+  it("뷰포트 occupied 실패/로딩 + selectedRegion 있음 + grids 성공 → list — 뷰포트 밖 지역은 점령 조회와 무관하다 (재리뷰 P2)", () => {
+    const failedOccupied = { ...queries(), occupied: withRetry(failed) };
+    expect(deriveSheetState(defaultSheetQueries(failedOccupied, true), 3)).toBe(
+      "list",
+    );
+    const pendingOccupied = { ...queries(), occupied: withRetry(pending) };
+    expect(
+      deriveSheetState(defaultSheetQueries(pendingOccupied, true), 3),
+    ).toBe("list");
+  });
+
   it("selectedRegion이 없으면 geocode 실패가 그대로 error다 — 기존 동작 보존", () => {
     expect(deriveSheetState(defaultSheetQueries(queries(), false), 3)).toBe(
       "error",
     );
   });
 
-  it("재시도도 같은 목록을 따른다 — 선택 지역 활성 중 geocode 재시도는 표시의 전제가 아니다", () => {
+  it("재시도도 같은 목록을 따른다 — 선택 지역 활성 중 geocode·occupied 재시도는 표시의 전제가 아니다", () => {
     const target = queries();
 
     for (const query of defaultSheetQueries(target, true)) query.retry();
 
     expect(target.geocode.retry).not.toHaveBeenCalled();
-    expect(target.occupied.retry).toHaveBeenCalledTimes(1);
+    expect(target.occupied.retry).not.toHaveBeenCalled();
     expect(target.regionGrids.retry).toHaveBeenCalledTimes(1);
   });
 });
