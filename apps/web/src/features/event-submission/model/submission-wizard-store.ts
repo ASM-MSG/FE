@@ -21,7 +21,9 @@ import type { SubmissionStep } from "./submission-wizard";
  * - MSG-547(완료): `areaRects` 슬롯 + "위치 지정 후 유형 변경 시 입력·지도 선택 초기화"
  *   규칙(`selectType`). 다중 위치 UX는 티켓 제외 범위라 슬롯은 **위치 1개분**이다 —
  *   MSG-548이 제출 본문을 `locations: [{ areaRects }]`(1~20개 계약의 1개)로 조립한다.
- * - MSG-548: 확인·제출 — `toCreateDraft`(submission-form) + submitMutation.
+ * - MSG-548(완료): 확인·제출 — `toDraftState`가 `areaRects`까지 노출하고,
+ *   `toCreateRequest`(submission-form)가 `locations: [{ areaRects }]`로 조립해 제출한다.
+ *   스토어 본문은 늘지 않았다 — 제출은 뷰(ReviewStep) + `api/use-submit-submission` 몫이다.
  * - MSG-550: `mode: "create" | "edit"` + 서버 신청 상세로 초기값을 채우는 hydrate 액션.
  */
 
@@ -207,6 +209,8 @@ export const toDraftState = (
   common: state.common,
   typeFieldValues: state.typeFieldValues,
   imageS3Key: state.image.s3Key,
+  // MSG-547이 미룬 1줄 — 제출 본문의 locations 재료다 (MSG-548 인계 계약 이행)
+  areaRects: state.areaRects,
 });
 
 /**
