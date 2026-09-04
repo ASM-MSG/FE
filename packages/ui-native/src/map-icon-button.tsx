@@ -19,22 +19,29 @@ const iconVariant: Record<MapIconButtonIcon, string> = {
 interface MapIconButtonProps extends MapIconButtonBaseProps {
   onPress?: () => void;
   className?: string;
+  /**
+   * 활성(추적 중) 상태 — 아이콘 색만 primary, 배경 불변 (MSG-565 D8, 네이버 지도 앱 추적 모드
+   * 미러). ui-native 로컬 prop이라 `MapIconButtonBaseProps`에는 넣지 않는다. 미지정 시 렌더 불변.
+   */
+  active?: boolean;
 }
 
 /**
  * @example
  * <MapIconButton icon="locate" onPress={moveToMyLocation} />
+ * <MapIconButton icon="locate" active onPress={moveToMyLocation} />
  */
 export const MapIconButton = ({
   icon = "back",
   disabled,
   onPress,
   className,
+  active = false,
 }: MapIconButtonProps) => (
   <Pressable
     accessibilityRole="button"
     accessibilityLabel={icon === "back" ? "뒤로 가기" : "내 위치"}
-    accessibilityState={{ disabled: !!disabled }}
+    accessibilityState={{ disabled: !!disabled, selected: active }}
     disabled={disabled}
     onPress={onPress}
     className={cx(
@@ -47,7 +54,10 @@ export const MapIconButton = ({
     {icon === "back" ? (
       <ChevronLeft size={22} color={semantic.textPrimary} />
     ) : (
-      <Locate size={20} color={semantic.textPrimary} />
+      <Locate
+        size={20}
+        color={active ? semantic.primary : semantic.textPrimary}
+      />
     )}
   </Pressable>
 );

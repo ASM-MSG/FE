@@ -7,6 +7,11 @@ export interface GeoCoords {
   lng: number;
 }
 
+/** 현재 위치 + 측위 정확도(m, 없으면 null) — 지도 홈 현재 위치 점·원의 재료 (MSG-565) */
+export interface CurrentLocation extends GeoCoords {
+  accuracy: number | null;
+}
+
 /** 위치 조회 폴백 — 서면 (웹 shared/geolocation.ts와 동일 좌표) */
 export const SEOMYEON_CENTER: GeoCoords = { lat: 35.1579, lng: 129.0594 };
 
@@ -61,6 +66,72 @@ const toCoords = (position: Location.LocationObject): GeoCoords => ({
   lat: position.coords.latitude,
   lng: position.coords.longitude,
 });
+
+/** expo LocationObject → 플랫폼 중립 CurrentLocation (MSG-565 L2) — expo 타입은 여기서 끊는다 */
+export const toCurrentLocation = (
+  position: Location.LocationObject,
+): CurrentLocation => ({
+  ...toCoords(position),
+  accuracy: position.coords.accuracy,
+});
+
+/**
+ * 위치 구독 옵션 (MSG-565 A4 개정) — `High`: 네이버 지도 앱처럼 점이 실제 위치에 붙어야 하고,
+ * `Balanced`는 GMS fused가 GNSS를 켜지 않아 실측(에뮬레이터 `geo fix`·실기 첫 탭)에서 점이
+ * 옛 캐시 위치에 머물렀다. 구독은 홈 포커스+포그라운드에서만 살아 있어 배터리 비용은 한정된다.
+ */
+const WATCH_OPTIONS: Location.LocationOptions = {
+  accuracy: Location.Accuracy.High,
+  timeInterval: 3000,
+  distanceInterval: 5,
+};
+
+/**
+ * 위치 구독 어댑터 (MSG-565 D4·D5·L3·L4) — 권한을 **판독만** 하고(요청 없음 — 새 프롬프트
+ * 시점을 만들지 않는다) granted일 때만 `watchPositionAsync`를 건다. 거부·미결정·판독 실패·
+ * 구독 실패·provider 오류는 전부 "구독 없음"으로 흡수하고 화면에 예외를 내지 않는다.
+ *
+ * 반환한 함수가 해제다. 구독 프라미스가 해소되기 **전**에 해제되면(포커스 즉시 이탈) 해소
+ * 직후 remove해 네이티브 구독이 새지 않게 한다.
+ */
+export const watchPosition = (
+  /** 권한이 granted가 아니면 `null` 1회 — 이전 픽스를 지우라는 신호(codex 리뷰: 백그라운드 권한 회수 시 옛 점 잔존) */
+  onPosition: (location: CurrentLocation | null) => void,
+): (() => void) => {
+  let cancelled = false;
+  let subscription: Location.LocationSubscription | null = null;
+  const stop = () => {
+    subscription?.remove();
+    subscription = null;
+  };
+  void Location.getForegroundPermissionsAsync()
+    .then(({ granted }) => {
+      if (cancelled) return null;
+      if (!granted) {
+        onPosition(null);
+        return null;
+      }
+      return Location.watchPositionAsync(
+        WATCH_OPTIONS,
+        (position) => onPosition(toCurrentLocation(position)),
+        stop,
+      );
+    })
+    .then((result) => {
+      if (!result) return;
+      if (cancelled) result.remove();
+      else subscription = result;
+    })
+    .catch(() => {
+      // 권한 판독·구독 자체 실패 — 이전 픽스를 지우고 점 없이 끝난다 (기존 MSG-447 안내 흐름은
+      // 탭이 담당). 미승인 분기와 같은 신호라 화면은 추적도 함께 끈다 (Claude 리뷰 🟢)
+      if (!cancelled) onPosition(null);
+    });
+  return () => {
+    cancelled = true;
+    stop();
+  };
+};
 
 /** 좌표 + 그 좌표가 나온 권한 사정 (MSG-447 기준 2·3·4) */
 export interface MapCenterResult {
