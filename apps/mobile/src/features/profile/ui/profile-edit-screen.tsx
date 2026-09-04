@@ -38,7 +38,35 @@ import { profileImageErrorMessage } from "../model/profile-image";
 import {
   measureFileSize,
   toProfileImageCandidate,
+  type ProfileImageAssetLike,
 } from "../model/profile-image-pick";
+
+type GalleryPickOutcome =
+  | { kind: "permission"; permission: PermissionState }
+  | { kind: "canceled" }
+  | { kind: "asset"; asset: ProfileImageAssetLike };
+
+/**
+ * 권한(결정 D12) → 갤러리 이미지 전용(D4) → `fileSize` 확보(스펙 Q2 실측). 네이티브 호출 3개가
+ * 던지는 예외를 호출부의 try/catch 하나로 모으려고 컴포넌트 밖으로 뺐다 (codex·Claude 리뷰 —
+ * `void pickImage()` 호출이라 잡지 않으면 unhandled rejection이 되고 화면은 침묵한다).
+ */
+const pickGalleryAsset = async (): Promise<GalleryPickOutcome> => {
+  const permission = toPermissionState(
+    await requestMediaLibraryPermissionsAsync(),
+  );
+  if (permission !== "granted") return { kind: "permission", permission };
+  const result = await launchImageLibraryAsync({ mediaTypes: "images" });
+  const asset = result.canceled ? undefined : result.assets[0];
+  if (asset === undefined) return { kind: "canceled" };
+  return {
+    kind: "asset",
+    asset: {
+      ...asset,
+      fileSize: asset.fileSize ?? (await measureFileSize(asset.uri)),
+    },
+  };
+};
 
 /**
  * SOURCE: Figma "프로필 편집" (node 14799:26233) — MSG-306 → MSG-426 개편.
@@ -115,26 +143,20 @@ export const ProfileEditScreen = () => {
    */
   const pickImage = async () => {
     if (isSaving) return;
-    const permission = toPermissionState(
-      await requestMediaLibraryPermissionsAsync(),
-    );
-    if (permission !== "granted") {
-      setGalleryNotice(permission);
-      return;
-    }
-    const result = await launchImageLibraryAsync({ mediaTypes: "images" });
-    const asset = result.canceled ? undefined : result.assets[0];
-    if (asset === undefined) return;
-    // 픽커가 fileSize를 안 주면 실측 (스펙 Q2). 읽기 실패는 거부 캡션으로 — `void pickImage()`
-    // 호출이라 여기서 잡지 않으면 unhandled rejection이 되고 화면은 침묵한다 (codex 리뷰)
-    let fileSize: number;
+    let outcome: GalleryPickOutcome;
     try {
-      fileSize = asset.fileSize ?? (await measureFileSize(asset.uri));
+      outcome = await pickGalleryAsset();
     } catch (error) {
+      // 권한·피커·실측 어느 예외든 거부 캡션으로 (FALLBACK 문구)
       setPickError(profileImageErrorMessage(error));
       return;
     }
-    const pick = toProfileImageCandidate({ ...asset, fileSize });
+    if (outcome.kind === "permission") {
+      setGalleryNotice(outcome.permission);
+      return;
+    }
+    if (outcome.kind === "canceled") return;
+    const pick = toProfileImageCandidate(outcome.asset);
     if (pick.kind === "rejected") {
       setPickError(pick.message);
       return;
