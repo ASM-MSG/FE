@@ -540,32 +540,6 @@
       ]
     },
     {
-      "id": "08acdef17ccd99ab",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "57c4830791b8a5ea",
-          "source_digest": "fnv1a64:812d3280278a7989",
-          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 265,
-          "end_line": 299,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "b5222f552d883cb8",
-          "source_digest": "fnv1a64:42254c47e178b1f5",
-          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 111,
-          "end_line": 130,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "08e49dcc4a7e9436",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -1120,32 +1094,6 @@
           "lang": "typescript",
           "start_line": 2,
           "end_line": 6,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "13967fa5a46be726",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "3e6a40e98133d623",
-          "source_digest": "fnv1a64:d447f6c025a28731",
-          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 36,
-          "end_line": 64,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "8d5002730b1c56e8",
-          "source_digest": "fnv1a64:07d98f97ab8d14ba",
-          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 40,
-          "end_line": 64,
           "kind": "Block",
           "is_fragment": false
         }
@@ -2571,6 +2519,32 @@
           "lang": "typescript",
           "start_line": 52,
           "end_line": 63,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "2724ca55cb00b265",
+      "note": "MSG-547 의도 중복 — AreaMapCanvas ↔ MapCanvas의 프리플라이트·authFailure effect 쌍 / 로더 import 블록. 정석 해소는 useNaverSdkPreflight 훅을 shared/naver-maps로 추출하는 것이지만 MapCanvas 대수술이 따라와 웨이브 2 소유 계약(import 1줄)을 깬다 — MapLoadErrorBoundary 공용화 후속 티켓에서 함께 해소한다",
+      "members": [
+        {
+          "id": "09bc3a4610de16cc",
+          "source_digest": "fnv1a64:81df8998064d06ff",
+          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 38,
+          "end_line": 67,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "8d5002730b1c56e8",
+          "source_digest": "fnv1a64:07d98f97ab8d14ba",
+          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 40,
+          "end_line": 64,
           "kind": "Block",
           "is_fragment": false
         }
@@ -7768,6 +7742,32 @@
       ]
     },
     {
+      "id": "63f588f32cca65f7",
+      "note": "MSG-547 의도 중복 — AreaMapCanvas ↔ MapCanvas의 프리플라이트·authFailure effect 쌍 / 로더 import 블록. 정석 해소는 useNaverSdkPreflight 훅을 shared/naver-maps로 추출하는 것이지만 MapCanvas 대수술이 따라와 웨이브 2 소유 계약(import 1줄)을 깬다 — MapLoadErrorBoundary 공용화 후속 티켓에서 함께 해소한다",
+      "members": [
+        {
+          "id": "653057181683c118",
+          "source_digest": "fnv1a64:fa55039aa9fb2a0a",
+          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 11,
+          "end_line": 19,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "15359d8ada73be62",
+          "source_digest": "fnv1a64:970cf0110fd53186",
+          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 17,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "641c20d3ef3e68f0",
       "note": "repeated across 3 directories — extract a shared abstraction",
       "members": [
@@ -11083,34 +11083,6 @@
       ]
     },
     {
-      "id": "8c11c6ee4edf2f28",
-      "note": "local duplication — extract a helper",
-      "members": [
-        {
-          "id": "7fe40627318d1826",
-          "source_digest": "fnv1a64:c7e865e753d8f9a5",
-          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 197,
-          "end_line": 200,
-          "kind": "Function",
-          "name": "endDrag",
-          "is_fragment": false
-        },
-        {
-          "id": "f1cbcee58057abdb",
-          "source_digest": "fnv1a64:681a6a5b42945712",
-          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 279,
-          "end_line": 282,
-          "kind": "Function",
-          "name": "handleMouseup",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "8c165a12eafa198b",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -11157,32 +11129,6 @@
           "lang": "typescript",
           "start_line": 259,
           "end_line": 263,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "8cd2eebdf0411520",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "4f70f9582b4dac03",
-          "source_digest": "fnv1a64:5a9bbf8a74e86806",
-          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 167,
-          "end_line": 203,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "be3f3400cdf3526a",
-          "source_digest": "fnv1a64:6c26322fd13e7a83",
-          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 441,
-          "end_line": 475,
           "kind": "Block",
           "is_fragment": false
         }
@@ -14120,6 +14066,32 @@
       ]
     },
     {
+      "id": "aa92005241f54771",
+      "note": "MSG-547 의도 중복 — AreaMapCanvas ↔ MapCanvas의 프리플라이트·authFailure effect 쌍 / 로더 import 블록. 정석 해소는 useNaverSdkPreflight 훅을 shared/naver-maps로 추출하는 것이지만 MapCanvas 대수술이 따라와 웨이브 2 소유 계약(import 1줄)을 깬다 — MapLoadErrorBoundary 공용화 후속 티켓에서 함께 해소한다",
+      "members": [
+        {
+          "id": "57c4830791b8a5ea",
+          "source_digest": "fnv1a64:812d3280278a7989",
+          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 265,
+          "end_line": 299,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "01f28928bcd950d6",
+          "source_digest": "fnv1a64:42254c47e178b1f5",
+          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 120,
+          "end_line": 139,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "ab9dd62af6054d10",
       "note": "consolidate `view` — 2 copies",
       "members": [
@@ -16755,6 +16727,32 @@
       ]
     },
     {
+      "id": "cb718f1c48937438",
+      "note": "MSG-547 의도 중복 — AreaMapCanvas ↔ MapCanvas의 프리플라이트·authFailure effect 쌍 / 로더 import 블록. 정석 해소는 useNaverSdkPreflight 훅을 shared/naver-maps로 추출하는 것이지만 MapCanvas 대수술이 따라와 웨이브 2 소유 계약(import 1줄)을 깬다 — MapLoadErrorBoundary 공용화 후속 티켓에서 함께 해소한다",
+      "members": [
+        {
+          "id": "b694a1f447f03d90",
+          "source_digest": "fnv1a64:58de21c880a091c8",
+          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 441,
+          "end_line": 469,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "f8fb9745cdff73c1",
+          "source_digest": "fnv1a64:3690f41d90f90758",
+          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 176,
+          "end_line": 202,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "cc2b596b9d80940e",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -17539,32 +17537,6 @@
           "end_line": 141,
           "kind": "Function",
           "name": "mutate",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "d329e7ad2392cbd9",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "653057181683c118",
-          "source_digest": "fnv1a64:fa55039aa9fb2a0a",
-          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 11,
-          "end_line": 19,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "66391622a249e998",
-          "source_digest": "fnv1a64:970cf0110fd53186",
-          "file": "apps/web/src/pages/org/ui/AreaMapCanvas.tsx",
-          "lang": "typescript",
-          "start_line": 9,
-          "end_line": 16,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -19661,6 +19633,32 @@
           "end_line": 44,
           "kind": "Function",
           "name": "submitNewPassword",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "e59d3a6f9746411f",
+      "note": "MSG-547 의도 중복 — shared/naver-maps의 공용 SDK 예외 흡수 경계가 pages/map-home/ui/MapCanvas 내부 동명 클래스와 겹친다(codex 리뷰 P2 반영으로 신설). 웨이브 2에서 MapCanvas는 import 1줄만 건드리는 소유 계약이라 내부 클래스를 지금 교체할 수 없다 — 후속 티켓에서 MapCanvas가 이 공용 경계를 import하면 중복이 소멸한다",
+      "members": [
+        {
+          "id": "1a183a5d4f167d97",
+          "source_digest": "fnv1a64:49a97f865f8679d3",
+          "file": "apps/web/src/shared/naver-maps/MapLoadErrorBoundary.tsx",
+          "lang": "typescript",
+          "start_line": 3,
+          "end_line": 42,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "4871244637243e6d",
+          "source_digest": "fnv1a64:3557b5d26fc41073",
+          "file": "apps/web/src/pages/map-home/ui/MapCanvas.tsx",
+          "lang": "typescript",
+          "start_line": 208,
+          "end_line": 243,
+          "kind": "Block",
           "is_fragment": false
         }
       ]

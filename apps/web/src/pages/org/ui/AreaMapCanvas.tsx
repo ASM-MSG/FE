@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -33,6 +34,7 @@ import {
 } from "@/features/map-home/model/grid-overlay";
 import { MAX_ZOOM, MIN_ZOOM } from "@/features/map-home/model/map-scale";
 import { SEOMYEON_CENTER } from "@/shared/geolocation";
+import { MapLoadErrorBoundary } from "@/shared/naver-maps/MapLoadErrorBoundary";
 import {
   buildNaverMapsScriptUrl,
   loadNaverMapsScript,
@@ -51,10 +53,11 @@ import {
  * 검색과 줌 컨트롤이 담당한다. 좌표→셀 판정은 격자 정본 `cellIndexAt`, 사각형→꼭짓점은
  * `rectCornersAt`이며 이 파일에 좌표 산술은 없다.
  *
- * **간소판의 범위(의도)**: 유저 지도의 SDK 예외 흡수 경계(MapLoadErrorBoundary)·줌 스텝
- * 리미터·진입 명령 큐는 이식하지 않았다 — 앞의 것은 MapCanvas 내부 클래스라 복제가 되고,
- * 뒤 둘은 유저 지도 UX 정책이다. 여기서는 프리플라이트 실패·인증 실패를 폴백 + 재시도로만
- * 수렴시킨다.
+ * **간소판의 범위(의도)**: 줌 스텝 리미터·진입 명령 큐는 이식하지 않았다 — 유저 지도의
+ * UX 정책이라 최소 마운트에 과투자다. 프리플라이트 실패·인증 실패는 폴백 + 재시도로
+ * 수렴시키고, 그 전환은 `shared/naver-maps`의 `MapLoadErrorBoundary` **안쪽**에서 한다
+ * (codex 리뷰 P2 — 경계 없이 하위 트리를 갈아끼우면 인증 실패 언마운트 때 SDK cleanup이
+ * 던지는 TypeError가 라우터 루트까지 올라가 폴백 대신 앱이 죽는다).
  */
 
 /** 지도 명령 핸들 — 지도 인스턴스를 경계 밖으로 노출하지 않는다 */
@@ -198,15 +201,17 @@ const AreaNaverMapView = forwardRef<AreaMapHandle, AreaNaverMapViewProps>(
       };
     }, []);
 
+    /** 드래그 종료 — 지도 mouseup과 window 보강이 같은 동작을 공유한다 */
+    const endDrag = useCallback(() => {
+      anchorRef.current = null;
+      setBadgeOffset(null);
+    }, []);
+
     // 포인터가 패널 위로 이탈한 채 놓아도 드래그가 끝나야 한다 (지도 mouseup 유실 보강)
     useEffect(() => {
-      const endDrag = () => {
-        anchorRef.current = null;
-        setBadgeOffset(null);
-      };
       window.addEventListener("mouseup", endDrag);
       return () => window.removeEventListener("mouseup", endDrag);
-    }, []);
+    }, [endDrag]);
 
     // 후보가 해제되면(Esc·취소·확정) 진행 중 드래그 래치도 끊는다 (AC 4) — 이걸 빼면
     // Esc 직후의 mousemove가 anchor를 살려 후보를 되살린다. 상태가 아니라 ref만 되돌린다:
@@ -279,95 +284,103 @@ const AreaNaverMapView = forwardRef<AreaMapHandle, AreaNaverMapViewProps>(
       onDraftChange(toDragRect(anchor, cellAt(event)));
     };
 
-    const handleMouseup = () => {
-      anchorRef.current = null;
-      setBadgeOffset(null);
-    };
-
     const gridLines = useMemo(
       () =>
         viewport === null ? [] : buildGridLines(viewport.bounds, viewport.zoom),
       [viewport],
     );
 
-    if (authFailed || sdkStatus === "failed") {
-      return <AreaMapFallback onRetry={onRetry} />;
-    }
-    if (sdkStatus === "loading") {
-      return <div className="h-full w-full bg-surface" aria-busy="true" />;
-    }
-
     const draftSpan = draftRect === null ? null : rectSpan(draftRect);
+    // 폴백 전환 분기를 경계 **안쪽**에 둔다 — 밖에서 하위 트리를 갈아끼우면 인증 실패
+    // 언마운트 때 SDK cleanup이 던지는 TypeError가 라우터 루트까지 올라가 앱이 죽는다
+    // (MapLoadErrorBoundary JSDoc·MSG-254 경로, codex 리뷰 P2 반영)
+    const sdkFailed = authFailed || sdkStatus === "failed";
 
     return (
       <div className="relative h-full w-full">
-        <NavermapsProvider ncpKeyId={ncpKeyId} submodules={NAVER_SUBMODULES}>
-          <Container
-            className="h-full w-full"
-            fallback={<div className="h-full w-full" aria-busy="true" />}
-          >
-            <NaverMap
-              ref={mapRef}
-              defaultCenter={SEOMYEON_CENTER}
-              defaultZoom={DEFAULT_ZOOM}
-              // 그리기 전용 — 패닝은 장소 검색·줌 컨트롤이 대신한다 (승인 확정 질문 2)
-              draggable={false}
-              scaleControl={false}
-              onInit={syncViewport}
-              onIdle={syncViewport}
-              onMousedown={handleMousedown}
-              onMousemove={handleMousemove}
-              onMouseup={handleMouseup}
+        <MapLoadErrorBoundary fallback={<AreaMapFallback onRetry={onRetry} />}>
+          {sdkFailed ? (
+            <AreaMapFallback onRetry={onRetry} />
+          ) : sdkStatus === "loading" ? (
+            <div className="h-full w-full bg-surface" aria-busy="true" />
+          ) : (
+            <NavermapsProvider
+              ncpKeyId={ncpKeyId}
+              submodules={NAVER_SUBMODULES}
             >
-              {gridLines.map((line) => (
-                <Polyline
-                  key={line.id}
-                  path={line.path}
-                  strokeWeight={GRID_LINE_STROKE_WEIGHT}
-                  strokeColor={semantic.primary}
-                  strokeStyle="shortdash"
-                />
-              ))}
-              {confirmedRects.map((rect, index) => (
-                <Polygon
-                  // 인덱스가 목록 식별자다 — 같은 사각형이 두 번 확정될 수 있다(AreaRectList 주석)
-                  key={index}
-                  paths={[rectCornersAt(rect)]}
-                  strokeWeight={1}
-                  strokeColor={semantic.primary}
-                  strokeOpacity={CONFIRMED_STROKE_OPACITY}
-                  fillColor={semantic.primary}
-                  fillOpacity={CONFIRMED_FILL_OPACITY}
-                />
-              ))}
-              {draftRect !== null && (
-                <Polygon
-                  paths={[rectCornersAt(draftRect)]}
-                  strokeWeight={DRAFT_STROKE_WEIGHT}
-                  strokeColor={semantic.accent}
-                  fillColor={semantic.accent}
-                  fillOpacity={DRAFT_FILL_OPACITY}
-                />
-              )}
-            </NaverMap>
-          </Container>
-        </NavermapsProvider>
+              <Container
+                className="h-full w-full"
+                fallback={<div className="h-full w-full" aria-busy="true" />}
+              >
+                <NaverMap
+                  ref={mapRef}
+                  defaultCenter={SEOMYEON_CENTER}
+                  defaultZoom={DEFAULT_ZOOM}
+                  // 그리기 전용 — 패닝은 장소 검색·줌 컨트롤이 대신한다 (승인 확정 질문 2)
+                  draggable={false}
+                  scaleControl={false}
+                  onInit={syncViewport}
+                  onIdle={syncViewport}
+                  onMousedown={handleMousedown}
+                  onMousemove={handleMousemove}
+                  onMouseup={endDrag}
+                >
+                  {gridLines.map((line) => (
+                    <Polyline
+                      key={line.id}
+                      path={line.path}
+                      strokeWeight={GRID_LINE_STROKE_WEIGHT}
+                      strokeColor={semantic.primary}
+                      strokeStyle="shortdash"
+                    />
+                  ))}
+                  {confirmedRects.map((rect, index) => (
+                    <Polygon
+                      // 인덱스가 목록 식별자다 — 같은 사각형이 두 번 확정될 수 있다(AreaRectList 주석)
+                      key={index}
+                      paths={[rectCornersAt(rect)]}
+                      strokeWeight={1}
+                      strokeColor={semantic.primary}
+                      strokeOpacity={CONFIRMED_STROKE_OPACITY}
+                      fillColor={semantic.primary}
+                      fillOpacity={CONFIRMED_FILL_OPACITY}
+                    />
+                  ))}
+                  {draftRect !== null && (
+                    <Polygon
+                      paths={[rectCornersAt(draftRect)]}
+                      strokeWeight={DRAFT_STROKE_WEIGHT}
+                      strokeColor={semantic.accent}
+                      fillColor={semantic.accent}
+                      fillOpacity={DRAFT_FILL_OPACITY}
+                    />
+                  )}
+                </NaverMap>
+              </Container>
+            </NavermapsProvider>
+          )}
+        </MapLoadErrorBoundary>
 
-        {/* 커서 옆 크기 배지 (AC 2) — 지도 위 DOM 오버레이라 SDK 마커가 필요 없다 */}
-        {badgeOffset !== null && draftSpan !== null && (
-          <span
-            className="pointer-events-none absolute z-10 translate-x-3 -translate-y-1/2 rounded-sm bg-primary px-xs py-0.5 text-fm-caption text-primary-foreground"
-            style={{ left: badgeOffset.x, top: badgeOffset.y }}
-          >
-            가로 {draftSpan.cols}칸 × 세로 {draftSpan.rows}칸
-          </span>
+        {/* 배지·줌 컨트롤은 지도가 실제로 떠 있을 때만 — 폴백·로딩 화면에는 얹지 않는다 */}
+        {!sdkFailed && sdkStatus === "ready" && (
+          <>
+            {/* 커서 옆 크기 배지 (AC 2) — 지도 위 DOM 오버레이라 SDK 마커가 필요 없다 */}
+            {badgeOffset !== null && draftSpan !== null && (
+              <span
+                className="pointer-events-none absolute z-10 translate-x-3 -translate-y-1/2 rounded-sm bg-primary px-xs py-0.5 text-fm-caption text-primary-foreground"
+                style={{ left: badgeOffset.x, top: badgeOffset.y }}
+              >
+                가로 {draftSpan.cols}칸 × 세로 {draftSpan.rows}칸
+              </span>
+            )}
+
+            <ZoomControl
+              className="absolute right-md bottom-md z-10"
+              onZoomIn={() => zoomBy(1)}
+              onZoomOut={() => zoomBy(-1)}
+            />
+          </>
         )}
-
-        <ZoomControl
-          className="absolute right-md bottom-md z-10"
-          onZoomIn={() => zoomBy(1)}
-          onZoomOut={() => zoomBy(-1)}
-        />
       </div>
     );
   },
