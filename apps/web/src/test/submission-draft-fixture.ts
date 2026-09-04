@@ -25,6 +25,7 @@ export const FESTIVAL_DRAFT: SubmissionDraftState = {
     EVENT: "현장 참여 후 영상 업로드",
   },
   imageS3Key: "pending/submissions/abc.jpg",
+  imageKept: false,
   areaRects: [],
 };
 

@@ -4238,6 +4238,34 @@
       ]
     },
     {
+      "id": "36a3044cfdce2f40",
+      "note": "duplicated across 2 directories — extract a helper — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "da10a250e81d0e5e",
+          "source_digest": "fnv1a64:8c67c5d7b2594875",
+          "file": "apps/web/src/features/map-home/model/mission-view.test.ts",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 37,
+          "kind": "Function",
+          "name": "progressDto",
+          "is_fragment": false
+        },
+        {
+          "id": "0ac0ea75d8c020bd",
+          "source_digest": "fnv1a64:9daa5743902d6b58",
+          "file": "apps/web/src/test/submission-draft-fixture.ts",
+          "lang": "typescript",
+          "start_line": 33,
+          "end_line": 38,
+          "kind": "Function",
+          "name": "areaRect",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
       "id": "36bdeb1d71884fe7",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -5823,6 +5851,89 @@
           "start_line": 101,
           "end_line": 106,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "4915135509fc5545",
+      "note": "consolidate `div` — 7 copies",
+      "members": [
+        {
+          "id": "30f2b9190313a977",
+          "source_digest": "fnv1a64:2248ab7e2fbc5205",
+          "file": "apps/web/src/pages/map-home/ui/HomeCellDetailPanel.tsx",
+          "lang": "typescript",
+          "start_line": 82,
+          "end_line": 92,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "b1c9700b4d7cc103",
+          "source_digest": "fnv1a64:10037f310b9fba1e",
+          "file": "apps/web/src/pages/map-home/ui/HomeCellDetailPanel.tsx",
+          "lang": "typescript",
+          "start_line": 195,
+          "end_line": 205,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "fa4e48df92626880",
+          "source_digest": "fnv1a64:9b39634bece0dbdf",
+          "file": "apps/web/src/pages/org/OrgSubmissionDetailPage.tsx",
+          "lang": "typescript",
+          "start_line": 52,
+          "end_line": 62,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "4195a83e9d628162",
+          "source_digest": "fnv1a64:342a941c7e738127",
+          "file": "apps/web/src/pages/org/OrgSubmissionWizardPage.tsx",
+          "lang": "typescript",
+          "start_line": 91,
+          "end_line": 101,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "56565f1260f8b26e",
+          "source_digest": "fnv1a64:62cf9c980c42cb66",
+          "file": "apps/web/src/widgets/video-mini-panel/VideoPlaybackSurface.tsx",
+          "lang": "typescript",
+          "start_line": 56,
+          "end_line": 66,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "79c0621e07b4655f",
+          "source_digest": "fnv1a64:348eaf311382fd41",
+          "file": "apps/web/src/pages/dex/DexPanel.tsx",
+          "lang": "typescript",
+          "start_line": 307,
+          "end_line": 310,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "846075829e37c932",
+          "source_digest": "fnv1a64:3f71e7a7f5e69646",
+          "file": "packages/ui-web/src/retry-notice.tsx",
+          "lang": "typescript",
+          "start_line": 20,
+          "end_line": 23,
+          "kind": "Block",
+          "name": "div",
           "is_fragment": false
         }
       ]
@@ -8494,8 +8605,8 @@
           "source_digest": "fnv1a64:ede62ea65c4e7975",
           "file": "apps/web/src/pages/org/ui/review-step.smoke.test.tsx",
           "lang": "typescript",
-          "start_line": 276,
-          "end_line": 281,
+          "start_line": 280,
+          "end_line": 285,
           "kind": "Block",
           "is_fragment": false
         },
@@ -8504,8 +8615,8 @@
           "source_digest": "fnv1a64:6a74ac8bdb1a8b42",
           "file": "apps/web/src/pages/org/ui/review-step.smoke.test.tsx",
           "lang": "typescript",
-          "start_line": 319,
-          "end_line": 324,
+          "start_line": 323,
+          "end_line": 328,
           "kind": "Block",
           "is_fragment": false
         }
@@ -10992,6 +11103,32 @@
           "end_line": 17,
           "kind": "Block",
           "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "81f95de407c320a0",
+      "note": "consolidate `` — 2 copies — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "c7261ec71076c9ec",
+          "source_digest": "fnv1a64:f88ac3086fd60fcc",
+          "file": "apps/web/src/pages/org/submission-edit.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 52,
+          "end_line": 55,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "7ea8f111fe5d9f7d",
+          "source_digest": "fnv1a64:f88ac3086fd60fcc",
+          "file": "apps/web/src/pages/org/submission-wizard.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 103,
+          "end_line": 106,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -20393,6 +20530,32 @@
           "lang": "typescript",
           "start_line": 13,
           "end_line": 50,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "e11e9fcc7c643f19",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "43f7d6e67a4e01d2",
+          "source_digest": "fnv1a64:c97c448d01e18173",
+          "file": "apps/web/src/pages/org/submission-edit.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 102,
+          "end_line": 111,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "cb75dd613e4dc1e6",
+          "source_digest": "fnv1a64:146ee284f490b1b4",
+          "file": "apps/web/src/pages/org/submission-wizard.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 176,
+          "end_line": 184,
           "kind": "Block",
           "is_fragment": false
         }

@@ -5,6 +5,7 @@ import type {
   EventSubmissionMyListResponseDto,
   EventSubmissionSummaryResponseDto,
 } from "@/shared/api/generated/types.gen";
+import { areaRect } from "./submission-draft-fixture";
 
 /**
  * 테스트 전용 픽스처 — 운영자 신청 목록·상세 (MSG-545).
@@ -129,6 +130,41 @@ export const submissionDetail = (
   updatedAt: "2026-09-18T01:24:00",
   ...overrides,
 });
+
+/**
+ * 반려 + 재제출 프리필 재료를 갖춘 상세 (MSG-550) — 수정 모드 테스트 공용 팩토리.
+ *
+ * 기본 `submissionDetail`은 심사 중이고 위치의 `areaRects`가 비어 있다(MSG-549 화면이 읽지
+ * 않던 필드) — 수정 모드 테스트(순수 매핑·스토어·페이지 스모크)가 "반려 + 사유 + 제출 원본
+ * 사각형" 덮어쓰기를 매번 복제하게 되어 한 자리에 모았다.
+ */
+export const rejectedEditableDetail = (
+  overrides: Partial<EventSubmissionDetailResponseDto> = {},
+): EventSubmissionDetailResponseDto =>
+  submissionDetail({
+    id: 12,
+    submissionNo: "ES-2026-0012",
+    status: "REJECTED",
+    locations: [
+      submissionLocation({
+        areaRects: [areaRect(39064, 112221, 39065, 112222)],
+      }),
+    ],
+    rejection: {
+      reasonCodes: ["PERIOD", "IMAGE"],
+      reasonText: "행사 기간과 홍보 이미지를 확인해 주세요.",
+    },
+    history: [
+      submissionHistory(),
+      submissionHistory({
+        status: "REJECTED",
+        reasonCodes: ["PERIOD", "IMAGE"],
+        reasonText: "행사 기간과 홍보 이미지를 확인해 주세요.",
+        changedAt: "2026-09-19T05:00:00",
+      }),
+    ],
+    ...overrides,
+  });
 
 /** 반려 대표(id 12)의 상세 — 사유 본문 + history 2건(제출 → 반려) */
 export const REJECTED_DETAIL: EventSubmissionDetailResponseDto =

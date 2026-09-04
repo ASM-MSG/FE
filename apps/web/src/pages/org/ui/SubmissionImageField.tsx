@@ -78,7 +78,8 @@ export const SubmissionImageField = ({ label }: SubmissionImageFieldProps) => {
             text={
               image.status === "uploading"
                 ? "업로드 중"
-                : image.s3Key === null
+                : // 수정 모드는 s3Key 없이도 서버 이미지가 있다 — "선택"이 아니라 "변경"이다
+                  image.s3Key === null && image.keptPreviewUrl === null
                   ? "이미지 선택"
                   : "이미지 변경"
             }

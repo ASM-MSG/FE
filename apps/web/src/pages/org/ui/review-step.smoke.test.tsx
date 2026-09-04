@@ -252,6 +252,10 @@ describe("확인 모달과 제출 (AC 6·7·8·11)", () => {
     fireEvent.click(submitButton());
 
     expect(screen.getByRole("button", { name: "제출하기" })).toBeDefined();
+    // 신규 등록 모달 제목은 그대로다 — 수정 모드만 재제출 문구를 넘긴다 (MSG-550 재작업)
+    expect(
+      screen.getAllByRole("dialog", { name: "행사 등록 신청 제출" }).length,
+    ).toBeGreaterThan(0);
     expect(submitRequests(received)).toHaveLength(0);
   });
 
