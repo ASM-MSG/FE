@@ -4,6 +4,8 @@ import {
   resetInFlightPositionForTest,
   resolveMapCenter,
   resolveMapCenterWithPermission,
+  toCurrentLocation,
+  watchPosition,
   type GeoCoords,
 } from "./geolocation";
 
@@ -25,12 +27,44 @@ const control = vi.hoisted(() => ({
   lastKnown: null as { latitude: number; longitude: number } | null,
   /** MSG-317 리뷰 반영 — 연타 누적 감사: getCurrentPositionAsync 발행 횟수 */
   positionCalls: 0,
+  /** MSG-565 L3 — watchPositionAsync 발행 횟수·해제 횟수, 구독 프라미스 수동 해소(레이스 재현) */
+  watchCalls: 0,
+  removeCalls: 0,
+  watchError: false,
+  resolveWatch: null as null | (() => void),
+  watchCallback: null as
+    | null
+    | ((position: { coords: Record<string, number | null> }) => void),
+  watchErrorHandler: null as null | ((error: unknown) => void),
 }));
 
 vi.mock("expo-location", () => ({
+  Accuracy: { Balanced: 3, High: 4 },
   requestForegroundPermissionsAsync: async () => {
     if (control.permissionError) throw new Error("permission unavailable");
     return { granted: control.granted, canAskAgain: control.canAskAgain };
+  },
+  getForegroundPermissionsAsync: async () => {
+    if (control.permissionError) throw new Error("permission unavailable");
+    return { granted: control.granted, canAskAgain: control.canAskAgain };
+  },
+  watchPositionAsync: (
+    _options: unknown,
+    callback: (typeof control)["watchCallback"],
+    errorHandler: (typeof control)["watchErrorHandler"],
+  ) => {
+    control.watchCalls += 1;
+    if (control.watchError) return Promise.reject(new Error("watch failed"));
+    control.watchCallback = callback;
+    control.watchErrorHandler = errorHandler;
+    return new Promise<{ remove: () => void }>((resolve) => {
+      control.resolveWatch = () =>
+        resolve({
+          remove: () => {
+            control.removeCalls += 1;
+          },
+        });
+    });
   },
   getCurrentPositionAsync: async () => {
     control.positionCalls += 1;
@@ -258,5 +292,154 @@ describe("resolveMapCenterWithPermission — 좌표 + 권한 상태 (MSG-447 기
       center: SEOMYEON_CENTER,
       permission: "granted",
     });
+  });
+});
+
+/** 템플릿 ① 순수 로직 — MSG-565 L2: expo LocationObject → 플랫폼 중립 CurrentLocation */
+describe("toCurrentLocation — LocationObject 변환 (L2)", () => {
+  it("coords의 위경도·정확도를 {lat, lng, accuracy}로 낸다", () => {
+    expect(
+      toCurrentLocation({
+        coords: {
+          latitude: 35.16,
+          longitude: 129.06,
+          accuracy: 12.5,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: 0,
+      }),
+    ).toEqual({ lat: 35.16, lng: 129.06, accuracy: 12.5 });
+  });
+
+  it("coords.accuracy가 null이면 accuracy: null이다", () => {
+    expect(
+      toCurrentLocation({
+        coords: {
+          latitude: 35.16,
+          longitude: 129.06,
+          accuracy: null,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: 0,
+      }).accuracy,
+    ).toBeNull();
+  });
+});
+
+/**
+ * MSG-565 L3·L4 — 위치 구독 어댑터. 권한은 **판독만**(요청 없음, D5) 하고, 구독 프라미스가
+ * 해소되기 전 해제되는 레이스(포커스 즉시 이탈)에서도 네이티브 구독이 새지 않아야 한다.
+ */
+describe("watchPosition — 위치 구독 어댑터 (L3·L4)", () => {
+  /** 마이크로태스크 체인(권한 판독 → 구독 → 등록)을 비운다 */
+  const flush = async () => {
+    for (let i = 0; i < 10; i += 1) await Promise.resolve();
+  };
+
+  beforeEach(() => {
+    control.granted = true;
+    control.permissionError = false;
+    control.watchCalls = 0;
+    control.removeCalls = 0;
+    control.watchError = false;
+    control.resolveWatch = null;
+    control.watchCallback = null;
+    control.watchErrorHandler = null;
+  });
+
+  it("권한이 granted가 아니면 watchPositionAsync를 호출하지 않고 no-op unsubscribe를 돌려준다 (L3)", async () => {
+    control.granted = false;
+
+    const unsubscribe = watchPosition(() => {});
+    await flush();
+    unsubscribe();
+
+    expect(control.watchCalls).toBe(0);
+    expect(control.removeCalls).toBe(0);
+  });
+
+  it("granted면 구독하고, 위치 콜백이 CurrentLocation으로 도착한다 (L3)", async () => {
+    const onPosition = vi.fn();
+
+    watchPosition(onPosition);
+    await flush();
+    control.resolveWatch?.();
+    await flush();
+    control.watchCallback?.({
+      coords: { latitude: 35.16, longitude: 129.06, accuracy: 8 },
+    });
+
+    expect(control.watchCalls).toBe(1);
+    expect(onPosition).toHaveBeenCalledWith({
+      lat: 35.16,
+      lng: 129.06,
+      accuracy: 8,
+    });
+  });
+
+  it("반환한 unsubscribe가 LocationSubscription.remove()를 부른다 (L3)", async () => {
+    const unsubscribe = watchPosition(() => {});
+    await flush();
+    control.resolveWatch?.();
+    await flush();
+
+    unsubscribe();
+
+    expect(control.removeCalls).toBe(1);
+  });
+
+  it("구독 프라미스가 해소되기 전에 unsubscribe되면 해소 직후 즉시 remove된다 — 레이스 (L3)", async () => {
+    const unsubscribe = watchPosition(() => {});
+    await flush();
+    unsubscribe();
+    expect(control.removeCalls).toBe(0);
+
+    control.resolveWatch?.();
+    await flush();
+
+    expect(control.removeCalls).toBe(1);
+  });
+
+  it("권한 판독 자체가 던져도 예외가 전파되지 않고 구독 없음으로 끝난다 (L4)", async () => {
+    control.permissionError = true;
+
+    const unsubscribe = watchPosition(() => {});
+    await flush();
+
+    expect(control.watchCalls).toBe(0);
+    expect(() => unsubscribe()).not.toThrow();
+  });
+
+  it("watchPositionAsync가 reject해도 예외가 전파되지 않는다 (L4)", async () => {
+    control.watchError = true;
+    const rejections: unknown[] = [];
+    const onRejection = (reason: unknown) => rejections.push(reason);
+    process.on("unhandledRejection", onRejection);
+
+    const unsubscribe = watchPosition(() => {});
+    await flush();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    process.off("unhandledRejection", onRejection);
+
+    expect(rejections).toEqual([]);
+    expect(() => unsubscribe()).not.toThrow();
+  });
+
+  it("errorHandler가 호출되면 구독을 종료하고 예외를 내지 않는다 (L4)", async () => {
+    watchPosition(() => {});
+    await flush();
+    control.resolveWatch?.();
+    await flush();
+
+    expect(() =>
+      control.watchErrorHandler?.(new Error("provider unavailable")),
+    ).not.toThrow();
+    expect(control.removeCalls).toBe(1);
   });
 });
