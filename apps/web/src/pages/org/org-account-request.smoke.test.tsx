@@ -181,6 +181,32 @@ describe("계정 발급 요청 선검증 (AC 2)", () => {
     expect(screen.getByText("담당자명을 2~20자로 입력해주세요")).toBeDefined();
   });
 
+  it("무효한 값으로 고치면 오류가 걷히지 않고 현재 사유로 갱신된다 (AC 2 · codex P2)", () => {
+    // 편집만으로 오류를 지우면 무효→무효 편집(예: 여전히 짧은 담당자명)이
+    // 다음 submit까지 "해결됨"으로 보인다 — 걷는 조건은 편집이 아니라 유효다.
+    acceptedFetch();
+    renderPage();
+
+    submit();
+
+    fireEvent.change(screen.getByLabelText("담당자명"), {
+      target: { value: "김" },
+    });
+    expect(screen.getByText("담당자명을 2~20자로 입력해주세요")).toBeDefined();
+    expect(screen.getByLabelText("담당자명").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+
+    // 사유가 바뀌는 편집은 문구도 현재 값 기준으로 갱신된다 (필수 → 패턴)
+    fireEvent.change(screen.getByLabelText("연락처"), {
+      target: { value: "010 1234 5678" },
+    });
+    expect(
+      screen.getByText("연락처는 숫자와 하이픈만 사용해 9~20자로 입력해주세요"),
+    ).toBeDefined();
+    expect(screen.queryByText("연락처를 입력해주세요")).toBeNull();
+  });
+
   it("동의 오류는 체크박스에 프로그램적으로 연결된다 (AC 2 · codex P2)", () => {
     // 텍스트 6필드와 달리 동의 체크박스는 문구만 렌더돼 스크린리더가 "이 컨트롤이
     // 무효이고 옆 문구가 그 사유"라는 것을 알 수 없었다 — 오류 표출이 곧 접근성

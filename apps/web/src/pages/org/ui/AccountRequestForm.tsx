@@ -92,13 +92,19 @@ export const AccountRequestForm = ({
     field: Field,
     value: AccountRequestDraft[Field],
   ) => {
-    setDraft((previous) => ({ ...previous, [field]: value }));
-    // 고친 필드의 선검증 오류는 즉시 걷는다 — 다음 submit까지 남기면 이미 해결한
-    // 안내가 계속 무효 표시로 잡는다. 판정 자체는 여전히 submit에서만 한다.
+    const nextDraft = { ...draft, [field]: value };
+    setDraft(nextDraft);
+    // 오류가 떠 있는 필드를 고치면 그 필드만 재검증한다 — 유효해졌을 때만 걷고,
+    // 사유가 바뀌면 문구를 갱신한다. 편집만으로 지우면 무효→무효 편집이 다음
+    // submit까지 "해결됨"으로 보인다(codex P2). 오류가 없던 필드는 submit 전까지
+    // 판정하지 않는다 — 첫 제출 전 실시간 검증을 시작하지 않기 위해서다.
     setErrors((previous) => {
       if (previous[field] === undefined) return previous;
+      const revalidated = validateAccountRequest(nextDraft).errors[field];
+      if (revalidated === previous[field]) return previous;
       const next = { ...previous };
-      delete next[field];
+      if (revalidated === undefined) delete next[field];
+      else next[field] = revalidated;
       return next;
     });
   };
