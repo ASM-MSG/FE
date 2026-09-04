@@ -3947,34 +3947,6 @@
       ]
     },
     {
-      "id": "32f4fb8c461fb44a",
-      "note": "consolidate `view` — 2 copies",
-      "members": [
-        {
-          "id": "cfc4a4c9d9ad56d5",
-          "source_digest": "fnv1a64:d8646fdc8323fbc3",
-          "file": "apps/mobile/src/features/ai-route/ui/route-empty-state.tsx",
-          "lang": "typescript",
-          "start_line": 10,
-          "end_line": 20,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "c6844502734dc29a",
-          "source_digest": "fnv1a64:add5130b01985187",
-          "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
-          "lang": "typescript",
-          "start_line": 149,
-          "end_line": 159,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "3328aa6f5f5b2ad0",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (13 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -7212,6 +7184,34 @@
           "is_fragment": true,
           "fragment_kind": "expr-effect",
           "reason_code": "exact-expr-effect"
+        }
+      ]
+    },
+    {
+      "id": "5547880424c673f8",
+      "note": "consolidate `view` — 2 copies",
+      "members": [
+        {
+          "id": "8086fa7e8236511d",
+          "source_digest": "fnv1a64:385644269e074fde",
+          "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
+          "lang": "typescript",
+          "start_line": 169,
+          "end_line": 174,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "640d0f6a17270834",
+          "source_digest": "fnv1a64:70185628548ad10a",
+          "file": "apps/mobile/src/features/map-home/ui/region-location-line.tsx",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 18,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
         }
       ]
     },
@@ -15140,34 +15140,6 @@
       ]
     },
     {
-      "id": "ad49398726ff3a8e",
-      "note": "consolidate `view` — 2 copies",
-      "members": [
-        {
-          "id": "ff7a67b94096d3ef",
-          "source_digest": "fnv1a64:385644269e074fde",
-          "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
-          "lang": "typescript",
-          "start_line": 164,
-          "end_line": 169,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "640d0f6a17270834",
-          "source_digest": "fnv1a64:70185628548ad10a",
-          "file": "apps/mobile/src/features/map-home/ui/region-location-line.tsx",
-          "lang": "typescript",
-          "start_line": 15,
-          "end_line": 18,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "ad6179d518d78816",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -19317,6 +19289,34 @@
           "start_line": 161,
           "end_line": 165,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "db3b3022f3092606",
+      "note": "consolidate `view` — 2 copies",
+      "members": [
+        {
+          "id": "cfc4a4c9d9ad56d5",
+          "source_digest": "fnv1a64:d8646fdc8323fbc3",
+          "file": "apps/mobile/src/features/ai-route/ui/route-empty-state.tsx",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 20,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "f1b09568680003f6",
+          "source_digest": "fnv1a64:add5130b01985187",
+          "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
+          "lang": "typescript",
+          "start_line": 154,
+          "end_line": 164,
+          "kind": "Block",
+          "name": "view",
           "is_fragment": false
         }
       ]
