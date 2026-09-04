@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import { semantic } from "@fillmap/design-tokens";
 import { Button, VideoCard } from "@fillmap/ui-native";
@@ -31,6 +37,10 @@ interface DefaultSheetContentProps extends HomeSheetContentContext {
   state: SheetState;
   /** 실패 상태의 "다시 시도" — 세 쿼리를 함께 재조회한다 (요구 7) */
   onRetry: () => void;
+  /** 격자 카드 탭 → 격자 상세 시트 (MSG-571 AC 1·2) — 지도 셀 탭과 같은 선택 경로, 게이트 없음 */
+  onSelectGrid: (gridId: string) => void;
+  /** 헤더 "전체 보기" → 전체 지역 목록 모드 (MSG-571 AC 5) */
+  onOpenRegionList: () => void;
 }
 
 /** 상태 문구·로더가 공통으로 쓰는 여백 박스 — 시트 중앙에 한 줄로 놓는다 */
@@ -48,6 +58,8 @@ export const DefaultSheetContent = ({
   grids,
   state,
   onRetry,
+  onSelectGrid,
+  onOpenRegionList,
 }: DefaultSheetContentProps) => {
   // 콘텐츠 교체·상태 전환으로 스크롤 뷰가 재마운트되면 오프셋 가드가 스테일해진다 —
   // 새 스크롤 뷰는 항상 0에서 시작한다 (쉘 계약)
@@ -64,9 +76,16 @@ export const DefaultSheetContent = ({
         >
           {regionName ?? "현재 위치"}
         </Text>
-        {/* 목적지가 아직 없어 표시 전용이다 — 누를 수 있는 것처럼 보이지 않도록
-            버튼으로 만들지 않는다 (스펙 추정 5, 라우팅은 후속 티켓) */}
-        <Text className="text-fm-body text-primary">전체 보기</Text>
+        {/* 헤더 행(y≥26dp)은 핸들 Pressable hitSlop 밴드(0~26dp) 밖이다 — 행 위치를
+            바꾸면 MSG-445 C1(헤더 탭 불가)이 재발한다 */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenRegionList}
+          hitSlop={8}
+          className="active:opacity-80"
+        >
+          <Text className="text-fm-body text-primary">전체 보기</Text>
+        </Pressable>
       </View>
 
       {state === "loading" && (
@@ -125,6 +144,8 @@ export const DefaultSheetContent = ({
                     durationLabel={formatDuration(grid.coverDurationSec)}
                     title={label}
                     meta={`${grid.videoCount}개 영상`}
+                    accessibilityLabel={`${label}, ${grid.videoCount}개 영상`}
+                    onPress={() => onSelectGrid(grid.gridId)}
                   />
                 );
               })}

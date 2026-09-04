@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { ScrollView, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
+import { LOAD_MORE_THRESHOLD_PX, isNearScrollEnd } from "../model/scroll-end";
 import type { HomeSheetContentContext } from "./home-sheet";
 
 /**
@@ -14,6 +15,11 @@ import type { HomeSheetContentContext } from "./home-sheet";
 interface SheetScrollViewProps extends HomeSheetContentContext {
   /** 콘텐츠 교체를 알리는 키 — 바뀌면 스크롤 오프셋 0을 다시 보고한다 */
   resetKey?: unknown;
+  /**
+   * 스크롤 끝 근접(`LOAD_MORE_THRESHOLD_PX`) 시 호출 (MSG-571 AC 8) — 임계 안에서는 매
+   * 스크롤 이벤트마다 불리므로 연속 발화 가드는 호출부(훅의 loadMore)가 진다
+   */
+  onEndReached?: () => void;
   children: ReactNode;
 }
 
@@ -22,6 +28,7 @@ export const SheetScrollView = ({
   scrollEnabled,
   onScrollOffsetChange,
   resetKey,
+  onEndReached,
   children,
 }: SheetScrollViewProps) => {
   // 콘텐츠 교체·상태 전환으로 스크롤 뷰가 재마운트되면 오프셋 가드가 스테일해진다 —
@@ -41,6 +48,11 @@ export const SheetScrollView = ({
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
           onScrollOffsetChange(event.nativeEvent.contentOffset.y);
+          if (
+            onEndReached &&
+            isNearScrollEnd(event.nativeEvent, LOAD_MORE_THRESHOLD_PX)
+          )
+            onEndReached();
         }}
       >
         <View className="gap-md pb-9">{children}</View>

@@ -38,6 +38,14 @@ import {
 } from "../model/mission-selection";
 import { homePanelKind } from "../model/panel-branch";
 import {
+  clearSelectedRegion,
+  closeRegionList,
+  openRegionList,
+  resetRegionPanel,
+  selectRegion,
+  useRegionPanel,
+} from "../model/region-panel-selection";
+import {
   closeTheme,
   sheetStageFor,
   showsCloseButton,
@@ -74,6 +82,9 @@ const NAV_BAR_HEIGHT = 64;
  *   `home-sheet-switch.tsx`가 소유한다. 선택 상태 3종(테마·미션·격자)은 전부 모듈
  *   싱글턴이고, 단계 이동 규칙은 `sheet-navigation.ts`에 있다 — 헤더 `‹`·`✕`·안드로이드
  *   뒤로가기가 같은 함수를 부른다(A3~A5). 시트 분기를 늘릴 때는 스위치 파일만 만진다.
+ *   기본 시트의 "전체 보기" 모드·선택 지역(MSG-571)은 `panelKind` 밖의 모듈 상태
+ *   (`region-panel-selection`)다 — parity 파일(`panel-branch`·`sheet-navigation`)은
+ *   모르므로 `goBack` 선두에서 1회 가로챈다.
  * - **확장점 ③(지도 오버레이)** — 오버레이 3층 파생은 `use-home-overlays.ts`가 갖고
  *   GridMap의 prop을 층별로 유지한다 (`occupiedCells` = 상시 점령 층 /
  *   `themeCells`·`hatchCells`·`route`·`missionLabel` = 테마 층 /
@@ -134,22 +145,28 @@ export const MapHomeScreen = () => {
     selectedGridId,
   });
 
+  /** 확장점 ② — 기본 시트 "전체 보기" 모드·선택 지역 오버라이드 (MSG-571) */
+  const { mode: regionMode, selectedRegion } = useRegionPanel();
+
   const bounds = viewport?.bounds ?? null;
   const isHotChip = themeId === "hot";
 
   /** 기본 시트 조회 3종 (MSG-423) — 뷰포트 bbox·중심·행정동 코드가 각각의 입력이다 */
   const occupied = useOccupiedGridsQuery(bounds);
   const geocode = useReverseGeocodeQuery(viewport?.center ?? null);
-  const regionGrids = useRegionGridsQuery(geocode.region?.regionCode ?? null);
+  // 표시 지역 = 지역 행 탭 오버라이드 ?? 지도 중심 행정동 (MSG-571 AC 15) — 기본 시트
+  // 헤더·격자 목록만 이걸 쓰고, 핫구역 요약·미션·오버레이는 계속 geocode(지도 중심) 기준
+  const displayedRegion = selectedRegion ?? geocode.region ?? null;
+  const regionGrids = useRegionGridsQuery(displayedRegion?.regionCode ?? null);
   const collected = useCollectedGridsQuery();
-  const regionName = geocode.region?.regionName ?? null;
+  const regionName = displayedRegion?.regionName ?? null;
   /** 확장점 ③ — 저줌 지역 집계 마커 (MSG-428). 게이트·파생은 전부 훅 안 */
   const aggregation = useGridAggregationQuery(viewport);
 
   /** 핫구역 요약 (B) — 핫구역 칩일 때만 bbox·행정동 코드를 넘겨 조회를 연다 */
   const hotRegion = useHotRegionSummary({
     bounds: isHotChip ? bounds : null,
-    regionName,
+    regionName: geocode.region?.regionName ?? null,
     regionCode: isHotChip ? (geocode.region?.regionCode ?? null) : null,
   });
 
@@ -222,6 +239,11 @@ export const MapHomeScreen = () => {
 
   /** 한 단계 위로 (A3) — 최상위면 false를 돌려 안드로이드 뒤로가기가 화면을 벗어나게 한다 */
   const goBack = useCallback((): boolean => {
+    // 전체 지역 모드(MSG-571 AC 12)는 기본 시트 위의 한 단계다 — 모드만 풀고 선택 지역은 유지
+    if (panelKind === "region" && regionMode === "regions") {
+      closeRegionList();
+      return true;
+    }
     const next = stepBack({
       activeTheme: themeId,
       selectedMissionId,
@@ -230,13 +252,22 @@ export const MapHomeScreen = () => {
     if (next === null) return false;
     applySelection(next);
     return true;
-  }, [themeId, selectedMissionId, selectedGridId, applySelection]);
+  }, [
+    panelKind,
+    regionMode,
+    themeId,
+    selectedMissionId,
+    selectedGridId,
+    applySelection,
+  ]);
 
   /** 헤더 ✕ (A2·A4) — 테마·선택 미션·선택 격자를 함께 초기화해 최초 홈 상태로 */
-  const handleClose = () =>
+  const handleClose = () => {
+    resetRegionPanel();
     applySelection(
       closeTheme({ activeTheme: themeId, selectedMissionId, selectedGridId }),
     );
+  };
   /**
    * ✕ 노출 여부를 시트별 분기가 아니라 규칙 한 곳(`showsCloseButton`)에서 정한다 (A4) —
    * Figma 실측상 목록 3종에는 ✕가 없고, 분기마다 기억해서 넣으면 한 곳이 어긋난다.
@@ -261,6 +292,10 @@ export const MapHomeScreen = () => {
     }, [goBack, event.handlers]),
   );
 
+  // 홈 포커스 이탈(다른 탭)은 전체 지역 모드만 풀고 선택 지역은 유지한다 (MSG-571 AC 13,
+  // 웹 SideRailNav 미러) — 복귀 시 기본 시트가 뜬다
+  useFocusEffect(useCallback(() => closeRegionList, []));
+
   // 시트 단계 (A6) — 목록·요약은 2단계(절반), 상세는 1단계(전체 확장)로 스냅한다.
   // 탭 왕복 복귀(포커스)와 단계 전환(panelKind 변경)이 같은 규칙을 타야 하므로 한 곳이다
   useFocusEffect(
@@ -272,6 +307,7 @@ export const MapHomeScreen = () => {
   /** 칩 탭 (MSG-423 요구 4) — 같은 칩 재탭은 해제, 다른 칩은 전환. 선택도 함께 초기화 (A2) */
   const handleToggleTheme = (id: ThemeId) => {
     event.handlers.close();
+    resetRegionPanel();
     applySelection({
       activeTheme: toggleTheme(themeId, id),
       selectedMissionId: null,
@@ -399,7 +435,12 @@ export const MapHomeScreen = () => {
             route={overlays.route}
             missionLabel={event.mapLabel ?? overlays.missionLabel}
             clusters={aggregation.clusters}
-            onViewportChange={setViewport}
+            onViewportChange={(next) => {
+              setViewport(next);
+              // 지도가 움직이면 선택 지역 오버라이드를 풀어 헤더가 지도 중심 행정동으로
+              // 돌아간다 (MSG-571 AC 14, 추정 2) — 모바일 헤더는 라이브(MSG-423)
+              clearSelectedRegion();
+            }}
             currentLocation={location}
             onGestureCameraChange={() =>
               setTracking((prev) =>
@@ -461,6 +502,7 @@ export const MapHomeScreen = () => {
               regionName={regionName}
               grids={grids}
               defaultSheetState={defaultSheetState}
+              regionListOpen={regionMode === "regions"}
               // action-row는 코스 스팟 격자 상세(Figma 화면 9)에만 없다 (C9) —
               // 핫구역 격자 상세(화면 2)와 칩 미선택 상태의 내 점령 격자에는 있다
               showGridActions={gridDetail.selectedSpot === null}
@@ -470,6 +512,8 @@ export const MapHomeScreen = () => {
               onClose={closeAction}
               onUpload={() => enterGeneralUpload(() => router.push("/upload"))}
               onRetryDefault={handleRetryDefault}
+              onOpenRegionList={openRegionList}
+              onSelectRegion={selectRegion}
             />
           )}
         </HomeSheet>
