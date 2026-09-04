@@ -19,12 +19,8 @@ export const ANALYZING_COPY = {
 /** 업로드 완료 화면 문구 (Figma 14824:486) */
 export const UPLOAD_COMPLETE_COPY = {
   title: "업로드 완료!",
-  description: "영상이 성공적으로 업로드됐어요",
-  /**
-   * 블러 후처리 안내 — **축약·변형 금지**(티켓 주의사항). 블러가 업로드 전 확인 스텝에서
-   * 후처리로 빠졌다는 구조 변경을 사용자에게 알리는 유일한 문장이다.
-   */
-  blurNotice: "잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요",
+  /** 웹 MSG-476 문구 미러 (MSG-567 AC 2) — 블러 후처리 안내는 서버가 블러를 끄며 삭제됐다 */
+  description: "영상이 지도에 등록됐어요. 내 격자에서 확인해보세요",
   confirm: "확인",
 } as const;
 

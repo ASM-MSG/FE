@@ -2,7 +2,7 @@ import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
-import { Button, Toast } from "@fillmap/ui-native";
+import { Button } from "@fillmap/ui-native";
 import { usePushPermissionPrompt } from "../../notifications/api/use-push-permission-prompt";
 import { PUSH_PERMISSION_DENIED_MESSAGE } from "../../notifications/model/push-registration";
 import { PermissionSettingsNotice } from "../../permissions/ui/permission-settings-notice";
@@ -18,15 +18,12 @@ interface UploadCompleteViewProps {
  * 라우트가 아니라 미리보기 화면의 **전면 오버레이**로 렌더한다(D6) — 라우트로 만들면
  * 하드웨어 뒤로가기가 미리보기로 돌아가 이미 확정된 업로드를 재게시할 수 있다.
  *
- * 블러 안내 배너는 블러가 업로드 **후처리**로 빠졌다는 구조 변경을 알리는 핵심 카피라
- * 축약·변형하지 않는다(analysis-copy.UPLOAD_COMPLETE_COPY.blurNotice).
- * Figma의 🔔 아이콘은 재현하지 않는다 — ui-native Toast의 light 변형에 아이콘 슬롯이
- * 없고, 공통 컴포넌트 대신 배너를 화면에서 새로 조립하지 않기 위한 선택이다.
+ * Figma의 🔔 블러 안내 배너는 **의도적으로 미노출**한다 — 서버가 블러를 끄며(MSG-567)
+ * 블러 파이프라인을 삭제했고, 본문은 웹 MSG-476 문구를 미러한다. 결함 아님.
  *
- * [MSG-447 기준 7·8] 이 화면이 **알림 권한을 묻는 자리**다. 배너가 "알림으로 알려드릴게요"라고
- * 약속하는 바로 그 순간이라, 앱 첫 진입에 권한을 몰아 묻지 않고도 맥락이 성립한다. 이미
- * 거부된 사용자에게는 프롬프트 대신 설정 안내를 띄운다 — 다시 요청해 봐야 OS가 프롬프트를
- * 띄우지 않아 아무 일도 일어나지 않는다.
+ * [MSG-447 기준 7·8] 이 화면이 **알림 권한을 묻는 자리**다 — 프롬프트 시점·흐름은 불변이고
+ * 맥락 문장만 사라졌다(MSG-567 A1). 이미 거부된 사용자에게는 프롬프트 대신 설정 안내를
+ * 띄운다 — 다시 요청해 봐야 OS가 프롬프트를 띄우지 않아 아무 일도 일어나지 않는다.
  */
 export const UploadCompleteView = ({ onConfirm }: UploadCompleteViewProps) => {
   const insets = useSafeAreaInsets();
@@ -46,11 +43,6 @@ export const UploadCompleteView = ({ onConfirm }: UploadCompleteViewProps) => {
       <Text className="text-fm-body text-foreground-body">
         {UPLOAD_COMPLETE_COPY.description}
       </Text>
-      <Toast
-        variant="light"
-        className="mt-sm"
-        title={UPLOAD_COMPLETE_COPY.blurNotice}
-      />
       {pushPrompt === "settings-needed" && (
         <PermissionSettingsNotice
           className="mt-xs items-center"
