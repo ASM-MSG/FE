@@ -95,7 +95,8 @@ const WATCH_OPTIONS: Location.LocationOptions = {
  * 직후 remove해 네이티브 구독이 새지 않게 한다.
  */
 export const watchPosition = (
-  onPosition: (location: CurrentLocation) => void,
+  /** 권한이 granted가 아니면 `null` 1회 — 이전 픽스를 지우라는 신호(codex 리뷰: 백그라운드 권한 회수 시 옛 점 잔존) */
+  onPosition: (location: CurrentLocation | null) => void,
 ): (() => void) => {
   let cancelled = false;
   let subscription: Location.LocationSubscription | null = null;
@@ -105,7 +106,11 @@ export const watchPosition = (
   };
   void Location.getForegroundPermissionsAsync()
     .then(({ granted }) => {
-      if (!granted || cancelled) return null;
+      if (cancelled) return null;
+      if (!granted) {
+        onPosition(null);
+        return null;
+      }
       return Location.watchPositionAsync(
         WATCH_OPTIONS,
         (position) => onPosition(toCurrentLocation(position)),

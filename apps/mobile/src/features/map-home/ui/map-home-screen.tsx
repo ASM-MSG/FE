@@ -303,9 +303,11 @@ export const MapHomeScreen = () => {
     });
   }, [restartLocation]);
 
-  // 추적 중 카메라 추종 (MSG-565 A1) — 위치가 갱신되면 줌은 두고 중심만 따라간다
+  // 추적 중 카메라 추종 (MSG-565 A1) — 위치가 갱신되면 줌은 두고 중심만 따라간다.
+  // 위치가 지워지면(권한 회수 → 어댑터가 null) 추적도 끈다 (codex 리뷰)
   useEffect(() => {
-    if (tracking && location) mapRef.current?.panTo(location);
+    if (location === null) setTracking(false);
+    else if (tracking) mapRef.current?.panTo(location);
   }, [tracking, location]);
 
   /**

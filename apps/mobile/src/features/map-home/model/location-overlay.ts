@@ -26,7 +26,8 @@ export const nextTracking = (
   event: TrackingEvent,
 ): boolean => {
   if (event.kind === "locate") {
-    return event.permission === "granted" ? true : tracking;
+    // 거부·미결정이면 추적을 끈다 — 이미 추적 중이던 상태에서 권한이 회수된 경우 파란 아이콘이 남지 않게 (codex 리뷰)
+    return event.permission === "granted";
   }
   return isGestureCameraChange(event.reason) ? false : tracking;
 };

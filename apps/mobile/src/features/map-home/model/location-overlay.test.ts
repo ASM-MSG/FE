@@ -20,9 +20,9 @@ describe("nextTracking — 내 위치 버튼 추적 상태 리듀서 (L5)", () =
   });
 
   it.each(["undetermined", "denied"] as const)(
-    "내 위치 탭이 %s로 끝나면 추적 상태는 불변이다",
+    "내 위치 탭이 %s로 끝나면 추적이 꺼진다 — 추적 중 권한이 회수돼도 파란 아이콘이 남지 않는다",
     (permission) => {
-      expect(nextTracking(true, { kind: "locate", permission })).toBe(true);
+      expect(nextTracking(true, { kind: "locate", permission })).toBe(false);
       expect(nextTracking(false, { kind: "locate", permission })).toBe(false);
     },
   );

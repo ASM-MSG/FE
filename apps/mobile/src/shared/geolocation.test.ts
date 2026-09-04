@@ -353,15 +353,18 @@ describe("watchPosition — 위치 구독 어댑터 (L3·L4)", () => {
     control.watchErrorHandler = null;
   });
 
-  it("권한이 granted가 아니면 watchPositionAsync를 호출하지 않고 no-op unsubscribe를 돌려준다 (L3)", async () => {
+  it("권한이 granted가 아니면 watchPositionAsync를 호출하지 않고 onPosition(null)로 이전 픽스를 지운 뒤 no-op unsubscribe를 돌려준다 (L3)", async () => {
     control.granted = false;
+    const onPosition = vi.fn();
 
-    const unsubscribe = watchPosition(() => {});
+    const unsubscribe = watchPosition(onPosition);
     await flush();
     unsubscribe();
 
     expect(control.watchCalls).toBe(0);
     expect(control.removeCalls).toBe(0);
+    expect(onPosition).toHaveBeenCalledTimes(1);
+    expect(onPosition).toHaveBeenCalledWith(null);
   });
 
   it("granted면 구독하고, 위치 콜백이 CurrentLocation으로 도착한다 (L3)", async () => {
