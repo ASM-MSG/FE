@@ -45,7 +45,9 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.orgHome, "내 행사 신청"],
   [CONSOLE_ROUTES.orgSubmissionNew, "새 행사 등록"],
   [CONSOLE_ROUTES.orgSubmissions, "내 신청 목록"],
-  ["/org/submissions/1204", "신청 상세"],
+  // MSG-549가 상세 스텁을 실화면으로 교체하며 h1이 "신청 상세" → "심사 결과"가 됐다
+  // (MSG-549 AC 5 · Figma 15525:8923). 라우트↔파일 1:1과 등록 자체는 불변이다
+  ["/org/submissions/1204", "심사 결과"],
   ["/org/submissions/1204/edit", "새 행사 등록"],
   [CONSOLE_ROUTES.orgSettings, "계정 설정"],
   [CONSOLE_ROUTES.orgGuide, "등록 가이드"],

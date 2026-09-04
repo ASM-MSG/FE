@@ -3,6 +3,7 @@ import type {
   OrgSubmissionStatusCounts,
   OrgSubmissionSummary,
 } from "@/entities/org-submission/model/org-submission";
+import { SUBMISSION_TYPE_LABELS } from "@/features/event-submission/model/submission-form";
 
 /**
  * 신청 상태의 라벨·톤 매핑과 목록 필터 (MSG-545 AC 1·2·3).
@@ -69,3 +70,22 @@ export const filterSubmissions = (
 export const totalSubmissionCount = (
   counts: OrgSubmissionStatusCounts,
 ): number => counts.inReview + counts.approved + counts.rejected;
+
+/**
+ * 목록 부제의 counts 요약 "신청 3건 (심사 중 1 · 승인 1 · 반려 1)" (MSG-549 AC 1).
+ * 전체 건수는 counts 합산이 정본이다(응답에 전체 필드 없음 — MSG-545 추정 2).
+ */
+export const submissionCountsSummary = (
+  counts: OrgSubmissionStatusCounts,
+): string =>
+  `신청 ${totalSubmissionCount(counts)}건 (심사 중 ${counts.inReview} · 승인 ${counts.approved} · 반려 ${counts.rejected})`;
+
+/** 유형 라벨은 위저드(features/event-submission)의 표시명이 정본이다 — 열린 문자열 조회용 */
+const TYPE_LABELS: Record<string, string> = SUBMISSION_TYPE_LABELS;
+
+/**
+ * 등록 유형 라벨 (MSG-549 AC 1) — 목록·상세 DTO의 `type`은 plain string이라
+ * 미지 유형은 원문을 그대로 보여 행을 깨뜨리지 않는다(status 가드와 같은 방침).
+ */
+export const submissionTypeLabel = (type: string): string =>
+  TYPE_LABELS[type] ?? type;
