@@ -67,6 +67,30 @@ const IDLE_IMAGE: SubmissionImageState = {
   errorMessage: null,
 };
 
+/**
+ * 유형 확정 시의 상태 패치 (AC 12 — MSG-546 확장점 이행).
+ *
+ * 지도 선택까지 마친 뒤 유형을 갈아타면 유형별 필수값·영역이 새 유형과 맞지 않는다 —
+ * 스텝 1이 예고한 대로 입력·이미지·영역을 비운다. 같은 유형 재선택은 무해하므로 보존하고,
+ * 확정 영역이 없으면 종전 보존 동작(MSG-546 AC 13) 그대로다.
+ *
+ * 유형 확정 경로가 둘이라 판정을 여기 모았다 — 카드 클릭(`selectType`)과 EVENT 모달
+ * 확정(`confirmEventParent`). 후자를 빼먹으면 EVENT로 갈아탈 때 규칙이 새어나간다.
+ */
+const typeChangePatch = (
+  state: Pick<SubmissionWizardState, "type" | "areaRects">,
+  type: SubmissionType,
+): Partial<SubmissionWizardState> =>
+  state.areaRects.length > 0 && state.type !== type
+    ? {
+        type,
+        common: EMPTY_COMMON,
+        typeFieldValues: EMPTY_TYPE_FIELDS,
+        image: IDLE_IMAGE,
+        areaRects: [],
+      }
+    : { type };
+
 export interface SubmissionWizardState {
   step: SubmissionStep;
   type: SubmissionType | null;
@@ -108,23 +132,16 @@ export const useSubmissionWizardStore = create<SubmissionWizardState>(
     image: IDLE_IMAGE,
     areaRects: [],
     goToStep: (step) => set({ step }),
-    // 지도 선택까지 마친 뒤 유형을 갈아타면 유형별 필수값·영역이 새 유형과 맞지 않는다 —
-    // 스텝 1이 예고한 대로 입력·이미지·영역을 비운다 (AC 12). 같은 유형 재선택은 무해하므로
-    // 보존하고, 영역이 없으면 종전 보존 동작(MSG-546 AC 13) 그대로다
-    selectType: (type) =>
-      set((state) =>
-        state.areaRects.length > 0 && state.type !== type
-          ? {
-              type,
-              common: EMPTY_COMMON,
-              typeFieldValues: EMPTY_TYPE_FIELDS,
-              image: IDLE_IMAGE,
-              areaRects: [],
-            }
-          : { type },
-      ),
+    selectType: (type) => set((state) => typeChangePatch(state, type)),
+    // EVENT는 카드 클릭이 selectType을 부르지 않는다 — 모달을 열고 **확정이 곧 유형 확정**
+    // 이다(TypeSelectStep). 그래서 초기화 규칙을 selectType에만 두면 EVENT로 갈아탈 때
+    // 새 유형과 맞지 않는 입력·영역이 그대로 남는다(codex 리뷰 P1) — 같은 판정을 공유한다
     confirmEventParent: (parent) =>
-      set({ type: "EVENT", parentOccurrence: parent, step: "basic" }),
+      set((state) => ({
+        ...typeChangePatch(state, "EVENT"),
+        parentOccurrence: parent,
+        step: "basic",
+      })),
     setCommonField: (key, value) =>
       set((state) => ({ common: { ...state.common, [key]: value } })),
     setTypeFieldValue: (value) => {
