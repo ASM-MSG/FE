@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { REJECTED_DETAIL } from "@/test/org-submission-fixture";
 import {
+  formatKstDateTime,
+  formatSubmissionDateRange,
   formatSubmissionPeriod,
   submissionTimelineText,
 } from "./submission-format";
@@ -59,5 +61,35 @@ describe("submissionTimelineText — 요약 카드 일자 표기 (AC 4·5, 추�
     expect(submissionTimelineText("2026-08-25T03:00:00", [])).toBe(
       "최종 수정 2026. 8. 25.",
     );
+  });
+});
+
+describe("formatSubmissionDateRange — 목록 행 행사 기간 (MSG-549 AC 1)", () => {
+  it("같은 해면 종료일의 연도를 생략한다 (AC 1)", () => {
+    expect(formatSubmissionDateRange("2026-09-05", "2026-09-07")).toBe(
+      "2026-09-05 ~ 09-07",
+    );
+  });
+
+  it("해가 넘어가면 종료일도 연도까지 표기한다 (AC 1 경계)", () => {
+    expect(formatSubmissionDateRange("2026-12-30", "2027-01-02")).toBe(
+      "2026-12-30 ~ 2027-01-02",
+    );
+  });
+});
+
+describe("formatKstDateTime — 상세 접수·처리 시각 표기 (MSG-549 AC 5·6·7·9)", () => {
+  it("서버 시각을 'YYYY. M. D. HH:mm' KST 표기로 옮긴다 (AC 5)", () => {
+    expect(formatKstDateTime("2026-09-18T01:24:00")).toBe("2026. 9. 18. 10:24");
+  });
+
+  it("타임존 마커가 붙은 값도 같은 KST 시각으로 읽는다 (AC 5)", () => {
+    expect(formatKstDateTime("2026-09-18T01:24:00Z")).toBe(
+      "2026. 9. 18. 10:24",
+    );
+  });
+
+  it("UTC 15:00 이후는 KST 다음 날 자정대다 — 하루가 밀리지 않는다 (경계)", () => {
+    expect(formatKstDateTime("2026-09-18T15:30:00")).toBe("2026. 9. 19. 00:30");
   });
 });

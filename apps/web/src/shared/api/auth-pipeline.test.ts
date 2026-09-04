@@ -179,6 +179,42 @@ describe("auth 엔드포인트 토큰 미주입 (기준 1 — 실서버 회귀)"
   });
 
   /**
+   * 공개 엔드포인트(비로그인 셀프 신청)도 미주입 대상이다 — 요청이 정의상 비인증인데
+   * 남아 있는 stale 토큰이 붙으면 서버가 그 토큰을 검증해 401을 내고, 공개 화면에서
+   * 세션 만료 처리(로그인 모달)가 발화한다 (MSG-543 codex P1).
+   */
+  it("공개 엔드포인트(/api/org-account-requests)에는 저장 토큰이 주입되지 않는다", async () => {
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    configure(configureAuthPipeline, () => "stale-token");
+    const { received } = stubFetch(() => envelopeResponse({ ok: true }));
+
+    await httpClient.post(`${API_BASE}/api/org-account-requests`, { json: {} });
+
+    expect(received[0].headers.get("Authorization")).toBeNull();
+  });
+
+  it("공개 엔드포인트의 401은 재발급·세션 만료 처리를 트리거하지 않는다", async () => {
+    const { configureAuthPipeline, httpClient } = await loadPipeline();
+    const { onSessionExpired } = configure(
+      configureAuthPipeline,
+      () => "stale-token",
+    );
+    const { received } = stubFetch(() => unauthorizedResponse());
+
+    const response = await httpClient
+      .post(`${API_BASE}/api/org-account-requests`, {
+        json: {},
+        throwHttpErrors: false,
+      })
+      .then((r) => r);
+
+    expect(response.status).toBe(401);
+    // reissue 왕복 없이 원 401이 그대로 반환된다
+    expect(received.map(pathnameOf)).toEqual(["/api/org-account-requests"]);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+
+  /**
    * logout은 계약상 Authorization이 필수라 제외 목록에 없다 — 의도된 비대칭이다.
    * 제외 목록에 logout을 추가하면 이 단정이 깨지며 알린다.
    */

@@ -31,7 +31,7 @@ import {
 } from "vitest";
 import { createRef, type RefObject } from "react";
 import type { MapCanvas as MapCanvasType, MapCanvasHandle } from "./MapCanvas";
-import { resetNaverMapsPreflight } from "./naver-sdk-loader";
+import { resetNaverMapsPreflight } from "@/shared/naver-maps/naver-sdk-loader";
 
 /** 라이브러리(NaverMap)가 생성하는 지도 인스턴스의 최소 대역 */
 class FakeMap {

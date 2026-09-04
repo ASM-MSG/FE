@@ -1,6 +1,8 @@
 import type {
   AdminEventSubmissionItemResponseDto,
+  EventSubmissionDetailResponseDto,
   EventSubmissionHistoryResponseDto,
+  EventSubmissionLocationResponseDto,
   EventSubmissionRejectionResponseDto,
   EventSubmissionStatusCountsResponseDto,
   EventSubmissionSummaryResponseDto,
@@ -56,4 +58,51 @@ export type OrgSubmissionRejection = Required<
 /** 상태 전이 이력 1건 — 발생 순. 요약 카드의 신청일·처리일 파생 재료 (추정 5) */
 export type OrgSubmissionHistoryEntry = Required<
   Pick<EventSubmissionHistoryResponseDto, "status" | "changedAt">
+>;
+
+/**
+ * 제출본 위치 1곳 (MSG-549) — 상세 응답의 locations 원소.
+ * 표시명은 구역명·칸 이름 → 행정동 → 대표 격자 id 순으로 내려간다(구역 밖·무귀속 폴백).
+ * 제출 원본 사각형(`areaRects`)은 재제출 폼(MSG-550)의 재료라 이 화면이 읽지 않는다.
+ */
+export type OrgSubmissionLocation = Required<
+  Pick<
+    EventSubmissionLocationResponseDto,
+    | "order"
+    | "representativeGridId"
+    | "zoneName"
+    | "zoneCell"
+    | "regionName"
+    | "cellCount"
+  >
+>;
+
+/**
+ * 신청 상세 (MSG-549) — `GET /api/org/event-submissions/{submissionId}`.
+ *
+ * 상태별 3분기(심사 중·승인·반려)의 재료가 전부 이 한 응답에 있다. 시안의 승인 번호(APR-…)·
+ * 홍보 이미지 파일명·접수/승인 전용 시각 필드는 명세에 없어(실측) 각각 `submissionNo` 대체·
+ * 생략·`history` 파생으로 처리한다 (추정 3·5·10).
+ */
+export type OrgSubmissionDetail = Required<
+  Pick<
+    EventSubmissionDetailResponseDto,
+    | "id"
+    | "submissionNo"
+    | "type"
+    | "status"
+    | "title"
+    | "organizerName"
+    | "startsOn"
+    | "endsOn"
+    | "operatingHours"
+    | "programDescription"
+    | "participationMethod"
+    | "parentEvent"
+    | "description"
+    | "imageUrl"
+    | "locations"
+    | "rejection"
+    | "history"
+  >
 >;

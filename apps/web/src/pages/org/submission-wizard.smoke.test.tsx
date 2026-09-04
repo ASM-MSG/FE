@@ -250,7 +250,11 @@ describe("기본 정보 스텝 (AC 6·9·10·11·13)", () => {
     const cta = screen.getByRole("button", { name: "다음: 축제 위치 등록" });
     await waitFor(() => expect(cta.hasAttribute("disabled")).toBe(false));
     fireEvent.click(cta);
-    expect(screen.getByRole("heading", { name: "위치 영역" })).toBeDefined();
+    // MSG-547에서 area 스텝이 자리표시(제목 = 스텝 이름)를 벗고 실화면이 됐다 —
+    // 제목은 시안 문구 "위치 영역 지정"이고 스텝 표시("3 / 4 위치 영역")는 그대로다
+    expect(
+      screen.getByRole("heading", { name: "위치 영역 지정" }),
+    ).toBeDefined();
     expect(screen.getByText("3 / 4 위치 영역")).toBeDefined();
   });
 

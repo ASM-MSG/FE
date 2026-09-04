@@ -1,5 +1,8 @@
 /**
- * 네이버 지도 SDK 프리플라이트 로더 — 지도 경계(MapCanvas) 전용 웹 코드 (RN 경계: 지도 격리).
+ * 네이버 지도 SDK 프리플라이트 로더 — 지도 경계 전용 웹 코드 (RN 경계: 지도 격리).
+ * 소비처는 지도 경계 컴포넌트뿐이다: `pages/map-home/ui/MapCanvas`(유저 지도) ·
+ * `pages/org/ui/AreaMapCanvas`(콘솔 위치 영역 지정). 두 번째 소비처가 생기며
+ * `pages/map-home/ui/`에서 이 자리로 옮겼다(pages→pages import 회피 — MSG-547).
  *
  * react-naver-maps 0.2.2의 `useNavermaps` 모듈 레벨 promise 캐시는 실패한 promise(거부,
  * 영구 pending, 깨진 네임스페이스로 resolve)를 퇴거하지 않아, remount 재시도가 같은
