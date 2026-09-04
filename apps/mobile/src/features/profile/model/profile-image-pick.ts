@@ -38,15 +38,15 @@ const EXTENSION_BY_MIME: Record<string, string> = {
 };
 
 /**
- * presign `extension`의 재료가 될 파일명. 픽커가 fileName을 주면 그대로 쓰고, 없으면
- * uri 마지막 세그먼트를, 그것에도 확장자가 없으면(안드로이드 `content://`) MIME에서 파생해 붙인다
- * (upload `pick-result.resolveFileName`과 같은 규칙).
+ * presign `extension`의 재료가 될 파일명 — **확장자는 항상 검증된 MIME에서 파생**한다.
+ * 픽커가 준 fileName(없으면 uri 마지막 세그먼트)은 줄기만 쓴다: 안드로이드가 HEIC를 JPEG로
+ * 트랜스코딩해 `photo.heic` + `image/jpeg`로 돌려주면 확장자·Content-Type 불일치로 서버가
+ * 1415를 낸다(codex 리뷰). 확장자 없는 `content://`도 같은 규칙으로 해결된다.
  */
 const resolveFileName = (asset: ProfileImageAssetLike, mimeType: string) => {
   const fromUri = asset.uri.split("?")[0].split("/").pop() ?? "";
-  const name = asset.fileName ?? fromUri;
-  if (name.includes(".")) return name;
-  return `${name || "image"}.${EXTENSION_BY_MIME[mimeType]}`;
+  const stem = (asset.fileName ?? fromUri).replace(/\.[^.]*$/, "");
+  return `${stem || "image"}.${EXTENSION_BY_MIME[mimeType]}`;
 };
 
 /**

@@ -47,6 +47,20 @@ describe("toProfileImageCandidate — 픽커 자산 → 업로드 후보 (기준
     },
   );
 
+  it("fileName 확장자가 MIME과 다르면 확장자를 MIME에서 다시 파생한다 — 트랜스코딩된 HEIC (codex 리뷰)", () => {
+    expect(
+      toProfileImageCandidate({
+        uri: "content://media/external/images/77",
+        fileName: "photo.heic",
+        mimeType: "image/jpeg",
+        fileSize: 1024,
+      }),
+    ).toMatchObject({
+      kind: "ok",
+      candidate: { name: "photo.jpg", type: "image/jpeg" },
+    });
+  });
+
   it.each<[string | null, string]>([
     ["image/heic", "허용 외 MIME"],
     [null, "MIME 없음"],

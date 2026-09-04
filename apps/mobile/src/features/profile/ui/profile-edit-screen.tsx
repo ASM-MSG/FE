@@ -125,8 +125,15 @@ export const ProfileEditScreen = () => {
     const result = await launchImageLibraryAsync({ mediaTypes: "images" });
     const asset = result.canceled ? undefined : result.assets[0];
     if (asset === undefined) return;
-    // 픽커가 fileSize를 안 주면 실측 (스펙 Q2)
-    const fileSize = asset.fileSize ?? (await measureFileSize(asset.uri));
+    // 픽커가 fileSize를 안 주면 실측 (스펙 Q2). 읽기 실패는 거부 캡션으로 — `void pickImage()`
+    // 호출이라 여기서 잡지 않으면 unhandled rejection이 되고 화면은 침묵한다 (codex 리뷰)
+    let fileSize: number;
+    try {
+      fileSize = asset.fileSize ?? (await measureFileSize(asset.uri));
+    } catch (error) {
+      setPickError(profileImageErrorMessage(error));
+      return;
+    }
     const pick = toProfileImageCandidate({ ...asset, fileSize });
     if (pick.kind === "rejected") {
       setPickError(pick.message);

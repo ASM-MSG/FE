@@ -28,7 +28,7 @@ const VARIABLES = {
   candidate: { name: "photo.jpg", type: "image/jpeg", size: 3 },
 };
 
-const loadUpload = async () => {
+const loadUpload = async ({ seedCache = true } = {}) => {
   vi.stubEnv("EXPO_PUBLIC_API_BASE_URL", API_BASE);
   vi.resetModules();
   const { profileImageUploadMutationOptions } =
@@ -41,14 +41,16 @@ const loadUpload = async () => {
     queryClient,
     profileImageUploadMutationOptions(queryClient),
   );
-  queryClient.setQueryData(getMeQueryKey(), {
-    developCode: 0,
-    message: "ok",
-    data: ME,
-  });
+  if (seedCache) {
+    queryClient.setQueryData(getMeQueryKey(), {
+      developCode: 0,
+      message: "ok",
+      data: ME,
+    });
+  }
   const cachedMe = () =>
     (queryClient.getQueryData(getMeQueryKey()) as { data: typeof ME }).data;
-  return { observer, cachedMe };
+  return { observer, cachedMe, queryClient, getMeQueryKey };
 };
 
 interface Received {
@@ -136,6 +138,20 @@ describe("프로필 이미지 업로드 mutation (기준 4·5)", () => {
       ...ME,
       profileImageUrl: "https://cdn/new.jpg",
     });
+  });
+
+  it("getMe 봉투가 없으면(조회 전·실패) 병합 대신 getMe를 무효화해 확정본을 재조회한다 (codex 리뷰)", async () => {
+    const { observer, queryClient, getMeQueryKey } = await loadUpload({
+      seedCache: false,
+    });
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    stubFetch(null);
+
+    await observer.mutate(VARIABLES);
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: getMeQueryKey() });
+    // 없는 봉투에 부분 병합본을 만들어 넣지 않는다
+    expect(queryClient.getQueryData(getMeQueryKey())).toBeUndefined();
   });
 
   it.each([

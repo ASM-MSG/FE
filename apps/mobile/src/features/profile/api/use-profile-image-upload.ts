@@ -61,6 +61,12 @@ export const profileImageUploadMutationOptions = (
         unwrapEnvelope(await confirmFn({ body: { s3Key } }, context)),
     }),
   onSuccess: (confirmed) => {
+    // 봉투가 없으면(조회 전·실패 폴백 상태) 병합할 대상이 없어 확정본이 버려진다 — 재조회로
+    // 받는다. 웹·삭제 훅은 이 경우를 무시하지만 앱 편집 화면은 조회 실패에도 열린다 (codex 리뷰)
+    if (queryClient.getQueryData(getMeQueryKey()) == null) {
+      void queryClient.invalidateQueries({ queryKey: getMeQueryKey() });
+      return;
+    }
     queryClient.setQueryData<GetMeResponse>(getMeQueryKey(), (previous) =>
       previous == null
         ? previous
