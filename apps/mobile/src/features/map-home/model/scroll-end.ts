@@ -13,9 +13,16 @@ export interface ScrollMetrics {
   contentSize: { height: number };
 }
 
-/** 남은 스크롤 거리가 임계 이하면 true — 콘텐츠가 뷰포트보다 짧으면(스크롤 불가) 항상 true */
+/**
+ * 남은 스크롤 거리가 임계 이하면 true — 콘텐츠가 뷰포트보다 짧으면(스크롤 불가) 항상 true.
+ * 뷰포트·콘텐츠 높이가 아직 측정 전(0)이면 false — `onLayout`·`onContentSizeChange`는
+ * 순서가 보장되지 않아 한쪽만 온 상태를 끝 도달로 보면 측정 전에 이어받기가 나간다
+ * (codex 리뷰 P2-2).
+ */
 export const isNearScrollEnd = (
   { contentOffset, layoutMeasurement, contentSize }: ScrollMetrics,
   threshold: number,
 ): boolean =>
+  layoutMeasurement.height > 0 &&
+  contentSize.height > 0 &&
   contentSize.height - layoutMeasurement.height - contentOffset.y <= threshold;

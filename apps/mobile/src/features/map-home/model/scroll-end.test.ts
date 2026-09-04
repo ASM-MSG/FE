@@ -28,5 +28,11 @@ describe("isNearScrollEnd — 스크롤 끝 근접 판정 (AC 8)", () => {
 
   it("콘텐츠가 뷰포트보다 짧으면(스크롤 불가) 끝 근접이다 — 첫 페이지가 화면을 못 채워도 이어받는다", () => {
     expect(isNearScrollEnd(metrics(0, 600, 300), 80)).toBe(true);
+    expect(isNearScrollEnd(metrics(0, 600, 600), 80)).toBe(true);
+  });
+
+  it("측정 전(높이 0) 지표는 끝 근접이 아니다 — onLayout·onContentSizeChange 어느 쪽이 먼저 와도 측정 전에 이어받지 않는다 (codex 리뷰 P2-2)", () => {
+    expect(isNearScrollEnd(metrics(0, 600, 0), 80)).toBe(false);
+    expect(isNearScrollEnd(metrics(0, 0, 300), 80)).toBe(false);
   });
 });

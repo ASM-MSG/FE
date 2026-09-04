@@ -29,7 +29,10 @@ import { MAP_MIN_ZOOM } from "../model/aggregation-unit";
 import { gridIdOfCell } from "../model/cell-grid-id-index";
 import { setSelectedGridId, useSelectedGridId } from "../model/grid-selection";
 import { canOpenDetail } from "../model/home-cell-detail";
-import { deriveSheetState } from "../model/home-sheet-state";
+import {
+  defaultSheetQueries,
+  deriveSheetState,
+} from "../model/home-sheet-state";
 import { locateBottomOffset } from "../model/locate-offset";
 import { nextTracking } from "../model/location-overlay";
 import {
@@ -211,16 +214,16 @@ export const MapHomeScreen = () => {
     () => regionGrids.data?.grids ?? [],
     [regionGrids.data],
   );
-  const defaultSheetState = deriveSheetState(
-    [occupied, geocode, regionGrids],
-    grids.length,
+  // 선택 지역 오버라이드 중에는 geocode가 상태·재시도 목록에서 빠진다 (codex 리뷰 P2-1)
+  const defaultQueries = defaultSheetQueries(
+    { occupied, geocode, regionGrids },
+    selectedRegion !== null,
   );
+  const defaultSheetState = deriveSheetState(defaultQueries, grids.length);
 
-  /** 기본 시트 재시도 — 세 쿼리를 함께 다시 조회한다 */
+  /** 기본 시트 재시도 — 시트 상태를 이루는 쿼리들을 함께 다시 조회한다 */
   const handleRetryDefault = () => {
-    occupied.retry();
-    geocode.retry();
-    regionGrids.retry();
+    for (const query of defaultQueries) query.retry();
   };
 
   /** 선택 상태 3종을 한 번에 반영한다 — `sheet-navigation` 결과의 유일한 적용점 */
