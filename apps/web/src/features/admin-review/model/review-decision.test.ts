@@ -317,4 +317,11 @@ describe("경로 파라미터 파싱 (AC 12)", () => {
     expect(parseSubmissionId("12.5")).toBeNull();
     expect(parseSubmissionId("12a")).toBeNull();
   });
+
+  it("0과 안전 정수를 넘는 숫자열은 null이다 — 다른 신청을 조회하거나 Infinity로 나가지 않는다", () => {
+    expect(parseSubmissionId("0")).toBeNull();
+    expect(parseSubmissionId("9007199254740993")).toBeNull();
+    expect(parseSubmissionId("9".repeat(400))).toBeNull();
+    expect(parseSubmissionId("9007199254740991")).toBe(Number.MAX_SAFE_INTEGER);
+  });
 });
