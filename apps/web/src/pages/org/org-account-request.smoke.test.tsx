@@ -161,6 +161,31 @@ describe("계정 발급 요청 선검증 (AC 2)", () => {
       screen.getByText("입력한 정보 확인에 동의해야 요청할 수 있습니다"),
     ).toBeDefined();
   });
+
+  it("동의 오류는 체크박스에 프로그램적으로 연결된다 (AC 2 · codex P2)", () => {
+    // 텍스트 6필드와 달리 동의 체크박스는 문구만 렌더돼 스크린리더가 "이 컨트롤이
+    // 무효이고 옆 문구가 그 사유"라는 것을 알 수 없었다 — 오류 표출이 곧 접근성
+    // 계약이라 aria-invalid + aria-describedby를 컨트롤에 싣는다.
+    acceptedFetch();
+    renderPage();
+    fillForm();
+    fireEvent.click(
+      screen.getByLabelText(
+        "발급 및 운영 안내를 위해 입력한 정보를 운영팀이 확인하는 것에 동의합니다.",
+      ),
+    );
+
+    submit();
+
+    const consent = screen.getByRole("checkbox");
+    expect(consent.getAttribute("aria-invalid")).toBe("true");
+    expect(consent.getAttribute("aria-describedby")).toBe(
+      "account-request-consent-error",
+    );
+    expect(
+      document.getElementById("account-request-consent-error")?.textContent,
+    ).toBe("입력한 정보 확인에 동의해야 요청할 수 있습니다");
+  });
 });
 
 describe("계정 발급 요청 제출 (AC 3·5)", () => {

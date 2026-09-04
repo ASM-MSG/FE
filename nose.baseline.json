@@ -3087,32 +3087,6 @@
       ]
     },
     {
-      "id": "2ecc6b100afd7ee7",
-      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
-      "members": [
-        {
-          "id": "4e8fe51d4e946c06",
-          "source_digest": "fnv1a64:c1cf55e1a5ec4b6f",
-          "file": "apps/web/src/pages/org/org-account-request.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 293,
-          "end_line": 317,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "2fe0ddfd3c39e51c",
-          "source_digest": "fnv1a64:f407ddeefcf2f8a9",
-          "file": "apps/web/src/pages/org/org-login.smoke.test.tsx",
-          "lang": "typescript",
-          "start_line": 199,
-          "end_line": 219,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "2fc7d701d542fcc9",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -10222,6 +10196,34 @@
           "start_line": 1,
           "end_line": 95,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "8814dec234103ddb",
+      "note": "consolidate `SwitchProps` — 2 copies",
+      "members": [
+        {
+          "id": "348338e0e6f8f9d1",
+          "source_digest": "fnv1a64:e3e5f3d6509356e9",
+          "file": "packages/ui-native/src/switch.tsx",
+          "lang": "typescript",
+          "start_line": 6,
+          "end_line": 12,
+          "kind": "Class",
+          "name": "SwitchProps",
+          "is_fragment": false
+        },
+        {
+          "id": "3db79e8011cb24b7",
+          "source_digest": "fnv1a64:7849cc686f8f4278",
+          "file": "packages/ui-web/src/switch.tsx",
+          "lang": "typescript",
+          "start_line": 5,
+          "end_line": 10,
+          "kind": "Class",
+          "name": "SwitchProps",
           "is_fragment": false
         }
       ]
@@ -18348,45 +18350,6 @@
       ]
     },
     {
-      "id": "ddf1ae87ecba0e39",
-      "note": "duplicated across 2 directories — consolidate one shared interface/protocol contract",
-      "members": [
-        {
-          "id": "348338e0e6f8f9d1",
-          "source_digest": "fnv1a64:e3e5f3d6509356e9",
-          "file": "packages/ui-native/src/switch.tsx",
-          "lang": "typescript",
-          "start_line": 6,
-          "end_line": 12,
-          "kind": "Class",
-          "name": "SwitchProps",
-          "is_fragment": false
-        },
-        {
-          "id": "88b86557ce8fe63f",
-          "source_digest": "fnv1a64:da8dee700526ffe8",
-          "file": "packages/ui-web/src/selector.tsx",
-          "lang": "typescript",
-          "start_line": 27,
-          "end_line": 32,
-          "kind": "Class",
-          "name": "SelectorProps",
-          "is_fragment": false
-        },
-        {
-          "id": "3db79e8011cb24b7",
-          "source_digest": "fnv1a64:7849cc686f8f4278",
-          "file": "packages/ui-web/src/switch.tsx",
-          "lang": "typescript",
-          "start_line": 5,
-          "end_line": 10,
-          "kind": "Class",
-          "name": "SwitchProps",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "de1670139e9b744d",
       "note": "consolidate `CollectedVideo` — 2 copies",
       "members": [
@@ -18592,6 +18555,32 @@
           "end_line": 22,
           "kind": "Function",
           "name": "initialFeaturedSelection",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "df3173fb31bc3e17",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "e095f1b1035c9056",
+          "source_digest": "fnv1a64:c1cf55e1a5ec4b6f",
+          "file": "apps/web/src/pages/org/org-account-request.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 318,
+          "end_line": 342,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "2fe0ddfd3c39e51c",
+          "source_digest": "fnv1a64:f407ddeefcf2f8a9",
+          "file": "apps/web/src/pages/org/org-login.smoke.test.tsx",
+          "lang": "typescript",
+          "start_line": 199,
+          "end_line": 219,
+          "kind": "Block",
           "is_fragment": false
         }
       ]

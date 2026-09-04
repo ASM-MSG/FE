@@ -195,6 +195,10 @@ export const AccountRequestForm = ({
             id={CONSENT_ID}
             checked={draft.consented}
             onCheckedChange={(checked) => update("consented", checked)}
+            aria-invalid={errors.consented !== undefined || undefined}
+            aria-describedby={
+              errors.consented !== undefined ? `${CONSENT_ID}-error` : undefined
+            }
           />
           <label
             htmlFor={CONSENT_ID}
