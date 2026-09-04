@@ -21,6 +21,10 @@ import { authErrorMessage } from "../auth-error";
  *
  * 저장 성공 시 폼 값을 **응답(변경 후 프로필)으로 재동기**한다(추정 8) — 서버가 정규화한
  * 값이 화면과 어긋나지 않게 한다. 캐시 갱신은 훅이 맡는다(사이드바와 공유).
+ *
+ * 초기값 prop은 **마운트 시 1회만** 읽는다 — 포커스 refetch 등으로 프로필 캐시가 갱신돼
+ * prop이 바뀌어도 입력값을 덮지 않는다. 백그라운드 갱신이 편집 중 드래프트를 지우면 안 되고,
+ * 두 필드를 항상 함께 보내는 PATCH라 최종 값은 마지막 저장이 이긴다. 재동기 경로는 저장 성공뿐.
  */
 export const SettingsContactForm = ({
   contactName: initialName,
