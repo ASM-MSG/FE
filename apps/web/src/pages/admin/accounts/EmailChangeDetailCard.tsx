@@ -5,6 +5,7 @@ import {
 import type { AdminEmailChangeRequestItemResponseDto } from "@/shared/api/generated/types.gen";
 import { formatKstReceiptTime } from "@/shared/format";
 import { DetailField, PendingActions, ProcessedResult } from "./DetailFields";
+import { type MutationNotice, MutationNoticeText } from "./MutationNotice";
 
 interface EmailChangeDetailCardProps {
   /** 선택된 목록 항목 — 상세 API가 없어 이 항목이 상세 전체다 */
@@ -13,7 +14,7 @@ interface EmailChangeDetailCardProps {
   onReject: () => void;
   isMutating: boolean;
   /** 처리 결과·실패 안내 — 없으면 미렌더 */
-  notice: string | null;
+  notice: MutationNotice | null;
 }
 
 /** 승인 직전 재고지 — 아이디가 바뀌면 다음 로그인부터 새 이메일을 쓴다 */
@@ -78,10 +79,6 @@ export const EmailChangeDetailCard = ({
       </>
     )}
 
-    {notice !== null && (
-      <p role="status" className="text-fm-caption text-foreground-body">
-        {notice}
-      </p>
-    )}
+    <MutationNoticeText notice={notice} />
   </section>
 );

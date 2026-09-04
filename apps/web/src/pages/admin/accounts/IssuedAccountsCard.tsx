@@ -10,6 +10,7 @@ import {
 } from "@/features/admin-accounts/model/account-view";
 import type { AdminOrgAccountItemResponseDto } from "@/shared/api/generated/types.gen";
 import { formatKstReceiptTime } from "@/shared/format";
+import { type MutationNotice, MutationNoticeText } from "./MutationNotice";
 import { ResendPasswordDialog } from "./ResendPasswordDialog";
 import { StatusChip } from "./StatusChip";
 
@@ -30,17 +31,17 @@ export const IssuedAccountsCard = () => {
   const [target, setTarget] = useState<AdminOrgAccountItemResponseDto | null>(
     null,
   );
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<MutationNotice | null>(null);
 
   const resend = useResendPassword({
     onResent: (result) => {
       setTarget(null);
-      setNotice(resendNotice(result.emailSent));
+      setNotice({ message: resendNotice(result.emailSent), isError: false });
     },
     onFailed: (failure) => {
       // 실패 안내는 모달이 아니라 카드에서 낸다 — 1423은 목록 재조회로 버튼이 사라진다
       setTarget(null);
-      setNotice(failure.message);
+      setNotice({ message: failure.message, isError: true });
     },
   });
 
@@ -99,11 +100,7 @@ export const IssuedAccountsCard = () => {
         </p>
       )}
 
-      {notice !== null && (
-        <p role="status" className="text-fm-caption text-foreground-body">
-          {notice}
-        </p>
-      )}
+      <MutationNoticeText notice={notice} />
 
       <ResendPasswordDialog
         open={target !== null}

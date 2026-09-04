@@ -1632,32 +1632,6 @@
       ]
     },
     {
-      "id": "13eec2c915b48eed",
-      "note": "local duplication — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "cd269003586daf59",
-          "source_digest": "fnv1a64:e6d4ab8db17bc97c",
-          "file": "apps/web/src/pages/admin/accounts/EmailChangeDetailCard.tsx",
-          "lang": "typescript",
-          "start_line": 12,
-          "end_line": 21,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "68b031b8006befa1",
-          "source_digest": "fnv1a64:0674091f7a229444",
-          "file": "apps/web/src/pages/admin/accounts/RequestDetailCard.tsx",
-          "lang": "typescript",
-          "start_line": 13,
-          "end_line": 21,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "140788257c73bea4",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -2279,32 +2253,6 @@
       ]
     },
     {
-      "id": "1c593ff1738d18f4",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "55b99b88c96b3a97",
-          "source_digest": "fnv1a64:fad1f1dec899974d",
-          "file": "apps/web/src/pages/admin/AdminEventsPage.tsx",
-          "lang": "typescript",
-          "start_line": 37,
-          "end_line": 41,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "aa524808212f7c62",
-          "source_digest": "fnv1a64:59d823c3b2bfc7a6",
-          "file": "apps/web/src/pages/admin/accounts/RequestQueueSection.tsx",
-          "lang": "typescript",
-          "start_line": 51,
-          "end_line": 55,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "1d70edcd0b39ccd2",
       "note": "consolidate `view` — 2 copies",
       "members": [
@@ -2847,6 +2795,32 @@
           "end_line": 85,
           "kind": "Block",
           "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "23963e460bb26514",
+      "note": "local duplication — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "248499d5c63a2314",
+          "source_digest": "fnv1a64:87e469e1d04cf633",
+          "file": "apps/web/src/pages/admin/accounts/RequestDetailCard.tsx",
+          "lang": "typescript",
+          "start_line": 4,
+          "end_line": 19,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e5efe073c3b2a525",
+          "source_digest": "fnv1a64:6f8527bf7eefe75e",
+          "file": "apps/web/src/pages/admin/accounts/EmailChangeDetailCard.tsx",
+          "lang": "typescript",
+          "start_line": 7,
+          "end_line": 18,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -5083,6 +5057,34 @@
           "end_line": 26,
           "kind": "Function",
           "name": "toDayIndex",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "3eeeb6aeb0fd971c",
+      "note": "consolidate `dl` — 2 copies",
+      "members": [
+        {
+          "id": "3a98fcb52d6c6530",
+          "source_digest": "fnv1a64:17bd7218db2fd3d8",
+          "file": "apps/web/src/pages/admin/accounts/EmailChangeDetailCard.tsx",
+          "lang": "typescript",
+          "start_line": 48,
+          "end_line": 62,
+          "kind": "Block",
+          "name": "dl",
+          "is_fragment": false
+        },
+        {
+          "id": "551bf0980c30e59d",
+          "source_digest": "fnv1a64:456d51cc2380aad7",
+          "file": "apps/web/src/pages/admin/accounts/RequestDetailCard.tsx",
+          "lang": "typescript",
+          "start_line": 68,
+          "end_line": 76,
+          "kind": "Block",
+          "name": "dl",
           "is_fragment": false
         }
       ]
@@ -8189,6 +8191,34 @@
           "is_fragment": true,
           "fragment_kind": "conditional-guard",
           "reason_code": "exact-conditional-guard"
+        }
+      ]
+    },
+    {
+      "id": "5e2f3aecf2629783",
+      "note": "consolidate `div` — 2 copies",
+      "members": [
+        {
+          "id": "ba21523ff48dd821",
+          "source_digest": "fnv1a64:7e7f301b57a73a90",
+          "file": "apps/web/src/pages/admin/accounts/RequestDetailCard.tsx",
+          "lang": "typescript",
+          "start_line": 56,
+          "end_line": 61,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
+        },
+        {
+          "id": "5ca21c4b43b02ddf",
+          "source_digest": "fnv1a64:a237e31742d1786b",
+          "file": "apps/web/src/pages/admin/events/SelectedEventCard.tsx",
+          "lang": "typescript",
+          "start_line": 58,
+          "end_line": 63,
+          "kind": "Block",
+          "name": "div",
+          "is_fragment": false
         }
       ]
     },
@@ -13187,34 +13217,6 @@
       ]
     },
     {
-      "id": "957eb0a53515b05c",
-      "note": "local duplication — extract a helper — high-parameter (17 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "f49b2da827c34296",
-          "source_digest": "fnv1a64:1468fa2bde9d6038",
-          "file": "apps/web/src/pages/admin/accounts/RequestQueueSection.tsx",
-          "lang": "typescript",
-          "start_line": 50,
-          "end_line": 180,
-          "kind": "Function",
-          "name": "RequestQueueSection",
-          "is_fragment": false
-        },
-        {
-          "id": "0ff8568d907f3153",
-          "source_digest": "fnv1a64:1d8f97f6cd927602",
-          "file": "apps/web/src/pages/admin/accounts/EmailChangeSection.tsx",
-          "lang": "typescript",
-          "start_line": 42,
-          "end_line": 165,
-          "kind": "Function",
-          "name": "EmailChangeSection",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "9617d1f9f3140a46",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -13637,6 +13639,32 @@
           "lang": "typescript",
           "start_line": 12,
           "end_line": 89,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "9b3539cd8e3ec0c0",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "55b99b88c96b3a97",
+          "source_digest": "fnv1a64:fad1f1dec899974d",
+          "file": "apps/web/src/pages/admin/AdminEventsPage.tsx",
+          "lang": "typescript",
+          "start_line": 37,
+          "end_line": 41,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "d6e246d5c148a74e",
+          "source_digest": "fnv1a64:2e255a0c253c01dc",
+          "file": "apps/web/src/pages/admin/accounts/EmailChangeSection.tsx",
+          "lang": "typescript",
+          "start_line": 44,
+          "end_line": 48,
           "kind": "Block",
           "is_fragment": false
         }
@@ -14738,34 +14766,6 @@
       ]
     },
     {
-      "id": "a5988fbefcb2b6cd",
-      "note": "consolidate `div` — 2 copies",
-      "members": [
-        {
-          "id": "bf1a5efae1253633",
-          "source_digest": "fnv1a64:7e7f301b57a73a90",
-          "file": "apps/web/src/pages/admin/accounts/RequestDetailCard.tsx",
-          "lang": "typescript",
-          "start_line": 55,
-          "end_line": 60,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        },
-        {
-          "id": "5ca21c4b43b02ddf",
-          "source_digest": "fnv1a64:a237e31742d1786b",
-          "file": "apps/web/src/pages/admin/events/SelectedEventCard.tsx",
-          "lang": "typescript",
-          "start_line": 58,
-          "end_line": 63,
-          "kind": "Block",
-          "name": "div",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "a5b4aa0d35fdf462",
       "note": "consolidate `pad2` — 2 copies",
       "members": [
@@ -15309,7 +15309,7 @@
       "members": [
         {
           "id": "d7fa6732d9fb11de",
-          "source_digest": "fnv1a64:c393357a54f6e111",
+          "source_digest": "fnv1a64:90030733d83b068f",
           "file": "apps/web/src/pages/admin/accounts/admin-accounts.smoke.test.tsx",
           "lang": "typescript",
           "start_line": 582,
@@ -15319,7 +15319,7 @@
         },
         {
           "id": "36624f9b10584dd4",
-          "source_digest": "fnv1a64:932b67ed8577846d",
+          "source_digest": "fnv1a64:caee72b3dc69bcc7",
           "file": "apps/web/src/pages/admin/accounts/admin-accounts.smoke.test.tsx",
           "lang": "typescript",
           "start_line": 601,
@@ -15613,32 +15613,6 @@
           "end_line": 25,
           "kind": "Block",
           "name": "text",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "aebf2350580126b0",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "55b99b88c96b3a97",
-          "source_digest": "fnv1a64:fad1f1dec899974d",
-          "file": "apps/web/src/pages/admin/AdminEventsPage.tsx",
-          "lang": "typescript",
-          "start_line": 37,
-          "end_line": 41,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "32efd395657b5f2e",
-          "source_digest": "fnv1a64:2274d515c246797e",
-          "file": "apps/web/src/pages/admin/accounts/EmailChangeSection.tsx",
-          "lang": "typescript",
-          "start_line": 43,
-          "end_line": 47,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -18545,7 +18519,7 @@
         },
         {
           "id": "67e059295ce65ec9",
-          "source_digest": "fnv1a64:4dbac29e3f48d3c4",
+          "source_digest": "fnv1a64:ca20de3470b47240",
           "file": "apps/web/src/pages/admin/accounts/admin-accounts.smoke.test.tsx",
           "lang": "typescript",
           "start_line": 587,
@@ -18561,7 +18535,7 @@
       "members": [
         {
           "id": "07f4151f905033be",
-          "source_digest": "fnv1a64:708ec54f09389b70",
+          "source_digest": "fnv1a64:59218a5bc2095d72",
           "file": "apps/web/src/pages/admin/accounts/admin-accounts.smoke.test.tsx",
           "lang": "typescript",
           "start_line": 386,
@@ -18784,34 +18758,6 @@
           "start_line": 1,
           "end_line": 44,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "d36c493671ad14a0",
-      "note": "consolidate `dl` — 2 copies",
-      "members": [
-        {
-          "id": "6f85e57a07e450b4",
-          "source_digest": "fnv1a64:17bd7218db2fd3d8",
-          "file": "apps/web/src/pages/admin/accounts/EmailChangeDetailCard.tsx",
-          "lang": "typescript",
-          "start_line": 47,
-          "end_line": 61,
-          "kind": "Block",
-          "name": "dl",
-          "is_fragment": false
-        },
-        {
-          "id": "b1e2442ff15644a5",
-          "source_digest": "fnv1a64:456d51cc2380aad7",
-          "file": "apps/web/src/pages/admin/accounts/RequestDetailCard.tsx",
-          "lang": "typescript",
-          "start_line": 67,
-          "end_line": 75,
-          "kind": "Block",
-          "name": "dl",
           "is_fragment": false
         }
       ]
@@ -19549,6 +19495,32 @@
           "lang": "typescript",
           "start_line": 167,
           "end_line": 173,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "dbf0b633cd19f028",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "dceb25e005079dbd",
+          "source_digest": "fnv1a64:3c5a1eae22c615ff",
+          "file": "apps/mobile/src/features/map-home/model/aggregation-unit.parity.test.ts",
+          "lang": "typescript",
+          "start_line": 185,
+          "end_line": 192,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "997e84f679b5392c",
+          "source_digest": "fnv1a64:1b95e734e85b4424",
+          "file": "apps/mobile/src/features/map-home/model/aggregation-unit.parity.test.ts",
+          "lang": "typescript",
+          "start_line": 163,
+          "end_line": 169,
           "kind": "Block",
           "is_fragment": false
         }
@@ -22032,6 +22004,34 @@
           "start_line": 1,
           "end_line": 60,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "f22ca78c16bb82b9",
+      "note": "local duplication — extract a helper — high-parameter (16 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "9b45f18146f4b106",
+          "source_digest": "fnv1a64:afd9f29f22f0949e",
+          "file": "apps/web/src/pages/admin/accounts/RequestQueueSection.tsx",
+          "lang": "typescript",
+          "start_line": 51,
+          "end_line": 185,
+          "kind": "Function",
+          "name": "RequestQueueSection",
+          "is_fragment": false
+        },
+        {
+          "id": "c915087efad13a9a",
+          "source_digest": "fnv1a64:ae7426dbdcac49ea",
+          "file": "apps/web/src/pages/admin/accounts/EmailChangeSection.tsx",
+          "lang": "typescript",
+          "start_line": 43,
+          "end_line": 173,
+          "kind": "Function",
+          "name": "EmailChangeSection",
           "is_fragment": false
         }
       ]

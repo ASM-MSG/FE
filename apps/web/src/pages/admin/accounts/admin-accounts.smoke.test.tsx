@@ -386,7 +386,7 @@ describe("계정 운영 — 계정 목록·비밀번호 재발송 (AC 10)", () =
     fireEvent.click(screen.getByRole("button", { name: "재발송 확정" }));
 
     await waitFor(() =>
-      expect(screen.getByRole("status").textContent).toContain(
+      expect(screen.getByRole("alert").textContent).toContain(
         "이미 비밀번호를 변경한 계정",
       ),
     );
@@ -590,7 +590,7 @@ describe("계정 운영 — 발급 요청 큐 (AC 11·12)", () => {
     fireEvent.click(screen.getByRole("button", { name: "계정 발급" }));
 
     await waitFor(() =>
-      expect(screen.getByRole("status").textContent).toContain(
+      expect(screen.getByRole("alert").textContent).toContain(
         "이미 처리된 요청",
       ),
     );
@@ -609,7 +609,7 @@ describe("계정 운영 — 발급 요청 큐 (AC 11·12)", () => {
     fireEvent.click(screen.getByRole("button", { name: "계정 발급" }));
 
     await waitFor(() =>
-      expect(screen.getByRole("status").textContent).toContain("검토 이후"),
+      expect(screen.getByRole("alert").textContent).toContain("검토 이후"),
     );
   });
 });

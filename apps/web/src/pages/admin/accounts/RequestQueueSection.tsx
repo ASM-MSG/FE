@@ -14,6 +14,7 @@ import {
 } from "@/features/admin-accounts/model/account-view";
 // 선택 id 파생은 심사 큐가 이미 소유한다 — 같은 폴백 규칙을 복제하지 않는다 (MSG-552)
 import { resolveSelectedId } from "@/features/admin-review/model/submission-view";
+import type { MutationNotice } from "./MutationNotice";
 import { QueueSectionLayout } from "./QueueSectionLayout";
 import { RejectReasonDialog } from "./RejectReasonDialog";
 import { RequestDetailCard } from "./RequestDetailCard";
@@ -51,7 +52,7 @@ export const RequestQueueSection = () => {
   const [status, setStatus] = useState<AccountRequestStatus>("PENDING");
   const [pinnedId, setPinnedId] = useState<number | null>(null);
   const [rejectTarget, setRejectTarget] = useState<RejectTarget | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<MutationNotice | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
 
   const list = useAccountRequestsQuery(status);
@@ -63,16 +64,20 @@ export const RequestQueueSection = () => {
 
   const approve = useApproveAccountRequest({
     onApproved: (result) => {
-      setNotice(issuedNotice(result.emailSent));
+      setNotice({ message: issuedNotice(result.emailSent), isError: false });
     },
-    onFailed: (failure) => setNotice(failure.message),
+    onFailed: (failure) =>
+      setNotice({ message: failure.message, isError: true }),
   });
 
   const reject = useRejectAccountRequest({
     onRejected: () => {
       setRejectTarget(null);
       setRejectError(null);
-      setNotice("요청을 반려했어요. 사유는 수기 통보 재료로 저장됩니다.");
+      setNotice({
+        message: "요청을 반려했어요. 사유는 수기 통보 재료로 저장됩니다.",
+        isError: false,
+      });
     },
     onFailed: (failure) => {
       // 서버 진실이 바뀐 실패면 모달을 닫고 카드 안내로 알린다 — 훅이 목록·상세를
@@ -80,7 +85,7 @@ export const RequestQueueSection = () => {
       if (failure.staleServerState) {
         setRejectTarget(null);
         setRejectError(null);
-        setNotice(failure.message);
+        setNotice({ message: failure.message, isError: true });
         return;
       }
       setRejectError(failure.message);

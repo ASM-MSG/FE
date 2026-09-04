@@ -15,6 +15,7 @@ import {
 import { resolveSelectedId } from "@/features/admin-review/model/submission-view";
 import { EmailChangeDetailCard } from "./EmailChangeDetailCard";
 import { EmailChangeTable } from "./EmailChangeTable";
+import type { MutationNotice } from "./MutationNotice";
 import { QueueSectionLayout } from "./QueueSectionLayout";
 import { RejectReasonDialog } from "./RejectReasonDialog";
 
@@ -43,7 +44,7 @@ export const EmailChangeSection = () => {
   const [status, setStatus] = useState<EmailChangeStatus>("PENDING");
   const [pinnedId, setPinnedId] = useState<number | null>(null);
   const [rejectTarget, setRejectTarget] = useState<RejectTarget | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<MutationNotice | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
 
   const list = useEmailChangeRequestsQuery(status);
@@ -55,21 +56,28 @@ export const EmailChangeSection = () => {
 
   const approve = useApproveEmailChange({
     onApproved: (result) =>
-      setNotice(emailChangeApprovedNotice(result.emailSent, result.email)),
-    onFailed: (failure) => setNotice(failure.message),
+      setNotice({
+        message: emailChangeApprovedNotice(result.emailSent, result.email),
+        isError: false,
+      }),
+    onFailed: (failure) =>
+      setNotice({ message: failure.message, isError: true }),
   });
 
   const reject = useRejectEmailChange({
     onRejected: () => {
       setRejectTarget(null);
       setRejectError(null);
-      setNotice("요청을 반려했어요. 사유는 수기 통보 재료로 저장됩니다.");
+      setNotice({
+        message: "요청을 반려했어요. 사유는 수기 통보 재료로 저장됩니다.",
+        isError: false,
+      });
     },
     onFailed: (failure) => {
       if (failure.staleServerState) {
         setRejectTarget(null);
         setRejectError(null);
-        setNotice(failure.message);
+        setNotice({ message: failure.message, isError: true });
         return;
       }
       setRejectError(failure.message);

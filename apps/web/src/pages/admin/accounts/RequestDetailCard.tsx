@@ -2,6 +2,7 @@ import { RetryNotice, Skeleton } from "@fillmap/ui-web";
 import { accountRequestStatusView } from "@/features/admin-accounts/model/account-view";
 import type { AdminOrgAccountRequestDetailResponseDto } from "@/shared/api/generated/types.gen";
 import { DetailField, PendingActions, ProcessedResult } from "./DetailFields";
+import { type MutationNotice, MutationNoticeText } from "./MutationNotice";
 
 interface RequestDetailCardProps {
   /** 선택된 행이 있는지 — 없으면 빈 상태 (AC 14) */
@@ -14,7 +15,7 @@ interface RequestDetailCardProps {
   onReject: () => void;
   isMutating: boolean;
   /** 처리 결과·실패 안내 — 없으면 미렌더 */
-  notice: string | null;
+  notice: MutationNotice | null;
 }
 
 /** Figma 15579:2326 각주 — 승인 직전 재고지 */
@@ -98,10 +99,6 @@ export const RequestDetailCard = ({
       </>
     )}
 
-    {notice !== null && (
-      <p role="status" className="text-fm-caption text-foreground-body">
-        {notice}
-      </p>
-    )}
+    <MutationNoticeText notice={notice} />
   </section>
 );
