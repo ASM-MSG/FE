@@ -26,7 +26,8 @@ export interface ConsoleConfig {
 
 /**
  * 운영자 콘솔 설정 — SOURCE: Figma "[v2] [행사 운영자 2] 홈·신청 현황" (node 15525:8652)
- * + "레일 / OpsRail" (15551:1906). 레일 2섹션(홈·행사), 사이드바 4메뉴.
+ * + "레일 / OpsRail" (15551:1906). 레일 2섹션(홈·행사), 사이드바 5메뉴
+ * ("내 신청 목록"은 MSG-549에서 추가 — 그전에는 레일 "행사"만 진입로였다).
  * "등록 가이드"는 대응 티켓이 없지만 자리표시로 존치한다 (질문 7 (b) 확정).
  * 사이드바 슬롯 2종(계정 정보·행사 등록 권한 안내)은 MSG-545에서 배선했다 —
  * `ADMIN_CONSOLE`은 슬롯을 주지 않아 렌더가 불변이다.
@@ -60,6 +61,14 @@ export const ORG_CONSOLE: ConsoleConfig = {
       key: "submission-new",
       label: "새 행사 등록",
       path: CONSOLE_ROUTES.orgSubmissionNew,
+    },
+    // MSG-549: 티켓 문면의 "사이드바 '내 신청 목록' 진입"에 대응하는 항목 —
+    // 접두 최장 일치라 상세·재신청 경로도 이 항목이 활성이고, 더 긴
+    // `/org/submissions/new`는 계속 "새 행사 등록"이 이긴다(matches 불필요)
+    {
+      key: "submissions",
+      label: "내 신청 목록",
+      path: CONSOLE_ROUTES.orgSubmissions,
     },
     { key: "guide", label: "등록 가이드", path: CONSOLE_ROUTES.orgGuide },
     { key: "settings", label: "계정 설정", path: CONSOLE_ROUTES.orgSettings },
