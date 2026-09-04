@@ -25,7 +25,6 @@ export const PROTECTED_ROUTES = [
   "terms/[docKey]",
   "upload",
   "upload/analyzing",
-  "upload/blur",
   "upload/highlight",
   "upload/preview",
   "video/[videoId]",

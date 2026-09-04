@@ -21,7 +21,7 @@ describe("resolveEntry — 앱 진입 판정 (L1)", () => {
       resolveEntry({
         onboardingCompleted: false,
         isAuthenticated: true,
-        resume: "/upload/blur",
+        resume: "/upload/preview",
       }),
     ).toBe("onboarding");
     expect(
@@ -45,7 +45,7 @@ describe("resolveEntry — 앱 진입 판정 (L1)", () => {
       resolveEntry({
         onboardingCompleted: true,
         isAuthenticated: false,
-        resume: "/upload/blur",
+        resume: "/upload/preview",
       }),
     ).toBe("login");
   });
@@ -65,7 +65,7 @@ describe("resolveEntry — 앱 진입 판정 (L1)", () => {
       resolveEntry({
         onboardingCompleted: true,
         isAuthenticated: true,
-        resume: "/upload/blur",
+        resume: "/upload/preview",
       }),
     ).toBe("resume");
   });

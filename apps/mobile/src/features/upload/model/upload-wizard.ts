@@ -6,8 +6,8 @@
  *
  * 모바일 스텝 = 라우트다: select(/upload) → analyzing(/upload/analyzing) →
  * highlight(/upload/highlight) → preview(/upload/preview). 구 `/upload/blur`(블러 확인)는
- * 블러가 업로드 후처리로 빠지며 플로우에서 이탈했다. MSG-429가 그 화면을 **알림 진입 확인
- * 화면**(`/upload/blur?videoId=`)으로 재배치했으므로 위저드는 앞으로도 거치지 않는다.
+ * 블러가 업로드 후처리로 빠지며 플로우에서 이탈했고, 서버가 블러를 끄며 MSG-567에서 라우트째
+ * 삭제됐다.
  */
 
 /** 업로드 위저드 스텝 — 선택 → (선분석 로딩) → 하이라이트 → 미리보기. */

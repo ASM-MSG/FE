@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { getLocationVideosInfiniteOptions } from "../../../shared/api/query-options";
+import { useLoadMore } from "../../../shared/use-load-more";
 import {
   locationVideosResult,
   nextLocationVideosPageParam,
@@ -45,9 +46,6 @@ export const useLocationVideosQuery = (
   return {
     ...locationVideosResult(query, active),
     retry: () => void query.refetch(),
-    loadMore: () => {
-      if (!query.hasNextPage || query.isFetchingNextPage) return;
-      void query.fetchNextPage();
-    },
+    loadMore: useLoadMore(query),
   };
 };

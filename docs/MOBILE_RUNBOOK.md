@@ -99,7 +99,7 @@ adb devices          # R3CT...  device   ("unauthorized"면 팝업 승인이 안
 
 ### 1-D. 두 번째 에뮬레이터로 병렬 실기 (다른 세션이 5554·8081을 쓰고 있을 때 — MSG-572 실측)
 
-`emulator-5554`와 8081 Metro가 다른 워크트리 세션 것이면 **종료·재사용하지 않는다**(그쪽 실기가 끊긴다). AVD를 하나 더 띄우고 Metro를 8082에 올린 뒤, **앱 dev 메뉴에서 번들 주소를 8082로 바꿔 준다**.
+`emulator-5554`와 8081 Metro가 다른 워크트리 세션 것이면 **종료·재사용하지 않는다**(그쪽 실기가 끊긴다). 그 Metro가 **아무도 안 쓰는 유령**(세션이 끝났는데 남은 것)이면 함정 11대로 죽이고 이 레포에서 재기동하는 쪽이 맞다 — 살아 있는 세션의 것인지 먼저 가른다. AVD를 하나 더 띄우고 Metro를 8082에 올린 뒤, **앱 dev 메뉴에서 번들 주소를 8082로 바꿔 준다**.
 
 > **`adb reverse tcp:8081 tcp:8082`는 에뮬레이터에서 효과가 없다** (MSG-572 실측 — 7분 허비). RN 디버그 호스트 기본값이 `localhost`가 아니라 **호스트 루프백 `10.0.2.2:8081`** 이라 reverse를 우회해 **타 세션의 8081 Metro 번들(다른 브랜치 코드)** 을 조용히 실행한다 — 내 변경이 화면에 안 보이면 코드 결함이 아니라 이 함정을 먼저 의심한다. 딥링크 `url=10.0.2.2:8082`도 RN 번들 호스트는 바꾸지 못한다.
 
@@ -425,6 +425,19 @@ adb unroot; adb reverse tcp:8081 tcp:8081                             # root 토
 ```
 
 **두 번 걸린 함정** — (1) 일반 셸은 `/dev/input/event1` 쓰기 권한이 없어 `Permission denied`가 이벤트 수만큼 찍힌다 → `adb root` 선행. (2) root 뒤에도 무반응이면 툴타입이다 — 에뮬레이터 virtio 터치 장치는 `BTN_TOUCH`가 없고 `BTN_STYLUS`만 있어(함정 9의 스타일러스 오인과 같은 뿌리) `ABS_MT_TOOL_TYPE=0`(finger)·`ABS_MT_PRESSURE`를 명시해야 제스처로 인식된다. 스크립트는 둘 다 반영돼 있다.
+
+### 함정 11. "Metro 가동 중"인데 첫 콜드 스타트가 옛 코드를 받는다 — 다른 워크트리의 Metro
+
+**증상** — `lsof -ti tcp:8081 -sTCP:LISTEN`에 pid가 있고 `curl localhost:8081/status`도 `packager-status:running`인데, 앱을 콜드 스타트하면 방금 고친 화면이 아니라 **삭제한 UI가 그대로** 보인다. Metro 로그의 `Android Bundled (N modules)` 모듈 수도 예상과 다르다.
+
+**원인** — 8081을 물고 있는 Metro가 **다른 워크트리**(예: `~/projects/FE-MSG-558`)에서 띄운 것이다. 워크트리가 여러 개면 어느 cwd의 Metro인지 포트만으로는 구분이 안 된다. MSG-567 검증에서 오케스트레이터가 "Metro 가동 중"으로 넘긴 8081이 머지된 MSG-565 브랜치의 번들을 서빙하고 있었다(2026-09-04).
+
+**대응** — 넘겨받은 Metro는 cwd부터 확인하고, 다르면 죽이고 이 레포에서 8081로 재기동한다(함정 3대로 8082는 안 붙는다).
+
+```bash
+PID=$(lsof -ti tcp:8081 -sTCP:LISTEN); lsof -p $PID | grep cwd     # cwd가 지금 레포인가
+kill $PID && (cd apps/mobile && npx expo start --dev-client --port 8081)
+```
 
 ### 에뮬레이터 재현 성공 경로 (막혔을 때 통째로 다시 밟을 순서)
 
