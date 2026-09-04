@@ -43,6 +43,37 @@ describe("derivePermissionNotice — 권한 상태별 복구 동선 (기준 3)",
 });
 
 /**
+ * MSG-564 기준 9 — 갤러리 축. 프로필 사진 선택은 사용자가 방금 누른 버튼이라 위치 축과 동형의
+ * 차단형 모달로 복구 동선을 준다 (스펙 Q3).
+ */
+describe("derivePermissionNotice — 갤러리 축 (MSG-564 기준 9)", () => {
+  it("허용이면 안내가 없다 (기준 9)", () => {
+    expect(derivePermissionNotice("gallery", "granted")).toBeNull();
+  });
+
+  it("다시 물을 수 있으면 [권한 요청]이고 본문이 설정으로 보내지 않는다 (기준 9)", () => {
+    const notice = derivePermissionNotice("gallery", "undetermined");
+
+    expect(notice).toMatchObject({
+      title: "갤러리 접근 권한이 필요해요",
+      recovery: "request",
+      actionLabel: "권한 요청",
+    });
+    expect(notice?.message).not.toContain("설정");
+  });
+
+  it("영구 거부면 [설정 열기]이고 본문이 설정을 가리킨다 (기준 9)", () => {
+    const notice = derivePermissionNotice("gallery", "denied");
+
+    expect(notice).toMatchObject({
+      recovery: "settings",
+      actionLabel: "설정 열기",
+    });
+    expect(notice?.message).toContain("설정");
+  });
+});
+
+/**
  * MSG-447 **실기 회귀** — 안내 본문이 CTA와 어긋나던 결함.
  *
  * 실기에서 관찰: 프롬프트를 닫아 `undetermined`로 남은 상태에서 안내가 [권한 요청] 버튼을

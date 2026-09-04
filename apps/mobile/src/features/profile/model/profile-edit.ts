@@ -39,6 +39,28 @@ export const shouldRemoveProfileImage = (
   profileImageUrl: string | null,
 ): boolean => reserved && profileImageUrl !== null;
 
+/** [저장] 시 이미지 단계에서 나갈 요청 — 업로드·삭제·없음 */
+export type ProfileImageAction = "upload" | "remove" | "none";
+
+/**
+ * [저장] 시 이미지 액션 판정 (MSG-564 기준 6, 결정 D2) — 마지막 조작이 이긴다.
+ * 화면이 선택 시 예약을 풀고 예약 시 선택을 폐기하므로 둘이 동시에 참이면 예약이 나중 조작이다.
+ * 웹은 `ProfileEditModal.handleConfirm`에 인라인이지만 모바일은 렌더 테스트가 없어 순수 함수로
+ * 뗀다 (`shouldRemoveProfileImage` 선례).
+ */
+export const resolveProfileImageAction = (input: {
+  hasSelection: boolean;
+  removalReserved: boolean;
+  profileImageUrl: string | null;
+}): ProfileImageAction => {
+  if (input.removalReserved) {
+    return shouldRemoveProfileImage(true, input.profileImageUrl)
+      ? "remove"
+      : "none";
+  }
+  return input.hasSelection ? "upload" : "none";
+};
+
 /**
  * 저장할 닉네임과 요청 필요 여부. 앞뒤 공백은 잘라내고, 현재 값과 같으면 요청을 생략한다.
  * trim은 공백 선두 닉네임이 아바타 이니셜을 빈 칸으로 만드는 결함을 막는다 —

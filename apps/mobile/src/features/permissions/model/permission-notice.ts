@@ -8,7 +8,8 @@ import { PUSH_PERMISSION_DENIED_MESSAGE } from "../../notifications/model/push-r
  * 길"이다. 그 길을 화면에 두면 모바일에는 렌더 테스트 인프라가 없어(vitest.config 정책) 회귀를
  * 잡을 자산이 실기밖에 남지 않으므로, 축 × 상태 → 안내·CTA 파생을 여기로 뺀다.
  */
-export type PermissionAxis = "location" | "notification";
+/** MSG-564: `gallery`(프로필 사진 선택) 추가 — 방금 누른 버튼이 막힌 상황이라 위치 축과 동형(차단형 모달) */
+export type PermissionAxis = "location" | "notification" | "gallery";
 
 /** 복구 수단 — 재요청(프롬프트가 아직 뜬다) vs 시스템 설정 이동(영구 거부) */
 export type PermissionRecovery = "request" | "settings";
@@ -48,6 +49,12 @@ const AXIS_COPY: Record<
     title: "알림 권한이 필요해요",
     request: "블러 처리 완료를 알림으로 받으려면 알림 권한을 허용해주세요",
     settings: PUSH_PERMISSION_DENIED_MESSAGE,
+  },
+  gallery: {
+    title: "갤러리 접근 권한이 필요해요",
+    request: "프로필 사진을 고르려면 갤러리 접근 권한을 허용해주세요",
+    settings:
+      "프로필 사진을 바꾸려면 기기 설정에서 사진 접근 권한을 허용해주세요",
   },
 };
 

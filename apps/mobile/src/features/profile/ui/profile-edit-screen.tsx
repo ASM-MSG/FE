@@ -1,11 +1,30 @@
 import { useEffect, useEffectEvent, useState } from "react";
-import { BackHandler, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  BackHandler,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  launchImageLibraryAsync,
+  requestMediaLibraryPermissionsAsync,
+} from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { User } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader, Avatar, Button, Input } from "@fillmap/ui-native";
 import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
+import {
+  toPermissionState,
+  type PermissionState,
+} from "../../../shared/permission-state";
+import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
+import {
+  useProfileImageUpload,
+  type ProfileImageUploadVariables,
+} from "../api/use-profile-image-upload";
 import { useProfileQuery } from "../api/use-profile-query";
 import { useRemoveProfileImage } from "../api/use-remove-profile-image";
 import { useUpdateNickname } from "../api/use-update-nickname";
@@ -13,9 +32,13 @@ import {
   canSaveProfile,
   nicknameError,
   resolveNicknameSave,
-  shouldRemoveProfileImage,
+  resolveProfileImageAction,
 } from "../model/profile-edit";
 import { profileImageErrorMessage } from "../model/profile-image";
+import {
+  measureFileSize,
+  toProfileImageCandidate,
+} from "../model/profile-image-pick";
 
 /**
  * SOURCE: Figma "프로필 편집" (node 14799:26233) — MSG-306 → MSG-426 개편.
@@ -29,8 +52,11 @@ import { profileImageErrorMessage } from "../model/profile-image";
  * 화면 로컬 상태와 함께 폐기된다(기준 15, 웹 MSG-407 미러) ④ 닉네임 2~20자 검증 사유
  * 표시(기준 17) ⑤ 저장이 `PUT /api/users/me/nickname` 실연동(결정 E2-b).
  *
- * [변경](업로드)은 여전히 표시만이다 — 티켓 동작 요구가 "두 버튼이 보인다"까지고
- * 이미지 업로드는 후속 티켓이다.
+ * [MSG-564] [변경]이 실연동됐다 (웹 MSG-378 `ProfileEditModal` 미러): 갤러리(이미지 전용,
+ * 크롭 없음) → 형식·5MB 사전 검증 → 로컬 미리보기, 업로드는 [저장] 시점에 presign → S3 PUT →
+ * 확정(결정 D1). 선택과 삭제 예약은 마지막 조작이 이긴다(D2). 업로드 중 아바타 위 진행
+ * 오버레이(Q1), 갤러리 권한 거부는 차단형 `PermissionNoticeModal`(Q3). 진행 오버레이·권한
+ * 모달·선택 거부 캡션은 Figma 노드에 없다 — 티켓 요구에 따른 의도적 추가.
  */
 export const ProfileEditScreen = () => {
   const insets = useSafeAreaInsets();
@@ -51,36 +77,107 @@ export const ProfileEditScreen = () => {
     if (untouched) setNickname(identity.nickname);
   }
 
-  /** [기본 이미지로] 예약 — 서버 반영은 [저장] 시점 (기준 15) */
+  /** 갤러리에서 고른 이미지 — 서버 반영은 [저장] 시점 (결정 D1). 선택 시 삭제 예약을 푼다 */
+  const [selected, setSelected] = useState<ProfileImageUploadVariables | null>(
+    null,
+  );
+  /** 선택 직후 형식·크기 거부 문구 (기준 2) — 요청 없이 캡션만, 이전 미리보기는 유지 */
+  const [pickError, setPickError] = useState<string | null>(null);
+  /** [기본 이미지로] 예약 — 서버 반영은 [저장] 시점 (기준 15). 예약 시 선택을 폐기한다 */
   const [removalReserved, setRemovalReserved] = useState(false);
+  /** 갤러리 권한 안내 — null이면 닫힘 (기준 10) */
+  const [galleryNotice, setGalleryNotice] = useState<PermissionState | null>(
+    null,
+  );
 
+  const upload = useProfileImageUpload();
   const removeImage = useRemoveProfileImage();
   const saveNickname = useUpdateNickname({ onSaved: () => router.back() });
-  const isSaving = removeImage.isPending || saveNickname.isPending;
+  const isSaving =
+    upload.isPending || removeImage.isPending || saveNickname.isPending;
 
   const validationMessage = nicknameError(nickname);
+  // 우선순위: 선택 거부 → 업로드 실패 → 삭제 실패 → 닉네임 실패 (웹 `sizeError ?? upload.error ?? remove.error` 미러)
   const errorMessage =
-    removeImage.error !== null
-      ? profileImageErrorMessage(removeImage.error)
-      : saveNickname.error !== null
-        ? "닉네임 저장에 실패했어요. 다시 시도해주세요"
-        : null;
+    pickError ??
+    (upload.error !== null
+      ? profileImageErrorMessage(upload.error)
+      : removeImage.error !== null
+        ? profileImageErrorMessage(removeImage.error)
+        : saveNickname.error !== null
+          ? "닉네임 저장에 실패했어요. 다시 시도해주세요"
+          : null);
+
+  /**
+   * [변경] — 권한(결정 D12) → 갤러리 이미지 전용(D4) → 사전 검증(D3) → 로컬 미리보기.
+   * 이 시점에 네트워크 요청은 없다 (기준 1). 저장 중에는 받지 않는다 — 재선택이 `reset()`으로
+   * 진행 중 뮤테이션의 가드를 풀면 늦게 완료된 이전 업로드가 새 선택을 덮어쓴다(웹 PR #51 리뷰).
+   */
+  const pickImage = async () => {
+    if (isSaving) return;
+    const permission = toPermissionState(
+      await requestMediaLibraryPermissionsAsync(),
+    );
+    if (permission !== "granted") {
+      setGalleryNotice(permission);
+      return;
+    }
+    const result = await launchImageLibraryAsync({ mediaTypes: "images" });
+    const asset = result.canceled ? undefined : result.assets[0];
+    if (asset === undefined) return;
+    // 픽커가 fileSize를 안 주면 실측 (스펙 Q2)
+    const fileSize = asset.fileSize ?? (await measureFileSize(asset.uri));
+    const pick = toProfileImageCandidate({ ...asset, fileSize });
+    if (pick.kind === "rejected") {
+      setPickError(pick.message);
+      return;
+    }
+    setSelected({ uri: pick.uri, candidate: pick.candidate });
+    // 새 선택은 삭제 예약과 상호 배타 — 예약을 해제한다 (결정 D2)
+    setRemovalReserved(false);
+    setPickError(null);
+    upload.reset();
+    removeImage.reset();
+  };
+
+  /** [기본 이미지로] — 삭제 예약 + 진행 중이던 선택 폐기 (결정 D2). 요청은 [저장] 시점 */
+  const reserveRemoval = () => {
+    setSelected(null);
+    setPickError(null);
+    upload.reset();
+    removeImage.reset();
+    setRemovalReserved(true);
+  };
 
   const handleSave = () => {
     const save = resolveNicknameSave(nickname, identity.nickname);
-    // 순차 실행: 이미지 삭제 → 닉네임. 무변경 단계는 요청을 만들지 않는다
+    // 순차 실행: 이미지(업로드 또는 삭제) → 닉네임. 무변경 단계는 요청을 만들지 않는다
     const finishWithNickname = () => {
       if (save.shouldRequest) saveNickname.mutate(save.nickname);
       else router.back();
     };
-    if (shouldRemoveProfileImage(removalReserved, identity.profileImageUrl)) {
-      // 성공분이 재요청되지 않도록 예약을 즉시 폐기한다. 다음 단계를 per-call 콜백으로
-      // 잇는 것은 저장 중 이탈이 **막혀 있기 때문에** 안전하다 — 아래 leaveIfIdle과
-      // hardwareBackPress 가드가 그 전제를 강제한다(가드가 없으면 이미지만 지워지고
-      // 닉네임 저장이 조용히 누락된다 — MSG-426 리뷰)
+    // 성공분이 재요청되지 않도록 선택·예약을 즉시 폐기한다. 다음 단계를 per-call 콜백으로
+    // 잇는 것은 저장 중 이탈이 **막혀 있기 때문에** 안전하다 — 아래 leaveIfIdle과
+    // hardwareBackPress 가드가 그 전제를 강제한다(가드가 없으면 이미지만 바뀌고
+    // 닉네임 저장이 조용히 누락된다 — MSG-426 리뷰)
+    const action = resolveProfileImageAction({
+      hasSelection: selected !== null,
+      removalReserved,
+      profileImageUrl: identity.profileImageUrl,
+    });
+    if (action === "remove") {
       removeImage.mutate(undefined, {
         onSuccess: () => {
           setRemovalReserved(false);
+          finishWithNickname();
+        },
+      });
+      return;
+    }
+    if (action === "upload" && selected !== null) {
+      upload.mutate(selected, {
+        onSuccess: () => {
+          setSelected(null);
           finishWithNickname();
         },
       });
@@ -90,8 +187,8 @@ export const ProfileEditScreen = () => {
   };
 
   /**
-   * 저장 비행 중에는 이탈을 받지 않는다 (MSG-426 리뷰). 이미지 삭제 → 닉네임의 순차 실행이
-   * per-call 콜백으로 이어져 있어, 중간에 이 화면이 언마운트되면 **이미지는 서버에서 지워졌는데
+   * 저장 비행 중에는 이탈을 받지 않는다 (MSG-426 리뷰). 이미지 → 닉네임의 순차 실행이
+   * per-call 콜백으로 이어져 있어, 중간에 이 화면이 언마운트되면 **이미지는 서버에서 바뀌었는데
    * 닉네임 저장만 조용히 누락**된다(사용자에게 오류도 안 보인다). 하단 [취소]/[저장]은 이미
    * `disabled={isSaving}`인데 헤더 `‹`와 하드웨어 뒤로가기만 열려 있던 구멍을 막는다.
    * MSG-422 `abortSignup` 가드와 같은 취지다.
@@ -137,18 +234,27 @@ export const ProfileEditScreen = () => {
         >
           {/* 아바타 + [변경]/[기본 이미지로] + 안내 (기준 14·15) — 아바타 80px */}
           <View className="items-center gap-md">
-            <Avatar
-              size="lg"
-              className="size-20"
-              // 예약 즉시 기본 이미지로 보인다 — 서버 반영 전에도 결과를 미리 보여 준다
-              src={
-                removalReserved
-                  ? undefined
-                  : (identity.profileImageUrl ?? undefined)
-              }
-              alt={identity.nickname}
-              fallbackIcon={<User size={40} color={semantic.muted} />}
-            />
+            <View className="relative">
+              <Avatar
+                size="lg"
+                className="size-20"
+                // 우선순위: 예약(기본 이미지) → 로컬 미리보기 → 서버 → 기본 (웹 미러) —
+                // 서버 반영 전에도 결과를 미리 보여 준다
+                src={
+                  removalReserved
+                    ? undefined
+                    : (selected?.uri ?? identity.profileImageUrl ?? undefined)
+                }
+                alt={identity.nickname}
+                fallbackIcon={<User size={40} color={semantic.muted} />}
+              />
+              {/* 업로드 진행 표시 (기준 7, Q1) — S3 왕복 중에만. 삭제·닉네임 저장은 버튼 문구로 충분 */}
+              {upload.isPending && (
+                <View className="absolute inset-0 items-center justify-center rounded-full bg-background/60">
+                  <ActivityIndicator color={semantic.primary} />
+                </View>
+              )}
+            </View>
             <View className="flex-row items-center gap-sm">
               <Button
                 text="변경"
@@ -156,6 +262,8 @@ export const ProfileEditScreen = () => {
                 size="sm"
                 shape="pill"
                 className="border border-primary"
+                disabled={isSaving}
+                onPress={() => void pickImage()}
               />
               <Button
                 text="기본 이미지로"
@@ -164,7 +272,7 @@ export const ProfileEditScreen = () => {
                 shape="pill"
                 className="border border-border"
                 disabled={isSaving}
-                onPress={() => setRemovalReserved(true)}
+                onPress={reserveRemoval}
               />
             </View>
             <Text className="text-center text-fm-caption text-foreground-muted">
@@ -191,7 +299,7 @@ export const ProfileEditScreen = () => {
             )}
           </View>
 
-          {/* [취소]/[저장] — [취소]·뒤로가기는 삭제 예약·닉네임 편집을 모두 폐기한다 (기준 15) */}
+          {/* [취소]/[저장] — [취소]·뒤로가기는 선택·삭제 예약·닉네임 편집을 모두 폐기한다 (기준 15) */}
           <View className="mt-auto flex-row gap-md pt-lg">
             <Button
               text="취소"
@@ -212,6 +320,14 @@ export const ProfileEditScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* 갤러리 권한 안내 (기준 10, Q3) — [권한 요청]은 픽커를 다시 열고, [설정 열기]는 모달이 처리 */}
+      <PermissionNoticeModal
+        axis="gallery"
+        state={galleryNotice}
+        onDismiss={() => setGalleryNotice(null)}
+        onRequest={() => void pickImage()}
+      />
     </View>
   );
 };
