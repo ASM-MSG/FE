@@ -235,6 +235,26 @@ describe("계정 발급 요청 제출 (AC 3·5)", () => {
     expect(screen.getByText("서면 겨울 축제")).toBeDefined();
   });
 
+  it("요약의 긴 값(제약 상한 이메일)은 카드 밖으로 넘치지 않고 줄바꿈된다 (AC 5 · codex P2)", async () => {
+    // 서버 DTO는 255자 이메일을 허용한다 — 공백 없는 최대 길이 값이 요약에 들어와도
+    // 카드를 밀어내면 안 된다. flex 자식의 기본 `min-width: auto`는 줄바꿈을 막으므로
+    // 값 셀은 `min-w-0`과 단어 분해 규칙을 함께 가져야 한다(jsdom은 레이아웃이 없어
+    // 클래스 계약으로 판정한다 — 실제 렌더는 브라우저 검증 몫).
+    const longEmail = `${"a".repeat(240)}@busanjin.go.kr`;
+    expect(longEmail).toHaveLength(255);
+
+    acceptedFetch();
+    renderPage();
+    fillForm({ "공식 이메일": longEmail });
+
+    submit();
+
+    await screen.findByRole("heading", { name: "계정 발급 요청 완료" });
+    const valueCell = screen.getByText(longEmail);
+    expect(valueCell.className).toContain("min-w-0");
+    expect(valueCell.className).toMatch(/break-words|break-all|wrap-anywhere/);
+  });
+
   it("완료 화면에서 좌측 안내가 접수 문구로 바뀌고 2단계가 활성이 된다 (AC 5)", async () => {
     acceptedFetch();
     renderPage();

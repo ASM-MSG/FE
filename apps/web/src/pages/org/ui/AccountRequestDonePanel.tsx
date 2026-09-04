@@ -57,7 +57,12 @@ export const AccountRequestDonePanel = ({
             <dt className="w-20 shrink-0 text-fm-caption text-foreground-muted">
               {label}
             </dt>
-            <dd className="text-fm-body-strong text-foreground-body">
+            {/*
+             * `min-w-0` + `break-words`: DTO는 255자 이메일·200자 행사명을 허용하고
+             * 이메일에는 공백이 없다. flex 자식의 기본 `min-width: auto`는 내용보다
+             * 좁아지지 않으므로 이 두 규칙이 없으면 긴 값이 카드와 뷰포트를 밀어낸다.
+             */}
+            <dd className="min-w-0 break-words text-fm-body-strong text-foreground-body">
               {summary[field]}
             </dd>
           </div>
