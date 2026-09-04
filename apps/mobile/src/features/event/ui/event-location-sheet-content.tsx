@@ -1,6 +1,5 @@
 import { Text, View } from "react-native";
 import { Button, VideoCard } from "@fillmap/ui-native";
-import { goToVideoPlayback } from "../../../shared/navigation";
 import type { HomeSheetContentContext } from "../../map-home/ui/home-sheet";
 import { SheetHeader } from "../../map-home/ui/sheet-header";
 import { SheetScrollView } from "../../map-home/ui/sheet-scroll-view";
@@ -88,8 +87,7 @@ export const EventLocationSheetContent = ({
                 }
                 meta={video.timeLabel}
                 accessibilityLabel={video.accessibilityLabel}
-                // `mine`은 표기용 신호일 뿐 접근 판정이 아니다 — DTO에 소유 정보가 없다
-                onPress={() => goToVideoPlayback(video.videoId, false)}
+                onPress={() => handlers.selectVideo(video.videoId)}
               />
             ))}
             {location.hasNext && (

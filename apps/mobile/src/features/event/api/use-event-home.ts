@@ -41,6 +41,7 @@ import {
   getEventSelection,
   openEventRoom,
   selectEventLocation,
+  selectEventVideo,
   stepBackEvent,
   useEventSelection,
   type EventRoomSelection,
@@ -58,6 +59,7 @@ import { useKstToday } from "../model/use-kst-today";
 import { useEventHeartbeat } from "./use-event-heartbeat";
 import { useEventOccurrencesQuery } from "./use-event-occurrences-query";
 import { useEventRoomQuery } from "./use-event-room-query";
+import { videoSheetInput, type EventVideoInput } from "./use-event-video-sheet";
 import { useLocationVideosQuery } from "./use-location-videos-query";
 import { useViewerCountQuery } from "./use-viewer-count-query";
 
@@ -128,6 +130,8 @@ export interface EventHome {
   overlayColor: string | undefined;
   /** 위치 상세 시트 재료 — 위치 미선택이면 null (MSG-560 D4) */
   location: EventLocationView | null;
+  /** 현장 영상 시트 입력 (MSG-562 D13) — 상세·댓글은 `use-event-video-sheet`가 소유. 미선택이면 null */
+  video: EventVideoInput | null;
   /** 선택 위치의 강조 셀 (D3) — 미선택이면 undefined(기존 렌더 불변) */
   accentCells: GridCellIndex[] | undefined;
   /** 강조 색 `theme-festival` — 셀과 같은 수명 (D3) */
@@ -143,6 +147,8 @@ export interface EventHome {
     selectLocation: (locationId: number) => void;
     /** 지도 셀 탭 — 소속 위치가 있으면 위치 상세로, 없으면 무동작 (MSG-560 D2) */
     tapCell: (cell: GridCellIndex) => void;
+    /** 위치 상세의 영상 카드 탭 — 현장 영상 상세로 (MSG-562 D12) */
+    selectVideo: (videoId: number) => void;
     /** 위치 상세의 업로드 버튼 2곳 — 행사 귀속 모드로 업로드 플로우를 연다 (D11) */
     openUpload: () => void;
     /** `‹`·하드웨어 백 — 소비했으면 true (D14) */
@@ -156,8 +162,8 @@ export interface EventHome {
  * 여기서 끝내고 화면은 훅 호출 한 번과 prop 배선만 남긴다(MSG-428 G3 선례 — 화면 diff 예산).
  * 지도 SDK·라우터를 import하지 않는다(RN 경계) — 카메라·업로드 이동은 콜백 주입.
  * MSG-560: 위치 슬롯·위치 영상·시청 인원 폴링·heartbeat·지도 강조/라벨·업로드 귀속까지
- * 여기서 조립한다. 후속 확장점: 익명 heartbeat(`X-Viewer-Session` RN 저장소 어댑터),
- * 영상 미니 패널·도움돼요·댓글(웹 MSG-520 `getVideoDetail`).
+ * 여기서 조립한다. MSG-562: 영상 슬롯(`video`)만 노출 — 상세·댓글·뮤테이션은 `use-event-video-sheet`.
+ * 후속 확장점: 익명 heartbeat(`X-Viewer-Session` RN 저장소 어댑터).
  */
 export const useEventHome = ({
   bounds,
@@ -283,6 +289,7 @@ export const useEventHome = ({
         // 행사 셀이 아니면 무동작 — 이벤트 모드 중 홈 격자 상세를 열지 않는다 (557 유지)
         if (locationId !== null) selectLocationById(locationId);
       },
+      selectVideo: selectEventVideo,
       openUpload: () => {
         const { room, location, title, onUpload } = latest.current;
         // 두 버튼 모두 방·위치가 선 상태에서만 렌더된다 — 타입 좁히기용 가드
@@ -372,6 +379,7 @@ export const useEventHome = ({
     overlayCells,
     overlayColor: overlayCells ? semantic.primary : undefined,
     location,
+    video: videoSheetInput(selection.video, selectedLocation, snapshot.title),
     accentCells,
     accentColor: accentCells ? palette["theme-festival"] : undefined,
     mapLabel,
