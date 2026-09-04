@@ -29,6 +29,14 @@ interface SelectorProps extends SelectorBaseProps {
   onCheckedChange?: (checked: boolean) => void;
   id?: string;
   className?: string;
+  /**
+   * 무효 상태와 사유 연결 (MSG-543) — 폼에서 이 컨트롤이 검증에 걸렸을 때
+   * 스크린리더에 "무효 + 사유는 이 요소"를 알린다. 텍스트 입력은 `Input`이
+   * 같은 두 속성을 받는데 체크박스만 통로가 없어 오류 문구가 시각 전용이었다.
+   * 시각 표현은 바꾸지 않는다 — 상태 전달만 담당한다.
+   */
+  "aria-invalid"?: boolean | "true" | "false";
+  "aria-describedby"?: string;
 }
 
 /**
@@ -44,6 +52,8 @@ export const Selector = ({
   onCheckedChange,
   id,
   className,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedby,
 }: SelectorProps) => (
   <CheckboxPrimitive.Root
     id={id}
@@ -51,6 +61,8 @@ export const Selector = ({
     defaultChecked={defaultChecked}
     disabled={disabled}
     onCheckedChange={(value) => onCheckedChange?.(value === true)}
+    aria-invalid={ariaInvalid}
+    aria-describedby={ariaDescribedby}
     className={cn(selectorVariants({ type }), className)}
   >
     {type === "checkbox" && (

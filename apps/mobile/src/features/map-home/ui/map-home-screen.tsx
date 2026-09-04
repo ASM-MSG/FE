@@ -7,7 +7,6 @@ import { MapIconButton } from "@fillmap/ui-native";
 import type { GridCellIndex } from "../../../entities/cell/model/grid";
 import {
   SEOMYEON_CENTER,
-  resolveMapCenter,
   resolveMapCenterWithPermission,
 } from "../../../shared/geolocation";
 import type { PermissionState } from "../../../shared/permission-state";
@@ -32,6 +31,7 @@ import { setSelectedGridId, useSelectedGridId } from "../model/grid-selection";
 import { canOpenDetail } from "../model/home-cell-detail";
 import { deriveSheetState } from "../model/home-sheet-state";
 import { locateBottomOffset } from "../model/locate-offset";
+import { nextTracking } from "../model/location-overlay";
 import {
   setSelectedMissionId,
   useSelectedMissionId,
@@ -54,6 +54,7 @@ import { HomeSheet } from "./home-sheet";
 import type { HomeSheetRef } from "./home-sheet";
 import { ClusterErrorNotice } from "./cluster-error-notice";
 import { HomeTopBar } from "./home-top-bar";
+import { useCurrentLocation } from "./use-current-location";
 import { useHomeOverlays } from "./use-home-overlays";
 
 /** BottomNav 바 실높이(h-16=64px) — 카메라 돌출부(상단 20px)는 시트 위로 겹친다 */
@@ -110,6 +111,13 @@ export const MapHomeScreen = () => {
   const [locationNotice, setLocationNotice] = useState<PermissionState | null>(
     null,
   );
+  /**
+   * 현재 위치 점·원 + 내 위치 버튼 "추적 중" (MSG-565). 구독은 홈 포커스·포그라운드에만
+   * 켜지고(D4), 추적은 탭 승인으로 켜져 제스처로만 풀린다(D7·D9). 추적 중엔 위치 갱신마다
+   * 카메라가 따라간다(A1 — 네이버 지도 앱 추적 모드).
+   */
+  const { location, restart: restartLocation } = useCurrentLocation();
+  const [tracking, setTracking] = useState(false);
   /** 확장점 ① — 시트 단계·컨테이너 높이 (내 위치 버튼 오프셋 계산용) */
   const [sheetLayout, setSheetLayout] = useState<{
     stage: SheetStage;
@@ -286,14 +294,29 @@ export const MapHomeScreen = () => {
   useEffect(() => {
     // 초기 중심 결정: 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만
     // 현재 위치로 이동한다 — 폴백(SEOMYEON_CENTER)은 동일 객체 참조라 이동 생략.
-    void resolveMapCenter().then((center) => {
+    void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      // 초기 요청이 승인으로 끝났을 때만 위치 구독을 (재)시작한다 (MSG-565 D5) — 마운트 구독은
+      // 프롬프트 전에 "미승인"으로 끝나 있으므로, 승인이 아니면 재구독할 이유가 없다 (Claude 리뷰 🟢)
+      if (permission === "granted") restartLocation();
       if (movedToSearchTargetRef.current) return;
       if (center !== SEOMYEON_CENTER) mapRef.current?.moveTo(center);
     });
-  }, []);
+  }, [restartLocation]);
+
+  // 추적 중 카메라 추종 (MSG-565 A1) — 위치가 갱신되면 줌은 두고 중심만 따라간다
+  useEffect(() => {
+    if (tracking && location) mapRef.current?.panTo(location);
+  }, [tracking, location]);
+
+  // 위치가 **있다가 지워지면**(권한 회수 → 어댑터가 null) 추적도 끈다 (codex 리뷰). `location`만
+  // 의존해야 한다 — `tracking`까지 걸면 최초 권한 승인 직후(위치 도착 전) 켜진 추적을 곧바로
+  // 되돌리는 레이스가 생긴다 (Claude 리뷰 🔴)
+  useEffect(() => {
+    if (location === null) setTracking(false);
+  }, [location]);
 
   /**
-   * 내 위치 버튼 — 현재 위치로 카메라 이동. 조회는 이동 종료가 갱신한다.
+   * 내 위치 버튼 — 현재 위치로 카메라 이동(줌 유지, MSG-565 D6) + 추적 시작.
    *
    * [MSG-447 기준 2·4] 권한이 없으면 **카메라를 움직이지 않고** 안내를 띄운다. 종전에는
    * 폴백 좌표(서면)로 그냥 이동해, 사용자가 보고 있던 위치를 권한 거부의 부작용으로 잃고도
@@ -301,12 +324,24 @@ export const MapHomeScreen = () => {
    * 권한 문제가 아닌 것을 권한 문제로 안내하지 않는다.
    */
   const handleLocate = () => {
+    // 구독 위치가 이미 있으면(= 권한 승인) 신규 조회(최대 3s·타임아웃 시 서면 폴백)를 기다리지
+    // 않고 즉시 이동한다 — 실기에서 첫 탭은 폴백/옛 위치로 가고 두 번째 탭에야 도착하던 증상
+    if (location) {
+      // 꺼져 있으면 켜기만 한다 — 추종 effect가 이동을 맡아 panTo 중복 호출을 피한다 (Claude 리뷰 🟡).
+      // 이미 추적 중이면(Developer 이동으로 중심이 벗어났을 수 있음) 직접 되돌린다
+      if (tracking) mapRef.current?.panTo(location);
+      else setTracking(true);
+      return;
+    }
     void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      setTracking((prev) => nextTracking(prev, { kind: "locate", permission }));
       if (permission !== "granted") {
         setLocationNotice(permission);
         return;
       }
-      mapRef.current?.moveTo(center);
+      // 탭이 권한 승인으로 끝났으면 구독을 (재)시작한다 (D5) — 거부 상태의 구독은 no-op이었다
+      restartLocation();
+      mapRef.current?.panTo(center);
     });
   };
 
@@ -365,6 +400,12 @@ export const MapHomeScreen = () => {
             missionLabel={event.mapLabel ?? overlays.missionLabel}
             clusters={aggregation.clusters}
             onViewportChange={setViewport}
+            currentLocation={location}
+            onGestureCameraChange={() =>
+              setTracking((prev) =>
+                nextTracking(prev, { kind: "camera", reason: "Gesture" }),
+              )
+            }
           />
         </View>
 
@@ -393,7 +434,11 @@ export const MapHomeScreen = () => {
             ),
           }}
         >
-          <MapIconButton icon="locate" onPress={handleLocate} />
+          <MapIconButton
+            icon="locate"
+            active={tracking}
+            onPress={handleLocate}
+          />
         </View>
 
         {/* 시트 쉘/콘텐츠 분리 (MSG-298) — 쉘은 콘텐츠를 모르고, 분기는 스위치가 소유한다 */}
