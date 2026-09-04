@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CONSOLE_ROUTES } from "@/app/console-routes";
 import { KAKAO_CALLBACK_PATH } from "@/app/routes";
 import { appOrigin, redirectTo } from "@/shared/navigation";
 import { oauthStateStorage, webStorage } from "@/shared/storage";
@@ -76,8 +77,31 @@ describe("로그인 모달 스모크", () => {
         "로그인 시 서비스 약관과 개인정보 처리 방침에 동의합니다",
       ),
     ).toBeTruthy();
-    // 약관 문구는 플레인 텍스트 — 링크 연결은 제외 범위 (구 페이지 스모크 AC 7 계약 승계)
-    expect(screen.queryAllByRole("link")).toEqual([]);
+    // 약관 문구는 여전히 플레인 텍스트 — 유일한 링크는 MSG-555 콘솔 진입 링크다
+    // (구 페이지 스모크 AC 7 "약관 링크 없음" 계약은 이 형태로 승계된다)
+    expect(screen.queryAllByRole("link")).toHaveLength(1);
+    expect(
+      screen.getByRole("link", { name: "운영자 콘솔 로그인 →" }),
+    ).toBeTruthy();
+  });
+
+  it("하단에 행사 운영자 안내 링크가 보이고 콘솔 로그인으로 이동한다 (MSG-555 AC 1·10)", () => {
+    renderModal();
+
+    expect(screen.getByText("행사 운영자이신가요?")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "운영자 콘솔 로그인 →" })
+        .getAttribute("href"),
+    ).toBe(CONSOLE_ROUTES.orgLogin);
+  });
+
+  it("운영자 콘솔 링크를 누르면 로그인 모달이 닫힌다 — 복귀 시 유령 모달 방지 (MSG-555 AC 2)", () => {
+    renderModal();
+
+    fireEvent.click(screen.getByRole("link", { name: "운영자 콘솔 로그인 →" }));
+
+    expect(useLoginModalStore.getState().open).toBe(false);
   });
 
   it("✕ 버튼으로 닫힌다 — 원래 화면 그대로, URL 불변 (G3)", () => {
