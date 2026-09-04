@@ -323,4 +323,19 @@ describe("확인 모달과 제출 (AC 6·7·8·11)", () => {
     );
     expect(submitRequests(received)).toHaveLength(2);
   });
+
+  it("실패 후 모달을 닫았다 재오픈하면 이전 실패 안내가 남지 않는다 (AC 11 — PR #140 리뷰 반영)", async () => {
+    stubFetch(() => errorEnvelope(13433, "종료일이 오늘 이전입니다", 400));
+    enterReviewStep();
+    checkFactConfirm();
+    fireEvent.click(submitButton());
+    fireEvent.click(screen.getByRole("button", { name: "제출하기" }));
+    expect(await screen.findByRole("alert")).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "취소" }));
+    fireEvent.click(submitButton());
+
+    expect(screen.getByRole("button", { name: "제출하기" })).toBeDefined();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });

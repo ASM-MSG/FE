@@ -131,7 +131,11 @@ export const ReviewStep = () => {
 
       <SubmitConfirmDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(open) => {
+          // 닫힐 때 실패 상태를 지운다 — 재오픈 시 이전 실패 안내 잔상 방지 (ProfileEditModal 선례)
+          if (!open) submit.reset();
+          setIsDialogOpen(open);
+        }}
         isPending={submit.isPending}
         errorMessage={
           submit.error === null ? null : submitFailureNotice(submit.error)
