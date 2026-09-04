@@ -37,7 +37,7 @@ interface VideoPlayerScreenProps {
  * 커스텀 컨트롤은 시안이 없어 전부 추정이 되고, 스크러버 접근성도 직접 만들어야 한다.
  *
  * 소스는 항상 null로 첫 렌더된 뒤 조회 응답으로 채워진다. `player.replace*`를 손으로
- * 부르지 않는 이유는 `blur-preview.tsx` JSDoc에 실측으로 기록돼 있다 — `useVideoPlayer`가
+ * 부르지 않는 이유는 `upload-video-preview.tsx` JSDoc에 실측으로 기록돼 있다 — `useVideoPlayer`가
  * 소스 변경 시 플레이어를 재생성하므로 교체를 더하면 같은 소스를 두 번 로드하며 경합한다.
  * 재생성 시 setup 콜백이 다시 돌아 자동 재생이 성립한다 (승인 추정 5).
  */
