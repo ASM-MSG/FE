@@ -17,7 +17,13 @@ import { hasTimezoneMarker, KST_OFFSET_MS } from "@/shared/kst-date";
  */
 const toKstParts = (
   iso: string,
-): { year: number; month: number; day: number } => {
+): {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+} => {
   const normalized =
     iso.includes("T") && !hasTimezoneMarker(iso) ? `${iso}Z` : iso;
   const kst = new Date(Date.parse(normalized) + KST_OFFSET_MS);
@@ -25,6 +31,8 @@ const toKstParts = (
     year: kst.getUTCFullYear(),
     month: kst.getUTCMonth() + 1,
     day: kst.getUTCDate(),
+    hour: kst.getUTCHours(),
+    minute: kst.getUTCMinutes(),
   };
 };
 
@@ -45,6 +53,30 @@ const monthDayDate = (iso: string): string => {
   const { month, day } = toKstParts(iso);
   return `${month}. ${day}.`;
 };
+
+/**
+ * 상세의 접수·처리·이력 시각 "2026. 9. 18. 10:24" (MSG-549 AC 5·6·7·9).
+ * 시·분은 두 자리로 맞춘다(시안 "10:24") — 자정대가 "0:30"으로 흔들리지 않는다.
+ */
+export const formatKstDateTime = (iso: string): string => {
+  const { hour, minute } = toKstParts(iso);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  // 날짜부는 요약 카드와 같은 표기라 fullDate를 그대로 재사용한다 (중복 게이트 지적)
+  return `${fullDate(iso)} ${pad(hour)}:${pad(minute)}`;
+};
+
+/**
+ * 목록 행·상세 기본 정보의 행사 기간 "2026-09-05 ~ 09-07" (MSG-549 AC 1).
+ * 서버 LocalDate("YYYY-MM-DD")를 자릿수로 자른다 — `new Date` 파싱을 거치지 않아
+ * 실행 환경 타임존과 무관하다. 같은 해면 종료일의 연도를 생략한다(시안 표기).
+ */
+export const formatSubmissionDateRange = (
+  startsOn: string,
+  endsOn: string,
+): string =>
+  `${startsOn} ~ ${
+    startsOn.slice(0, 4) === endsOn.slice(0, 4) ? endsOn.slice(5) : endsOn
+  }`;
 
 /** 목록 행의 기간 "9.5–9.7" (AC 2) — 구분자는 시안의 en dash */
 export const formatSubmissionPeriod = (
