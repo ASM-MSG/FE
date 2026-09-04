@@ -1,7 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { ScrollView, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
+import {
+  LOAD_MORE_THRESHOLD_PX,
+  isNearScrollEnd,
+  type ScrollMetrics,
+} from "../model/scroll-end";
 import type { HomeSheetContentContext } from "./home-sheet";
 
 /**
@@ -14,6 +19,13 @@ import type { HomeSheetContentContext } from "./home-sheet";
 interface SheetScrollViewProps extends HomeSheetContentContext {
   /** 콘텐츠 교체를 알리는 키 — 바뀌면 스크롤 오프셋 0을 다시 보고한다 */
   resetKey?: unknown;
+  /**
+   * 스크롤 끝 근접(`LOAD_MORE_THRESHOLD_PX`) 시 호출 (MSG-571 AC 8) — 스크롤뿐 아니라
+   * 레이아웃·콘텐츠 크기 변화에서도 판정한다: 첫 페이지가 뷰포트를 못 채우면 스크롤
+   * 이벤트가 아예 없어 `onScroll`만으로는 영영 이어받지 못한다(codex 리뷰 P2-2). 임계
+   * 안에서는 매 이벤트마다 불리므로 연속 발화 가드는 호출부(훅의 loadMore)가 진다
+   */
+  onEndReached?: () => void;
   children: ReactNode;
 }
 
@@ -22,6 +34,7 @@ export const SheetScrollView = ({
   scrollEnabled,
   onScrollOffsetChange,
   resetKey,
+  onEndReached,
   children,
 }: SheetScrollViewProps) => {
   // 콘텐츠 교체·상태 전환으로 스크롤 뷰가 재마운트되면 오프셋 가드가 스테일해진다 —
@@ -29,6 +42,20 @@ export const SheetScrollView = ({
   useEffect(() => {
     onScrollOffsetChange(0);
   }, [onScrollOffsetChange, resetKey]);
+
+  // 최근 지표 — 세 이벤트(스크롤·레이아웃·콘텐츠 크기)가 각각 한 축만 갱신하므로 합쳐 둔다
+  const metrics = useRef<ScrollMetrics>({
+    contentOffset: { y: 0 },
+    layoutMeasurement: { height: 0 },
+    contentSize: { height: 0 },
+  });
+  const checkEndReached = () => {
+    if (
+      onEndReached &&
+      isNearScrollEnd(metrics.current, LOAD_MORE_THRESHOLD_PX)
+    )
+      onEndReached();
+  };
 
   return (
     <GestureDetector gesture={scrollGesture}>
@@ -39,8 +66,25 @@ export const SheetScrollView = ({
         overScrollMode="never"
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        onLayout={(event) => {
+          metrics.current.layoutMeasurement.height =
+            event.nativeEvent.layout.height;
+          checkEndReached();
+        }}
+        onContentSizeChange={(_width, height) => {
+          metrics.current.contentSize.height = height;
+          checkEndReached();
+        }}
         onScroll={(event) => {
-          onScrollOffsetChange(event.nativeEvent.contentOffset.y);
+          const { contentOffset, layoutMeasurement, contentSize } =
+            event.nativeEvent;
+          onScrollOffsetChange(contentOffset.y);
+          metrics.current = {
+            contentOffset: { y: contentOffset.y },
+            layoutMeasurement: { height: layoutMeasurement.height },
+            contentSize: { height: contentSize.height },
+          };
+          checkEndReached();
         }}
       >
         <View className="gap-md pb-9">{children}</View>

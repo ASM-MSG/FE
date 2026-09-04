@@ -15,7 +15,7 @@ import { semantic } from "@fillmap/design-tokens";
  * 시트 안에 넣을 수 없고, 티켓 [제외 범위]가 그 화면의 무수정을 요구한다(추정 A1).
  *
  * 소스는 항상 null로 첫 렌더된 뒤 상세 응답으로 채워진다. `useVideoPlayer`가 소스 변경 시
- * 플레이어를 재생성하고 언마운트 시 해제한다(`blur-preview.tsx` 실측) — 영상 교체·시트 이탈
+ * 플레이어를 재생성하고 언마운트 시 해제한다(`upload-video-preview.tsx` 실측) — 영상 교체·시트 이탈
  * 시 재생 정지는 마운트 수명으로 성립한다(D11). 재생성 시 setup 콜백이 다시 돌아 자동 재생.
  */
 interface EventVideoPlayerProps {

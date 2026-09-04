@@ -1,7 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button, RetryNotice, Skeleton } from "@fillmap/ui-web";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Button, RetryNotice, Skeleton, Toast } from "@fillmap/ui-web";
 import { CONSOLE_ROUTES } from "@/app/console-routes";
+import {
+  readSubmittedNo,
+  submissionReceiptToast,
+} from "@/features/event-submission/model/submission-review";
+import { useAutoDismissToast } from "@/features/video-actions/model/use-auto-dismiss-toast";
 import { useMySubmissionsQuery } from "@/features/org-submissions/api/use-my-submissions-query";
 import {
   filterSubmissions,
@@ -23,6 +28,12 @@ import { SubmissionListCard } from "./ui/SubmissionListCard";
 const submissionPath = (route: string, submissionId: number): string =>
   route.replace(":submissionId", String(submissionId));
 
+/**
+ * 접수 안내가 스스로 사라지는 시간 (MSG-548 AC 10) — 신청 번호 + 심사 소요 2줄을 읽을
+ * 여유를 둔다(계정 설정의 완료 안내 5초보다 문구가 길다).
+ */
+const RECEIPT_NOTICE_DURATION_MS = 6_000;
+
 const ListSkeleton = () => (
   <div className="flex flex-col gap-sm">
     <p role="status" className="sr-only">
@@ -37,7 +48,28 @@ const ListSkeleton = () => (
 export const OrgSubmissionsPage = () => {
   useDocumentTitle(formatDocumentTitle("내 신청 목록"));
   const navigate = useNavigate();
+  const { pathname, state } = useLocation();
   const [filter, setFilter] = useState<SubmissionFilter>("ALL");
+  const [receiptNo, setReceiptNo] = useAutoDismissToast(
+    RECEIPT_NOTICE_DURATION_MS,
+  );
+
+  // 제출 성공 직후 위저드가 넘긴 신청 번호를 1회 안내한다 (MSG-548 AC 10) — 콘솔에 전역
+  // 토스트 호스트가 없어 목적지 페이지가 그린다(MSG-544 페이지 소유 Toast 선례).
+  // 표시 후 history state를 비워 새로고침·뒤로가기 재방문에서 반복되지 않게 한다.
+  //
+  // **ref 가드는 필수다**(실측 — 없으면 무한 렌더로 워커가 OOM으로 죽는다): 토스트 설정은
+  // 매번 새 참조를 만들고 setter가 렌더마다 새로 생겨 이 이펙트가 매 렌더 실행되는데,
+  // 라우터의 state 비우기는 transition으로 커밋된다 — 급한 setState가 계속 끼어들면
+  // transition이 영원히 밀려 state가 비워지지 않는다. 번호당 1회로 잠가 그 고리를 끊는다.
+  const announcedNoRef = useRef<string | null>(null);
+  useEffect(() => {
+    const submittedNo = readSubmittedNo(state);
+    if (submittedNo === null || announcedNoRef.current === submittedNo) return;
+    announcedNoRef.current = submittedNo;
+    setReceiptNo(submittedNo);
+    navigate(pathname, { replace: true, state: null });
+  }, [state, pathname, navigate, setReceiptNo]);
 
   const { data, isPending, isError, refetch } = useMySubmissionsQuery();
   const submissions = data?.submissions ?? [];
@@ -60,6 +92,10 @@ export const OrgSubmissionsPage = () => {
         </div>
         <Button text="+ 새 행사 등록" onClick={goToWizard} />
       </header>
+
+      {receiptNo !== null && (
+        <Toast variant="light" {...submissionReceiptToast(receiptNo)} />
+      )}
 
       {isError ? (
         <RetryNotice

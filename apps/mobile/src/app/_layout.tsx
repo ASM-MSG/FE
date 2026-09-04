@@ -5,14 +5,17 @@ import {
   isRouteGuardOpen,
   PROTECTED_ROUTES,
 } from "../features/auth/model/app-entry";
-import { bootstrapAuth, useAuth } from "../features/auth/model/auth-session";
+import {
+  authStore,
+  bootstrapAuth,
+  useAuth,
+} from "../features/auth/model/auth-session";
 import { useConsentGate } from "../features/auth/model/use-consent-gate";
 import { SignupConsentScreen } from "../features/auth/ui/signup-consent-screen";
-import { usePushNavigation } from "../features/notifications/api/use-push-navigation";
+import { usePushForegroundHandler } from "../features/notifications/api/use-push-foreground-handler";
 import { usePushTokenSync } from "../features/notifications/api/use-push-registration";
-import { ProcessingNoticeHost } from "../features/upload/ui/processing-notice-host";
+import { configureReadyRefresh } from "../features/upload/api/start-ready-refresh";
 import { QueryProvider } from "../shared/api/query-provider";
-import { goToRoute } from "../shared/navigation";
 
 // API 부트스트랩 (MSG-419) — 에러 정규화 인터셉터 등록 + 인증 파이프라인 배선 +
 // 보안 저장소 재수화. 모듈 로드 시 1회 (웹 main.tsx 대응, 내부에 재진입 가드).
@@ -23,6 +26,9 @@ import { goToRoute } from "../shared/navigation";
 // (재작업 1회차: 이 가드만으로 env를 면제한다고 본 것이 결함이었다).
 if (process.env.EXPO_PUBLIC_STORYBOOK !== "1") {
   bootstrapAuth();
+  // READY 재무효화 폴의 세션 배선 (MSG-567 AC 13) — auth-session을 import할 수 없는
+  // use-upload-mutations 대신 여기서 주입한다(vitest 로드 제약, 스펙 A2)
+  configureReadyRefresh(authStore);
 }
 
 /**
@@ -37,26 +43,22 @@ const AppShell = () => {
   const { hydrated, isAuthenticated } = useAuth();
 
   /**
-   * 푸시 배선 (MSG-429 기준 14·16) — 게이트 **바깥**에 둔다. 알림 탭은 동의 게이트가
-   * 떠 있는 동안에도 도착하고, 토큰 자동 동기화는 화면 상태와 무관한 상주 작업이다.
-   * 신규 등록 경로가 아니라 기존 등록자의 재등록·로테이션뿐이라 권한 프롬프트는 뜨지 않는다.
+   * 푸시 배선 (MSG-429 기준 14) — 게이트 **바깥**에 둔다. 배너 핸들러 등록과 토큰 자동
+   * 동기화는 화면 상태와 무관한 상주 작업이다. 신규 등록 경로가 아니라 기존 등록자의
+   * 재등록·로테이션뿐이라 권한 프롬프트는 뜨지 않는다. 알림 탭 라우팅은 MSG-567에서
+   * 삭제됐다(FCM 푸시에 `data` 없음) — 탭은 앱 열기로 끝난다.
    */
   usePushTokenSync(isAuthenticated);
-  usePushNavigation(goToRoute);
+  usePushForegroundHandler();
 
   /**
-   * 게이트가 뜨면 통지 호스트는 **의도적으로 마운트하지 않는다** (PR #78 리뷰 ④ — 기각).
-   * MSG-422의 계약은 "동의 전에는 어떤 앱 화면에도 도달할 수 없다"이고, 통지 토스트의
-   * [확인하기]는 곧 `/upload/blur`로 가는 진입점이라 게이트 위에 띄우면 그 계약이 흔들린다.
-   * 폴링이 멈추는 대가는 감수한다 — 대기 항목은 저장소에 남아 게이트 통과 후 `hydrate`로
-   * 이어지고, 15분 만료 판정도 저장된 기산점으로 계속 성립한다.
-   * (푸시 배선은 위에서 게이트 밖에 둔다 — 알림 탭이 라우팅해도 `AppShell`이 `Stack` 자체를
-   * 대체하므로 게이트는 그대로 렌더된다. 우회가 아니다.)
+   * 구 블러 통지 호스트(`ProcessingNoticeHost`)는 MSG-567에서 삭제됐고 대체 마운트는 없다 —
+   * READY 재무효화 폴은 모듈 소유 타이머(`start-ready-refresh`)라 마운트가 필요 없다.
+   * PR #78 리뷰 ④("게이트 위 호스트 미마운트")의 계약 논점도 함께 소멸했다.
    */
   if (showConsentGate) return <SignupConsentScreen />;
   return (
     /*
-      통지 호스트가 절대 배치로 얹히려면 화면을 채우는 부모가 필요하다(fragment로는 기준점이 없다).
       className이 아니라 인라인 style을 쓰는 이유: 이 View는 화면 전체가 걸린 **루트 컨테이너**라
       높이가 0이 되면 Stack이 통째로 안 보인다. NativeWind 스타일시트 적용 여부에 앱 기동을
       걸지 않으려고 RN 기본 스타일로 고정한다(기능 차이는 없다).
@@ -77,8 +79,6 @@ const AppShell = () => {
           ))}
         </Stack.Protected>
       </Stack>
-      {/* 블러 완료 인앱 통지 (기준 11) — 루트 상주라 어느 화면에 있든 보인다 */}
-      <ProcessingNoticeHost />
     </View>
   );
 };

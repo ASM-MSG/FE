@@ -1,5 +1,6 @@
 import type { EventSubmissionCreateRequestDto } from "@/shared/api/generated";
 import { euroJosa } from "@/shared/format";
+import type { AreaRect } from "./submission-area";
 
 /**
  * 행사 등록 유형별 폼 설정·필수값·날짜 검증·제출 본문 조립 — 순수 로직 (MSG-546 AC 6·10·11).
@@ -158,6 +159,8 @@ export interface SubmissionDraftState {
   /** 유형 전용 필드 값 — 유형별로 각자 보관한다 (AC 13) */
   typeFieldValues: Record<SubmissionType, string>;
   imageS3Key: string | null;
+  /** 위치 1의 확정 영역 (MSG-547 인계 계약) — 제출 본문 locations의 재료 (MSG-548) */
+  areaRects: AreaRect[];
 }
 
 const isFilled = (value: string): boolean => value.trim() !== "";
@@ -201,16 +204,25 @@ export const periodIssueMessage = (
 export type SubmissionCreateDraft = Partial<EventSubmissionCreateRequestDto>;
 
 /**
- * 위저드 입력을 제출 본문(부분형)으로 조립한다 (AC 6·12).
+ * 위저드 입력을 제출 본문(부분형)으로 조립한다 (AC 6·12 · MSG-548 AC 7).
  * **유형 전용 필드는 선택 유형의 것 하나만 싣는다** — 유형 밖 항목이 실리면 서버 13439라
  * 구조로 막는다. parentOccurrenceId도 EVENT에서만 실린다.
- * `locations`는 위치 스텝(MSG-547)이, 실제 제출은 MSG-548이 채운다.
+ *
+ * 확정 영역은 **단일 위치**로 조립한다 — 서버 계약은 1~20개 위치를 받지만 위저드가
+ * 확정하는 것은 위치 1곳뿐이고(MSG-547 스토어 계약), SDK 주석의 "EVENT는 대표 위치
+ * 정확히 1곳"도 이 조립으로 충족된다. 영역이 없으면 키 자체를 싣지 않는다(부분형).
  */
 export const toCreateDraft = (
   state: SubmissionDraftState,
 ): SubmissionCreateDraft | null => {
-  const { type, common, typeFieldValues, imageS3Key, parentOccurrenceId } =
-    state;
+  const {
+    type,
+    common,
+    typeFieldValues,
+    imageS3Key,
+    parentOccurrenceId,
+    areaRects,
+  } = state;
   if (type === null) return null;
 
   const base: SubmissionCreateDraft = {
@@ -229,5 +241,22 @@ export const toCreateDraft = (
     [typeFieldKey]: typeFieldValues[type],
     ...(type === "EVENT" &&
       parentOccurrenceId !== null && { parentOccurrenceId }),
+    ...(areaRects.length > 0 && { locations: [{ areaRects }] }),
   };
+};
+
+/**
+ * 제출 발사의 단일 관문 (MSG-548 AC 7) — 필수값(기본 정보 + 확정 영역 1개 이상)이
+ * 모두 갖춰졌을 때만 완전한 제출 본문을 돌려주고, 아니면 null이다.
+ *
+ * 부분형(`toCreateDraft`)과 서버 DTO 사이의 좁히기를 이 한 곳에 모은다 — 뷰가 부분형을
+ * 그대로 캐스팅해 보내면 필수 필드가 빈 요청이 서버까지 갈 수 있다.
+ */
+export const toCreateRequest = (
+  state: SubmissionDraftState,
+): EventSubmissionCreateRequestDto | null => {
+  if (!isBasicStepComplete(state) || state.areaRects.length === 0) return null;
+  const draft = toCreateDraft(state);
+  // isBasicStepComplete가 통과했으면 필수 필드는 전부 채워져 있다 — 그 판정이 이 좁히기의 근거다
+  return draft === null ? null : (draft as EventSubmissionCreateRequestDto);
 };

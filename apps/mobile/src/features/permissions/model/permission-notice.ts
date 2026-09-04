@@ -47,7 +47,7 @@ const AXIS_COPY: Record<
   },
   notification: {
     title: "알림 권한이 필요해요",
-    request: "블러 처리 완료를 알림으로 받으려면 알림 권한을 허용해주세요",
+    request: "영상 준비 완료 알림을 받으려면 알림 권한을 허용해주세요",
     settings: PUSH_PERMISSION_DENIED_MESSAGE,
   },
   gallery: {
