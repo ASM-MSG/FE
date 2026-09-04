@@ -4,7 +4,7 @@ import { toPermissionState } from "../../../shared/permission-state";
 import type { PushPermissionStatus } from "../model/push-registration";
 
 /**
- * `expo-notifications` 격리 경계 (MSG-429 기준 14·15·16) — 네이티브 모듈을 만지는 유일한 지점.
+ * `expo-notifications` 격리 경계 (MSG-429 기준 14·15) — 네이티브 모듈을 만지는 유일한 지점.
  *
  * **정적 import를 쓰지 않는다 (2026-08-19 실기 환류).** 네이티브 모듈이 빠진 APK에서는
  * `import * as Notifications from "expo-notifications"` **문 자체가 던지고**, 그러면 이 파일을
@@ -22,8 +22,8 @@ const loadNotifications = (): Promise<NotificationsModule> =>
   (modulePromise ??= import("expo-notifications"));
 
 /**
- * 포그라운드에서도 알림 배너를 띄운다 — 앱을 보고 있을 때 완료를 놓치지 않게 (기준 16).
- * 최초 1회만 등록한다.
+ * 포그라운드에서도 알림 배너를 띄운다 — 앱을 보고 있을 때 알림을 놓치지 않게.
+ * 최초 1회만 등록한다. 탭 라우팅·콜드 스타트 조회는 MSG-567에서 삭제됐다(푸시에 `data` 없음).
  */
 let handlerReady = false;
 export const ensureForegroundHandler = async (): Promise<void> => {
@@ -75,23 +75,3 @@ export const devicePlatform = (): string =>
 /** 토큰 등록 body의 선택 필드 (스펙 추정 7) */
 export const appVersion = (): string | undefined =>
   Constants.expoConfig?.version ?? undefined;
-
-/** 알림 탭 응답 구독 — 해지 함수를 돌려준다 */
-export const subscribeToNotificationTaps = async (
-  onTap: (data: unknown) => void,
-): Promise<() => void> => {
-  const subscription = (
-    await loadNotifications()
-  ).addNotificationResponseReceivedListener((response) =>
-    onTap(response.notification.request.content.data),
-  );
-  return () => subscription.remove();
-};
-
-/**
- * 앱이 종료된 상태에서 알림 탭으로 실행됐을 때의 최초 응답 (기준 16 콜드 스타트).
- * 구독은 마운트 이후의 탭만 받으므로 이 조회가 없으면 콜드 스타트 진입이 통째로 누락된다.
- */
-export const readLastNotificationData = async (): Promise<unknown> =>
-  (await (await loadNotifications()).getLastNotificationResponseAsync())
-    ?.notification.request.content.data ?? null;

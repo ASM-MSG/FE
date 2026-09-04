@@ -6,11 +6,10 @@ import type {
   EventConfirmTarget,
 } from "../model/confirm-input";
 import { withFlowProgress } from "../model/flow-progress";
-import { processingStore } from "../model/processing-persistence";
 import { runUploadFlow, UploadFlowError } from "../model/upload-orchestration";
 import { uploadFlowStore } from "../model/upload-flow-store";
-import { invalidateEventSurfaces } from "./invalidate-event-surfaces";
-import { invalidateGridQueries } from "./invalidate-grid-queries";
+import { invalidateUploadSurfaces } from "./invalidate-upload-surfaces";
+import { startReadyRefresh } from "./start-ready-refresh";
 import {
   buildAnalyzeEffects,
   buildConfirmEffects,
@@ -83,8 +82,8 @@ export const useAnalyzeVideo = () => {
 };
 
 /**
- * 게시 성공 정산 (MSG-424 기준 28·29 + MSG-429 기준 8) — 격자 쿼리 무효화 +
- * **재개 가능한 진행 정리** + **블러 처리 대기 등록**.
+ * 게시 성공 정산 (MSG-424 기준 28·29 + MSG-567 AC 10) — 업로드가 바꾼 화면 무효화 +
+ * **재개 가능한 진행 정리** + **READY 재무효화 폴 시작**.
  *
  * 정리가 여기 있는 이유: 완료 오버레이는 화면 로컬 상태라, 그게 떠 있는 동안 앱이 종료되면
  * 스토어에는 `step:"preview"`와 `confirm:{presign, s3PutDone:true}`가 그대로 남는다. 다음
@@ -100,22 +99,18 @@ export const useAnalyzeVideo = () => {
 export const settleUploadSuccess = (
   queryClient: QueryClient,
   video: { videoId: number; gridId: string },
-  now: () => number = Date.now,
   event: EventConfirmTarget | null = null,
 ): void => {
-  invalidateGridQueries(queryClient, video.gridId);
   /**
-   * MSG-560 D12 — 행사 귀속 확정에만: 그 위치의 영상 목록(infinite)과 행사 위치 목록
-   * (videoCount)을 함께 무효화한다. 웹 `invalidate-upload-surfaces.ts`의 행사 분기 대응.
+   * 확정 시점과 READY 시점이 **같은 집합**을 같은 인자로 무효화한다 (MSG-567 AC 10) —
+   * 확정 직후 재조회는 서버가 non-READY라 새 영상을 빼고 응답하므로, READY에서 한 번 더
+   * 필요하다. 여기가 폴 시작의 **유일한 지점**이다: 확정 응답을 손에 쥔 시점이 videoId를
+   * 아는 첫 순간이고, 바로 아래 `reset()`이 플로우를 비우므로 나중에는 알 방법이 없다.
+   * auth-session은 import하지 않는다 — 폴의 세션 배선은 `_layout`의 `configureReadyRefresh`.
    */
-  if (event !== null) invalidateEventSurfaces(queryClient, event);
-  /**
-   * MSG-429 기준 8 — 여기가 대기 등록의 **유일한 지점**이다. 확정 응답을 손에 쥔 시점이
-   * videoId를 아는 첫 순간이고, 바로 아래 `reset()`이 플로우를 비우므로 나중에는 알 방법이
-   * 없다. 기산점(15분 만료 판정)도 이 시각이다. 저장은 비동기지만 기다리지 않는다 —
-   * 완료 화면 표시를 저장소 왕복에 묶지 않기 위해서다(실패해도 폴링은 이번 실행 동안 돈다).
-   */
-  void processingStore.track(video.videoId, now());
+  const target = { videoId: video.videoId, gridId: video.gridId, event };
+  invalidateUploadSurfaces(queryClient, target);
+  startReadyRefresh(queryClient, target);
   uploadFlowStore.reset();
 };
 
@@ -142,7 +137,7 @@ export const useConfirmUpload = () => {
       }
     },
     onSuccess: (video, input) =>
-      settleUploadSuccess(queryClient, video, Date.now, input.event ?? null),
+      settleUploadSuccess(queryClient, video, input.event ?? null),
     onSettled: () => uploadFlowStore.endFlight(),
   });
 
