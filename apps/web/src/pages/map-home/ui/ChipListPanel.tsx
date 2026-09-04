@@ -21,6 +21,13 @@ interface ChipListPanelProps {
   notice?: ReactNode;
   /** 닫기 — Escape 배선. 칩 재클릭 닫힘은 스토어 연동이 담당 (AC 5) */
   onClose: () => void;
+  /**
+   * 목록 끝에 붙는 꼬리표 — 스크롤 영역 **안** 마지막 요소로 들어간다 (MSG-555 AC 3·4·7).
+   * 목록이 길면 스크롤해야 나타나는 것이 요구 동작이라 sticky로 띄우지 않는다.
+   * 미지정이면 아무것도 렌더하지 않는다 — 기존 소비처의 렌더 결과가 불변이어야 한다(비파괴).
+   * 껍데기가 특정 배너를 알지 않도록 슬롯으로 받는다(내장하면 미래 소비처에 무조건 노출).
+   */
+  footer?: ReactNode;
   /** 목록 본문 — 비어 있으면(count 0) 대신 emptyMessage가 뜬다 */
   children: ReactNode;
 }
@@ -41,6 +48,7 @@ export const ChipListPanel = ({
   onRetry,
   notice,
   onClose,
+  footer,
   children,
 }: ChipListPanelProps) => {
   useEscapeClose(onClose);
@@ -80,6 +88,8 @@ export const ChipListPanel = ({
         ) : (
           children
         )}
+        {/* 목록 끝 꼬리표 — 실패·빈·목록 상태 공통. 로딩은 위 early return이 이미 가린다 */}
+        {footer}
       </div>
     </div>
   );
