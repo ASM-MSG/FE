@@ -504,13 +504,20 @@ describe("이탈 경고와 재진입 (AC 14·15)", () => {
     expect(confirmSpy).not.toHaveBeenCalled();
   });
 
-  it("수정 모드 경로(/edit)도 같은 위저드를 렌더한다 (AC 15)", () => {
+  it("수정 모드 경로(/edit)도 같은 위저드 페이지를 렌더한다 (AC 15)", async () => {
     wizardFetch();
 
     renderWizard("/org/submissions/1204/edit");
 
+    // MSG-550이 `/edit`를 수정 모드로 실구현하며 **빈 위저드가 아니라** 신청 상세를
+    // 프리필하는 화면이 됐다(AC 1) — 유형 선택 스텝 단정은 그 티켓의 요구로 폐기하고,
+    // 이 스모크가 지키려던 계약("같은 페이지가 이 경로를 렌더한다")은 페이지 h1으로 본다.
+    // 프리필 동선 자체는 `submission-edit.smoke`가 상세 스텁과 함께 검증한다.
     expect(
-      screen.getByRole("heading", { name: "어떤 형태를 등록하시나요?" }),
+      await screen.findByRole("heading", {
+        name: "수정 후 재제출",
+        level: 1,
+      }),
     ).toBeDefined();
   });
 

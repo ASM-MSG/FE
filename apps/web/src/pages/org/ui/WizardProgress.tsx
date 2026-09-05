@@ -6,6 +6,12 @@ interface WizardProgressProps {
   current: SubmissionStep;
   /** 완료 스텝 클릭 = 그 스텝으로 복귀 — 유형 변경 진입로다 (추정 5) */
   onSelect: (step: SubmissionStep) => void;
+  /**
+   * 되돌아갈 수 없는 스텝 (MSG-550 AC 2) — 수정 모드의 "유형 선택"이 유일한 사용처다.
+   * 완료 표시(체크)는 그대로 두고 **버튼을 만들지 않는다**: onSelect만 막으면 버튼이 남아
+   * 클릭·포커스가 가능한 채 아무 일도 하지 않는 자리가 된다.
+   */
+  lockedSteps?: readonly SubmissionStep[];
 }
 
 /**
@@ -14,7 +20,11 @@ interface WizardProgressProps {
  * 산출물이고 하단 슬롯이 없어 **위저드 페이지 본문 좌하단에 페이지 소유로 렌더한다**
  * (승인 확정 — 웨이브 1 병렬 안전 우선, 배치 차이는 Figma 오탐 방지에 등재됨).
  */
-export const WizardProgress = ({ current, onSelect }: WizardProgressProps) => (
+export const WizardProgress = ({
+  current,
+  onSelect,
+  lockedSteps = [],
+}: WizardProgressProps) => (
   <nav
     aria-label="등록 절차"
     className="w-64 rounded-md border border-border bg-background p-md"
@@ -23,7 +33,12 @@ export const WizardProgress = ({ current, onSelect }: WizardProgressProps) => (
     <ol className="mt-xs flex flex-col gap-xs">
       {toStepProgress(current).map(({ step, order, label, state }) => (
         <li key={step}>
-          {state === "done" ? (
+          {state === "done" && lockedSteps.includes(step) ? (
+            <span className="flex items-center gap-xxs text-fm-label text-foreground-muted">
+              <Check className="size-3" strokeWidth={3} />
+              {label}
+            </span>
+          ) : state === "done" ? (
             <button
               type="button"
               onClick={() => onSelect(step)}

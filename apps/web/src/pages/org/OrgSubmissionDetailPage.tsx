@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, RetryNotice, Skeleton } from "@fillmap/ui-web";
+import { Button, RetryNotice } from "@fillmap/ui-web";
 import { CONSOLE_ROUTES } from "@/app/console-routes";
 import { useSubmissionDetailQuery } from "@/features/org-submissions/api/use-submission-detail-query";
 import { parseSubmissionId } from "@/features/org-submissions/model/submission-detail-view";
@@ -8,6 +8,7 @@ import { SubmissionStatusChip } from "@/features/org-submissions/ui/SubmissionSt
 import { formatDocumentTitle } from "@/shared/document-title";
 import { useDocumentTitle } from "@/shared/use-document-title";
 import { SubmissionInfoSection } from "./ui/SubmissionInfoSection";
+import { SubmissionLoadingSkeleton } from "./ui/SubmissionLoadingSkeleton";
 import { SubmissionResultCard } from "./ui/SubmissionResultCard";
 import { SubmissionStatusBanner } from "./ui/SubmissionStatusBanner";
 
@@ -22,16 +23,6 @@ import { SubmissionStatusBanner } from "./ui/SubmissionStatusBanner";
  * 경로 파라미터가 숫자가 아니면 훅에 null을 주어 **요청을 발사하지 않고** 오류 안내를
  * 보여준다 (AC 10 — 훅의 null 게이트 재사용).
  */
-const DetailSkeleton = () => (
-  <div className="flex flex-col gap-md">
-    <p role="status" className="sr-only">
-      신청 상세를 불러오는 중
-    </p>
-    <Skeleton className="h-24 w-full rounded-sm" />
-    <Skeleton className="h-60 w-full rounded-sm" />
-  </div>
-);
-
 export const OrgSubmissionDetailPage = () => {
   useDocumentTitle(formatDocumentTitle("심사 결과"));
   const navigate = useNavigate();
@@ -72,7 +63,7 @@ export const OrgSubmissionDetailPage = () => {
       ) : isError ? (
         <RetryNotice message="신청 상세를 불러오지 못했어요" onRetry={retry} />
       ) : isPending || detail === null ? (
-        <DetailSkeleton />
+        <SubmissionLoadingSkeleton label="신청 상세를 불러오는 중" />
       ) : (
         <>
           {isOrgSubmissionStatus(detail.status) && (

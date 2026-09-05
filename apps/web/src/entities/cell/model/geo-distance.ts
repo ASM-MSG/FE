@@ -23,6 +23,25 @@ export const distanceMeters = (a: LatLng, b: LatLng): number => {
   return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(h));
 };
 
+/**
+ * 꼭짓점 묶음을 감싸는 경계 상자 (MSG-553) — 5179 격자 사각형은 위경도 평면에서 살짝
+ * 기울어 있어(자오선 수렴) 남서·북동 2점만 보면 가장자리가 잘린다. 네 꼭짓점 전부의
+ * min/max를 취하는 이 산술이 세 번째 소비처(관리자 심사 상세의 노출 범위 카메라)를
+ * 만나 엔티티로 올렸다 — 하버사인을 `course.ts`에서 올린 MSG-451과 같은 판단이다.
+ *
+ * 기존 두 소비처(`features/search/model/zone-search.zoneBounds` ·
+ * `features/map-home/model/mission`)의 이관은 후속 몫이다: 웨이브 3 병렬 티켓과
+ * 겹치지 않는 자기 범위만 고친다는 계약이라 여기서는 새 소비처만 붙인다.
+ */
+export const cornersBounds = (corners: readonly LatLng[]): Bounds => {
+  const lats = corners.map((corner) => corner.lat);
+  const lngs = corners.map((corner) => corner.lng);
+  return {
+    sw: { lat: Math.min(...lats), lng: Math.min(...lngs) },
+    ne: { lat: Math.max(...lats), lng: Math.max(...lngs) },
+  };
+};
+
 /** 경계 상자의 중심 좌표 — 도형 하나를 대표하는 한 점 */
 export const boundsCenter = ({ sw, ne }: Bounds): LatLng => ({
   lat: (sw.lat + ne.lat) / 2,

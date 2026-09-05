@@ -48,7 +48,11 @@ const STUB_TITLES: [path: string, title: string][] = [
   // MSG-549가 상세 스텁을 실화면으로 교체하며 h1이 "신청 상세" → "심사 결과"가 됐다
   // (MSG-549 AC 5 · Figma 15525:8923). 라우트↔파일 1:1과 등록 자체는 불변이다
   ["/org/submissions/1204", "심사 결과"],
-  ["/org/submissions/1204/edit", "새 행사 등록"],
+  // MSG-550이 `/edit`를 위저드 수정 모드로 실구현하며 h1이 "새 행사 등록" → "수정 후
+  // 재제출"이 됐다(추정 4). 반려 신청(id 뒷자리 2 — console-session 스텁)으로 진입해야
+  // 수정 모드가 열린다: 반려가 아닌 신청은 상세로 회송된다(MSG-550 AC 8).
+  // 라우트↔파일 1:1과 등록 자체는 불변이다
+  ["/org/submissions/1202/edit", "수정 후 재제출"],
   [CONSOLE_ROUTES.orgSettings, "계정 설정"],
   [CONSOLE_ROUTES.orgGuide, "등록 가이드"],
   // /admin 인덱스는 /admin/review로 replace 리다이렉트 (추정 4)
@@ -57,7 +61,9 @@ const STUB_TITLES: [path: string, title: string][] = [
   [CONSOLE_ROUTES.adminHome, "행사 등록 심사"],
   [CONSOLE_ROUTES.adminAccounts, "계정 운영"],
   [CONSOLE_ROUTES.adminReview, "행사 등록 심사"],
-  ["/admin/review/1204", "심사 상세"],
+  // MSG-553이 심사 상세 스텁을 실화면으로 교체하며 h1이 Figma 정본 "행사 등록 심사"가 됐다
+  // (큐와 같은 문구 — 추정 10 승인). 라우트↔파일 1:1과 등록 자체는 불변이다
+  ["/admin/review/1204", "행사 등록 심사"],
   // MSG-554에서 스텁이 실구현으로 교체되며 화면 제목이 "승인 행사 관리"가 됐다
   // (스펙 AC 1 · Figma 15579:2385). 사이드바 메뉴 라벨("승인 행사")은 그대로다
   [CONSOLE_ROUTES.adminEvents, "승인 행사 관리"],

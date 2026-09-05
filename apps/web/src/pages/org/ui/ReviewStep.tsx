@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Selector } from "@fillmap/ui-web";
 import { CONSOLE_ROUTES } from "@/app/console-routes";
+import { useResubmitSubmission } from "@/features/event-submission/api/use-resubmit-submission";
 import { useSubmitSubmission } from "@/features/event-submission/api/use-submit-submission";
+import { toUpdateRequest } from "@/features/event-submission/model/submission-edit";
 import {
   SUBMISSION_FORM_CONFIGS,
   toCreateRequest,
@@ -14,6 +16,7 @@ import {
   type SubmissionReceiptState,
 } from "@/features/event-submission/model/submission-review";
 import {
+  submissionWizardMode,
   toDraftState,
   useSubmissionWizardStore,
 } from "@/features/event-submission/model/submission-wizard-store";
@@ -30,6 +33,10 @@ const FOOTNOTE =
   "제출 후에는 「내 신청 목록」에서 심사 상태를 확인할 수 있습니다. 심사는 보통 1~2영업일이 걸립니다.";
 const FACT_CHECK_ID = "submission-fact-check";
 
+/** 수정 모드 CTA·각주 (MSG-550 AC 5 — Figma 15525:8787 채택 문구) */
+const RESUBMIT_CTA_LABEL = "수정본으로 재제출";
+const RESUBMIT_FOOTNOTE = "재제출하면 상태가 '심사 중'으로 바뀝니다.";
+
 /**
  * 확인·제출 스텝 (MSG-548 — Figma 15644:2935) — 요약 2카드 + 사실 확인 + 확인 모달.
  * 위저드 스토어를 직접 구독하는 자급 컨테이너다(스위치가 prop 통로가 되지 않게 — 546 관례).
@@ -41,29 +48,60 @@ const FACT_CHECK_ID = "submission-fact-check";
  * 성공 처리 순서가 중요하다 (AC 9): blob 해제 → `reset()` → navigate.
  * 리셋을 먼저 해야 이탈 경고(WizardExitGuard)가 발화하지 않고, 미리보기 blob은 리셋으로
  * previewUrl이 지워지기 전에 놓아 준다(페이지 언마운트 cleanup이 볼 값이 이미 없다).
+ *
+ * **수정 모드 분기는 두 자리뿐이다** (MSG-550 AC 5 — 548 인계 계약): 본문 조립 관문
+ * (`toCreateRequest` ↔ `toUpdateRequest`)과 제출 훅(`useSubmitSubmission` ↔
+ * `useResubmitSubmission`). 요약 카드·사실 확인 게이트·확인 모달·성공 후 리셋→이동은
+ * 두 모드가 그대로 공유한다 — 갈리는 것은 문구 3개(CTA·각주·모달 제목)뿐이다.
+ * 재제출 성공은 **접수 안내(navigate state)를 싣지 않는다**: 수용 기준이 목록 이동만
+ * 요구하고, 안내를 실으면 목록 화면의 "신청 번호당 1회" 가드 경로(548)에 재신청 케이스가
+ * 얹혀 위험만 늘어난다(신청 번호가 그대로라 같은 번호가 재등장한다).
  */
 export const ReviewStep = () => {
   const state = useSubmissionWizardStore();
   const navigate = useNavigate();
   const [factChecked, setFactChecked] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const isEditMode = submissionWizardMode(state) === "edit";
+
+  const leaveToList = (receipt: SubmissionReceiptState | null) => {
+    revokeBlobPreviewUrl(useSubmissionWizardStore.getState().image.previewUrl);
+    state.reset();
+    navigate(
+      CONSOLE_ROUTES.orgSubmissions,
+      receipt === null ? undefined : { state: receipt },
+    );
+  };
 
   const submit = useSubmitSubmission({
-    onSubmitted: ({ submissionNo }) => {
-      revokeBlobPreviewUrl(
-        useSubmissionWizardStore.getState().image.previewUrl,
-      );
-      state.reset();
-      const receipt: SubmissionReceiptState = { submittedNo: submissionNo };
-      navigate(CONSOLE_ROUTES.orgSubmissions, { state: receipt });
-    },
+    onSubmitted: ({ submissionNo }) =>
+      leaveToList({ submittedNo: submissionNo }),
+  });
+  const resubmit = useResubmitSubmission({
+    onResubmitted: () => leaveToList(null),
   });
 
   if (state.type === null) return null;
 
   const config = SUBMISSION_FORM_CONFIGS[state.type];
   const draft = toDraftState(state);
-  const request = toCreateRequest(draft);
+  const createRequest = isEditMode ? null : toCreateRequest(draft);
+  const updateRequest = isEditMode ? toUpdateRequest(draft) : null;
+  const canFire = isEditMode ? updateRequest !== null : createRequest !== null;
+  const mutation = isEditMode ? resubmit : submit;
+
+  const fire = () => {
+    if (isEditMode) {
+      if (updateRequest === null || state.editContext === null) return;
+      resubmit.mutate({
+        submissionId: state.editContext.submissionId,
+        body: updateRequest,
+      });
+      return;
+    }
+    if (createRequest === null) return;
+    submit.mutate(createRequest);
+  };
 
   return (
     <div className="flex flex-col gap-md">
@@ -121,29 +159,30 @@ export const ReviewStep = () => {
           onClick={() => state.goToStep("area")}
         />
         <Button
-          text="행사 등록 신청 제출"
-          disabled={!factChecked || request === null}
+          text={isEditMode ? RESUBMIT_CTA_LABEL : "행사 등록 신청 제출"}
+          disabled={!factChecked || !canFire}
           onClick={() => setIsDialogOpen(true)}
         />
       </div>
 
-      <p className="text-fm-caption text-foreground-muted">{FOOTNOTE}</p>
+      <p className="text-fm-caption text-foreground-muted">
+        {isEditMode ? RESUBMIT_FOOTNOTE : FOOTNOTE}
+      </p>
 
       <SubmitConfirmDialog
         open={isDialogOpen}
         onOpenChange={(open) => {
           // 닫힐 때 실패 상태를 지운다 — 재오픈 시 이전 실패 안내 잔상 방지 (ProfileEditModal 선례)
-          if (!open) submit.reset();
+          if (!open) mutation.reset();
           setIsDialogOpen(open);
         }}
-        isPending={submit.isPending}
+        isPending={mutation.isPending}
+        // 제목은 누른 CTA와 같은 문구다 — 본문·확인 버튼은 두 모드가 공유한다
+        title={isEditMode ? RESUBMIT_CTA_LABEL : undefined}
         errorMessage={
-          submit.error === null ? null : submitFailureNotice(submit.error)
+          mutation.error === null ? null : submitFailureNotice(mutation.error)
         }
-        onConfirm={() => {
-          if (request === null) return;
-          submit.mutate(request);
-        }}
+        onConfirm={fire}
       />
     </div>
   );

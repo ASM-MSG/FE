@@ -5,6 +5,7 @@ import { areaRect, FESTIVAL_DRAFT } from "@/test/submission-draft-fixture";
 import {
   continueWithLabel,
   isBasicStepComplete,
+  isSubmissionType,
   PERIOD_ORDER_MESSAGE,
   PERIOD_PAST_MESSAGE,
   periodIssueMessage,
@@ -110,6 +111,16 @@ describe("isBasicStepComplete — 필수값 판정 (AC 10)", () => {
     expect(isBasicStepComplete({ ...FESTIVAL_DRAFT, imageS3Key: null })).toBe(
       false,
     );
+  });
+
+  it("수정 모드의 기존 이미지 유지 상태는 s3Key 없이도 진행할 수 있다 (MSG-550 AC 4)", () => {
+    expect(
+      isBasicStepComplete({
+        ...FESTIVAL_DRAFT,
+        imageS3Key: null,
+        imageKept: true,
+      }),
+    ).toBe(true);
   });
 
   it("선택 유형의 전용 필드가 비면 진행할 수 없다 (AC 10)", () => {
@@ -321,5 +332,18 @@ describe("toCreateRequest — 제출 발사의 단일 관문 (MSG-548 AC 7)", ()
         areaRects: [RECT_A],
       }),
     ).toBeNull();
+  });
+});
+
+describe("isSubmissionType — 열린 문자열 유형 가드 (MSG-550 AC 8)", () => {
+  it("서버 계약 3종만 통과시킨다 (AC 8 — 추정 6)", () => {
+    expect(isSubmissionType("FESTIVAL")).toBe(true);
+    expect(isSubmissionType("POPUP")).toBe(true);
+    expect(isSubmissionType("EVENT")).toBe(true);
+  });
+
+  it("3종 밖 유형은 통과하지 못한다 — 폼 설정이 없다 (AC 8)", () => {
+    expect(isSubmissionType("MARKET")).toBe(false);
+    expect(isSubmissionType("")).toBe(false);
   });
 });
