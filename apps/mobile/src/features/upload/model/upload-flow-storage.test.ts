@@ -261,3 +261,46 @@ describe("upload-flow-storage — 행사 업로드 대상 영속 (AC 9·D11)", (
     expect(await createUploadFlowStorage(storage).load()).toBeNull();
   });
 });
+
+/**
+ * MSG-572 (D3): 저장값 형상 검증에 `visibility`가 포함된다 — `eventTarget`(MSG-560 D11) 패턴
+ * 미러. **필드가 없는 구버전 저장값은 PUBLIC으로 정규화**해 통과시키고, 있는데 UI에 없는 값
+ * (`FRIENDS`·숫자)은 진행 없음으로 폴백한다 — 통과시키면 ✓ 없는 라디오가 뜬다.
+ */
+describe("upload-flow-storage — 공개 범위 영속 (MSG-572 AC 5·6)", () => {
+  it("나만 보기 선택이 실린 스냅숏을 저장→읽기 왕복해도 값이 보존된다 (AC 5)", async () => {
+    const { storage } = memoryStorage();
+    const flowStorage = createUploadFlowStorage(storage);
+    const snapshot = { ...persistedSnapshot(), visibility: "PRIVATE" as const };
+
+    await flowStorage.save(snapshot);
+
+    expect((await flowStorage.load())?.visibility).toBe("PRIVATE");
+  });
+
+  it("visibility 필드가 없는 구버전 저장값은 PUBLIC으로 정규화해 통과시킨다 (AC 6)", async () => {
+    const { visibility: _drop, ...legacy } = persistedSnapshot();
+    const { storage } = memoryStorage(JSON.stringify(legacy));
+
+    const loaded = await createUploadFlowStorage(storage).load();
+
+    expect(loaded).not.toBeNull();
+    expect(loaded?.visibility).toBe("PUBLIC");
+    expect(loaded?.step).toBe(legacy.step);
+  });
+
+  it("UI에 없는 값(FRIENDS)·타입이 어긋난 값(숫자)은 진행 없음으로 폴백한다 (AC 6)", async () => {
+    const friends = createUploadFlowStorage(
+      memoryStorage(
+        JSON.stringify({ ...persistedSnapshot(), visibility: "FRIENDS" }),
+      ).storage,
+    );
+    const numeric = createUploadFlowStorage(
+      memoryStorage(JSON.stringify({ ...persistedSnapshot(), visibility: 1 }))
+        .storage,
+    );
+
+    expect(await friends.load()).toBeNull();
+    expect(await numeric.load()).toBeNull();
+  });
+});

@@ -1,3 +1,4 @@
+import type { VideoVisibility } from "../../video-actions/model/video-menu";
 import type { EventUploadTarget } from "./event-upload-target";
 import type { Segment } from "./highlight-selection";
 import type { UploadVideo } from "./upload-flow-store";
@@ -16,6 +17,10 @@ import type { UploadVideo } from "./upload-flow-store";
  * MSG-560 D12 — **행사 모드는 좌표를 싣지 않는다.** 귀속이 URL path(회차·위치)로 결정되고
  * `EventVideoUploadRequestDto`에 lat/lng가 없다. 두 모드를 유니온으로 갈라 소비처
  * (`buildConfirmEffects`)가 `input.event` 유무만으로 좁힐 수 있게 한다.
+ *
+ * MSG-572 D4·D5 — 일반 분기만 `visibility`를 **필수**로 싣는다(`EventVideoUploadRequestDto`에는
+ * 필드가 없다). `buildConfirmInput`의 5번째 인자도 기본값 없는 필수다: 기본값을 두면 호출부
+ * 누락이 조용히 PUBLIC으로 나가 "선택값=전송값"(AC 3 명시 전송)이 뒤집힌다.
  */
 
 /** 서버 계약 상한 — `POST /api/videos`의 durationSec은 1~30 */
@@ -40,8 +45,18 @@ export interface EventConfirmTarget {
 
 export type ConfirmUploadInput = ConfirmUploadBase &
   (
-    | { event: EventConfirmTarget; lat?: undefined; lng?: undefined }
-    | { event?: undefined; lat: number; lng: number }
+    | {
+        event: EventConfirmTarget;
+        lat?: undefined;
+        lng?: undefined;
+        visibility?: undefined;
+      }
+    | {
+        event?: undefined;
+        lat: number;
+        lng: number;
+        visibility: VideoVisibility;
+      }
   );
 
 const clampedDuration = (segment: Segment): number =>
@@ -54,7 +69,8 @@ export const buildConfirmInput = (
   video: UploadVideo,
   segment: Segment,
   center: { lat: number; lng: number } | null,
-  eventTarget: EventUploadTarget | null = null,
+  eventTarget: EventUploadTarget | null,
+  visibility: VideoVisibility,
 ): ConfirmUploadInput => {
   const base = {
     uri: video.uri,
@@ -68,7 +84,7 @@ export const buildConfirmInput = (
   // 일반 업로드는 `canPublishUpload`가 center 확보를 보장한다 — null은 형식상의 잔여
   // (fileSize와 같은 관례). 행사 모드에서만 center 없이 호출된다.
   return eventTarget === null
-    ? { ...base, lat: center?.lat ?? 0, lng: center?.lng ?? 0 }
+    ? { ...base, lat: center?.lat ?? 0, lng: center?.lng ?? 0, visibility }
     : {
         ...base,
         event: {

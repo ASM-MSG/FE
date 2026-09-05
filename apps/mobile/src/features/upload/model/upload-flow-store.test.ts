@@ -495,3 +495,64 @@ describe("setEventTarget — 행사 업로드 대상 슬롯 (AC 9·D11)", () => 
     expect(restored.getState().eventTarget).toEqual(eventTarget);
   });
 });
+
+/**
+ * MSG-572 (D1·D2): 공개 범위는 스토어 영속 필드다 — 라우트 왕복(하이라이트↔미리보기)마다
+ * 언마운트되는 화면 로컬 state로는 AC 4를 지킬 수 없다. 초기화는 완료 `reset()`만이며
+ * 파일 교체(`startAnalysis`)는 유지한다(웹 PR #99 — 조용한 PUBLIC 복귀 금지).
+ */
+describe("setVisibility — 공개 범위 (MSG-572)", () => {
+  it("초기 선택은 전체 공개(PUBLIC)다 (AC 1)", () => {
+    expect(createUploadFlowStore().getState().visibility).toBe("PUBLIC");
+  });
+
+  it("나만 보기를 고르면 PRIVATE가 된다 (AC 2)", () => {
+    const store = createUploadFlowStore();
+
+    store.setVisibility("PRIVATE");
+
+    expect(store.getState().visibility).toBe("PRIVATE");
+  });
+
+  it("나만 보기 → 이전 단계로(backToHighlight) → goPreview 재진입에도 PRIVATE가 유지된다 (AC 4)", () => {
+    const store = analyzing();
+    store.completeAnalysis([[3, 8]]);
+    store.goPreview();
+    store.setVisibility("PRIVATE");
+
+    store.backToHighlight();
+    store.goPreview();
+
+    expect(store.getState().visibility).toBe("PRIVATE");
+  });
+
+  it("새 영상 확보(startAnalysis)는 선택을 유지한다 — 파일을 바꿨다고 조용히 PUBLIC으로 되돌리지 않는다 (D2)", () => {
+    const store = createUploadFlowStore();
+    store.setVisibility("PRIVATE");
+
+    store.startAnalysis(video);
+
+    expect(store.getState().visibility).toBe("PRIVATE");
+  });
+
+  it("완료 후 reset은 PUBLIC으로 돌아간다 — 다음 업로드의 초기 선택 (AC 7)", () => {
+    const store = analyzing();
+    store.setVisibility("PRIVATE");
+
+    store.reset();
+
+    expect(store.getState().visibility).toBe("PUBLIC");
+  });
+
+  it("영속 스냅숏에 visibility가 실리고 재수화로 같은 값이 돌아온다 — 콜드 스타트 복원 (AC 5)", () => {
+    const store = analyzing();
+    store.setVisibility("PRIVATE");
+
+    const snapshot = store.toPersisted();
+    expect(snapshot.visibility).toBe("PRIVATE");
+
+    const restored = createUploadFlowStore();
+    restored.hydrate(snapshot);
+    expect(restored.getState().visibility).toBe("PRIVATE");
+  });
+});

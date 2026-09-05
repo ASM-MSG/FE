@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, type InitialEntry } from "react-router-dom";
 import { render } from "@testing-library/react";
 
 /**
@@ -13,7 +13,14 @@ import { render } from "@testing-library/react";
  * 케이스(모달이 열린 동안 목록이 갈아타는 경합 등)가 프로바이더 스택을 손으로
  * 복제하지 않도록. 기존 호출부는 `render` 결과만 쓰므로 가산은 비파괴다.
  */
-export const renderWithProviders = (ui: ReactNode, route = "/") => {
+export const renderWithProviders = (
+  ui: ReactNode,
+  /**
+   * 경로 문자열, 또는 history state가 필요한 경우 부분 Location
+   * (`{ pathname, state }`) — navigate state로 안내를 넘기는 화면 계약을 재현한다 (MSG-548).
+   */
+  route: InitialEntry = "/",
+) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

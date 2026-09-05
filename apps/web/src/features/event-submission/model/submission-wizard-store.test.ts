@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   isSubmissionDirty,
+  submissionWizardMode,
   toDraftState,
   useSubmissionWizardStore,
 } from "./submission-wizard-store";
@@ -259,6 +260,13 @@ describe("toDraftState — 폼 판정용 파생 (AC 10)", () => {
     expect(draft.parentOccurrenceId).toBe(412);
     expect(draft.imageS3Key).toBe("pending/submissions/abc.jpg");
   });
+
+  it("확정한 위치 영역이 제출 조립 재료로 실린다 (MSG-548 AC 4·7)", () => {
+    store().addAreaRect(RECT_A);
+    store().addAreaRect(RECT_B);
+
+    expect(toDraftState(store()).areaRects).toEqual([RECT_A, RECT_B]);
+  });
 });
 
 describe("isSubmissionDirty — 이탈 경고 판정 (AC 14)", () => {
@@ -305,5 +313,152 @@ describe("isSubmissionDirty — 이탈 경고 판정 (AC 14)", () => {
     store().reset();
 
     expect(isSubmissionDirty(store())).toBe(false);
+  });
+});
+
+/** 수정 모드 프리필 패치 한 벌 (MSG-550) — 반려된 지역축제 신청 */
+const HYDRATE_PATCH = {
+  submissionId: 12,
+  type: "FESTIVAL" as const,
+  parentOccurrence: null,
+  common: {
+    title: "서면 야간 드론쇼",
+    organizerName: "서면상권활성화협의회",
+    startsOn: "2026-09-05",
+    endsOn: "2026-09-07",
+    description: "서면 일대에서 열리는 야간 드론쇼입니다.",
+  },
+  typeFieldValue: "드론 라이트쇼 · 거리 버스킹",
+  keptImageUrl: "https://cdn.example.test/seomyeon-drone.jpg",
+  areaRects: [RECT_A],
+  rejection: {
+    reasonCodes: ["PERIOD", "IMAGE"],
+    reasonText: "행사 기간과 홍보 이미지를 확인해 주세요.",
+  },
+  droppedLocations: false,
+};
+
+describe("hydrate — 수정 모드 프리필 (MSG-550 AC 1·2·4)", () => {
+  beforeEach(() => {
+    useSubmissionWizardStore.setState(
+      useSubmissionWizardStore.getInitialState(),
+      true,
+    );
+  });
+
+  it("서버 제출값이 한 번에 채워지고 시작 스텝은 기본 정보다 (AC 1)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    expect(store().step).toBe("basic");
+    expect(store().type).toBe("FESTIVAL");
+    expect(store().common.title).toBe("서면 야간 드론쇼");
+    expect(store().typeFieldValues.FESTIVAL).toBe(
+      "드론 라이트쇼 · 거리 버스킹",
+    );
+    expect(store().areaRects).toEqual([RECT_A]);
+  });
+
+  it("대표 이미지는 서버 URL이 미리보기이자 유지 표식이 된다 — s3Key는 없다 (AC 4)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    expect(store().image.previewUrl).toBe(
+      "https://cdn.example.test/seomyeon-drone.jpg",
+    );
+    expect(store().image.s3Key).toBeNull();
+    expect(toDraftState(store()).imageKept).toBe(true);
+  });
+
+  it("hydrate 후에는 수정 모드이고 반려 사유·신청 id를 들고 있다 (AC 1·3)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    expect(submissionWizardMode(store())).toBe("edit");
+    expect(store().editContext).toEqual({
+      submissionId: 12,
+      rejection: HYDRATE_PATCH.rejection,
+      droppedLocations: false,
+    });
+  });
+
+  it("신규 등록은 수정 모드가 아니다 (AC 10)", () => {
+    store().selectType("FESTIVAL");
+
+    expect(submissionWizardMode(store())).toBe("create");
+    expect(store().editContext).toBeNull();
+  });
+
+  it("reset은 수정 모드 컨텍스트·유지 이미지까지 되돌린다 (AC 1·10)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    store().reset();
+
+    expect(store().editContext).toBeNull();
+    expect(store().step).toBe("type");
+    expect(store().type).toBeNull();
+    expect(store().image.previewUrl).toBeNull();
+    expect(toDraftState(store()).imageKept).toBe(false);
+    expect(submissionWizardMode(store())).toBe("create");
+  });
+
+  it("유지 상태에서 새 업로드가 실패하면 서버 이미지 상태로 복원된다 (AC 4 — 추정 5)", () => {
+    store().hydrate(HYDRATE_PATCH);
+    store().startImageUpload("blob:preview-1");
+
+    store().failImageUpload("업로드에 실패했어요");
+
+    expect(store().image.previewUrl).toBe(
+      "https://cdn.example.test/seomyeon-drone.jpg",
+    );
+    expect(store().image.errorMessage).toBe("업로드에 실패했어요");
+    expect(toDraftState(store()).imageKept).toBe(true);
+  });
+
+  it("신규 등록의 업로드 실패는 종전대로 미리보기를 남기지 않는다 (MSG-546 AC 8 — 보존)", () => {
+    store().selectType("FESTIVAL");
+    store().startImageUpload("blob:preview-1");
+
+    store().failImageUpload("업로드에 실패했어요");
+
+    expect(store().image.previewUrl).toBeNull();
+    expect(toDraftState(store()).imageKept).toBe(false);
+  });
+});
+
+describe("isSubmissionDirty — 수정 모드 기준선 (MSG-550 AC 9)", () => {
+  beforeEach(() => {
+    useSubmissionWizardStore.setState(
+      useSubmissionWizardStore.getInitialState(),
+      true,
+    );
+  });
+
+  it("프리필 직후에는 작성 중이 아니다 (AC 9)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    expect(isSubmissionDirty(store())).toBe(false);
+  });
+
+  it("스텝만 옮겨 다녀도 작성 중이 아니다 (AC 9)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    store().goToStep("area");
+    store().goToStep("review");
+
+    expect(isSubmissionDirty(store())).toBe(false);
+  });
+
+  it("프리필 값을 하나라도 바꾸면 작성 중이다 (AC 9)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    store().setCommonField("title", "서면 야간 드론쇼 2회차");
+
+    expect(isSubmissionDirty(store())).toBe(true);
+  });
+
+  it("프리필된 영역을 지우면 작성 중이다 (AC 9)", () => {
+    store().hydrate(HYDRATE_PATCH);
+
+    store().removeAreaRect(0);
+
+    expect(isSubmissionDirty(store())).toBe(true);
   });
 });

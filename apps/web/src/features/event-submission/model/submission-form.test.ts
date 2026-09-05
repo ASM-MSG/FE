@@ -1,33 +1,21 @@
 import { describe, expect, it } from "vitest";
+// MSG-548: 완전 입력 draft는 검토 요약 테스트와 공유한다(중복 게이트 검출 — 픽스처 추출).
+// 기본 픽스처의 areaRects는 비어 있어 546·547 시절 조립 단정이 그대로 유효하다
+import { areaRect, FESTIVAL_DRAFT } from "@/test/submission-draft-fixture";
 import {
   continueWithLabel,
   isBasicStepComplete,
+  isSubmissionType,
   PERIOD_ORDER_MESSAGE,
   PERIOD_PAST_MESSAGE,
   periodIssueMessage,
   SUBMISSION_FORM_CONFIGS,
   SUBMISSION_TYPE_CARDS,
   toCreateDraft,
-  type SubmissionDraftState,
+  toCreateRequest,
 } from "./submission-form";
 
-const FESTIVAL_DRAFT: SubmissionDraftState = {
-  type: "FESTIVAL",
-  parentOccurrenceId: null,
-  common: {
-    title: "광안리 M 드론쇼",
-    organizerName: "부산광역시 관광마이스과",
-    startsOn: "2026-09-05",
-    endsOn: "2026-09-07",
-    description: "광안리 해변의 밤하늘을 수놓는 정기 드론 공연입니다.",
-  },
-  typeFieldValues: {
-    FESTIVAL: "드론 공연 · 체험 부스",
-    POPUP: "11:00 ~ 20:00",
-    EVENT: "현장 참여 후 영상 업로드",
-  },
-  imageS3Key: "pending/submissions/abc.jpg",
-};
+const RECT_A = areaRect(39064, 112221, 39065, 112222);
 
 describe("SUBMISSION_FORM_CONFIGS — 유형별 폼 설정 3벌 (AC 6)", () => {
   it("지역축제는 축제명·주요 프로그램 라벨과 '다음: 축제 위치 등록' CTA를 쓴다 (AC 6)", () => {
@@ -125,6 +113,16 @@ describe("isBasicStepComplete — 필수값 판정 (AC 10)", () => {
     );
   });
 
+  it("수정 모드의 기존 이미지 유지 상태는 s3Key 없이도 진행할 수 있다 (MSG-550 AC 4)", () => {
+    expect(
+      isBasicStepComplete({
+        ...FESTIVAL_DRAFT,
+        imageS3Key: null,
+        imageKept: true,
+      }),
+    ).toBe(true);
+  });
+
   it("선택 유형의 전용 필드가 비면 진행할 수 없다 (AC 10)", () => {
     expect(
       isBasicStepComplete({
@@ -148,9 +146,9 @@ describe("isBasicStepComplete — 필수값 판정 (AC 10)", () => {
   });
 
   it("이벤트는 parentOccurrenceId가 없으면 진행할 수 없다 (AC 10)", () => {
-    const eventDraft: SubmissionDraftState = {
+    const eventDraft = {
       ...FESTIVAL_DRAFT,
-      type: "EVENT",
+      type: "EVENT" as const,
       parentOccurrenceId: null,
     };
 
@@ -254,5 +252,98 @@ describe("toCreateDraft — 제출 본문 부분형 조립 (AC 6·12 — 13439 �
 
   it("유형이 없으면 조립하지 않는다 (경계)", () => {
     expect(toCreateDraft({ ...FESTIVAL_DRAFT, type: null })).toBeNull();
+  });
+
+  it("확정 영역은 단일 위치(locations 1개)로 조립된다 (MSG-548 AC 7)", () => {
+    const draft = toCreateDraft({ ...FESTIVAL_DRAFT, areaRects: [RECT_A] });
+
+    expect(draft?.locations).toEqual([{ areaRects: [RECT_A] }]);
+  });
+
+  it("확정 영역이 없으면 locations를 싣지 않는다 (MSG-548 AC 7 — 경계)", () => {
+    expect(toCreateDraft(FESTIVAL_DRAFT)).not.toHaveProperty("locations");
+  });
+});
+
+describe("toCreateRequest — 제출 발사의 단일 관문 (MSG-548 AC 7)", () => {
+  it("필수값과 확정 영역이 모두 갖춰지면 완전한 제출 본문을 돌려준다 (AC 7)", () => {
+    expect(toCreateRequest({ ...FESTIVAL_DRAFT, areaRects: [RECT_A] })).toEqual(
+      {
+        type: "FESTIVAL",
+        title: "광안리 M 드론쇼",
+        organizerName: "부산광역시 관광마이스과",
+        startsOn: "2026-09-05",
+        endsOn: "2026-09-07",
+        description: "광안리 해변의 밤하늘을 수놓는 정기 드론 공연입니다.",
+        imageS3Key: "pending/submissions/abc.jpg",
+        programDescription: "드론 공연 · 체험 부스",
+        locations: [{ areaRects: [RECT_A] }],
+      },
+    );
+  });
+
+  it("팝업스토어는 operatingHours만 실린다 (AC 7 — 13439 예방)", () => {
+    const request = toCreateRequest({
+      ...FESTIVAL_DRAFT,
+      type: "POPUP",
+      areaRects: [RECT_A],
+    });
+
+    expect(request?.operatingHours).toBe("11:00 ~ 20:00");
+    expect(request).not.toHaveProperty("programDescription");
+    expect(request).not.toHaveProperty("participationMethod");
+    expect(request).not.toHaveProperty("parentOccurrenceId");
+  });
+
+  it("이벤트는 participationMethod와 parentOccurrenceId만 더 실린다 (AC 7)", () => {
+    const request = toCreateRequest({
+      ...FESTIVAL_DRAFT,
+      type: "EVENT",
+      parentOccurrenceId: 412,
+      areaRects: [RECT_A],
+    });
+
+    expect(request?.participationMethod).toBe("현장 참여 후 영상 업로드");
+    expect(request?.parentOccurrenceId).toBe(412);
+    expect(request).not.toHaveProperty("programDescription");
+    expect(request).not.toHaveProperty("operatingHours");
+  });
+
+  it("확정 영역이 없으면 제출 본문을 만들지 않는다 (AC 7)", () => {
+    expect(toCreateRequest(FESTIVAL_DRAFT)).toBeNull();
+  });
+
+  it("기본 정보 필수값이 비면 제출 본문을 만들지 않는다 (AC 7)", () => {
+    expect(
+      toCreateRequest({
+        ...FESTIVAL_DRAFT,
+        areaRects: [RECT_A],
+        imageS3Key: null,
+      }),
+    ).toBeNull();
+  });
+
+  it("이벤트인데 소속 이벤트가 없으면 제출 본문을 만들지 않는다 (AC 7)", () => {
+    expect(
+      toCreateRequest({
+        ...FESTIVAL_DRAFT,
+        type: "EVENT",
+        parentOccurrenceId: null,
+        areaRects: [RECT_A],
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("isSubmissionType — 열린 문자열 유형 가드 (MSG-550 AC 8)", () => {
+  it("서버 계약 3종만 통과시킨다 (AC 8 — 추정 6)", () => {
+    expect(isSubmissionType("FESTIVAL")).toBe(true);
+    expect(isSubmissionType("POPUP")).toBe(true);
+    expect(isSubmissionType("EVENT")).toBe(true);
+  });
+
+  it("3종 밖 유형은 통과하지 못한다 — 폼 설정이 없다 (AC 8)", () => {
+    expect(isSubmissionType("MARKET")).toBe(false);
+    expect(isSubmissionType("")).toBe(false);
   });
 });

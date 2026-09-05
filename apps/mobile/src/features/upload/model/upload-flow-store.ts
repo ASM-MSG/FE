@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { VideoVisibility } from "../../video-actions/model/video-menu";
 import { SELECT_FAILURE_MESSAGES } from "./analysis-copy";
 import type { EventUploadTarget } from "./event-upload-target";
 import {
@@ -82,6 +83,13 @@ export interface UploadFlowState {
    * 경로를 봉쇄한다. 일반 진입점(바텀 내비 카메라·격자 상세)은 진입 시 명시로 비운다.
    */
   eventTarget: EventUploadTarget | null;
+  /**
+   * 게시 공개 범위 (MSG-572 D1·D2) — 초기 PUBLIC. **영속 대상이다**(콜드 스타트 복원).
+   * 파일 교체(`startAnalysis`)·플로우 내부 복귀는 유지하고 완료 `reset()`만 되돌린다 —
+   * 파일을 바꿨다고 조용히 PUBLIC으로 돌아가면 나만 보기로 올리려던 영상이 전체 공개된다
+   * (웹 PR #99 결정 준용). 행사 귀속 업로드는 DTO에 필드가 없어 이 값을 쓰지 않는다.
+   */
+  visibility: VideoVisibility;
 }
 
 /** AsyncStorage에 남기는 진행 상태 (기준 36) — 실패 표기는 전이 상태라 제외한다 */
@@ -94,6 +102,7 @@ export interface PersistedUploadFlow {
   analysis: OrchestrationState;
   confirm: OrchestrationState;
   eventTarget: EventUploadTarget | null;
+  visibility: VideoVisibility;
 }
 
 const initialState = (): UploadFlowState => ({
@@ -108,6 +117,7 @@ const initialState = (): UploadFlowState => ({
   confirm: createOrchestration(),
   inFlight: null,
   eventTarget: null,
+  visibility: "PUBLIC",
 });
 
 /** 선택 영상의 실측 길이 — 없으면 0 (사전 검증이 null을 걸러 실제로는 도달하지 않는다) */
@@ -146,6 +156,8 @@ export interface UploadFlowStore {
   endFlight: () => void;
   /** 업로드 진입 모드 지정 (MSG-560 D11) — 행사 진입은 대상을, 일반 진입은 null을 준다 */
   setEventTarget: (target: EventUploadTarget | null) => void;
+  /** 게시 공개 범위 선택 (MSG-572) — 미리보기 카드의 라디오가 호출한다 */
+  setVisibility: (visibility: VideoVisibility) => void;
   /** 오케스트레이션 진행 기록 (api 계층이 단계 성공/실패마다 호출) */
   setAnalysisFlow: (state: OrchestrationState) => void;
   setConfirmFlow: (state: OrchestrationState) => void;
@@ -279,6 +291,7 @@ export const createUploadFlowStore = (): UploadFlowStore => {
     },
     endFlight: () => setState({ inFlight: null }),
     setEventTarget: (eventTarget) => setState({ eventTarget }),
+    setVisibility: (visibility) => setState({ visibility }),
 
     setAnalysisFlow: (analysis) => setState({ analysis }),
     setConfirmFlow: (confirm) => setState({ confirm }),
@@ -292,6 +305,7 @@ export const createUploadFlowStore = (): UploadFlowStore => {
       analysis: state.analysis,
       confirm: state.confirm,
       eventTarget: state.eventTarget,
+      visibility: state.visibility,
     }),
     hydrate: (persisted) => {
       if (persisted === null) return;

@@ -1,5 +1,6 @@
 import type { EventSubmissionCreateRequestDto } from "@/shared/api/generated";
 import { euroJosa } from "@/shared/format";
+import type { AreaRect } from "./submission-area";
 
 /**
  * 행사 등록 유형별 폼 설정·필수값·날짜 검증·제출 본문 조립 — 순수 로직 (MSG-546 AC 6·10·11).
@@ -16,6 +17,16 @@ export const SUBMISSION_TYPE_LABELS: Record<SubmissionType, string> = {
   POPUP: "팝업스토어",
   EVENT: "이벤트",
 };
+
+/**
+ * 열린 문자열 → 등록 유형 가드 (MSG-550 AC 8, 추정 6).
+ *
+ * 신청 상세·목록 DTO의 `type`은 plain string이라(실측) 서버가 유형을 추가하면 폼 설정
+ * 3벌(`SUBMISSION_FORM_CONFIGS`)에 대응이 없다 — 수정 모드는 렌더 자체가 불가하므로 이
+ * 가드로 좁힌다. 표시 전용 경로는 원문 라벨로 강등한다(`submissionTypeLabel` 선례).
+ */
+export const isSubmissionType = (type: string): type is SubmissionType =>
+  Object.hasOwn(SUBMISSION_TYPE_LABELS, type);
 
 /** 유형 전용 필드 키 — 유형 밖 필드가 실리면 서버 13439 */
 export type SubmissionTypeFieldKey =
@@ -158,6 +169,13 @@ export interface SubmissionDraftState {
   /** 유형 전용 필드 값 — 유형별로 각자 보관한다 (AC 13) */
   typeFieldValues: Record<SubmissionType, string>;
   imageS3Key: string | null;
+  /**
+   * 서버에 이미 있는 대표 이미지를 그대로 쓰는 상태 (MSG-550 AC 4) — 수정 모드 프리필의
+   * 산물이다. 신규 등록은 항상 false이고, 재제출 본문에서는 `imageS3Key` 생략으로 나타난다.
+   */
+  imageKept: boolean;
+  /** 위치 1의 확정 영역 (MSG-547 인계 계약) — 제출 본문 locations의 재료 (MSG-548) */
+  areaRects: AreaRect[];
 }
 
 const isFilled = (value: string): boolean => value.trim() !== "";
@@ -166,11 +184,15 @@ const isFilled = (value: string): boolean => value.trim() !== "";
  * 기본 정보 스텝의 필수값이 모두 찼는가 (AC 10) — 공통 5필드 + 선택 유형의 전용 필드 +
  * 이미지 s3Key, EVENT는 parentOccurrenceId까지. 다른 유형의 전용 필드는 판정에 넣지 않는다
  * (유형별 보관 — AC 13).
+ *
+ * 이미지는 **새 업로드(s3Key) 또는 서버 이미지 유지** 중 하나면 갖춰진 것이다
+ * (MSG-550 AC 4) — 수정 모드는 `imageS3Key`를 생략해 기존 이미지를 유지하므로,
+ * s3Key만 보면 재제출 경로가 기본 정보 스텝에서 영구히 막힌다.
  */
 export const isBasicStepComplete = (state: SubmissionDraftState): boolean => {
   if (state.type === null) return false;
   if (state.type === "EVENT" && state.parentOccurrenceId === null) return false;
-  if (state.imageS3Key === null) return false;
+  if (state.imageS3Key === null && !state.imageKept) return false;
   if (!isFilled(state.typeFieldValues[state.type])) return false;
   const { title, organizerName, startsOn, endsOn, description } = state.common;
   return [title, organizerName, startsOn, endsOn, description].every(isFilled);
@@ -201,16 +223,25 @@ export const periodIssueMessage = (
 export type SubmissionCreateDraft = Partial<EventSubmissionCreateRequestDto>;
 
 /**
- * 위저드 입력을 제출 본문(부분형)으로 조립한다 (AC 6·12).
+ * 위저드 입력을 제출 본문(부분형)으로 조립한다 (AC 6·12 · MSG-548 AC 7).
  * **유형 전용 필드는 선택 유형의 것 하나만 싣는다** — 유형 밖 항목이 실리면 서버 13439라
  * 구조로 막는다. parentOccurrenceId도 EVENT에서만 실린다.
- * `locations`는 위치 스텝(MSG-547)이, 실제 제출은 MSG-548이 채운다.
+ *
+ * 확정 영역은 **단일 위치**로 조립한다 — 서버 계약은 1~20개 위치를 받지만 위저드가
+ * 확정하는 것은 위치 1곳뿐이고(MSG-547 스토어 계약), SDK 주석의 "EVENT는 대표 위치
+ * 정확히 1곳"도 이 조립으로 충족된다. 영역이 없으면 키 자체를 싣지 않는다(부분형).
  */
 export const toCreateDraft = (
   state: SubmissionDraftState,
 ): SubmissionCreateDraft | null => {
-  const { type, common, typeFieldValues, imageS3Key, parentOccurrenceId } =
-    state;
+  const {
+    type,
+    common,
+    typeFieldValues,
+    imageS3Key,
+    parentOccurrenceId,
+    areaRects,
+  } = state;
   if (type === null) return null;
 
   const base: SubmissionCreateDraft = {
@@ -229,5 +260,22 @@ export const toCreateDraft = (
     [typeFieldKey]: typeFieldValues[type],
     ...(type === "EVENT" &&
       parentOccurrenceId !== null && { parentOccurrenceId }),
+    ...(areaRects.length > 0 && { locations: [{ areaRects }] }),
   };
+};
+
+/**
+ * 제출 발사의 단일 관문 (MSG-548 AC 7) — 필수값(기본 정보 + 확정 영역 1개 이상)이
+ * 모두 갖춰졌을 때만 완전한 제출 본문을 돌려주고, 아니면 null이다.
+ *
+ * 부분형(`toCreateDraft`)과 서버 DTO 사이의 좁히기를 이 한 곳에 모은다 — 뷰가 부분형을
+ * 그대로 캐스팅해 보내면 필수 필드가 빈 요청이 서버까지 갈 수 있다.
+ */
+export const toCreateRequest = (
+  state: SubmissionDraftState,
+): EventSubmissionCreateRequestDto | null => {
+  if (!isBasicStepComplete(state) || state.areaRects.length === 0) return null;
+  const draft = toCreateDraft(state);
+  // isBasicStepComplete가 통과했으면 필수 필드는 전부 채워져 있다 — 그 판정이 이 좁히기의 근거다
+  return draft === null ? null : (draft as EventSubmissionCreateRequestDto);
 };
