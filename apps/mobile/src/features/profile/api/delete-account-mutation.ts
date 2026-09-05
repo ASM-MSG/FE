@@ -1,5 +1,6 @@
 import type { QueryClient, UseMutationOptions } from "@tanstack/react-query";
 import { deleteMeMutation } from "../../../shared/api/query-options";
+import { endLocalSession } from "../../auth/model/end-local-session";
 
 // 생성 팩토리는 mutationFn을 항상 채운다 — UseMutationOptions 타입만 optional이라 !로 좁힌다
 // (웹 use-profile-mutations 선례)
@@ -43,10 +44,8 @@ export const deleteAccountMutationOptions = ({
   mutationFn: (_variables, context) =>
     deleteMeFn({ headers: { Authorization: "" } }, context),
   onSuccess: async () => {
-    // 상태 전이(토큰 null)는 동기로 끝나고 보안 저장소 정리만 비동기다 — 같은 tick에서
-    // 캐시를 비워 이전 사용자 데이터가 렌더되는 창을 없앤다 (useLogout 선례)
-    const cleared = clearSession();
-    queryClient.clear();
+    // 세션 종료 + 같은 tick 캐시·세션 스토어 정리 — 순서·이유는 endLocalSession 주석
+    const cleared = endLocalSession(clearSession, queryClient);
     onDeleted();
     await cleared;
   },

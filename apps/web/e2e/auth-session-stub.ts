@@ -39,6 +39,8 @@ export const seedLoggedInSession = async (page: Page): Promise<void> => {
           profileImageUrl: null,
           createdAt: "2026-01-12T00:00:00Z",
           locationConsent: true,
+          // MSG-541: 콘솔 가드가 role을 읽는다 — e2e는 일반 사용자 세션이다
+          role: "USER",
         },
       }),
     }),

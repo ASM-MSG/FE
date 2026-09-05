@@ -42,11 +42,20 @@ const AUTH_ENDPOINT_PATHS = new Set([
 /** provider가 경로 파라미터인 엔드포인트 — `/api/auth/oauth/{provider}` (실 소셜 로그인) */
 const AUTH_ENDPOINT_PREFIXES = ["/api/auth/oauth/"];
 
+/**
+ * 인증 없이 호출되는 공개 엔드포인트 — auth 엔드포인트와 같은 처리(토큰 미주입 +
+ * 401 무개입)를 받는다. 요청이 정의상 비인증인데 남아 있는 stale 토큰이 붙으면
+ * 서버가 그 토큰을 검증해 401을 내고, 공개 화면(비로그인 계정 발급 요청)에서
+ * 세션 만료 처리 — 토큰 클리어 + 로그인 모달 — 가 발화한다 (MSG-543).
+ */
+const PUBLIC_ENDPOINT_PATHS = new Set(["/api/org-account-requests"]);
+
 /** `/api/auth/logout`은 Authorization이 필수라 의도적으로 제외 대상이 아니다 (테스트가 고정) */
 const isAuthEndpoint = (url: string): boolean => {
   const { pathname } = new URL(url);
   return (
     AUTH_ENDPOINT_PATHS.has(pathname) ||
+    PUBLIC_ENDPOINT_PATHS.has(pathname) ||
     AUTH_ENDPOINT_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   );
 };

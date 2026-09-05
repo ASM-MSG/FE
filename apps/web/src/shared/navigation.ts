@@ -12,5 +12,14 @@ export const redirectTo = (url: string): void => {
   window.location.assign(url);
 };
 
+/**
+ * 새 탭으로 URL을 연다 (MSG-554) — 현재 문서를 유지해야 하는 이동용.
+ * 관리자 콘솔의 "지도에서 보기"가 유저 지도를 열면서 콘솔 화면을 남겨 둔다.
+ * `noopener`는 새 탭이 `window.opener`로 콘솔 문서를 만지지 못하게 막는다.
+ */
+export const openInNewTab = (url: string): void => {
+  window.open(url, "_blank", "noopener");
+};
+
 /** 앱의 현재 출처(scheme + host + port) — OAuth 콜백 URI 조립에 쓴다 */
 export const appOrigin = (): string => window.location.origin;

@@ -48,6 +48,17 @@ const UPLOAD_INTENT_KEY = "fillmap.upload.pending-intent";
  * 생존하면 되고, 탭을 닫으면 함께 소멸해 만료 로직 없이 stale 위험이 최소이며
  * 다른 탭·재방문으로 새지 않는다.
  */
+/**
+ * 행사 업로드 맥락 (MSG-521 추정 3) — 비로그인 행사 CTA 게이트가 영속화하는 값.
+ * shared는 최하층이라 features의 타입을 참조하지 않고 구조 동형으로 정의한다.
+ */
+export interface StoredEventUploadContext {
+  occurrenceId: number;
+  locationId: number;
+  occurrenceTitle: string;
+  locationName: string;
+}
+
 export const uploadIntentStorage = {
   /**
    * 비로그인 업로드 게이트 진입 시 저장. target은 격자 고정 진입의 지목 좌표 —
@@ -59,6 +70,14 @@ export const uploadIntentStorage = {
       UPLOAD_INTENT_KEY,
       target ? JSON.stringify(target) : "1",
     );
+  },
+  /**
+   * 행사 업로드 게이트 진입 시 저장 (MSG-521 추정 3) — 지목 격자(save)와 같은 이유:
+   * 미영속 시 카카오 리다이렉트 복귀 재개가 일반 업로드(뷰포트 중심 귀속)로 조용히
+   * 바뀌는 경로를 봉쇄한다. `{ event }` 래핑으로 지목 좌표 형식과 구분한다
+   */
+  saveEvent: (event: StoredEventUploadContext): void => {
+    sessionStorage.setItem(UPLOAD_INTENT_KEY, JSON.stringify({ event }));
   },
   /** 읽기 — 부수효과 없음(oauthStateStorage.peek과 동일 규약). 해제는 clear가 맡는다 */
   peek: (): boolean => sessionStorage.getItem(UPLOAD_INTENT_KEY) !== null,
@@ -77,6 +96,37 @@ export const uploadIntentStorage = {
         return {
           lat: (parsed as { lat: number }).lat,
           lng: (parsed as { lng: number }).lng,
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+  /** 행사 맥락 읽기 — 행사 의도가 아니면(플래그·지목 좌표·손상 값) null. 부수효과 없음 */
+  peekEventTarget: (): StoredEventUploadContext | null => {
+    const raw = sessionStorage.getItem(UPLOAD_INTENT_KEY);
+    if (raw === null || raw === "1") return null;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed !== "object" || parsed === null) return null;
+      const event: unknown = (parsed as { event?: unknown }).event;
+      if (
+        typeof event === "object" &&
+        event !== null &&
+        typeof (event as { occurrenceId?: unknown }).occurrenceId ===
+          "number" &&
+        typeof (event as { locationId?: unknown }).locationId === "number" &&
+        typeof (event as { occurrenceTitle?: unknown }).occurrenceTitle ===
+          "string" &&
+        typeof (event as { locationName?: unknown }).locationName === "string"
+      ) {
+        const context = event as StoredEventUploadContext;
+        return {
+          occurrenceId: context.occurrenceId,
+          locationId: context.locationId,
+          occurrenceTitle: context.occurrenceTitle,
+          locationName: context.locationName,
         };
       }
       return null;
@@ -123,6 +173,25 @@ export const fcmTokenStorage = {
   },
   clear: (): void => {
     localStorage.removeItem(FCM_TOKEN_KEY);
+  },
+};
+
+const VIEWER_SESSION_KEY = "fillmap.event.viewer-session";
+
+/**
+ * 행사 열람 세션 id 보관소 (MSG-517 AC 5, 확정 3) — 비로그인 heartbeat의
+ * `X-Viewer-Session` 헤더 값. 탭 세션 단위 고유(탭 2개 = 2명 집계)가 의도라
+ * sessionStorage를 쓴다(oauthStateStorage 선례). 최초 접근에서 1회 발급하고
+ * 같은 탭에서는 고정된다 — 값은 UUID 36자(서버 제약: 공백 아님·최대 64자).
+ */
+export const viewerSessionStorage = {
+  /** 발급 또는 재사용 — 항상 유효한 세션 id를 돌려준다 */
+  get: (): string => {
+    const existing = sessionStorage.getItem(VIEWER_SESSION_KEY);
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    sessionStorage.setItem(VIEWER_SESSION_KEY, created);
+    return created;
   },
 };
 

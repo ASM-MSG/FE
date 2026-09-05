@@ -35,10 +35,13 @@ describe("SELECT_FAILURE_MESSAGES — 파일 문제 복귀 사유 (기준 33)", 
   });
 });
 
-describe("UPLOAD_COMPLETE_COPY — 완료 안내 (기준 27)", () => {
-  it("블러 후처리 안내가 원문 그대로다 — 축약·변형 금지 카피다 (기준 27)", () => {
-    expect(UPLOAD_COMPLETE_COPY.blurNotice).toBe(
-      "잠시 후 AI가 영상 블러 처리를 마치면 알림으로 알려드릴게요",
+describe("UPLOAD_COMPLETE_COPY — 완료 안내 (MSG-567 AC 2)", () => {
+  it("완료 본문은 지도 등록·내 격자 확인 안내이고, 블러 안내 문구는 없다 (AC 2)", () => {
+    expect(UPLOAD_COMPLETE_COPY.title).toBe("업로드 완료!");
+    expect(UPLOAD_COMPLETE_COPY.description).toBe(
+      "영상이 지도에 등록됐어요. 내 격자에서 확인해보세요",
     );
+    expect(UPLOAD_COMPLETE_COPY).not.toHaveProperty("blurNotice");
+    expect(Object.values(UPLOAD_COMPLETE_COPY).join()).not.toContain("블러");
   });
 });

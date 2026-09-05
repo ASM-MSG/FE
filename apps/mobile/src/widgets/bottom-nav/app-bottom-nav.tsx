@@ -1,25 +1,26 @@
 import { View } from "react-native";
-import { House, LayoutGrid, UserRound, UsersRound } from "lucide-react-native";
+import { House, LayoutGrid, Sparkles, UserRound } from "lucide-react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { semantic } from "@fillmap/design-tokens";
 import { BottomNav, type BottomNavItem } from "@fillmap/ui-native";
+import { enterGeneralUpload } from "../../features/upload/model/upload-flow-store";
 
 /** 탭 키 → 라우트 (AC 12) — 촬영은 BottomNav 내장 카메라 버튼: onCamera → /upload (MSG-302 AC 1) */
 const TAB_ROUTES = {
   home: "/home",
-  friends: "/friends",
+  aiRoute: "/ai-route",
   dex: "/dex",
   profile: "/profile",
 } as const;
 
 type TabKey = keyof typeof TAB_ROUTES;
 
-// MSG-420: 2번째 탭을 탐색 → 친구로 교체 (Figma ver 6 bottom-nav `Tab-친구`).
-// 아이콘은 기존 4탭과 같은 lucide 매핑 관례 — 프로필(UserRound)과 계열이 맞는 UsersRound.
+// MSG-556: 2번째 탭을 친구 스텁 → AI 추천으로 교체 (Figma 15749:445 — 디자이너 메모 15751:25055:
+// "AI 경로추천"은 78px 탭에 좁고 "경로추천"은 지도 칩(코스)과 충돌해 패널 배지와 같은 "AI 추천").
 const TAB_META: { key: TabKey; label: string; Icon: typeof House }[] = [
   { key: "home", label: "홈", Icon: House },
-  { key: "friends", label: "친구", Icon: UsersRound },
+  { key: "aiRoute", label: "AI 추천", Icon: Sparkles },
   { key: "dex", label: "도감", Icon: LayoutGrid },
   { key: "profile", label: "프로필", Icon: UserRound },
 ];
@@ -86,7 +87,7 @@ export const AppBottomNav = ({ className, onHomeRetap }: AppBottomNavProps) => {
         activeKey={activeKey}
         onSelect={handleSelect}
         // 중앙 카메라 버튼 → 영상 업로드 플로우 진입 (MSG-302 AC 1 — MSG-296 제외 범위였던 연결)
-        onCamera={() => router.navigate("/upload")}
+        onCamera={() => enterGeneralUpload(() => router.navigate("/upload"))}
       />
       {/* 시스템 제스처 인셋 배경 채움 (AC 16 4차) — 바 배경(canvas)의 연장 */}
       <View

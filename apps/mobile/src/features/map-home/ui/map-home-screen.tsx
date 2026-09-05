@@ -7,13 +7,16 @@ import { MapIconButton } from "@fillmap/ui-native";
 import type { GridCellIndex } from "../../../entities/cell/model/grid";
 import {
   SEOMYEON_CENTER,
-  resolveMapCenter,
   resolveMapCenterWithPermission,
 } from "../../../shared/geolocation";
 import type { PermissionState } from "../../../shared/permission-state";
 import { splashGate } from "../../../shared/splash";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
+import { useEventHome } from "../../event/api/use-event-home";
+import { EventChip } from "../../event/ui/event-chip";
+import { EventSheetSwitch } from "../../event/ui/event-sheet-switch";
 import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
+import { enterGeneralUpload } from "../../upload/model/upload-flow-store";
 import { useCollectedGridsQuery } from "../api/use-collected-grids-query";
 import { useGridAggregationQuery } from "../api/use-grid-aggregation-query";
 import { useHomeGridDetail } from "../api/use-home-grid-detail";
@@ -26,13 +29,25 @@ import { MAP_MIN_ZOOM } from "../model/aggregation-unit";
 import { gridIdOfCell } from "../model/cell-grid-id-index";
 import { setSelectedGridId, useSelectedGridId } from "../model/grid-selection";
 import { canOpenDetail } from "../model/home-cell-detail";
-import { deriveSheetState } from "../model/home-sheet-state";
+import {
+  defaultSheetQueries,
+  deriveSheetState,
+} from "../model/home-sheet-state";
 import { locateBottomOffset } from "../model/locate-offset";
+import { nextTracking } from "../model/location-overlay";
 import {
   setSelectedMissionId,
   useSelectedMissionId,
 } from "../model/mission-selection";
 import { homePanelKind } from "../model/panel-branch";
+import {
+  clearSelectedRegion,
+  closeRegionList,
+  openRegionList,
+  resetRegionPanel,
+  selectRegion,
+  useRegionPanel,
+} from "../model/region-panel-selection";
 import {
   closeTheme,
   sheetStageFor,
@@ -49,8 +64,8 @@ import type { GridMapRef } from "./grid-map";
 import { HomeSheet } from "./home-sheet";
 import type { HomeSheetRef } from "./home-sheet";
 import { ClusterErrorNotice } from "./cluster-error-notice";
-import { HomeSheetSwitch } from "./home-sheet-switch";
 import { HomeTopBar } from "./home-top-bar";
+import { useCurrentLocation } from "./use-current-location";
 import { useHomeOverlays } from "./use-home-overlays";
 
 /** BottomNav 바 실높이(h-16=64px) — 카메라 돌출부(상단 20px)는 시트 위로 겹친다 */
@@ -70,6 +85,9 @@ const NAV_BAR_HEIGHT = 64;
  *   `home-sheet-switch.tsx`가 소유한다. 선택 상태 3종(테마·미션·격자)은 전부 모듈
  *   싱글턴이고, 단계 이동 규칙은 `sheet-navigation.ts`에 있다 — 헤더 `‹`·`✕`·안드로이드
  *   뒤로가기가 같은 함수를 부른다(A3~A5). 시트 분기를 늘릴 때는 스위치 파일만 만진다.
+ *   기본 시트의 "전체 보기" 모드·선택 지역(MSG-571)은 `panelKind` 밖의 모듈 상태
+ *   (`region-panel-selection`)다 — parity 파일(`panel-branch`·`sheet-navigation`)은
+ *   모르므로 `goBack` 선두에서 1회 가로챈다.
  * - **확장점 ③(지도 오버레이)** — 오버레이 3층 파생은 `use-home-overlays.ts`가 갖고
  *   GridMap의 prop을 층별로 유지한다 (`occupiedCells` = 상시 점령 층 /
  *   `themeCells`·`hatchCells`·`route`·`missionLabel` = 테마 층 /
@@ -107,6 +125,13 @@ export const MapHomeScreen = () => {
   const [locationNotice, setLocationNotice] = useState<PermissionState | null>(
     null,
   );
+  /**
+   * 현재 위치 점·원 + 내 위치 버튼 "추적 중" (MSG-565). 구독은 홈 포커스·포그라운드에만
+   * 켜지고(D4), 추적은 탭 승인으로 켜져 제스처로만 풀린다(D7·D9). 추적 중엔 위치 갱신마다
+   * 카메라가 따라간다(A1 — 네이버 지도 앱 추적 모드).
+   */
+  const { location, restart: restartLocation } = useCurrentLocation();
+  const [tracking, setTracking] = useState(false);
   /** 확장점 ① — 시트 단계·컨테이너 높이 (내 위치 버튼 오프셋 계산용) */
   const [sheetLayout, setSheetLayout] = useState<{
     stage: SheetStage;
@@ -123,22 +148,28 @@ export const MapHomeScreen = () => {
     selectedGridId,
   });
 
+  /** 확장점 ② — 기본 시트 "전체 보기" 모드·선택 지역 오버라이드 (MSG-571) */
+  const { mode: regionMode, selectedRegion } = useRegionPanel();
+
   const bounds = viewport?.bounds ?? null;
   const isHotChip = themeId === "hot";
 
   /** 기본 시트 조회 3종 (MSG-423) — 뷰포트 bbox·중심·행정동 코드가 각각의 입력이다 */
   const occupied = useOccupiedGridsQuery(bounds);
   const geocode = useReverseGeocodeQuery(viewport?.center ?? null);
-  const regionGrids = useRegionGridsQuery(geocode.region?.regionCode ?? null);
+  // 표시 지역 = 지역 행 탭 오버라이드 ?? 지도 중심 행정동 (MSG-571 AC 15) — 기본 시트
+  // 헤더·격자 목록만 이걸 쓰고, 핫구역 요약·미션·오버레이는 계속 geocode(지도 중심) 기준
+  const displayedRegion = selectedRegion ?? geocode.region ?? null;
+  const regionGrids = useRegionGridsQuery(displayedRegion?.regionCode ?? null);
   const collected = useCollectedGridsQuery();
-  const regionName = geocode.region?.regionName ?? null;
+  const regionName = displayedRegion?.regionName ?? null;
   /** 확장점 ③ — 저줌 지역 집계 마커 (MSG-428). 게이트·파생은 전부 훅 안 */
   const aggregation = useGridAggregationQuery(viewport);
 
   /** 핫구역 요약 (B) — 핫구역 칩일 때만 bbox·행정동 코드를 넘겨 조회를 연다 */
   const hotRegion = useHotRegionSummary({
     bounds: isHotChip ? bounds : null,
-    regionName,
+    regionName: geocode.region?.regionName ?? null,
     regionCode: isHotChip ? (geocode.region?.regionCode ?? null) : null,
   });
 
@@ -153,6 +184,7 @@ export const MapHomeScreen = () => {
   const overlays = useHomeOverlays({
     themeId,
     bounds,
+    zoom: viewport?.zoom ?? null,
     hotGridIds: hotRegion.hotGridIds,
     missions,
     occupiedGrids: occupied.grids,
@@ -182,16 +214,16 @@ export const MapHomeScreen = () => {
     () => regionGrids.data?.grids ?? [],
     [regionGrids.data],
   );
-  const defaultSheetState = deriveSheetState(
-    [occupied, geocode, regionGrids],
-    grids.length,
+  // 선택 지역 오버라이드 중에는 geocode가 상태·재시도 목록에서 빠진다 (codex 리뷰 P2-1)
+  const defaultQueries = defaultSheetQueries(
+    { occupied, geocode, regionGrids },
+    selectedRegion !== null,
   );
+  const defaultSheetState = deriveSheetState(defaultQueries, grids.length);
 
-  /** 기본 시트 재시도 — 세 쿼리를 함께 다시 조회한다 */
+  /** 기본 시트 재시도 — 시트 상태를 이루는 쿼리들을 함께 다시 조회한다 */
   const handleRetryDefault = () => {
-    occupied.retry();
-    geocode.retry();
-    regionGrids.retry();
+    for (const query of defaultQueries) query.retry();
   };
 
   /** 선택 상태 3종을 한 번에 반영한다 — `sheet-navigation` 결과의 유일한 적용점 */
@@ -210,6 +242,11 @@ export const MapHomeScreen = () => {
 
   /** 한 단계 위로 (A3) — 최상위면 false를 돌려 안드로이드 뒤로가기가 화면을 벗어나게 한다 */
   const goBack = useCallback((): boolean => {
+    // 전체 지역 모드(MSG-571 AC 12)는 기본 시트 위의 한 단계다 — 모드만 풀고 선택 지역은 유지
+    if (panelKind === "region" && regionMode === "regions") {
+      closeRegionList();
+      return true;
+    }
     const next = stepBack({
       activeTheme: themeId,
       selectedMissionId,
@@ -218,40 +255,62 @@ export const MapHomeScreen = () => {
     if (next === null) return false;
     applySelection(next);
     return true;
-  }, [themeId, selectedMissionId, selectedGridId, applySelection]);
+  }, [
+    panelKind,
+    regionMode,
+    themeId,
+    selectedMissionId,
+    selectedGridId,
+    applySelection,
+  ]);
 
   /** 헤더 ✕ (A2·A4) — 테마·선택 미션·선택 격자를 함께 초기화해 최초 홈 상태로 */
-  const handleClose = () =>
+  const handleClose = () => {
+    resetRegionPanel();
     applySelection(
       closeTheme({ activeTheme: themeId, selectedMissionId, selectedGridId }),
     );
+  };
   /**
    * ✕ 노출 여부를 시트별 분기가 아니라 규칙 한 곳(`showsCloseButton`)에서 정한다 (A4) —
    * Figma 실측상 목록 3종에는 ✕가 없고, 분기마다 기억해서 넣으면 한 곳이 어긋난다.
    */
   const closeAction = showsCloseButton(panelKind) ? handleClose : undefined;
+  /** 이벤트 모드 (MSG-557) — 칩·시트·지도 층 재료. 칩 활성은 테마·선택을 함께 비운다 (D5) */
+  const event = useEventHome({
+    bounds,
+    moveTo: (center) => mapRef.current?.moveTo(center),
+    onActivate: handleClose,
+    onUpload: () => router.push("/upload"),
+  });
 
   // Android 하드웨어 뒤로가기 (A5) — 헤더 `‹`와 같은 규칙을 타고, 최상위에서만 화면을 벗어난다
   useFocusEffect(
     useCallback(() => {
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        goBack,
+        () => event.handlers.back() || goBack(),
       );
       return () => subscription.remove();
-    }, [goBack]),
+    }, [goBack, event.handlers]),
   );
+
+  // 홈 포커스 이탈(다른 탭)은 전체 지역 모드만 풀고 선택 지역은 유지한다 (MSG-571 AC 13,
+  // 웹 SideRailNav 미러) — 복귀 시 기본 시트가 뜬다
+  useFocusEffect(useCallback(() => closeRegionList, []));
 
   // 시트 단계 (A6) — 목록·요약은 2단계(절반), 상세는 1단계(전체 확장)로 스냅한다.
   // 탭 왕복 복귀(포커스)와 단계 전환(panelKind 변경)이 같은 규칙을 타야 하므로 한 곳이다
   useFocusEffect(
     useCallback(() => {
-      sheetRef.current?.snapTo(sheetStageFor(panelKind));
-    }, [panelKind]),
+      sheetRef.current?.snapTo(event.sheetStage ?? sheetStageFor(panelKind));
+    }, [panelKind, event.sheetStage]),
   );
 
   /** 칩 탭 (MSG-423 요구 4) — 같은 칩 재탭은 해제, 다른 칩은 전환. 선택도 함께 초기화 (A2) */
   const handleToggleTheme = (id: ThemeId) => {
+    event.handlers.close();
+    resetRegionPanel();
     applySelection({
       activeTheme: toggleTheme(themeId, id),
       selectedMissionId: null,
@@ -274,14 +333,29 @@ export const MapHomeScreen = () => {
   useEffect(() => {
     // 초기 중심 결정: 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만
     // 현재 위치로 이동한다 — 폴백(SEOMYEON_CENTER)은 동일 객체 참조라 이동 생략.
-    void resolveMapCenter().then((center) => {
+    void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      // 초기 요청이 승인으로 끝났을 때만 위치 구독을 (재)시작한다 (MSG-565 D5) — 마운트 구독은
+      // 프롬프트 전에 "미승인"으로 끝나 있으므로, 승인이 아니면 재구독할 이유가 없다 (Claude 리뷰 🟢)
+      if (permission === "granted") restartLocation();
       if (movedToSearchTargetRef.current) return;
       if (center !== SEOMYEON_CENTER) mapRef.current?.moveTo(center);
     });
-  }, []);
+  }, [restartLocation]);
+
+  // 추적 중 카메라 추종 (MSG-565 A1) — 위치가 갱신되면 줌은 두고 중심만 따라간다
+  useEffect(() => {
+    if (tracking && location) mapRef.current?.panTo(location);
+  }, [tracking, location]);
+
+  // 위치가 **있다가 지워지면**(권한 회수 → 어댑터가 null) 추적도 끈다 (codex 리뷰). `location`만
+  // 의존해야 한다 — `tracking`까지 걸면 최초 권한 승인 직후(위치 도착 전) 켜진 추적을 곧바로
+  // 되돌리는 레이스가 생긴다 (Claude 리뷰 🔴)
+  useEffect(() => {
+    if (location === null) setTracking(false);
+  }, [location]);
 
   /**
-   * 내 위치 버튼 — 현재 위치로 카메라 이동. 조회는 이동 종료가 갱신한다.
+   * 내 위치 버튼 — 현재 위치로 카메라 이동(줌 유지, MSG-565 D6) + 추적 시작.
    *
    * [MSG-447 기준 2·4] 권한이 없으면 **카메라를 움직이지 않고** 안내를 띄운다. 종전에는
    * 폴백 좌표(서면)로 그냥 이동해, 사용자가 보고 있던 위치를 권한 거부의 부작용으로 잃고도
@@ -289,12 +363,24 @@ export const MapHomeScreen = () => {
    * 권한 문제가 아닌 것을 권한 문제로 안내하지 않는다.
    */
   const handleLocate = () => {
+    // 구독 위치가 이미 있으면(= 권한 승인) 신규 조회(최대 3s·타임아웃 시 서면 폴백)를 기다리지
+    // 않고 즉시 이동한다 — 실기에서 첫 탭은 폴백/옛 위치로 가고 두 번째 탭에야 도착하던 증상
+    if (location) {
+      // 꺼져 있으면 켜기만 한다 — 추종 effect가 이동을 맡아 panTo 중복 호출을 피한다 (Claude 리뷰 🟡).
+      // 이미 추적 중이면(Developer 이동으로 중심이 벗어났을 수 있음) 직접 되돌린다
+      if (tracking) mapRef.current?.panTo(location);
+      else setTracking(true);
+      return;
+    }
     void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      setTracking((prev) => nextTracking(prev, { kind: "locate", permission }));
       if (permission !== "granted") {
         setLocationNotice(permission);
         return;
       }
-      mapRef.current?.moveTo(center);
+      // 탭이 권한 승인으로 끝났으면 구독을 (재)시작한다 (D5) — 거부 상태의 구독은 no-op이었다
+      restartLocation();
+      mapRef.current?.panTo(center);
     });
   };
 
@@ -303,6 +389,8 @@ export const MapHomeScreen = () => {
    * 역인덱스에 없는 셀과 게이트(canOpenDetail)에 걸린 셀은 no-op이다.
    */
   const handleCellTap = (_cellId: string, index: GridCellIndex) => {
+    // 이벤트 모드 중 셀 탭은 행사 위치 상세로 위임한다 (MSG-560 D2 — 홈 격자 선택은 안 세운다)
+    if (event.active) return event.handlers.tapCell(index);
     const gridId = gridIdOfCell(overlays.gridIdIndex, index);
     if (gridId === null) return;
     if (
@@ -322,6 +410,10 @@ export const MapHomeScreen = () => {
 
   /** 시트 컨테이너·바텀 내비 하단 오프셋 — 내비 바는 전 단계 상시 노출 */
   const bottomOffset = insets.bottom + NAV_BAR_HEIGHT;
+  const themeColor = themeId ? THEME_META[themeId].color : undefined;
+  const eventChip = event.chipVisible ? (
+    <EventChip active={event.active} onPress={event.handlers.toggleChip} />
+  ) : null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -336,13 +428,28 @@ export const MapHomeScreen = () => {
             onReady={() => setMapReady(true)}
             onCellTap={handleCellTap}
             occupiedCells={overlays.occupiedCells}
-            themeCells={overlays.classification?.themeOnly}
-            themeColor={themeId ? THEME_META[themeId].color : undefined}
+            themeCells={
+              event.overlayCells ?? overlays.classification?.themeOnly
+            }
+            themeColor={event.overlayColor ?? themeColor}
             hatchCells={overlays.classification?.both}
+            accentCells={event.accentCells}
+            accentColor={event.accentColor}
             route={overlays.route}
-            missionLabel={overlays.missionLabel}
+            missionLabel={event.mapLabel ?? overlays.missionLabel}
             clusters={aggregation.clusters}
-            onViewportChange={setViewport}
+            onViewportChange={(next) => {
+              setViewport(next);
+              // 지도가 움직이면 선택 지역 오버라이드를 풀어 헤더가 지도 중심 행정동으로
+              // 돌아간다 (MSG-571 AC 14, 추정 2) — 모바일 헤더는 라이브(MSG-423)
+              clearSelectedRegion();
+            }}
+            currentLocation={location}
+            onGestureCameraChange={() =>
+              setTracking((prev) =>
+                nextTracking(prev, { kind: "camera", reason: "Gesture" }),
+              )
+            }
           />
         </View>
 
@@ -352,6 +459,7 @@ export const MapHomeScreen = () => {
           onToggleTheme={handleToggleTheme}
           onOpenSearch={() => router.push("/search")}
           onOpenProfile={() => router.navigate("/profile")}
+          chipsTrailing={eventChip}
         />
         {aggregation.isError && (
           <ClusterErrorNotice onRetry={aggregation.retry} />
@@ -370,7 +478,11 @@ export const MapHomeScreen = () => {
             ),
           }}
         >
-          <MapIconButton icon="locate" onPress={handleLocate} />
+          <MapIconButton
+            icon="locate"
+            active={tracking}
+            onPress={handleLocate}
+          />
         </View>
 
         {/* 시트 쉘/콘텐츠 분리 (MSG-298) — 쉘은 콘텐츠를 모르고, 분기는 스위치가 소유한다 */}
@@ -382,7 +494,8 @@ export const MapHomeScreen = () => {
           }
         >
           {(context) => (
-            <HomeSheetSwitch
+            <EventSheetSwitch
+              event={event}
               kind={panelKind}
               sheet={context}
               missions={missions}
@@ -392,6 +505,7 @@ export const MapHomeScreen = () => {
               regionName={regionName}
               grids={grids}
               defaultSheetState={defaultSheetState}
+              regionListOpen={regionMode === "regions"}
               // action-row는 코스 스팟 격자 상세(Figma 화면 9)에만 없다 (C9) —
               // 핫구역 격자 상세(화면 2)와 칩 미선택 상태의 내 점령 격자에는 있다
               showGridActions={gridDetail.selectedSpot === null}
@@ -399,8 +513,10 @@ export const MapHomeScreen = () => {
               onSelectGrid={setSelectedGridId}
               onBack={goBack}
               onClose={closeAction}
-              onUpload={() => router.push("/upload")}
+              onUpload={() => enterGeneralUpload(() => router.push("/upload"))}
               onRetryDefault={handleRetryDefault}
+              onOpenRegionList={openRegionList}
+              onSelectRegion={selectRegion}
             />
           )}
         </HomeSheet>

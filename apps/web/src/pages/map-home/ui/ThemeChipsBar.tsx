@@ -6,6 +6,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@fillmap/ui-web";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import {
   THEME_META,
   THEME_ORDER,
@@ -14,6 +15,7 @@ import {
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
 import { useSidebarStore } from "@/widgets/map-shell/sidebar-store";
+import { EventCapsule } from "./EventCapsule";
 import { ThemeChip } from "./ThemeChip";
 
 /**
@@ -49,37 +51,47 @@ const CHIP_VIEW: Record<
  * 칩 바도 지도 좌상단으로 붙는다.
  * 미니 디테일 패널(w-97, left-97)이 열리면 겹치지 않게 그 폭만큼 우측 이동한다 (MSG-277 3차
  * AC 15, 추정 3) — 칩 해제·전환이 미니를 닫으므로 이동 후에도 칩 상호작용은 유효하다.
+ * 행사 영상 미니 패널(MSG-520 AC 1, 동일 rect)도 같은 이유로 이동 조건에 합류한다 —
+ * 안 하면 칩 바가 패널 헤더(X·⋯)를 덮어 클릭이 칩으로 새고 행사방이 통째로 닫힌다.
  */
 export const ThemeChipsBar = () => {
   const activeTheme = useThemeFilterStore((s) => s.activeTheme);
   const toggle = useThemeFilterStore((s) => s.toggle);
   const miniPanelOpen = useVideoMiniPanelStore((s) => s.selected !== null);
+  const eventVideoOpen = useEventRoomStore((s) => s.videoId !== null);
   const collapsed = useSidebarStore((s) => s.collapsed);
 
   return (
     <div
-      role="group"
-      aria-label="테마 필터"
       className={cn(
         "pointer-events-auto absolute top-md z-10 ml-md flex gap-xs transition-transform",
         collapsed ? "left-0" : "left-97",
-        !collapsed && miniPanelOpen && "translate-x-97",
+        !collapsed && (miniPanelOpen || eventVideoOpen) && "translate-x-97",
       )}
     >
-      {THEME_ORDER.map((id) => {
-        const view = CHIP_VIEW[id];
-        return (
-          <ThemeChip
-            key={id}
-            label={THEME_META[id].label}
-            icon={view.icon}
-            active={activeTheme === id}
-            activeBgClassName={view.activeBg}
-            iconClassName={view.iconColor}
-            onClick={() => toggle(id)}
-          />
-        );
-      })}
+      <div role="group" aria-label="테마 필터" className="flex gap-xs">
+        {THEME_ORDER.map((id) => {
+          const view = CHIP_VIEW[id];
+          return (
+            <ThemeChip
+              key={id}
+              label={THEME_META[id].label}
+              icon={view.icon}
+              active={activeTheme === id}
+              activeBgClassName={view.activeBg}
+              iconClassName={view.iconColor}
+              onClick={() => {
+                // 테마 칩 활성화는 행사방과 상호 배타 (MSG-516 추정 6) — 유령 패널 방지.
+                // 해제 클릭에서는 방이 이미 닫혀 있어(배타 유지) 무동작이다
+                useEventRoomStore.getState().close();
+                toggle(id);
+              }}
+            />
+          );
+        })}
+      </div>
+      {/* 위치 기반 행사 캡슐 (MSG-516 AC 3) — 테마 칩 4종 오른쪽, 같은 바에 이어붙는다 */}
+      <EventCapsule />
     </div>
   );
 };

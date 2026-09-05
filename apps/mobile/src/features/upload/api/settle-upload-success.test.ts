@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UploadVideo } from "../model/upload-flow-store";
+import { invalidatedIds } from "../../../test/query-key-ids";
 
 /**
  * codex 리뷰 3회차 P1: 완료 오버레이가 떠 있는 동안 앱이 종료되면 스토어에는 여전히
@@ -48,7 +49,6 @@ type MutationsModule = typeof import("./use-upload-mutations");
 type StoreModule = typeof import("../model/upload-flow-store");
 type ResumeModule = typeof import("../model/upload-flow-resume");
 type OrchestrationModule = typeof import("../model/upload-orchestration");
-type ProcessingModule = typeof import("../model/processing-persistence");
 
 let settleUploadSuccess: MutationsModule["settleUploadSuccess"];
 let uploadFlowStore: StoreModule["uploadFlowStore"];
@@ -56,7 +56,6 @@ let createUploadFlowStore: StoreModule["createUploadFlowStore"];
 let isEmptyUploadFlow: StoreModule["isEmptyUploadFlow"];
 let resumeRouteForFlow: ResumeModule["resumeRouteForFlow"];
 let nextStage: OrchestrationModule["nextStage"];
-let processingStore: ProcessingModule["processingStore"];
 
 beforeEach(async () => {
   vi.stubEnv("EXPO_PUBLIC_API_BASE_URL", API_BASE);
@@ -66,7 +65,6 @@ beforeEach(async () => {
     await import("../model/upload-flow-store"));
   ({ resumeRouteForFlow } = await import("../model/upload-flow-resume"));
   ({ nextStage } = await import("../model/upload-orchestration"));
-  ({ processingStore } = await import("../model/processing-persistence"));
 });
 
 afterEach(() => {
@@ -121,6 +119,19 @@ describe("settleUploadSuccess — 게시 성공 정산 (기준 28·29·35)", () 
     expect(invalidated.mock.calls.length).toBeGreaterThanOrEqual(7);
   });
 
+  it("확정 정산이 READY 재무효화와 같은 집합을 무효화한다 — 단건 재생·도감 동 영상 목록 포함 (MSG-567 AC 10)", () => {
+    primeConfirmedFlow();
+    const queryClient = new QueryClient();
+    const invalidated = vi.spyOn(queryClient, "invalidateQueries");
+
+    settleUploadSuccess(queryClient, uploaded);
+
+    const ids = invalidatedIds(invalidated.mock.calls);
+    expect(ids).toContain("getPlayback");
+    expect(ids).toContain("getRegionVideos");
+    expect(ids).toContain("getCell");
+  });
+
   it("정산 후 상태가 새 스토어의 초기 상태와 같다 — 카메라 재진입 시 잔재 없음 (기준 29)", () => {
     primeConfirmedFlow();
 
@@ -133,21 +144,33 @@ describe("settleUploadSuccess — 게시 성공 정산 (기준 28·29·35)", () 
 });
 
 /**
- * MSG-429 기준 8 — 확정 성공은 블러 처리 대기 등록의 **유일한 지점**이다.
- * 바로 다음 줄의 `reset()`이 플로우를 비우므로 videoId를 아는 마지막 순간이고, 여기서
- * 빠지면 완료를 감지할 방법이 사라져 "알림으로 알려드릴게요"가 거짓말이 된다.
+ * AC 9 (D12): 행사 귀속 확정이 성공하면 기존 격자 무효화에 더해 **그 위치의 영상 목록**과
+ * **행사 위치 목록**(videoCount)을 무효화한다 — 올린 영상이 위치 상세에 바로 보인다.
  */
-describe("settleUploadSuccess — 블러 처리 대기 등록 (MSG-429 기준 8)", () => {
-  it("확정 성공한 videoId를 대기 목록에 남긴다", async () => {
+describe("settleUploadSuccess — 행사 확정 무효화 확장 (AC 9·D12)", () => {
+  const event = { occurrenceId: 5, locationId: 11 };
+
+  it("행사 대상이 있으면 위치 영상 목록·위치 목록을 추가로 무효화한다", () => {
     primeConfirmedFlow();
+    const queryClient = new QueryClient();
+    const invalidated = vi.spyOn(queryClient, "invalidateQueries");
 
-    settleUploadSuccess(new QueryClient(), uploaded, () => 1_700_000);
+    settleUploadSuccess(queryClient, uploaded, event);
 
-    // track은 저장소 왕복이라 비동기다 — 완료 화면 표시를 막지 않으려 기다리지 않는다
-    await vi.waitFor(() =>
-      expect(processingStore.getPending()).toEqual([
-        { videoId: uploaded.videoId, startedAtMs: 1_700_000 },
-      ]),
-    );
+    const ids = invalidatedIds(invalidated.mock.calls);
+    expect(ids).toContain("getLocationVideos");
+    expect(ids).toContain("getLocations");
+  });
+
+  it("일반 업로드는 행사 키를 무효화하지 않는다 — 기본값 = 기존 동작", () => {
+    primeConfirmedFlow();
+    const queryClient = new QueryClient();
+    const invalidated = vi.spyOn(queryClient, "invalidateQueries");
+
+    settleUploadSuccess(queryClient, uploaded);
+
+    const ids = invalidatedIds(invalidated.mock.calls);
+    expect(ids).not.toContain("getLocationVideos");
+    expect(ids).not.toContain("getLocations");
   });
 });

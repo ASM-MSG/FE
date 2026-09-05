@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MapPin, Sparkles } from "lucide-react-native";
 import { palette, semantic } from "@fillmap/design-tokens";
-import { AppHeader, Button } from "@fillmap/ui-native";
+import { AppHeader, Button, Selector, cx } from "@fillmap/ui-native";
+import { VISIBILITY_OPTIONS } from "../../video-actions/model/video-menu";
 import { useUploadLocation } from "../api/use-upload-location";
 import { useConfirmUpload } from "../api/use-upload-mutations";
 import { STAGE_FAILURE_MESSAGES } from "../model/analysis-copy";
 import { buildConfirmInput, canPublishUpload } from "../model/confirm-input";
+import { eventUploadLabel } from "../model/event-upload-target";
 import { formatSegmentLabel } from "../model/highlight-selection";
 import { useUploadFlowHydrated } from "../model/upload-flow-persistence";
 import { backRouteFromPreview } from "../model/upload-flow-resume";
@@ -44,12 +46,21 @@ export const PreviewScreen = () => {
   const [completed, setCompleted] = useState(false);
 
   const segment = selectSelectedSegment(flow);
+  // 행사 귀속 업로드는 좌표를 보내지 않아 측위를 기다리지 않는다 (MSG-560 D12)
   const canPublish = canPublishUpload({
     video: flow.video,
     segment,
     center: location.center,
     submitting: confirm.isPending,
+    eventTarget: flow.eventTarget,
   });
+  const locationLabel =
+    flow.eventTarget === null
+      ? location.label
+      : eventUploadLabel(
+          flow.eventTarget.occurrenceTitle,
+          flow.eventTarget.locationName,
+        );
 
   /** [확인] — 스택 해제 + 홈 복귀 + 플로우 초기화(영속 값 제거 포함) (기준 29·39) */
   const finish = () => {
@@ -99,18 +110,20 @@ export const PreviewScreen = () => {
    * 실제로 서버에 중복 영상이 생성됐다(실측 videoId 287+288 / 289+290).
    */
   const publish = () => {
-    if (
-      !canPublish ||
-      flow.video === null ||
-      segment === null ||
-      location.center === null
-    ) {
-      return;
-    }
-    confirm.publish(buildConfirmInput(flow.video, segment, location.center), {
-      onSuccess: () => setCompleted(true),
-      // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
-    });
+    if (!canPublish || flow.video === null || segment === null) return;
+    confirm.publish(
+      buildConfirmInput(
+        flow.video,
+        segment,
+        location.center,
+        flow.eventTarget,
+        flow.visibility,
+      ),
+      {
+        onSuccess: () => setCompleted(true),
+        // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
+      },
+    );
   };
 
   const failureMessage = confirm.isError
@@ -122,12 +135,17 @@ export const PreviewScreen = () => {
     : null;
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View
+      className="flex-1 bg-background"
+      // 하단 인셋은 스크롤 콘텐츠가 아니라 바깥 View가 갖는다 — react-doctor
+      // `rn-scrollview-dynamic-padding`이 contentContainerStyle의 인셋 패딩을 막는다
+      // (인셋은 기기 고정값이라 오탐이지만 규칙 off가 v0.9.3 스캐너에 안 먹는다, CLAUDE.md 08-28)
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+    >
       <AppHeader title="업로드 미리보기" onBack={goBack} />
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-5 pt-md"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        contentContainerClassName="px-5 pt-md pb-6"
       >
         {/* 실 영상 프리뷰 (기준 19) — 최종 확인이라 재생 컨트롤을 연다 */}
         <UploadVideoPreview uri={flow.video?.uri ?? null} nativeControls />
@@ -151,10 +169,61 @@ export const PreviewScreen = () => {
           <View className="mt-xxs flex-row items-center gap-xs">
             <MapPin size={14} color={palette["red-500"]} />
             <Text className="text-fm-body-strong text-foreground">
-              {location.label}
+              {locationLabel}
             </Text>
           </View>
         </View>
+
+        {/* 공개 범위 카드 (MSG-572 D7) — 일반 업로드만. 행사 귀속은 DTO에 필드가 없어 미노출.
+            행 Pressable을 `accessible`로 묶어 내부 Selector와 한 a11y 노드(radio)로 낭독되게 하고,
+            Selector에도 같은 핸들러를 달아 20dp 원을 직접 눌러도 동작한다(중첩 Pressable은
+            안쪽이 이벤트를 먹는다). 그룹 의미는 RN에 Radix 대응 프리미티브가 없어 radiogroup 컨테이너로 */}
+        {flow.eventTarget === null && (
+          <View className="mt-sm rounded-lg border border-border bg-surface-soft p-md">
+            <Text className="text-fm-label text-foreground-muted">
+              공개 범위
+            </Text>
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel="공개 범위"
+              className="mt-xxs flex-row items-center gap-lg"
+            >
+              {VISIBILITY_OPTIONS.map((option) => {
+                const checked = flow.visibility === option.value;
+                const select = () =>
+                  uploadFlowStore.setVisibility(option.value);
+                return (
+                  <Pressable
+                    key={option.value}
+                    accessible
+                    accessibilityRole="radio"
+                    accessibilityState={{
+                      checked,
+                      disabled: confirm.isPending,
+                    }}
+                    disabled={confirm.isPending}
+                    onPress={select}
+                    // 비활성 시 Selector만 스스로 dim 되고 라벨은 밝게 남던 것을 행 단위로 맞춘다 (PR #142 Claude 리뷰 🟢)
+                    className={cx(
+                      "min-h-11 flex-row items-center gap-xs",
+                      confirm.isPending && "opacity-50",
+                    )}
+                  >
+                    <Selector
+                      type="radio"
+                      checked={checked}
+                      disabled={confirm.isPending}
+                      onCheckedChange={select}
+                    />
+                    <Text className="text-fm-body text-foreground">
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* 단계 구분 실패 안내 (기준 34) */}
         {failureMessage !== null && (
@@ -173,7 +242,7 @@ export const PreviewScreen = () => {
           text={
             confirm.isPending
               ? "업로드 중…"
-              : location.center === null
+              : !canPublish && location.center === null
                 ? "위치 확인 중…"
                 : "업로드하기"
           }

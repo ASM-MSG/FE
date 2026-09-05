@@ -9,6 +9,11 @@
  * 재작업 1회차-3: SDK 내장 축척 컨트롤(scaleControl)이 커스텀 축척 바(MSG-123)와 중복 표시되지
  * 않도록 비활성되어 Map 생성 옵션에 반영되는지 단정한다. 다른 컨트롤 기본값은 건드리지 않는다.
  *
+ * MSG-554 재작업 1회차(AC 6): focus 딥링크는 **항상 콜드 로드**(관리자 콘솔이 여는 새 탭)라
+ * 진입 명령(moveTo·zoomTo)이 SDK 로드보다 먼저 도착한다. 지도 인스턴스가 없는 그 시점의
+ * 명령이 조용히 유실되지 않고 지도 준비 신호(init) 후 1회 적용되는지 단정한다 —
+ * 훅 레벨 테스트는 moveTo가 목이라 이 유실 경로를 통과시켰다(검증 리포트 지적).
+ *
  * 재작업 2회차(AC 8): 인증 실패 후 재시도에서 라이브러리 훅의 모듈 레벨 promise 캐시가
  * 최초 마운트 시점의(오염된) naver.maps로 resolve된 promise를 같은 캐시 키로 돌려줘,
  * 프리플라이트가 전역을 재구축해도 지도가 이전 객체로 생성되는 결함의 재현 — 재시도
@@ -24,9 +29,9 @@ import {
   it,
   vi,
 } from "vitest";
-import { createRef } from "react";
+import { createRef, type RefObject } from "react";
 import type { MapCanvas as MapCanvasType, MapCanvasHandle } from "./MapCanvas";
-import { resetNaverMapsPreflight } from "./naver-sdk-loader";
+import { resetNaverMapsPreflight } from "@/shared/naver-maps/naver-sdk-loader";
 
 /** 라이브러리(NaverMap)가 생성하는 지도 인스턴스의 최소 대역 */
 class FakeMap {
@@ -34,13 +39,18 @@ class FakeMap {
   options: Record<string, unknown>;
   /** 지도 컨테이너 — 휠 이벤트 버블 경로 재현용 (리뷰 P2) */
   el: HTMLElement;
+  /** 진입 명령 유실 판정용 호출 기록 (MSG-554 재작업 — 준비 전 no-op 경로) */
+  panToCalls: { lat: number; lng: number }[] = [];
+  setZoomCalls: number[] = [];
   constructor(el: HTMLElement, options: Record<string, unknown>) {
     this.el = el;
     this.options = options;
     FakeMap.instances.push(this);
   }
   destroy() {}
-  panTo() {}
+  panTo(coords: { lat: number; lng: number }) {
+    this.panToCalls.push(coords);
+  }
   get(key: string) {
     return this.options[key];
   }
@@ -48,13 +58,52 @@ class FakeMap {
   getZoom() {
     return (this.options.zoom as number | undefined) ?? 16;
   }
-  setZoom(_zoom: number, _useEffects?: boolean) {}
+  setZoom(zoom: number, _useEffects?: boolean) {
+    this.setZoomCalls.push(zoom);
+  }
+  // 준비 신호(init·idle)에서 뷰포트를 추출하는 경로(toViewport)가 부르는 최소 대역
+  getCenter() {
+    const center = this.options.center as { lat: number; lng: number };
+    return { lat: () => center.lat, lng: () => center.lng };
+  }
+  getBounds() {
+    return {
+      getSW: () => ({ lat: () => 35.15, lng: () => 129.05 }),
+      getNE: () => ({ lat: () => 35.16, lng: () => 129.07 }),
+    };
+  }
 }
 
+/**
+ * naver.maps.Event 대역 — 등록 리스너를 기록해 SDK 수명주기 이벤트(init·idle)를
+ * 테스트에서 발화시킨다 (MSG-554 재작업: 지도 준비 신호가 진입 명령을 흘리는지 검증).
+ */
+interface FakeListener {
+  target: unknown;
+  type: string;
+  handler: () => void;
+}
+let listeners: FakeListener[] = [];
+
 const fakeEvent = {
-  addListener: () => ({}),
-  removeListener: () => {},
-  clearInstanceListeners: () => {},
+  addListener: (target: unknown, type: string, handler: () => void) => {
+    const listener = { target, type, handler };
+    listeners.push(listener);
+    return listener;
+  },
+  removeListener: (listener: FakeListener) => {
+    listeners = listeners.filter((entry) => entry !== listener);
+  },
+  clearInstanceListeners: (target: unknown) => {
+    listeners = listeners.filter((entry) => entry.target !== target);
+  },
+};
+
+/** 지도 인스턴스의 SDK 수명주기 이벤트 발화 (실 SDK가 초기화 완료 시 내는 신호) */
+const fireMapEvent = (map: unknown, type: string) => {
+  listeners
+    .filter((entry) => entry.target === map && entry.type === type)
+    .forEach((entry) => entry.handler());
 };
 
 /** naver.maps 대역 — jsContentLoaded=true라 라이브러리 로더가 즉시 resolve한다 */
@@ -95,6 +144,7 @@ beforeEach(() => {
   resetNaverMapsPreflight();
   naverGlobal = { maps: fakeMaps };
   vi.stubGlobal("naver", naverGlobal);
+  listeners = [];
   FakeMap.instances = [];
   FreshFakeMap.instances = [];
 });
@@ -104,20 +154,40 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const renderMapCanvas = () =>
+/** 진입 초기 중심 — 서면(geolocation 폴백 좌표) */
+const ENTRY_CENTER = { lat: 35.1579, lng: 129.0594 };
+/** 콘솔 "지도에서 보기"가 여는 focus 좌표 (MSG-554) — 서면 행사 위치 */
+const FOCUS_TARGET = { lat: 35.158739, lng: 129.06293 };
+const FOCUS_ZOOM = 16;
+
+/** 명령 핸들을 받는 렌더 — 명령 경로를 보는 케이스가 공유한다 */
+const renderWithHandle = () => {
+  const ref = createRef<MapCanvasHandle>();
   render(
-    <MapCanvas
-      center={{ lat: 35.1579, lng: 129.0594 }}
-      onViewportChange={() => {}}
-    />,
+    <MapCanvas ref={ref} center={ENTRY_CENTER} onViewportChange={() => {}} />,
   );
+  return ref;
+};
 
 const mountUntilMapReady = async () => {
   // React 19: use()로 suspend되는 트리는 awaited act 안에서 렌더해야 재개가 flush된다
-  await act(async () => {
-    renderMapCanvas();
-  });
+  const ref = await act(async () => renderWithHandle());
   await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+  return ref;
+};
+
+/** focus 딥링크 진입 명령 — 훅(use-map-focus-entry)이 발사하는 그 조합 */
+const fireFocusEntry = (ref: RefObject<MapCanvasHandle | null>) => {
+  act(() => {
+    ref.current?.moveTo(FOCUS_TARGET);
+    ref.current?.zoomTo(FOCUS_ZOOM);
+  });
+};
+
+/** 진입 이동이 딱 1회 적용된 상태 */
+const expectFocusApplied = (map: FakeMap) => {
+  expect(map.panToCalls).toEqual([FOCUS_TARGET]);
+  expect(map.setZoomCalls).toEqual([FOCUS_ZOOM]);
 };
 
 describe("MapCanvas 스모크 — 인증 실패·내장 컨트롤", () => {
@@ -153,17 +223,7 @@ describe("MapCanvas 스모크 — 인증 실패·내장 컨트롤", () => {
   });
 
   it("줌 버튼 연타는 쿨다운 간격으로만 줌 단이 진행된다 — 리미터 배선 (MSG-462 AC 2)", async () => {
-    const ref = createRef<MapCanvasHandle>();
-    await act(async () => {
-      render(
-        <MapCanvas
-          ref={ref}
-          center={{ lat: 35.1579, lng: 129.0594 }}
-          onViewportChange={() => {}}
-        />,
-      );
-    });
-    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const ref = await mountUntilMapReady();
     const setZoom = vi.spyOn(FakeMap.instances[0], "setZoom");
 
     // 쿨다운(200ms) 안의 동기 연타 — 두 번째 탭은 스텝이 나가지 않아야 한다
@@ -194,6 +254,36 @@ describe("MapCanvas 스모크 — 인증 실패·내장 컨트롤", () => {
     });
 
     expect(setZoom).toHaveBeenCalledWith(17, true);
+  });
+
+  it("지도 준비 전에 도착한 진입 명령(focus 딥링크 콜드 로드)은 유실되지 않고 준비 후 1회 적용된다 (MSG-554 AC 6)", async () => {
+    // 새 탭 콜드 로드의 실제 시점: SDK 프리플라이트가 아직 안 끝나 지도 인스턴스가 없다
+    const ref = renderWithHandle();
+    expect(FakeMap.instances).toHaveLength(0);
+
+    fireFocusEntry(ref);
+
+    // SDK 로드 완료 → 지도 생성 → 준비 신호(init)에서 적용된다
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const map = FakeMap.instances[0];
+    act(() => fireMapEvent(map, "init"));
+
+    expectFocusApplied(map);
+
+    // 이후 준비 신호(idle)가 반복돼도 진입 이동을 다시 적용하지 않는다 —
+    // 사용자가 그 뒤 움직인 지도를 되돌리면 안 된다
+    act(() => fireMapEvent(map, "idle"));
+    expectFocusApplied(map);
+  });
+
+  it("지도 준비 후 도착한 진입 명령은 즉시 적용된다 — 기존 경로 불변 (MSG-554 AC 6)", async () => {
+    const ref = await mountUntilMapReady();
+    const map = FakeMap.instances[0];
+    act(() => fireMapEvent(map, "init"));
+
+    fireFocusEntry(ref);
+
+    expectFocusApplied(map);
   });
 
   it("인증 실패 후 재시도의 지도 생성은 재구축된 새 네임스페이스를 통해 일어난다 (라이브러리 캐시의 오염 promise 미사용)", async () => {

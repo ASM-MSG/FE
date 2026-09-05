@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
+import type { VideoVisibility } from "../../video-actions/model/video-menu";
 import { SELECT_FAILURE_MESSAGES } from "./analysis-copy";
+import type { EventUploadTarget } from "./event-upload-target";
 import {
   clampSegment,
   createInitialSelection,
@@ -75,6 +77,19 @@ export interface UploadFlowState {
    * 업로드 중 강제 종료된 잠금이 살아남으면 재실행이 영구히 막힌다.
    */
   inFlight: UploadFlowLane | null;
+  /**
+   * 행사 귀속 업로드 대상 (MSG-560 D11) — null이면 일반(좌표 귀속) 업로드다.
+   * **영속 대상이다**: 콜드 스타트 재개가 일반 업로드로 둔갑해 뷰포트 좌표에 오귀속되는
+   * 경로를 봉쇄한다. 일반 진입점(바텀 내비 카메라·격자 상세)은 진입 시 명시로 비운다.
+   */
+  eventTarget: EventUploadTarget | null;
+  /**
+   * 게시 공개 범위 (MSG-572 D1·D2) — 초기 PUBLIC. **영속 대상이다**(콜드 스타트 복원).
+   * 파일 교체(`startAnalysis`)·플로우 내부 복귀는 유지하고 완료 `reset()`만 되돌린다 —
+   * 파일을 바꿨다고 조용히 PUBLIC으로 돌아가면 나만 보기로 올리려던 영상이 전체 공개된다
+   * (웹 PR #99 결정 준용). 행사 귀속 업로드는 DTO에 필드가 없어 이 값을 쓰지 않는다.
+   */
+  visibility: VideoVisibility;
 }
 
 /** AsyncStorage에 남기는 진행 상태 (기준 36) — 실패 표기는 전이 상태라 제외한다 */
@@ -86,6 +101,8 @@ export interface PersistedUploadFlow {
   manualFallback: boolean;
   analysis: OrchestrationState;
   confirm: OrchestrationState;
+  eventTarget: EventUploadTarget | null;
+  visibility: VideoVisibility;
 }
 
 const initialState = (): UploadFlowState => ({
@@ -99,6 +116,8 @@ const initialState = (): UploadFlowState => ({
   analysis: createOrchestration(),
   confirm: createOrchestration(),
   inFlight: null,
+  eventTarget: null,
+  visibility: "PUBLIC",
 });
 
 /** 선택 영상의 실측 길이 — 없으면 0 (사전 검증이 null을 걸러 실제로는 도달하지 않는다) */
@@ -135,6 +154,10 @@ export interface UploadFlowStore {
   beginFlight: (lane: UploadFlowLane) => boolean;
   /** 발사 잠금 해제 — 성공·실패 양쪽에서 호출된다 (뮤테이션 onSettled) */
   endFlight: () => void;
+  /** 업로드 진입 모드 지정 (MSG-560 D11) — 행사 진입은 대상을, 일반 진입은 null을 준다 */
+  setEventTarget: (target: EventUploadTarget | null) => void;
+  /** 게시 공개 범위 선택 (MSG-572) — 미리보기 카드의 라디오가 호출한다 */
+  setVisibility: (visibility: VideoVisibility) => void;
   /** 오케스트레이션 진행 기록 (api 계층이 단계 성공/실패마다 호출) */
   setAnalysisFlow: (state: OrchestrationState) => void;
   setConfirmFlow: (state: OrchestrationState) => void;
@@ -267,6 +290,8 @@ export const createUploadFlowStore = (): UploadFlowStore => {
       return true;
     },
     endFlight: () => setState({ inFlight: null }),
+    setEventTarget: (eventTarget) => setState({ eventTarget }),
+    setVisibility: (visibility) => setState({ visibility }),
 
     setAnalysisFlow: (analysis) => setState({ analysis }),
     setConfirmFlow: (confirm) => setState({ confirm }),
@@ -279,6 +304,8 @@ export const createUploadFlowStore = (): UploadFlowStore => {
       manualFallback: state.manualFallback,
       analysis: state.analysis,
       confirm: state.confirm,
+      eventTarget: state.eventTarget,
+      visibility: state.visibility,
     }),
     hydrate: (persisted) => {
       if (persisted === null) return;
@@ -311,6 +338,16 @@ export const selectSelectedSegment = (
 
 /** 앱 전역 단일 인스턴스 — 라우트가 바뀌어도 플로우 상태 유지 (영속은 upload-flow-persistence) */
 export const uploadFlowStore = createUploadFlowStore();
+
+/**
+ * 일반(좌표 귀속) 업로드 진입 (MSG-560 D11) — 행사 귀속 모드를 **명시 해제**하고 이동한다.
+ * 진입점(바텀 내비 카메라·격자 상세)마다 해제를 기억하는 대신 규칙을 한 곳에 둔다
+ * (웹 `openModal`이 매 진입에 대상을 명시 세팅하는 것과 같은 취지). 라우터는 주입받는다.
+ */
+export const enterGeneralUpload = (navigate: () => void): void => {
+  uploadFlowStore.setEventTarget(null);
+  navigate();
+};
 
 /** 플로우 상태 구독 훅 — 업로드 화면들이 공용으로 사용 */
 export const useUploadFlow = (): UploadFlowState =>

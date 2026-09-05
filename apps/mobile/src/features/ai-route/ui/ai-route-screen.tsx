@@ -1,0 +1,304 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BackHandler, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
+import { palette } from "@fillmap/design-tokens";
+import { MapIconButton } from "@fillmap/ui-native";
+import {
+  SEOMYEON_CENTER,
+  resolveMapCenterWithPermission,
+} from "../../../shared/geolocation";
+import { goToLogin } from "../../../shared/navigation";
+import type { PermissionState } from "../../../shared/permission-state";
+import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
+import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
+import { useOccupiedGridsQuery } from "../../map-home/api/use-occupied-grids-query";
+import { locateBottomOffset } from "../../map-home/model/locate-offset";
+import { MAP_SCALE_1KM_ZOOM } from "../../map-home/model/map-scale";
+import type { LatLng } from "../../../entities/cell/model/grid";
+import type { SheetStage } from "../../map-home/model/sheet-snap";
+import type { Viewport } from "../../map-home/model/viewport";
+import { GridMap, type GridMapRef } from "../../map-home/ui/grid-map";
+import { HomeSheet, type HomeSheetRef } from "../../map-home/ui/home-sheet";
+import { aiRouteStore, useAiRouteState } from "../model/ai-route-store";
+import {
+  type InitialCenterEvent,
+  type InitialCenterPhase,
+  nextInitialCenterPhase,
+} from "../model/initial-center";
+import { AiRouteSheetContent } from "./ai-route-sheet-content";
+import { RouteToastHost } from "./route-toast-host";
+import { useAiRouteAutoMove } from "./use-ai-route-auto-move";
+import { useAiRouteOverlays } from "./use-ai-route-overlays";
+
+/** BottomNav 바 실높이(h-16=64px) — map-home-screen과 같은 값 */
+const NAV_BAR_HEIGHT = 64;
+
+/**
+ * 이동 안내 토스트의 상단 오프셋 (Figma 15751:553, §6 A5) — ← 버튼(MapIconButton size-10)
+ * 바로 아래. 인셋 + 버튼 패딩 8 + 버튼 40 + 간격 8. 노치 기기의 수 px 편차는 의도다.
+ */
+const TOAST_TOP_GAP = 56;
+
+/**
+ * AI 경로 추천 화면 (MSG-556) — 전용 라우트 `/ai-route`에 자체 `GridMap` + `HomeSheet` +
+ * `AppBottomNav`를 조립한다(격자 상세가 자체 지도를 띄우는 선례, §1-1 A안). 지도 홈은 0줄.
+ *
+ * 두 모드는 스토어 `status` 하나로 파생한다 (§1-2):
+ * - 대기(`idle`) — 내 위치 버튼 + 대기 시트(빈 상태·칩·입력 카드) + 바텀 내비
+ * - 결과(`loading`/`result`/`error`) — ← + 내 위치, 시트 half, 바텀 내비 숨김
+ *
+ * 초기 카메라는 진입 1회 현재 위치 + 1km 축척이다 (D1) — `initialZoom`이 1km 상수라
+ * `moveTo`가 그 줌으로 정착한다. 그 정착 전에는 제출을 막는다(`centerSettled`, codex 재리뷰
+ * P2 — 폴백 뷰포트로 요청이 나간 뒤 늦은 측위가 지도를 옮기는 창 제거). 결과 도착 시
+ * 카메라는 움직이지 않는다 (D2, 웹 S6) — 이동은 1차 응답 직후 1회뿐이다.
+ *
+ * MSG-559: 제출·요청 발사는 `useAiRouteAutoMove`(뷰-레이어 훅)가 소유한다 — 1km 축척
+ * 정규화·출발지 판정·언급 지역 이동·2차 자동 재요청이 한 사이클로 얽혀 있어서다. 화면은
+ * 재료(뷰포트·`mapReady`·현위치·카메라 명령)만 넘긴다. **`initialZoom`은
+ * `MAP_SCALE_1KM_ZOOM`이어야 한다** — `moveTo`가 그 줌으로 정착시키는 것이 정규화의 전제다.
+ */
+export const AiRouteScreen = () => {
+  const insets = useSafeAreaInsets();
+  const mapRef = useRef<GridMapRef>(null);
+  const sheetRef = useRef<HomeSheetRef>(null);
+
+  /** 지도 이동이 끝날 때마다 갱신되는 현재 뷰포트 (지도 준비 전 null) — 홈 관례 */
+  const [viewport, setViewport] = useState<Viewport | null>(null);
+  /** 초기 중심 정착 상태기계 — 판정은 `nextInitialCenterPhase`(순수), 여기는 현재 단계만 든다 */
+  const centerPhaseRef = useRef<InitialCenterPhase>("seeding");
+  const [centerSettled, setCenterSettled] = useState(false);
+  /** 진입 1회 측위로 확보한 현위치 — 출발지 자동 판정의 재료 (§6 A1). 거부·폴백은 null */
+  const [coords, setCoords] = useState<LatLng | null>(null);
+  /** 내 위치 권한 안내 (MSG-447) — null이면 닫힘 */
+  const [locationNotice, setLocationNotice] = useState<PermissionState | null>(
+    null,
+  );
+  const [sheetLayout, setSheetLayout] = useState<{
+    stage: SheetStage;
+    containerHeight: number;
+  }>({ stage: 2, containerHeight: 0 });
+
+  const state = useAiRouteState();
+  const { status, points, selectedOrder } = state;
+  const bounds = viewport?.bounds ?? null;
+  const resultMode = status !== "idle";
+
+  // 점령 격자는 홈과 같은 쿼리키라 캐시 히트 — 교집합 빗금의 재료 (§1-3)
+  const occupied = useOccupiedGridsQuery(bounds);
+
+  /** 지도 탭 — 시트 peek (D6). 4단(숨김)에서도 peek로 복귀. GridMap의 셀 탭 계약을 그대로 탄다 */
+  const peekSheet = useCallback(() => {
+    sheetRef.current?.snapTo(3);
+  }, []);
+
+  /** 마커 탭 — 선택 + 시트 half (카드 스크롤은 시트 콘텐츠가 selectedOrder에 반응) (D8) */
+  const selectFromMarker = useCallback((seq: number) => {
+    aiRouteStore.selectOrder(seq);
+    sheetRef.current?.snapTo(2);
+  }, []);
+
+  const overlays = useAiRouteOverlays({
+    points,
+    selectedOrder,
+    occupiedGrids: occupied.grids,
+    onWaypointTap: selectFromMarker,
+  });
+
+  const advanceCenter = useCallback(
+    (event: InitialCenterEvent): InitialCenterPhase => {
+      const next = nextInitialCenterPhase(centerPhaseRef.current, event);
+      centerPhaseRef.current = next;
+      if (next === "settled") setCenterSettled(true);
+      return next;
+    },
+    [],
+  );
+
+  /** 뷰포트 갱신 — 첫 호출은 씨딩, 이후는 idle(측위 이동 완료 또는 사용자 조작) */
+  const handleViewportChange = useCallback(
+    (next: Viewport) => {
+      setViewport(next);
+      advanceCenter({ type: "viewport" });
+    },
+    [advanceCenter],
+  );
+
+  // 진입 1회 현재 위치 (D1) — 폴백(서면)은 초기 카메라와 같은 객체 참조라 이동 생략 (홈 관례).
+  // 사용자가 먼저 지도를 움직였으면(settled) 늦은 측위는 이동시키지 않는다 (codex 재리뷰 P2).
+  // 권한 프롬프트는 in-flight 공유를 타 홈과 동시에 떠도 한 번뿐이다 (R2).
+  // MSG-559 §6 A1·A3: 같은 호출로 좌표를 함께 받아 출발지 판정에 쓴다 — 폴백(서면)은 동일
+  // 참조라 참조 비교만으로 실측 좌표를 가려낼 수 있어 측위를 한 번 더 하지 않는다.
+  useEffect(() => {
+    void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      const located = permission === "granted" && center !== SEOMYEON_CENTER;
+      if (located) setCoords(center);
+      // 2차 대기 중 탭을 떠났다 돌아온 재마운트 — 카메라는 현위치가 아니라 이동한 지역으로
+      // 되돌린다 (§6 A6). 복원하지 않으면 예약된 2차가 엉뚱한 지역 뷰포트로 나간다
+      const restored = aiRouteStore.getState();
+      const target = restored.secondaryPending ? restored.movedCenter : null;
+      const phase = advanceCenter({
+        type: "located",
+        moves: target !== null || located,
+      });
+      if (phase === "moving") mapRef.current?.moveTo(target ?? center);
+    });
+  }, [advanceCenter]);
+
+  /** ← / Android 뒤로가기 — 결과 모드면 대기로, 대기면 false로 화면을 벗어난다 (§1-2) */
+  const goBack = useCallback((): boolean => {
+    if (aiRouteStore.getState().status === "idle") return false;
+    aiRouteStore.dismissResult();
+    return true;
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        goBack,
+      );
+      return () => subscription.remove();
+    }, [goBack]),
+  );
+
+  // 시트 단계 — 로딩·결과·에러 진입(status 전환)도, 탭 복귀(포커스)도 half (D12). 대기 복귀도 half
+  useEffect(() => {
+    sheetRef.current?.snapTo(2);
+  }, [status]);
+  useFocusEffect(
+    useCallback(() => {
+      sheetRef.current?.snapTo(2);
+    }, []),
+  );
+
+  /**
+   * 제출 가능 판정의 단일 소스 — 시트의 `canSubmit`(버튼 활성)과 `submit()`(실제 실행)이 같은
+   * 값을 본다. 둘이 갈리면 UI 게이트 없이 부르는 경로(딥링크·타이머·프로그램적 재요청)가
+   * 초기 중심 정착 전에 요청을 낼 수 있다 (PR #124 리뷰 — 웹 488 codex 반영과 같은 교훈).
+   */
+  const mapReady = bounds !== null && centerSettled;
+
+  /**
+   * 제출·자동 동작 (MSG-559) — 1km 축척 정규화 → 요청 → 언급 지역 이동 → 2차 재요청까지
+   * 훅이 소유한다. 카메라 명령은 `moveTo`(중심 + 1km 줌) 하나만 넘긴다.
+   */
+  const { submit, originActive } = useAiRouteAutoMove({
+    viewport,
+    mapReady,
+    coords,
+    moveTo: (center) => mapRef.current?.moveTo(center),
+    onLoginRequired: goToLogin,
+  });
+
+  /** 카드 탭 — 선택 + 그 지점으로 이동, 줌은 그대로 (D8, 웹 S8) */
+  const selectFromCard = (order: number) => {
+    aiRouteStore.selectOrder(order);
+    const point = points.find((item) => item.order === order);
+    if (point) mapRef.current?.panTo({ lat: point.lat, lng: point.lng });
+  };
+
+  /** 내 위치 — 권한 없으면 카메라를 움직이지 않고 안내 (MSG-447, 홈과 동일) */
+  const handleLocate = () => {
+    void resolveMapCenterWithPermission().then(({ center, permission }) => {
+      if (permission !== "granted") {
+        setLocationNotice(permission);
+        return;
+      }
+      mapRef.current?.moveTo(center);
+    });
+  };
+
+  /** 시트 컨테이너 하단 오프셋 — 결과 모드는 바텀 내비가 없어 인셋만 */
+  const bottomOffset = insets.bottom + (resultMode ? 0 : NAV_BAR_HEIGHT);
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View className="flex-1 bg-background">
+        <View className="absolute inset-0">
+          <GridMap
+            ref={mapRef}
+            initialCenter={SEOMYEON_CENTER}
+            initialZoom={MAP_SCALE_1KM_ZOOM}
+            themeColor={palette["theme-route"]}
+            occupiedCells={overlays.occupiedCells}
+            themeCells={overlays.themeCells}
+            hatchCells={overlays.hatchCells}
+            route={overlays.route}
+            onViewportChange={handleViewportChange}
+            onCellTap={peekSheet}
+          />
+        </View>
+
+        {/* 결과 모드 좌상단 ← (§1-2) — 격자 상세와 같은 흰 원형·raised */}
+        {resultMode && (
+          <View
+            pointerEvents="box-none"
+            className="absolute inset-x-0 top-0 px-md"
+            style={{ paddingTop: insets.top + 8 }}
+          >
+            <MapIconButton
+              icon="back"
+              onPress={goBack}
+              className="self-start bg-surface-elevated shadow-raised"
+            />
+          </View>
+        )}
+
+        {/* 내 위치 — 시트 단계에 따라 함께 올라가 가려지지 않는다 (홈과 동일) */}
+        <View
+          pointerEvents="box-none"
+          className="absolute inset-x-0 items-end px-md"
+          style={{
+            bottom: locateBottomOffset(
+              sheetLayout.stage,
+              sheetLayout.containerHeight,
+              bottomOffset,
+            ),
+          }}
+        >
+          <MapIconButton icon="locate" onPress={handleLocate} />
+        </View>
+
+        <HomeSheet
+          ref={sheetRef}
+          bottomOffset={bottomOffset}
+          onStageChange={(stage, containerHeight) =>
+            setSheetLayout({ stage, containerHeight })
+          }
+        >
+          {(context) => (
+            <AiRouteSheetContent
+              {...context}
+              state={state}
+              mapReady={mapReady}
+              onChangeText={aiRouteStore.setText}
+              onSubmit={submit}
+              onInputFocus={() => sheetRef.current?.snapTo(1)}
+              onSelectCard={selectFromCard}
+              originActive={originActive}
+            />
+          )}
+        </HomeSheet>
+
+        {/* 자동 이동 안내 토스트 — ← 버튼 아래, 3초 자동 소멸 (Figma 15751:553) */}
+        <RouteToastHost topOffset={insets.top + TOAST_TOP_GAP} />
+
+        <PermissionNoticeModal
+          axis="location"
+          state={locationNotice}
+          onDismiss={() => setLocationNotice(null)}
+          onRequest={handleLocate}
+        />
+
+        {/* 바텀 내비는 대기 모드에만 — 결과 모드는 탭바 숨김 (시안 승인안 A) */}
+        {!resultMode && (
+          <View className="absolute inset-x-0 bottom-0">
+            <AppBottomNav />
+          </View>
+        )}
+      </View>
+    </GestureHandlerRootView>
+  );
+};

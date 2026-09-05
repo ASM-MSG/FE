@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ScrollView } from "react-native";
 import { Flame, PartyPopper, Route, Store } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
@@ -24,9 +25,15 @@ interface ThemeChipsBarProps {
   /** 현재 선택 테마 — null이면 전부 비활성 */
   selected: ThemeId | null;
   onToggle: (id: ThemeId) => void;
+  /** 4종 칩 뒤 슬롯 — 이벤트 칩 (MSG-557 D1). 미지정 시 렌더 불변 */
+  trailing?: ReactNode;
 }
 
-export const ThemeChipsBar = ({ selected, onToggle }: ThemeChipsBarProps) => (
+export const ThemeChipsBar = ({
+  selected,
+  onToggle,
+  trailing,
+}: ThemeChipsBarProps) => (
   <ScrollView
     horizontal
     showsHorizontalScrollIndicator={false}
@@ -45,5 +52,6 @@ export const ThemeChipsBar = ({ selected, onToggle }: ThemeChipsBarProps) => (
         onPress={() => onToggle(id)}
       />
     ))}
+    {trailing}
   </ScrollView>
 );

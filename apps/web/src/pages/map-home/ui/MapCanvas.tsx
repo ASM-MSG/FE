@@ -42,7 +42,7 @@ import {
   loadNaverMapsScript,
   markNaverMapsPoisoned,
   resetNaverMapsPreflight,
-} from "./naver-sdk-loader";
+} from "@/shared/naver-maps/naver-sdk-loader";
 
 declare global {
   interface Window {
@@ -430,6 +430,10 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
     const zoomStepRef = useRef<ZoomStepState>(initialZoomStepState);
     // 자체 휠 리스너를 붙일 호스트 — SDK 휠 줌(scrollWheel)은 꺼져 있다 (AC 3)
     const wheelHostRef = useRef<HTMLDivElement | null>(null);
+    // 지도 준비 전에 도착한 진입 명령 보관 (MSG-554 AC 6 재작업) — focus 딥링크는 항상
+    // 콜드 로드(콘솔이 여는 새 탭)라 진입 명령이 SDK 로드보다 먼저 온다. 그 시점의
+    // panTo/setZoom은 인스턴스가 없어 조용히 유실됐다. 준비 신호(init·idle)에서 1회 흘린다
+    const pendingCommandsRef = useRef<((map: naver.maps.Map) => void)[]>([]);
 
     // 프리플라이트 로드: 라이브러리 promise 캐시는 거부 promise를 퇴거하지 않아 remount
     // 재시도가 즉시 재실패한다. 경계가 직접 스크립트를 로드해 성공 후에만 SDK를 마운트하면
@@ -470,11 +474,18 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       mapRef.current?.panTo({ lat: center.lat, lng: center.lng });
     }, [center.lat, center.lng]);
 
-    useImperativeHandle(
-      ref,
-      () => ({
+    useImperativeHandle(ref, () => {
+      // 진입 명령 공용 경로 — 준비 전이면 큐에 쌓고 준비 신호에서 흘린다 (MSG-554 AC 6).
+      // 사용자 조작 명령(zoomIn/Out·fitBounds)은 지도가 보인 뒤에만 발생해 큐가 필요 없다
+      const withMap = (command: (map: naver.maps.Map) => void) => {
+        const map = mapRef.current;
+        if (map === null) pendingCommandsRef.current.push(command);
+        else command(map);
+      };
+
+      return {
         moveTo: (coords) => {
-          mapRef.current?.panTo({ lat: coords.lat, lng: coords.lng });
+          withMap((map) => map.panTo({ lat: coords.lat, lng: coords.lng }));
         },
         // 네이버 zoom은 클수록 확대 — 카카오 level과 방향 반대 (AC 4).
         // 버튼도 휠과 같은 리미터를 거친다 — 연타가 쿨다운 간격으로만 진행 (MSG-462 AC 2)
@@ -501,9 +512,8 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
           applyZoomStepToMap(map, step);
         },
         zoomTo: (zoom) => {
-          mapRef.current?.setZoom(
-            Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom)),
-            true,
+          withMap((map) =>
+            map.setZoom(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom)), true),
           );
         },
         fitBounds: ({ sw, ne }) => {
@@ -515,9 +525,8 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
             ),
           );
         },
-      }),
-      [],
-    );
+      };
+    }, []);
 
     // 자체 휠 줌 (MSG-462 AC 1·3) — SDK 휠 줌을 끄고(scrollWheel=false) 스텝 정책을
     // 거쳐 ±1단씩만 줌한다. 트랙패드 핀치는 브라우저가 ctrl+wheel로 주므로 같은 경로에
@@ -546,9 +555,19 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
       // (failed 파생은 아래 선언이라 원시 상태 둘을 직접 본다)
     }, [authFailed, sdkStatus]);
 
-    const pushViewport = () => {
+    /**
+     * 지도 준비 신호(init·idle) — 뷰포트를 스토어로 밀어내고, 준비 전에 도착한 진입 명령을
+     * 순서대로 1회 흘린다 (MSG-554 AC 6 재작업). 큐를 비운 뒤 실행하므로 이후 idle이
+     * 반복돼도 재적용하지 않는다 — 사용자가 그 뒤 움직인 지도를 되돌리지 않는다.
+     */
+    const handleMapReady = () => {
       const map = mapRef.current;
-      if (map) onViewportChange(toViewport(map));
+      if (map === null) return;
+      onViewportChange(toViewport(map));
+      if (pendingCommandsRef.current.length === 0) return;
+      const pending = pendingCommandsRef.current;
+      pendingCommandsRef.current = [];
+      pending.forEach((command) => command(map));
     };
 
     // 집계 마커 클릭 (MSG-410 AC 8) — SDK 접근은 이 경계 안에서만.
@@ -606,8 +625,8 @@ const NaverMapView = forwardRef<MapCanvasHandle, NaverMapViewProps>(
                   // SDK 휠 줌 비활성 (MSG-462 AC 3) — 속도 옵션이 없는 SDK 기본 줌 대신
                   // 위 자체 휠 리스너 + 스텝 정책이 줌을 담당한다. 터치 핀치는 기본 유지
                   scrollWheel={false}
-                  onInit={pushViewport}
-                  onIdle={pushViewport}
+                  onInit={handleMapReady}
+                  onIdle={handleMapReady}
                 >
                   {/* 미점령 격자선(MSG-263 AC 9·12) — 경계 절단·컬링·줌 게이트는 파생(grid-overlay) 몫,
                     여기는 점선 Polyline 렌더만. 클릭 불요(Polyline 기본 비클릭) */}

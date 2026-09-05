@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
 import { useVideoMiniPanelStore } from "@/features/map-home/model/video-mini-panel-store";
@@ -29,6 +30,11 @@ export const useHomeCloseHandlers = (
   closeDetailMiniFirst: () => void;
   /** 칩 해제 — 미니 패널이 열려 있으면 그것 먼저 */
   closeThemeMiniFirst: () => void;
+  /**
+   * 행사방 뒤로가기 (MSG-518 AC 12·추정 5) — 미니 패널이 열려 있으면 그것 먼저,
+   * 아니면 2단: 위치 선택 중이면 위치 해제(개요 복귀), 미선택이면 행사방 닫기
+   */
+  backEventRoomMiniFirst: () => void;
 } => {
   const closeDetail = useHomeCellDetailStore((s) => s.close);
   const toggleTheme = useThemeFilterStore((s) => s.toggle);
@@ -45,6 +51,11 @@ export const useHomeCloseHandlers = (
     closeThemeMiniFirst: useMemo(
       () => withMiniPanelPriority(closeThemeFilter),
       [closeThemeFilter],
+    ),
+    backEventRoomMiniFirst: useMemo(
+      // 2단 분기 자체는 스토어 back()이 소유한다 (event-room-store 테스트가 고정)
+      () => withMiniPanelPriority(() => useEventRoomStore.getState().back()),
+      [],
     ),
   };
 };

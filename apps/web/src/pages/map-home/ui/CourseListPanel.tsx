@@ -1,6 +1,7 @@
 import { RetryNotice } from "@fillmap/ui-web";
 import type { CourseView } from "@/features/map-home/model/mission-view";
 import { ChipListPanel } from "./ChipListPanel";
+import { ConsoleEntryBanner } from "./ConsoleEntryBanner";
 import { CourseCard } from "./CourseCard";
 
 interface CourseListPanelProps {
@@ -46,6 +47,8 @@ export const CourseListPanel = ({
       ) : undefined
     }
     onClose={onClose}
+    // 운영자 콘솔 진입 배너 (MSG-555 AC 4) — 미션 목록 패널과 **같은 컴포넌트**를 재사용한다
+    footer={<ConsoleEntryBanner />}
   >
     <ul className="flex flex-col gap-sm">
       {views.map((view) => (

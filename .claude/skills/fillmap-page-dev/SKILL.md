@@ -79,7 +79,7 @@ description: "FillMap 페이지 개발 파이프라인 오케스트레이터 —
    지적이 나오면 리뷰 반영 흐름(page-implementation 특칙)으로 처리하고, 반영 커밋 후 재리뷰 여부는 사용자에게 확인한다.
    **시점이 커밋 직전이 아니라 push 전인 이유**: 커밋은 로컬이라 되돌리기 싸고, 중간 커밋을 리뷰하면 곧 폐기될 코드를 반복해 본다(MSG-451은 커밋 4개 중 뒤 커밋이 앞 커밋의 결정을 뒤집었다). 브랜치 전체 diff(`--scope branch`)를 push 직전 1회 보는 쪽이 정확하고 싸다.
 
-6. **PR**: 사용자에게 push + PR 생성 여부를 확인한다. 진행 시 `gh pr create`(base: develop)로 생성하고, PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 따르되 "검증 요약" 섹션에 `03_verify_report.md`의 자동 검증 표 + 기준별 판정 요약을 붙여넣는다 — `_workspace/`는 gitignore라 리뷰어가 리포트를 볼 수 없으므로 PR 본문이 검증 증거의 유일한 공유 경로다
+6. **PR**: 사용자에게 push + PR 생성 여부를 확인한다. 진행 시 `gh pr create`(base: develop)로 생성하고, PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 따르되 "검증 요약" 섹션에 `03_verify_report.md`의 자동 검증 표 + 기준별 판정 요약을 붙여넣는다 — `_workspace/`는 gitignore라 리뷰어가 리포트를 볼 수 없으므로 PR 본문이 검증 증거의 유일한 공유 경로다. **스크린샷도 같은 이유로 본문에 실제 이미지로 임베드한다** (2026-09-03 사용자 지적 — MSG-558·560이 연속으로 "`_workspace/…/screenshots/`에 있음(gitignore)"으로 빠져나감). **방식은 GitHub 직접 업로드**(2026-09-03 사용자 확정 — orphan 브랜치 `pr-assets` raw URL 방식은 "이렇게 하지 마, 그냥 github에 직접 업로드"로 기각): Claude in Chrome으로 PR 페이지를 열어 `find`로 파일 입력(input type=file)을 찾고 `file_upload`로 `_workspace/MSG-{번호}/screenshots/*.png` 대표 2~3장을 올리면 GitHub가 `https://github.com/user-attachments/assets/…` URL을 편집창에 삽입한다. `javascript_tool`로 textarea에서 그 줄을 추출해 본문 "📸 스크린샷" 섹션을 `<img width="300" …>` 표 + AC 번호 캡션으로 채우고 `gh pr edit --body-file`로 갱신한 뒤 탭을 닫는다(편집창은 저장하지 않음). 레포 브랜치에는 어떤 형태로도 커밋하지 않는다(MSG-559 PR #126 실사용)
 7. **잔여 항목 환류**: 리포트의 "승격 필요"·"확인불가"·"후속 티켓 권장"·WAIVED 항목을 모아 atlassian MCP로 해당 지라 티켓에 코멘트로 남긴다 (신규 티켓 생성은 하지 않는다 — 티켓은 팀이 만든다). 결정 기록에만 남고 티켓화되지 않아 유실되는 후속 작업을 막는 단계다
 
 ## 데이터 흐름

@@ -30,7 +30,14 @@ import type { RouteWaypoint } from "../model/route-overlay";
 import { drillInZoomForUnit } from "../model/aggregation-unit";
 import { gateOccupiedFill, isBelowGridZoom } from "../model/cluster-overlay";
 import type { RegionClusterMarker } from "../model/region-cluster-overlay";
-import { CLUSTER_MARKER_PX, ClusterMarker } from "./cluster-marker";
+import { clusterBubbleSize } from "../model/cluster-bubble-size";
+import {
+  isGestureCameraChange,
+  locationOverlayProps,
+  type CurrentLocation,
+} from "../model/location-overlay";
+import { ClusterMarker } from "./cluster-marker";
+import userLocationImage from "../../../../assets/images/user-location.png";
 
 /**
  * 지도 SDK 격리 경계 — @mj-studio/react-native-naver-map 참조는 이 파일 안에서만 한다
@@ -41,6 +48,14 @@ import { CLUSTER_MARKER_PX, ClusterMarker } from "./cluster-marker";
 
 /** 지도 홈 기본 줌 — 100m 격자가 동네 스케일로 십수 개 보이는 수준 (AC 6) */
 export const DEFAULT_ZOOM = 16;
+
+/**
+ * 네이버 지도 커스텀 스타일 (MSG-566) — NCP 콘솔 Map Studio "FillMap" 발행본 My Style ID.
+ * 발행 Version 20260904102914. SDK는 ID만 받고 재발행해도 ID는 유지되므로 콘솔에서
+ * 다시 발행하면 코드 변경 없이 최신본이 적용된다. 로드 실패 시 SDK가 기본 스타일을
+ * 유지한다(래퍼 `onCustomStyleLoadFailed`로 메시지만 온다). 공개 식별자라 env 아님.
+ */
+const NAVER_MAP_CUSTOM_STYLE_ID = "990d8dd2-8d6d-41e6-ae17-6f7e7a594730";
 
 /** 격자 셀 테두리/채움 — 시맨틱 primary + 알파 (SDK color prop은 hex 문자열만 받는다) */
 const CELL_OUTLINE_COLOR = `${semantic.primary}80`;
@@ -59,20 +74,41 @@ const THEME_FILL_ALPHA = "2E";
 const THEME_OUTLINE_ALPHA = "73";
 const THEME_OUTLINE_WIDTH = 1.5;
 
+/** 강조 셀 외곽선 (MSG-560 D3) — 웹 emphasized(진한 실선) 대응, 테마 셀보다 굵다 */
+const ACCENT_OUTLINE_WIDTH = 2;
 /** 교집합 빗금 (MSG-298 AC 9) — 테마 원색 실선 세그먼트 */
 const HATCH_LINE_WIDTH = 2;
 
 /** 코스 경로 (MSG-427 E14) — Figma 14094:5417/5419: 폴리라인 4px + 28px 번호 마커 */
 const ROUTE_LINE_WIDTH = 4;
 const ROUTE_MARKER_SIZE = 28;
+/** 선택 경유지 강조 (MSG-556 D8) — 28→36 확대 + 흰 링 2→3 */
+const ROUTE_MARKER_ACTIVE_SIZE = 36;
+const ROUTE_MARKER_ACTIVE_RING = 3;
 
 /** 선택 미션 이름표 마커 치수 (MSG-427 승인 Q4) — 한 줄 pill */
 const MISSION_LABEL_WIDTH = 140;
 const MISSION_LABEL_HEIGHT = 24;
 
+/**
+ * 현재 위치 점 (MSG-565 D1·D3·A3·A6) — SDK 내장 `locationOverlay`로 그린다. **원을
+ * `NaverMapCircleOverlay`로 바꾸지 말 것**: RN 래퍼는 모든 shape 오버레이에 클릭 리스너를
+ * 강제로 걸어(`RNCNaverMapCircle.kt:17`) 원 안쪽 격자 탭을 죽인다. locationOverlay는
+ * 리스너가 없고 globalZIndex가 마커보다 위라 "기존 오버레이 위 + 탭 비가로채기"가 SDK 보장.
+ * 이미지는 `assets/images/user-location.png` 72×72dp — 점(파란 r8 + 흰 링 r11 + 그림자)과
+ * **방사형 그라데이션 glow(primary 40% → 0, r11 → r36)** 를 한 PNG에 구웠다(Figma
+ * `UserLocation` glow 64×64·blur 대응). SDK 원(`circleRadius`)은 단색만 지원해 그라데이션이
+ * 불가하므로 0으로 끄고, 원의 크기는 이미지 dp라 줌과 무관하게 고정된다 (사용자 결정 2026-09-04).
+ * 점이 이미지 중앙이라 앵커는 0.5/0.5.
+ */
+const USER_LOCATION_IMAGE_SIZE = 72;
+const USER_LOCATION_ANCHOR = { x: 0.5, y: 0.5 };
+
 export interface GridMapRef {
   /** 카메라를 해당 좌표로 애니메이션 이동 — 내 위치 버튼 (AC 8) */
   moveTo: (center: LatLng) => void;
+  /** 줌은 그대로 두고 중심만 이동 — AI 추천 카드 탭 (MSG-556 D8, 웹 `moveTo` 대응) */
+  panTo: (center: LatLng) => void;
 }
 
 interface GridMapProps {
@@ -121,14 +157,27 @@ interface GridMapProps {
   themeColor?: string;
   /** 교집합(테마 ∩ 점령) 셀 — 테마 색 빗금 추가 (MSG-427 D9) */
   hatchCells?: GridCellIndex[];
-  /** 코스 경로 — 폴리라인 좌표 + 번호 경유지 마커 (MSG-427 E14, 경로추천 전용) */
-  route?: { path: LatLng[]; waypoints: RouteWaypoint[] };
+  /**
+   * 강조 셀 — `accentColor` 채움 + 굵은 외곽선 (MSG-560 D3). 테마 층 위에 얹는 두 번째 색
+   * 층이다(행사 위치 상세가 열린 동안 그 위치 셀). 선택 1곳의 격자(실데이터 9칸)뿐이라
+   * 테마 층과 달리 파생을 memo하지 않는다. 미지정 시 렌더 불변.
+   */
+  accentCells?: GridCellIndex[];
+  /** 강조 원색 hex — `accentCells`와 같은 수명 (미지정이면 강조 층 미렌더) */
+  accentColor?: string;
+  /** 코스 경로 — 폴리라인 좌표 + 번호 경유지 마커 (MSG-427 E14, 경로추천 전용).
+      `onWaypointTap`은 AI 추천의 마커→카드 선택 (MSG-556 D8) — 없으면 마커는 탭 불가 */
+  route?: {
+    path: LatLng[];
+    waypoints: RouteWaypoint[];
+    onWaypointTap?: (seq: number) => void;
+  };
   /**
    * 선택된 미션의 이름표 마커 (MSG-427 승인 Q4) — **선택된 미션에만** 붙인다.
    * Figma 9개 프레임 어디에도 이름표가 없고 RN에는 hover가 없어(스펙 R4), 티켓
    * [동작 요구]의 "이름표가 붙는다"를 지도가 글자로 덮이지 않는 최소 범위로 충족한다.
    */
-  missionLabel?: { text: string; coord: LatLng };
+  missionLabel?: { text: string; coord: LatLng; color?: string };
   /**
    * 카메라 **이동 종료** 시 현재 뷰포트 통지 (MSG-423 요구 5) — 조회 재발사 트리거다.
    * SDK의 `onCameraIdle`에 물린다: 제스처가 완전히 끝나야 발화하므로 드래그·줌 중에는
@@ -142,6 +191,13 @@ interface GridMapProps {
    * 탭 시 카메라 이동만 맡는다.
    */
   clusters?: RegionClusterMarker[];
+  /**
+   * 현재 위치 점 + 정확도 원 (MSG-565) — 지도 홈만 넘긴다. **미지정(undefined)이면 렌더
+   * 불변**(AI 추천·격자 상세): 줌 상태 추적도 하지 않는다. null은 "홈이지만 아직 측위 없음".
+   */
+  currentLocation?: CurrentLocation | null;
+  /** 사용자 제스처(드래그·핀치)로 카메라가 움직일 때 — 추적 해제 신호 (MSG-565 D7). 제스처 중 매 프레임 발화 */
+  onGestureCameraChange?: () => void;
 }
 
 /** 셀 bounds → 폴리곤 꼭짓점 4점 (sw → se → ne → nw) */
@@ -203,11 +259,15 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     themeCells,
     themeColor,
     hatchCells,
+    accentCells,
+    accentColor,
     route,
     missionLabel,
     onViewportChange,
     clusters,
     onReady,
+    currentLocation,
+    onGestureCameraChange,
   },
   ref,
 ) {
@@ -298,6 +358,13 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         duration: 500,
       });
     },
+    panTo: (center) => {
+      mapRef.current?.animateCameraTo({
+        latitude: center.lat,
+        longitude: center.lng,
+        duration: 500,
+      });
+    },
   }));
 
   return (
@@ -318,8 +385,26 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
       minZoom={minZoom}
+      locationOverlay={
+        currentLocation === undefined
+          ? undefined
+          : {
+              ...locationOverlayProps(currentLocation),
+              image: userLocationImage,
+              imageWidth: USER_LOCATION_IMAGE_SIZE,
+              imageHeight: USER_LOCATION_IMAGE_SIZE,
+              anchor: USER_LOCATION_ANCHOR,
+            }
+      }
+      customStyleId={NAVER_MAP_CUSTOM_STYLE_ID}
+      onCustomStyleLoadFailed={({ message }) => {
+        console.warn("[GridMap] custom style load failed:", message);
+      }}
       onCameraChanged={(camera) => {
         setBelowGridZoom(isBelowGridZoom(camera.zoom ?? initialZoom));
+        if (onGestureCameraChange && isGestureCameraChange(camera.reason)) {
+          onGestureCameraChange();
+        }
         if (showCellGrid) {
           setCells(
             buildVisibleCells(
@@ -379,6 +464,17 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             outlineWidth={THEME_OUTLINE_WIDTH}
           />
         ))}
+      {/* 강조 셀 — 테마 층 위에 얹는 두 번째 색 (MSG-560 D3) */}
+      {accentColor &&
+        (accentCells ?? []).map((cell) => (
+          <NaverMapPolygonOverlay
+            key={`accent:${cellKey(cell)}`}
+            coords={rectCoords(cellBoundsAt(cell))}
+            color={`${accentColor}${THEME_FILL_ALPHA}`}
+            outlineColor={accentColor}
+            outlineWidth={ACCENT_OUTLINE_WIDTH}
+          />
+        ))}
       {/* 교집합 셀 빗금 — primary 채움(occupiedCells에 포함) 위에 테마 색 대각선 (AC 9) */}
       {themeColor &&
         hatchLines.map(({ key, segment: [from, to] }) => (
@@ -404,14 +500,15 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         />
       )}
       {themeColor &&
-        route?.waypoints.map(({ seq, coord }) => (
+        route?.waypoints.map(({ seq, coord, active }) => (
           <NaverMapMarkerOverlay
             key={seq}
             latitude={coord.lat}
             longitude={coord.lng}
-            width={ROUTE_MARKER_SIZE}
-            height={ROUTE_MARKER_SIZE}
+            width={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
+            height={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
             anchor={{ x: 0.5, y: 0.5 }}
+            onTap={route?.onWaypointTap && (() => route?.onWaypointTap?.(seq))}
           >
             {/* 커스텀 뷰 마커 — Figma 14094:5419: 테마 색 원 + 흰 테두리 2px + 흰 번호.
                 네이티브 마커 서브뷰라 nativewind 클래스 대신 토큰 값을 style로 직접 주입,
@@ -420,11 +517,11 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             <View
               collapsable={false}
               style={{
-                width: ROUTE_MARKER_SIZE,
-                height: ROUTE_MARKER_SIZE,
-                borderRadius: ROUTE_MARKER_SIZE / 2,
+                width: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
+                height: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
+                borderRadius: ROUTE_MARKER_SIZE,
                 backgroundColor: themeColor,
-                borderWidth: 2,
+                borderWidth: active ? ROUTE_MARKER_ACTIVE_RING : 2,
                 borderColor: semantic.onPrimary,
                 alignItems: "center",
                 justifyContent: "center",
@@ -444,19 +541,24 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         ))}
       {/* 지역 집계 마커 (MSG-428 S2·S3·S4) — 저줌에서만 채워져 들어온다.
           key는 regionCode 기반 안정 키라 재조회에도 같은 지역이면 마커가 유지된다 */}
-      {clusters?.map((cluster) => (
-        <NaverMapMarkerOverlay
-          key={`cluster:${cluster.id}`}
-          latitude={cluster.position.lat}
-          longitude={cluster.position.lng}
-          width={CLUSTER_MARKER_PX[cluster.unit]}
-          height={CLUSTER_MARKER_PX[cluster.unit]}
-          anchor={{ x: 0.5, y: 0.5 }}
-          onTap={() => zoomToCluster(cluster)}
-        >
-          <ClusterMarker marker={cluster} />
-        </NaverMapMarkerOverlay>
-      ))}
+      {clusters?.map((cluster) => {
+        // 카메라 프레임마다 리렌더되는 컴포넌트다(onCameraChanged → setCells가 새 배열).
+        // 마커당 한 번만 계산해 쓴다 — 파일의 useMemo 관례와 같은 이유다.
+        const { width, height } = clusterBubbleSize(cluster).box;
+        return (
+          <NaverMapMarkerOverlay
+            key={`cluster:${cluster.id}`}
+            latitude={cluster.position.lat}
+            longitude={cluster.position.lng}
+            width={width}
+            height={height}
+            anchor={{ x: 0.5, y: 0.5 }}
+            onTap={() => zoomToCluster(cluster)}
+          >
+            <ClusterMarker marker={cluster} />
+          </NaverMapMarkerOverlay>
+        );
+      })}
       {/* 선택 미션 이름표 (승인 Q4) — 마커 서브뷰라 nativewind 대신 토큰 값을 style로
           직접 주입한다 (번호 마커와 같은 관례). Android 서브뷰 평탄화 방지 collapsable={false} */}
       {themeColor && missionLabel && (
@@ -473,7 +575,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
               width: MISSION_LABEL_WIDTH,
               height: MISSION_LABEL_HEIGHT,
               borderRadius: MISSION_LABEL_HEIGHT / 2,
-              backgroundColor: themeColor,
+              backgroundColor: missionLabel.color ?? themeColor,
               alignItems: "center",
               justifyContent: "center",
               paddingHorizontal: 8,

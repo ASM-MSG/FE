@@ -787,13 +787,205 @@ export type RouteRecommendResponseDto = {
      */
     points: Array<RoutePointDto>;
     /**
-     * 후보 부족 안내 — 지점 3개 이상이면 null, 0~2개면 안내 문구
+     * 안내 문구 — 후보 부족(0~2개)이면 부족 안내, 여행과 무관한 문장(MSG-513)이면 무관 안내. 지점 3개 이상 정상 추천이면 null
      */
     notice: string | null;
     /**
      * 언급 지역 신호 (MSG-468) — 문장이 화면 밖 지역을 말했으면 이동·축소 제안 재료가 실린다. 무신호(지역 무언급·동명 다수·대조 실패·충분히 담김)가 기본값
      */
     mentionedArea: MentionedAreaDto | null;
+};
+
+/**
+ * 위치 영역 사각형 (격자 인덱스). 위치 하나의 합집합은 최대 81칸이다.
+ */
+export type EventSubmissionAreaRectDto = {
+    /**
+     * 격자 행 인덱스 최소
+     */
+    minGridY: number;
+    /**
+     * 격자 행 인덱스 최대
+     */
+    maxGridY: number;
+    /**
+     * 격자 열 인덱스 최소
+     */
+    minGridX: number;
+    /**
+     * 격자 열 인덱스 최대
+     */
+    maxGridX: number;
+};
+
+/**
+ * 행사 등재 신청 제출 요청
+ */
+export type EventSubmissionCreateRequestDto = {
+    /**
+     * 등록 유형 — FESTIVAL(지역축제)·POPUP(팝업스토어)·EVENT(이벤트 참여형)
+     */
+    type: 'FESTIVAL' | 'POPUP' | 'EVENT';
+    /**
+     * 참여할 승인 이벤트 회차 id — EVENT 전용 필수. 승인 이벤트 목록 응답의 occurrenceId 를 그대로 넣는다. 없는 회차면 13440, 이미 종료된 회차면 13441, 다른 유형에 실려 오면 13439
+     */
+    parentOccurrenceId?: number | null;
+    /**
+     * 축제명 / 팝업명
+     */
+    title: string;
+    /**
+     * 주최 기관 / 브랜드·운영사
+     */
+    organizerName: string;
+    /**
+     * 행사 시작일 (KST 날짜)
+     */
+    startsOn: string;
+    /**
+     * 행사 종료일 (KST 날짜). 오늘 이전이면 13433
+     */
+    endsOn: string;
+    /**
+     * 운영 시간 — POPUP 전용 필수. FESTIVAL 에 실려 오면 13439
+     */
+    operatingHours?: string;
+    /**
+     * 주요 프로그램 — FESTIVAL 전용 필수. 다른 유형에 실려 오면 13439
+     */
+    programDescription?: string;
+    /**
+     * 참여 방식 — EVENT 전용 필수. 다른 유형에 실려 오면 13439
+     */
+    participationMethod?: string;
+    /**
+     * 행사 소개
+     */
+    description: string;
+    /**
+     * 대표 이미지의 pending S3 키. presign 발급 응답의 s3Key 를 그대로 넣는다.
+     */
+    imageS3Key: string;
+    /**
+     * 행사 위치 목록. 1개 이상 20개 이하이고 이름 필드가 없다.
+     */
+    locations?: Array<EventSubmissionLocationRequestDto>;
+};
+
+/**
+ * 신청 위치 — 영역 사각형 목록만 담는다 (이름 없음)
+ */
+export type EventSubmissionLocationRequestDto = {
+    /**
+     * 영역 사각형 목록. 겹쳐도 되고 합집합 크기로 81칸 상한을 판정한다.
+     */
+    areaRects?: Array<EventSubmissionAreaRectDto>;
+};
+
+export type ApiResponseDtoEventSubmissionSubmitResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventSubmissionSubmitResponseDto;
+};
+
+/**
+ * 신청 접수 결과
+ */
+export type EventSubmissionSubmitResponseDto = {
+    /**
+     * 신청 id
+     */
+    id: number;
+    /**
+     * 신청 번호 — FM-{KST 연도}-{4자리 순번}
+     */
+    submissionNo: string;
+    /**
+     * 신청 상태
+     */
+    status: string;
+};
+
+/**
+ * 행사 신청 대표 이미지 업로드용 presigned URL 발급 요청 (MSG-498)
+ */
+export type EventSubmissionImagePresignRequestDto = {
+    /**
+     * 이미지 파일 확장자 (점 없이). jpg, jpeg, png 만 — 시안 문구가 "JPG 또는 PNG"라 webp 는 받지 않는다
+     */
+    extension: string;
+    /**
+     * 이미지 MIME 타입. 확장자와 쌍이 맞아야 한다
+     */
+    contentType: string;
+    /**
+     * 업로드할 파일 크기(바이트). 10MB 초과 시 거부
+     */
+    contentLength: number;
+};
+
+export type ApiResponseDtoEventSubmissionImagePresignResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventSubmissionImagePresignResponseDto;
+};
+
+/**
+ * 행사 신청 대표 이미지 presigned URL 발급 응답. uploadUrl 로 S3 에 직접 PUT 업로드한 뒤 s3Key 를 신청 제출·재제출 요청의 imageS3Key 로 전달한다.
+ */
+export type EventSubmissionImagePresignResponseDto = {
+    /**
+     * S3 에 직접 PUT 업로드할 presigned URL
+     */
+    uploadUrl: string;
+    /**
+     * 업로드 대상 S3 객체 키. 제출·재제출 요청에 그대로 전달한다.
+     */
+    s3Key: string;
+    /**
+     * presigned URL 유효 시간(초)
+     */
+    expiresInSec: number;
+};
+
+/**
+ * 아이디(공식 이메일) 변경 요청
+ */
+export type OrgEmailChangeRequestDto = {
+    /**
+     * 바꾸려는 공식 이메일
+     */
+    requestedEmail: string;
+};
+
+/**
+ * 행사 운영자 계정 발급 요청 (비로그인 공개 폼)
+ */
+export type OrgAccountRequestCreateRequestDto = {
+    /**
+     * 기관명
+     */
+    orgName: string;
+    /**
+     * 담당자 이름 (2~20자). 승인 시 계정 담당자 이름이 되므로 계정 설정과 같은 제약이다
+     */
+    contactName: string;
+    /**
+     * 담당자 연락처. 숫자로 시작하고 끝나는 숫자·하이픈 9~20자
+     */
+    contactPhone: string;
+    /**
+     * 공식 이메일. 승인 시 계정 아이디이자 초기 비밀번호를 받을 주소다
+     */
+    email: string;
+    /**
+     * 예정 행사명
+     */
+    eventName: string;
+    /**
+     * 요청 내용
+     */
+    content: string;
 };
 
 /**
@@ -1063,6 +1255,54 @@ export type ReissueResponseDto = {
 };
 
 /**
+ * 비밀번호 재설정 확정 요청
+ */
+export type PasswordResetConfirmRequestDto = {
+    /**
+     * 재설정 링크의 token 쿼리 값
+     */
+    token: string;
+    /**
+     * 새 비밀번호. 영문과 숫자를 각각 하나 이상 포함한 8~64자
+     */
+    newPassword: string;
+};
+
+/**
+ * 비밀번호 재설정 링크 요청
+ */
+export type PasswordResetRequestDto = {
+    /**
+     * 계정 이메일(아이디)
+     */
+    email: string;
+};
+
+/**
+ * 초기 비밀번호 설정 요청
+ */
+export type PasswordInitialRequestDto = {
+    /**
+     * 새 비밀번호. 영문과 숫자를 각각 하나 이상 포함한 8~64자
+     */
+    newPassword: string;
+};
+
+/**
+ * 비밀번호 변경 요청
+ */
+export type PasswordChangeRequestDto = {
+    /**
+     * 현재 비밀번호. 초기 비밀번호 상태면 발급받은 그 값이다
+     */
+    currentPassword: string;
+    /**
+     * 새 비밀번호. 영문과 숫자를 각각 하나 이상 포함한 8~64자
+     */
+    newPassword: string;
+};
+
+/**
  * 소셜(OIDC) 로그인 요청
  */
 export type OidcLoginRequestDto = {
@@ -1209,6 +1449,208 @@ export type ApiResponseDtoAdminReportProcessResponseDto = {
 };
 
 /**
+ * 행사 운영자 계정 직접 발급 요청
+ */
+export type OrgAccountCreateRequestDto = {
+    /**
+     * 기관명
+     */
+    orgName: string;
+    /**
+     * 담당자 이름 (2~20자)
+     */
+    contactName: string;
+    /**
+     * 공식 이메일. 계정 아이디이자 초기 비밀번호를 받을 주소다
+     */
+    email: string;
+    /**
+     * 담당자 연락처 (선택). 값이 있으면 숫자로 시작하고 끝나는 숫자·하이픈 9~20자
+     */
+    contactPhone?: string;
+};
+
+export type ApiResponseDtoOrgAccountIssueResponseDto = {
+    developCode: number;
+    message: string;
+    data: OrgAccountIssueResponseDto;
+};
+
+/**
+ * 계정 발급 결과
+ */
+export type OrgAccountIssueResponseDto = {
+    /**
+     * 발급된 계정 id
+     */
+    userId: number;
+    /**
+     * 초기 비밀번호 메일 발송 성공 여부. true 는 SES 접수까지의 성공이고 배달 확인은 아니다
+     */
+    emailSent: boolean;
+};
+
+export type ApiResponseDtoOrgAccountResendResponseDto = {
+    developCode: number;
+    message: string;
+    data: OrgAccountResendResponseDto;
+};
+
+/**
+ * 초기 비밀번호 재발송 결과
+ */
+export type OrgAccountResendResponseDto = {
+    /**
+     * 메일 발송 성공 여부. true 는 SES 접수까지의 성공이고 배달 확인은 아니다
+     */
+    emailSent: boolean;
+};
+
+/**
+ * 계정 발급 요청 반려 요청
+ */
+export type OrgAccountRequestRejectRequestDto = {
+    /**
+     * 반려 사유 (최대 500자). 관리자가 신청자에게 수기로 통보할 때 쓴다
+     */
+    reason: string;
+    /**
+     * 상세 조회로 받은 마지막 접수 시각. 값이 다르면 검토 이후 요청이 바뀐 것이라 반려가 거부된다
+     */
+    updatedAt: string;
+};
+
+/**
+ * 계정 발급 요청 승인 요청
+ */
+export type OrgAccountRequestApproveRequestDto = {
+    /**
+     * 상세 조회로 받은 마지막 접수 시각. 값이 다르면 검토 이후 요청이 바뀐 것이라 승인이 거부된다
+     */
+    updatedAt: string;
+};
+
+/**
+ * 행사 노출 중지 요청
+ */
+export type AdminEventUnpublishRequestDto = {
+    /**
+     * 중지 사유 — 행사 운영자에게 그대로 발송된다
+     */
+    reason: string;
+};
+
+/**
+ * 행사 노출 중지 결과
+ */
+export type AdminEventUnpublishResponseDto = {
+    /**
+     * 중지한 승인 행사 식별자 (= 신청 id)
+     */
+    submissionId: number;
+    /**
+     * 중지 시각 (UTC)
+     */
+    unpublishedAt: string;
+    /**
+     * 사유 통지 메일 발송 성공 여부 — false 여도 중지는 유지된다
+     */
+    emailSent: boolean;
+};
+
+export type ApiResponseDtoAdminEventUnpublishResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminEventUnpublishResponseDto;
+};
+
+/**
+ * 행사 등재 신청 반려 요청
+ */
+export type EventSubmissionRejectRequestDto = {
+    /**
+     * 반려 항목 코드 1개 이상 (PERIOD, AREA, IMAGE, INFO — 중복 불가)
+     */
+    reasonCodes: Array<string>;
+    /**
+     * 반려 사유 본문
+     */
+    reasonText: string;
+};
+
+export type ApiResponseDtoEventSubmissionApproveResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventSubmissionApproveResponseDto;
+};
+
+/**
+ * 행사 등재 신청 승인 결과
+ */
+export type EventSubmissionApproveResponseDto = {
+    /**
+     * 승인한 신청 id
+     */
+    submissionId: number;
+    /**
+     * 부여된 승인 번호
+     */
+    approvalNo: string;
+    /**
+     * 전이 후 상태
+     */
+    status: string;
+};
+
+/**
+ * 아이디 변경 요청 반려
+ */
+export type EmailChangeRejectRequestDto = {
+    /**
+     * 검토한 요청의 접수 시각 (목록의 createdAt 을 그대로)
+     */
+    requestedAt: string;
+    /**
+     * 반려 사유
+     */
+    reason: string;
+};
+
+/**
+ * 아이디 변경 요청 승인
+ */
+export type EmailChangeApproveRequestDto = {
+    /**
+     * 검토한 요청의 접수 시각 (목록의 createdAt 을 그대로)
+     */
+    requestedAt: string;
+};
+
+export type ApiResponseDtoEmailChangeApproveResponseDto = {
+    developCode: number;
+    message: string;
+    data: EmailChangeApproveResponseDto;
+};
+
+/**
+ * 아이디 변경 승인 결과
+ */
+export type EmailChangeApproveResponseDto = {
+    /**
+     * 승인한 요청 id
+     */
+    requestId: number;
+    /**
+     * 교체된 새 아이디(로그인 이메일)
+     */
+    email: string;
+    /**
+     * 새 이메일로 보낸 통지 성공 여부 — false 여도 교체는 유지된다
+     */
+    emailSent: boolean;
+};
+
+/**
  * 영상 공개 범위 전환 요청. PUBLIC · PRIVATE · FRIENDS.
  */
 export type VideoVisibilityRequestDto = {
@@ -1236,6 +1678,90 @@ export type VideoVisibilityResponseDto = {
      * 전환 후 공개 범위 (PUBLIC, PRIVATE, FRIENDS 중 하나)
      */
     visibility: string;
+};
+
+/**
+ * 담당자 정보 수정 요청
+ */
+export type OrgProfileUpdateRequestDto = {
+    /**
+     * 담당자 이름 (2~20자). users.nickname 에 저장되므로 가입 닉네임과 같은 제약이다
+     */
+    contactName: string;
+    /**
+     * 담당자 연락처. 숫자로 시작하고 끝나는 숫자·하이픈 9~20자
+     */
+    contactPhone: string;
+};
+
+export type ApiResponseDtoOrgProfileResponseDto = {
+    developCode: number;
+    message: string;
+    data: OrgProfileResponseDto;
+};
+
+/**
+ * 행사 운영자 계정 설정 응답
+ */
+export type OrgProfileResponseDto = {
+    /**
+     * 아이디(공식 이메일). 읽기 전용
+     */
+    email: string;
+    /**
+     * 담당자 이름
+     */
+    contactName: string;
+    /**
+     * 담당자 연락처. 아직 입력한 적이 없으면 null
+     */
+    contactPhone: string | null;
+};
+
+/**
+ * 반려본 수정 재제출 요청 — 유형을 뺀 전체 교체
+ */
+export type EventSubmissionUpdateRequestDto = {
+    /**
+     * 축제명 / 팝업명
+     */
+    title: string;
+    /**
+     * 주최 기관 / 브랜드·운영사
+     */
+    organizerName: string;
+    /**
+     * 행사 시작일 (KST 날짜)
+     */
+    startsOn: string;
+    /**
+     * 행사 종료일 (KST 날짜). 오늘 이전이면 13433
+     */
+    endsOn: string;
+    /**
+     * 운영 시간 — POPUP 전용 필수
+     */
+    operatingHours?: string;
+    /**
+     * 주요 프로그램 — FESTIVAL 전용 필수
+     */
+    programDescription?: string;
+    /**
+     * 참여 방식 — EVENT 전용 필수. 부모 이벤트는 재제출로 바꿀 수 없어 이 요청에 필드가 없다
+     */
+    participationMethod?: string;
+    /**
+     * 행사 소개
+     */
+    description: string;
+    /**
+     * 대표 이미지의 pending S3 키. 생략하거나 null 이면 기존 이미지를 유지한다.
+     */
+    imageS3Key?: string;
+    /**
+     * 행사 위치 목록. 통째로 갈아끼우고 대표 격자를 전부 재계산한다.
+     */
+    locations?: Array<EventSubmissionLocationRequestDto>;
 };
 
 /**
@@ -1682,6 +2208,318 @@ export type RegionDistrictResponseDto = {
      * 그 시군구의 전체 격자 수(사용자 무관). 0 인 시군구는 목록에 없다
      */
     gridCount: number;
+};
+
+export type ApiResponseDtoOrgEventListResponseDto = {
+    developCode: number;
+    message: string;
+    data: OrgEventListResponseDto;
+};
+
+/**
+ * 시·도별 승인 이벤트 건수 — 모달 시·도 칩 재료
+ */
+export type OrgEventCityCountResponseDto = {
+    /**
+     * 시·도 이름 — city 필터에 그대로 넣는 값
+     */
+    cityName: string;
+    /**
+     * 그 시·도의 승인 이벤트 수 (전체 기준)
+     */
+    count: number;
+};
+
+/**
+ * 승인 이벤트 하나 — 참여 신청(MSG-502)이 부모로 지정할 후보
+ */
+export type OrgEventItemResponseDto = {
+    /**
+     * 행사 회차 id — 참여 신청의 부모 참조값
+     */
+    occurrenceId: number;
+    /**
+     * 이벤트 이름 (회차 제목)
+     */
+    name: string;
+    /**
+     * 대상 지역 시·도 — 시·도 칩 묶음 기준
+     */
+    cityName: string;
+    /**
+     * 행사 시작 시각
+     */
+    startsAt: string;
+    /**
+     * 행사 종료 시각
+     */
+    endsAt: string;
+    /**
+     * 장소 라벨 — 표시 순서가 가장 앞선 위치의 이름. 위치가 없는 회차면 null
+     */
+    placeLabel: string | null;
+};
+
+/**
+ * 승인 이벤트 목록 — 참여 신청 모달 재료
+ */
+export type OrgEventListResponseDto = {
+    /**
+     * 승인 이벤트 전체 건수 — 필터·검색과 무관한 '전체 보기' 칩 재료
+     */
+    totalCount: number;
+    /**
+     * 시·도별 건수 — 건수 내림차순, 동수는 이름 오름차순
+     */
+    cityCounts: Array<OrgEventCityCountResponseDto>;
+    /**
+     * 필터·검색이 적용된 목록 — 시작일 오름차순, 동시각은 회차 id 오름차순
+     */
+    events: Array<OrgEventItemResponseDto>;
+};
+
+export type ApiResponseDtoEventSubmissionDetailResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventSubmissionDetailResponseDto;
+};
+
+/**
+ * 신청 상세
+ */
+export type EventSubmissionDetailResponseDto = {
+    /**
+     * 신청 id
+     */
+    id: number;
+    /**
+     * 신청 번호
+     */
+    submissionNo: string;
+    /**
+     * 등록 유형
+     */
+    type: string;
+    /**
+     * 신청 상태
+     */
+    status: string;
+    /**
+     * 축제명 / 팝업명
+     */
+    title: string;
+    /**
+     * 주최 기관 / 브랜드·운영사
+     */
+    organizerName: string;
+    /**
+     * 행사 시작일
+     */
+    startsOn: string;
+    /**
+     * 행사 종료일
+     */
+    endsOn: string;
+    /**
+     * 운영 시간 — POPUP 만 값이 있다
+     */
+    operatingHours: string | null;
+    /**
+     * 주요 프로그램 — FESTIVAL 만 값이 있다
+     */
+    programDescription: string | null;
+    /**
+     * 참여 방식 — EVENT 만 값이 있다
+     */
+    participationMethod: string | null;
+    /**
+     * 참여할 부모 이벤트 — EVENT 만 값이 있다
+     */
+    parentEvent: EventSubmissionParentEventResponseDto | null;
+    /**
+     * 행사 소개
+     */
+    description: string;
+    /**
+     * 대표 이미지 열람용 presigned GET URL
+     */
+    imageUrl: string;
+    /**
+     * 위치 목록 — 순번 오름차순
+     */
+    locations: Array<EventSubmissionLocationResponseDto>;
+    /**
+     * 현재 반려 사유 — 상태가 REJECTED 일 때만 값이 있다
+     */
+    rejection: EventSubmissionRejectionResponseDto | null;
+    /**
+     * 상태 이력 — 발생 순
+     */
+    history: Array<EventSubmissionHistoryResponseDto>;
+    /**
+     * 마지막 변경 시각 (UTC)
+     */
+    updatedAt: string;
+};
+
+/**
+ * 신청 상태 이력 항목
+ */
+export type EventSubmissionHistoryResponseDto = {
+    /**
+     * 전이 후 상태
+     */
+    status: string;
+    /**
+     * 반려 항목 코드 — 반려 행에만 있고 그 외에는 null
+     */
+    reasonCodes: Array<string> | null;
+    /**
+     * 반려 사유 본문 — 반려 행에만 있고 그 외에는 null
+     */
+    reasonText: string | null;
+    /**
+     * 전이 시각 (UTC)
+     */
+    changedAt: string;
+};
+
+/**
+ * 신청 위치 상세
+ */
+export type EventSubmissionLocationResponseDto = {
+    /**
+     * 위치 순번 — 제출 배열 순서대로 1부터
+     */
+    order: number;
+    /**
+     * 서버가 계산한 대표 격자 id
+     */
+    representativeGridId: string;
+    /**
+     * 구역 표시명 — 구역 밖이면 null
+     */
+    zoneName: string | null;
+    /**
+     * 구역 안 칸 이름 — 구역 밖이면 null
+     */
+    zoneCell: string | null;
+    /**
+     * 행정동 이름 — 무귀속이면 null
+     */
+    regionName: string | null;
+    /**
+     * 영역 합집합 칸 수 — 최대 81
+     */
+    cellCount: number;
+    /**
+     * 제출 원본 사각형 — 재제출 폼 프리필 재료라 보낸 그대로다
+     */
+    areaRects: Array<EventSubmissionAreaRectDto>;
+};
+
+/**
+ * 참여할 부모 이벤트 회차
+ */
+export type EventSubmissionParentEventResponseDto = {
+    /**
+     * 회차 id
+     */
+    occurrenceId: number;
+    /**
+     * 이벤트 이름
+     */
+    name: string;
+};
+
+/**
+ * 반려 항목과 사유
+ */
+export type EventSubmissionRejectionResponseDto = {
+    /**
+     * 반려 항목 코드 — PERIOD, AREA, IMAGE, INFO
+     */
+    reasonCodes: Array<string>;
+    /**
+     * 반려 사유 본문
+     */
+    reasonText: string;
+};
+
+export type ApiResponseDtoEventSubmissionMyListResponseDto = {
+    developCode: number;
+    message: string;
+    data: EventSubmissionMyListResponseDto;
+};
+
+/**
+ * 내 신청 목록과 상태별 건수
+ */
+export type EventSubmissionMyListResponseDto = {
+    /**
+     * 상태별 건수 — 내 신청 전체 기준
+     */
+    counts: EventSubmissionStatusCountsResponseDto;
+    /**
+     * 신청 목록 — 최신 제출 순
+     */
+    submissions: Array<EventSubmissionSummaryResponseDto>;
+};
+
+/**
+ * 내 신청의 상태별 건수
+ */
+export type EventSubmissionStatusCountsResponseDto = {
+    /**
+     * 심사 중 건수
+     */
+    inReview: number;
+    /**
+     * 승인 건수
+     */
+    approved: number;
+    /**
+     * 반려 건수
+     */
+    rejected: number;
+};
+
+/**
+ * 내 신청 목록 항목
+ */
+export type EventSubmissionSummaryResponseDto = {
+    /**
+     * 신청 id
+     */
+    id: number;
+    /**
+     * 신청 번호
+     */
+    submissionNo: string;
+    /**
+     * 등록 유형
+     */
+    type: string;
+    /**
+     * 축제명 / 팝업명
+     */
+    title: string;
+    /**
+     * 신청 상태
+     */
+    status: string;
+    /**
+     * 행사 시작일
+     */
+    startsOn: string;
+    /**
+     * 행사 종료일
+     */
+    endsOn: string;
+    /**
+     * 마지막 변경 시각 (UTC)
+     */
+    updatedAt: string;
 };
 
 export type ApiResponseDtoNotificationPageResponseDto = {
@@ -2881,7 +3719,7 @@ export type ApiResponseDtoEventOccurrenceDetailResponseDto = {
 };
 
 /**
- * 행사 회차 상세 — 행사방 헤더
+ * 행사 회차 상세 — 이벤트 헤더
  */
 export type EventOccurrenceDetailResponseDto = {
     /**
@@ -2951,7 +3789,7 @@ export type ApiResponseDtoEventViewerCountResponseDto = {
 };
 
 /**
- * 행사방 현재 열람 인원 응답.
+ * 이벤트 현재 열람 인원 응답.
  */
 export type EventViewerCountResponseDto = {
     /**
@@ -3010,6 +3848,30 @@ export type EventLocationResponseDto = {
      * 이 위치의 영상 수 — 조회 시점 실측(전역 노출 게이트 통과분)
      */
     videoCount: number;
+    /**
+     * 운영 주체 — 참여형 승인분만 값이 있다
+     */
+    organizerName: string | null;
+    /**
+     * 참여 소개 — 참여형 승인분만 값이 있다
+     */
+    description: string | null;
+    /**
+     * 공개 시작일 (표기 정보, 노출 창 아님)
+     */
+    participationStartsOn: string | null;
+    /**
+     * 공개 종료일 (표기 정보, 노출 창 아님)
+     */
+    participationEndsOn: string | null;
+    /**
+     * 참여 방식 서술 — 참여형 승인분만 값이 있다
+     */
+    participationMethod: string | null;
+    /**
+     * 커버 이미지 공개 URL — 참여형 승인분만 값이 있다
+     */
+    imageUrl: string | null;
 };
 
 export type ApiResponseDtoEventLocationVideoPageResponseDto = {
@@ -3244,6 +4106,22 @@ export type MyBadgeResponseDto = {
     featuredRank: number | null;
 };
 
+export type ApiResponseDtoPasswordStatusResponseDto = {
+    developCode: number;
+    message: string;
+    data: PasswordStatusResponseDto;
+};
+
+/**
+ * 비밀번호 강제 변경 상태
+ */
+export type PasswordStatusResponseDto = {
+    /**
+     * true 면 비밀번호를 바꾸기 전까지 행사 등재 콘솔이 막힌다
+     */
+    mustChange: boolean;
+};
+
 /**
  * 관리자 단건 영상 확인 응답 — 영상 메타와 재생·썸네일 presigned GET URL.
  */
@@ -3376,6 +4254,580 @@ export type ApiResponseDtoAdminReportListResponseDto = {
     developCode: number;
     message: string;
     data: AdminReportListResponseDto;
+};
+
+/**
+ * 발급된 행사 운영자 계정
+ */
+export type AdminOrgAccountItemResponseDto = {
+    /**
+     * 계정 id
+     */
+    userId: number;
+    /**
+     * 기관명. 이 발급 경로 밖에서 만들어진 계정이면 null 일 수 있다
+     */
+    orgName: string | null;
+    /**
+     * 담당자 이름
+     */
+    contactName: string;
+    /**
+     * 공식 이메일 (계정 아이디)
+     */
+    email: string;
+    /**
+     * 담당자 연락처. 직접 발급에서 생략했으면 null 이다
+     */
+    contactPhone: string | null;
+    /**
+     * 로그인 제공자. 목록이 LOCAL 만 담는다는 사실의 확인 재료다
+     */
+    provider: string;
+    /**
+     * 초기 비밀번호 변경 강제 여부. true 면 초기 로그인 전, false 면 사용 중이다
+     */
+    mustChange: boolean;
+    /**
+     * 발급 시각
+     */
+    createdAt: string;
+};
+
+/**
+ * 발급된 행사 운영자 계정 목록 — 발급 최신순 한 페이지.
+ */
+export type AdminOrgAccountListResponseDto = {
+    /**
+     * 조건에 해당하는 전체 계정 수
+     */
+    totalElements: number;
+    /**
+     * 현재 페이지 번호 (0부터)
+     */
+    page: number;
+    /**
+     * 페이지 크기
+     */
+    size: number;
+    /**
+     * 이 페이지의 계정 목록. 정렬은 발급 최신순 고정
+     */
+    accounts: Array<AdminOrgAccountItemResponseDto>;
+};
+
+export type ApiResponseDtoAdminOrgAccountListResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminOrgAccountListResponseDto;
+};
+
+/**
+ * 계정 발급 요청 목록 항목
+ */
+export type AdminOrgAccountRequestItemResponseDto = {
+    /**
+     * 요청 id
+     */
+    id: number;
+    /**
+     * 기관명
+     */
+    orgName: string;
+    /**
+     * 담당자 이름
+     */
+    contactName: string;
+    /**
+     * 공식 이메일
+     */
+    email: string;
+    /**
+     * 예정 행사명
+     */
+    eventName: string;
+    /**
+     * 처리 상태 (PENDING, ISSUED, REJECTED)
+     */
+    status: string;
+    /**
+     * 최초 접수 시각
+     */
+    createdAt: string;
+    /**
+     * 마지막 접수 시각 — 정렬 기준이자 심사의 검토 기준 시각
+     */
+    updatedAt: string;
+};
+
+/**
+ * 계정 발급 요청 목록 — 상태 필터 기준 한 페이지와 상태별 전체 건수.
+ */
+export type AdminOrgAccountRequestListResponseDto = {
+    /**
+     * 대기 건수 (필터와 무관한 전체 집계)
+     */
+    pendingCount: number;
+    /**
+     * 발급됨 건수 (필터와 무관한 전체 집계)
+     */
+    issuedCount: number;
+    /**
+     * 반려 건수 (필터와 무관한 전체 집계)
+     */
+    rejectedCount: number;
+    /**
+     * 필터에 해당하는 전체 요청 수
+     */
+    totalElements: number;
+    /**
+     * 현재 페이지 번호 (0부터)
+     */
+    page: number;
+    /**
+     * 페이지 크기
+     */
+    size: number;
+    /**
+     * 이 페이지의 요청 목록. 정렬은 마지막 접수 최신순 고정
+     */
+    requests: Array<AdminOrgAccountRequestItemResponseDto>;
+};
+
+export type ApiResponseDtoAdminOrgAccountRequestListResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminOrgAccountRequestListResponseDto;
+};
+
+/**
+ * 계정 발급 요청 상세
+ */
+export type AdminOrgAccountRequestDetailResponseDto = {
+    /**
+     * 요청 id
+     */
+    id: number;
+    /**
+     * 기관명
+     */
+    orgName: string;
+    /**
+     * 담당자 이름
+     */
+    contactName: string;
+    /**
+     * 담당자 연락처
+     */
+    contactPhone: string;
+    /**
+     * 공식 이메일
+     */
+    email: string;
+    /**
+     * 예정 행사명
+     */
+    eventName: string;
+    /**
+     * 요청 내용
+     */
+    content: string;
+    /**
+     * 처리 상태 (PENDING, ISSUED, REJECTED)
+     */
+    status: string;
+    /**
+     * 반려 사유. 반려 건에만 값이 있다
+     */
+    rejectReason: string | null;
+    /**
+     * 발급된 계정 id. 발급 건에만 값이 있다
+     */
+    issuedUserId: number | null;
+    /**
+     * 최초 접수 시각
+     */
+    createdAt: string;
+    /**
+     * 마지막 접수 시각 — 승인·반려 요청에 그대로 에코해야 하는 검토 기준 시각
+     */
+    updatedAt: string;
+    /**
+     * 처리 시각. 승인·반려 건에만 값이 있다
+     */
+    processedAt: string | null;
+};
+
+export type ApiResponseDtoAdminOrgAccountRequestDetailResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminOrgAccountRequestDetailResponseDto;
+};
+
+/**
+ * 승인 행사 목록 항목
+ */
+export type AdminApprovedEventItemResponseDto = {
+    /**
+     * 승인 행사 식별자 (= 신청 id)
+     */
+    submissionId: number;
+    /**
+     * 승인 번호
+     */
+    approvalNo: string;
+    /**
+     * 신청 번호
+     */
+    submissionNo: string;
+    /**
+     * 등록 유형
+     */
+    type: 'FESTIVAL' | 'POPUP' | 'EVENT';
+    /**
+     * 축제명 / 팝업명
+     */
+    title: string;
+    /**
+     * 주최 기관 — 신청 폼에 적힌 값
+     */
+    organizerName: string;
+    /**
+     * 기관명 — 신청 계정에 등록된 값
+     */
+    orgName: string | null;
+    /**
+     * 행사 시작일
+     */
+    startsOn: string;
+    /**
+     * 행사 종료일
+     */
+    endsOn: string;
+    /**
+     * 파생 상태 (UPCOMING 예정 · EXPOSED 노출 중 · ENDED 종료)
+     */
+    status: string;
+    /**
+     * 노출 중지 여부
+     */
+    unpublished: boolean;
+    /**
+     * 노출 중지 시각 (UTC) — 중지되지 않았으면 null
+     */
+    unpublishedAt: string | null;
+    /**
+     * 노출 중지 사유 — 중지되지 않았으면 null
+     */
+    unpublishReason: string | null;
+};
+
+/**
+ * 승인 행사 목록 — 탭 기준 한 페이지와 탭별 전체 건수.
+ */
+export type AdminApprovedEventListResponseDto = {
+    /**
+     * 노출 중 건수 (탭과 무관한 전체 집계)
+     */
+    exposedCount: number;
+    /**
+     * 예정 건수 (탭과 무관한 전체 집계)
+     */
+    upcomingCount: number;
+    /**
+     * 종료 건수 (탭과 무관한 전체 집계)
+     */
+    endedCount: number;
+    /**
+     * 탭에 해당하는 전체 행사 수
+     */
+    totalElements: number;
+    /**
+     * 현재 페이지 번호 (0부터)
+     */
+    page: number;
+    /**
+     * 페이지 크기
+     */
+    size: number;
+    /**
+     * 이 페이지의 행사 목록. 정렬은 시작일 최신순 고정
+     */
+    events: Array<AdminApprovedEventItemResponseDto>;
+};
+
+export type ApiResponseDtoAdminApprovedEventListResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminApprovedEventListResponseDto;
+};
+
+/**
+ * 관리자 심사 큐 항목
+ */
+export type AdminEventSubmissionItemResponseDto = {
+    /**
+     * 신청 id
+     */
+    id: number;
+    /**
+     * 신청 번호
+     */
+    submissionNo: string;
+    /**
+     * 등록 유형
+     */
+    type: 'FESTIVAL' | 'POPUP' | 'EVENT';
+    /**
+     * 신청 상태
+     */
+    status: 'IN_REVIEW' | 'APPROVED' | 'REJECTED';
+    /**
+     * 축제명 / 팝업명
+     */
+    title: string;
+    /**
+     * 주최 기관 — 신청 폼에 적힌 값
+     */
+    organizerName: string;
+    /**
+     * 기관명 — 신청 계정에 등록된 값
+     */
+    orgName: string | null;
+    /**
+     * 행사 시작일
+     */
+    startsOn: string;
+    /**
+     * 행사 종료일
+     */
+    endsOn: string;
+    /**
+     * 신청에 담긴 위치 수
+     */
+    locationCount: number;
+    /**
+     * 접수 시각 (UTC)
+     */
+    createdAt: string;
+    /**
+     * 마지막 변경 시각 (UTC)
+     */
+    updatedAt: string;
+};
+
+/**
+ * 관리자 심사 큐 — 상태 필터 기준 한 페이지와 상태별 전체 건수.
+ */
+export type AdminEventSubmissionListResponseDto = {
+    /**
+     * 상태별 전체 건수 (필터와 무관)
+     */
+    counts: EventSubmissionStatusCountsResponseDto;
+    /**
+     * 필터에 해당하는 전체 신청 수
+     */
+    totalElements: number;
+    /**
+     * 현재 페이지 번호 (0부터)
+     */
+    page: number;
+    /**
+     * 페이지 크기
+     */
+    size: number;
+    /**
+     * 이 페이지의 신청 목록. 정렬은 접수 최신순 고정
+     */
+    submissions: Array<AdminEventSubmissionItemResponseDto>;
+};
+
+export type ApiResponseDtoAdminEventSubmissionListResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminEventSubmissionListResponseDto;
+};
+
+/**
+ * 관리자 심사 상세
+ */
+export type AdminEventSubmissionDetailResponseDto = {
+    /**
+     * 신청 id
+     */
+    id: number;
+    /**
+     * 신청 번호
+     */
+    submissionNo: string;
+    /**
+     * 등록 유형
+     */
+    type: string;
+    /**
+     * 신청 상태
+     */
+    status: string;
+    /**
+     * 축제명 / 팝업명
+     */
+    title: string;
+    /**
+     * 주최 기관 — 신청 폼에 적힌 값
+     */
+    organizerName: string;
+    /**
+     * 행사 시작일
+     */
+    startsOn: string;
+    /**
+     * 행사 종료일
+     */
+    endsOn: string;
+    /**
+     * 운영 시간 — POPUP 만 값이 있다
+     */
+    operatingHours: string | null;
+    /**
+     * 주요 프로그램 — FESTIVAL 만 값이 있다
+     */
+    programDescription: string | null;
+    /**
+     * 참여 방식 — EVENT(참여형)만 값이 있다
+     */
+    participationMethod: string | null;
+    /**
+     * 참여할 부모 이벤트 회차 — EVENT(참여형)만 값이 있다
+     */
+    parentEvent: EventSubmissionParentEventResponseDto | null;
+    /**
+     * 행사 소개
+     */
+    description: string;
+    /**
+     * 대표 이미지 열람용 presigned GET URL
+     */
+    imageUrl: string;
+    /**
+     * 신청 계정의 기관명
+     */
+    orgName: string | null;
+    /**
+     * 신청 계정의 담당자 이름
+     */
+    contactName: string;
+    /**
+     * 신청 계정의 공식 이메일 (로그인 아이디)
+     */
+    email: string;
+    /**
+     * 위치 목록 — 순번 오름차순
+     */
+    locations: Array<EventSubmissionLocationResponseDto>;
+    /**
+     * 전 위치 셀 합집합의 경계 사각형 — 조회 시점 계산이고 저장하지 않는다
+     */
+    exposureRect: EventSubmissionAreaRectDto;
+    /**
+     * 상태 이력 — 발생 순
+     */
+    history: Array<EventSubmissionHistoryResponseDto>;
+    /**
+     * 접수 시각 (UTC)
+     */
+    createdAt: string;
+    /**
+     * 마지막 변경 시각 (UTC)
+     */
+    updatedAt: string;
+};
+
+export type ApiResponseDtoAdminEventSubmissionDetailResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminEventSubmissionDetailResponseDto;
+};
+
+/**
+ * 아이디 변경 요청 큐 항목
+ */
+export type AdminEmailChangeRequestItemResponseDto = {
+    /**
+     * 요청 id
+     */
+    id: number;
+    /**
+     * 요청한 계정 id
+     */
+    userId: number;
+    /**
+     * 기관명
+     */
+    orgName: string | null;
+    /**
+     * 현재 아이디(로그인 이메일)
+     */
+    email: string;
+    /**
+     * 바꾸려는 이메일
+     */
+    requestedEmail: string;
+    /**
+     * 처리 상태
+     */
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    /**
+     * 마지막 접수 시각 (UTC) — 승인·반려 요청에 되돌려 보내는 검토 기준 시각
+     */
+    createdAt: string;
+    /**
+     * 처리 시각 (UTC) — 대기 중이면 null
+     */
+    processedAt: string | null;
+    /**
+     * 반려 사유 — 반려된 요청에만 있다
+     */
+    rejectReason: string | null;
+};
+
+/**
+ * 아이디 변경 요청 목록 — 상태 필터 기준 한 페이지와 상태별 전체 건수.
+ */
+export type AdminEmailChangeRequestListResponseDto = {
+    /**
+     * 대기 건수 (필터와 무관한 전체 집계)
+     */
+    pendingCount: number;
+    /**
+     * 승인 건수 (필터와 무관한 전체 집계)
+     */
+    approvedCount: number;
+    /**
+     * 반려 건수 (필터와 무관한 전체 집계)
+     */
+    rejectedCount: number;
+    /**
+     * 필터에 해당하는 전체 요청 수
+     */
+    totalElements: number;
+    /**
+     * 현재 페이지 번호 (0부터)
+     */
+    page: number;
+    /**
+     * 페이지 크기
+     */
+    size: number;
+    /**
+     * 이 페이지의 요청 목록. 정렬은 마지막 접수 최신순 고정
+     */
+    requests: Array<AdminEmailChangeRequestItemResponseDto>;
+};
+
+export type ApiResponseDtoAdminEmailChangeRequestListResponseDto = {
+    developCode: number;
+    message: string;
+    data: AdminEmailChangeRequestListResponseDto;
 };
 
 export type DeleteData = {
@@ -3744,6 +5196,66 @@ export type RecommendResponses = {
 
 export type RecommendResponse = RecommendResponses[keyof RecommendResponses];
 
+export type SubmitData = {
+    body: EventSubmissionCreateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/org/event-submissions';
+};
+
+export type SubmitResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventSubmissionSubmitResponseDto;
+};
+
+export type SubmitResponse = SubmitResponses[keyof SubmitResponses];
+
+export type IssueImagePresignedUrlData = {
+    body: EventSubmissionImagePresignRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/org/event-submissions/image/presigned-url';
+};
+
+export type IssueImagePresignedUrlResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventSubmissionImagePresignResponseDto;
+};
+
+export type IssueImagePresignedUrlResponse = IssueImagePresignedUrlResponses[keyof IssueImagePresignedUrlResponses];
+
+export type RequestEmailChangeData = {
+    body: OrgEmailChangeRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/org/email-change-request';
+};
+
+export type RequestEmailChangeResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type CreateData = {
+    body: OrgAccountRequestCreateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/org-account-requests';
+};
+
+export type CreateResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type UnregisterData = {
     body?: never;
     path?: never;
@@ -4043,6 +5555,62 @@ export type ReissueResponses = {
 
 export type ReissueResponse = ReissueResponses[keyof ReissueResponses];
 
+export type ResetPasswordData = {
+    body: PasswordResetConfirmRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/reset';
+};
+
+export type ResetPasswordResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type RequestResetData = {
+    body: PasswordResetRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/reset-request';
+};
+
+export type RequestResetResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type SetInitialPasswordData = {
+    body: PasswordInitialRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/initial';
+};
+
+export type SetInitialPasswordResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type ChangePasswordData = {
+    body: PasswordChangeRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/change';
+};
+
+export type ChangePasswordResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type OauthLoginData = {
     body: OidcLoginRequestDto;
     headers?: {
@@ -4232,6 +5800,213 @@ export type ApproveResponses = {
 
 export type ApproveResponse = ApproveResponses[keyof ApproveResponses];
 
+export type GetAccountsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 페이지 번호 (0부터)
+         */
+        page?: number;
+        /**
+         * 페이지 크기 (1~100)
+         */
+        size?: number;
+        /**
+         * 공식 이메일 완전 일치 필터 (선택)
+         */
+        email?: string;
+    };
+    url: '/api/admin/organizations';
+};
+
+export type GetAccountsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminOrgAccountListResponseDto;
+};
+
+export type GetAccountsResponse = GetAccountsResponses[keyof GetAccountsResponses];
+
+export type IssueDirectData = {
+    body: OrgAccountCreateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/admin/organizations';
+};
+
+export type IssueDirectResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoOrgAccountIssueResponseDto;
+};
+
+export type IssueDirectResponse = IssueDirectResponses[keyof IssueDirectResponses];
+
+export type ResendPasswordData = {
+    body?: never;
+    path: {
+        /**
+         * 재발송 대상 계정 id
+         */
+        userId: number;
+    };
+    query?: never;
+    url: '/api/admin/organizations/{userId}/resend-password';
+};
+
+export type ResendPasswordResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoOrgAccountResendResponseDto;
+};
+
+export type ResendPasswordResponse = ResendPasswordResponses[keyof ResendPasswordResponses];
+
+export type Reject2Data = {
+    body: OrgAccountRequestRejectRequestDto;
+    path: {
+        /**
+         * 반려할 요청 id
+         */
+        requestId: number;
+    };
+    query?: never;
+    url: '/api/admin/org-account-requests/{requestId}/reject';
+};
+
+export type Reject2Responses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type Approve1Data = {
+    body: OrgAccountRequestApproveRequestDto;
+    path: {
+        /**
+         * 승인할 요청 id
+         */
+        requestId: number;
+    };
+    query?: never;
+    url: '/api/admin/org-account-requests/{requestId}/approve';
+};
+
+export type Approve1Responses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoOrgAccountIssueResponseDto;
+};
+
+export type Approve1Response = Approve1Responses[keyof Approve1Responses];
+
+export type UnpublishData = {
+    body: AdminEventUnpublishRequestDto;
+    path: {
+        /**
+         * 중지할 승인 행사 식별자 (= 신청 id)
+         */
+        submissionId: number;
+    };
+    query?: never;
+    url: '/api/admin/events/{submissionId}/unpublish';
+};
+
+export type UnpublishResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminEventUnpublishResponseDto;
+};
+
+export type UnpublishResponse = UnpublishResponses[keyof UnpublishResponses];
+
+export type Reject3Data = {
+    body: EventSubmissionRejectRequestDto;
+    path: {
+        /**
+         * 반려할 신청 id
+         */
+        submissionId: number;
+    };
+    query?: never;
+    url: '/api/admin/event-submissions/{submissionId}/reject';
+};
+
+export type Reject3Responses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type Approve2Data = {
+    body?: never;
+    path: {
+        /**
+         * 승인할 신청 id
+         */
+        submissionId: number;
+    };
+    query?: never;
+    url: '/api/admin/event-submissions/{submissionId}/approve';
+};
+
+export type Approve2Responses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventSubmissionApproveResponseDto;
+};
+
+export type Approve2Response = Approve2Responses[keyof Approve2Responses];
+
+export type RejectEmailChangeData = {
+    body: EmailChangeRejectRequestDto;
+    path: {
+        /**
+         * 반려할 요청 id
+         */
+        requestId: number;
+    };
+    query?: never;
+    url: '/api/admin/email-change-requests/{requestId}/reject';
+};
+
+export type RejectEmailChangeResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type ApproveEmailChangeData = {
+    body: EmailChangeApproveRequestDto;
+    path: {
+        /**
+         * 승인할 요청 id
+         */
+        requestId: number;
+    };
+    query?: never;
+    url: '/api/admin/email-change-requests/{requestId}/approve';
+};
+
+export type ApproveEmailChangeResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEmailChangeApproveResponseDto;
+};
+
+export type ApproveEmailChangeResponse = ApproveEmailChangeResponses[keyof ApproveEmailChangeResponses];
+
 export type SetVisibilityData = {
     body: VideoVisibilityRequestDto;
     path: {
@@ -4252,6 +6027,80 @@ export type SetVisibilityResponses = {
 };
 
 export type SetVisibilityResponse = SetVisibilityResponses[keyof SetVisibilityResponses];
+
+export type GetProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/org/profile';
+};
+
+export type GetProfileResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoOrgProfileResponseDto;
+};
+
+export type GetProfileResponse = GetProfileResponses[keyof GetProfileResponses];
+
+export type UpdateProfileData = {
+    body: OrgProfileUpdateRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/org/profile';
+};
+
+export type UpdateProfileResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoOrgProfileResponseDto;
+};
+
+export type UpdateProfileResponse = UpdateProfileResponses[keyof UpdateProfileResponses];
+
+export type GetSubmissionData = {
+    body?: never;
+    path: {
+        /**
+         * 신청 id
+         */
+        submissionId: number;
+    };
+    query?: never;
+    url: '/api/org/event-submissions/{submissionId}';
+};
+
+export type GetSubmissionResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventSubmissionDetailResponseDto;
+};
+
+export type GetSubmissionResponse = GetSubmissionResponses[keyof GetSubmissionResponses];
+
+export type ResubmitData = {
+    body: EventSubmissionUpdateRequestDto;
+    path: {
+        /**
+         * 신청 id
+         */
+        submissionId: number;
+    };
+    query?: never;
+    url: '/api/org/event-submissions/{submissionId}';
+};
+
+export type ResubmitResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventSubmissionSubmitResponseDto;
+};
+
+export type ResubmitResponse = ResubmitResponses[keyof ResubmitResponses];
 
 export type MarkReadData = {
     body?: never;
@@ -4630,6 +6479,47 @@ export type GetDistrictsResponses = {
 };
 
 export type GetDistrictsResponse = GetDistrictsResponses[keyof GetDistrictsResponses];
+
+export type GetApprovedEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 시·도 필터 — cityCounts 의 cityName 저장값과 정확 일치
+         */
+        city?: string;
+        /**
+         * 이벤트 이름 검색 — 부분 일치, 대소문자 무시
+         */
+        name?: string;
+    };
+    url: '/api/org/events';
+};
+
+export type GetApprovedEventsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoOrgEventListResponseDto;
+};
+
+export type GetApprovedEventsResponse = GetApprovedEventsResponses[keyof GetApprovedEventsResponses];
+
+export type GetMySubmissionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/org/event-submissions/my';
+};
+
+export type GetMySubmissionsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoEventSubmissionMyListResponseDto;
+};
+
+export type GetMySubmissionsResponse = GetMySubmissionsResponses[keyof GetMySubmissionsResponses];
 
 export type GetInboxData = {
     body?: never;
@@ -5517,6 +7407,22 @@ export type FindMyBadgesResponses = {
 
 export type FindMyBadgesResponse = FindMyBadgesResponses[keyof FindMyBadgesResponses];
 
+export type GetStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/status';
+};
+
+export type GetStatusResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoPasswordStatusResponseDto;
+};
+
+export type GetStatusResponse = GetStatusResponses[keyof GetStatusResponses];
+
 export type RedirectToKakaoAuthorizeData = {
     body?: never;
     path?: never;
@@ -5589,6 +7495,164 @@ export type GetReportsResponses = {
 };
 
 export type GetReportsResponse = GetReportsResponses[keyof GetReportsResponses];
+
+export type GetRequestsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 처리 상태 필터 (PENDING, ISSUED, REJECTED — 대소문자 무관)
+         */
+        status?: string;
+        /**
+         * 페이지 번호 (0부터)
+         */
+        page?: number;
+        /**
+         * 페이지 크기 (1~100)
+         */
+        size?: number;
+    };
+    url: '/api/admin/org-account-requests';
+};
+
+export type GetRequestsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminOrgAccountRequestListResponseDto;
+};
+
+export type GetRequestsResponse = GetRequestsResponses[keyof GetRequestsResponses];
+
+export type GetRequestData = {
+    body?: never;
+    path: {
+        /**
+         * 조회할 요청 id
+         */
+        requestId: number;
+    };
+    query?: never;
+    url: '/api/admin/org-account-requests/{requestId}';
+};
+
+export type GetRequestResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminOrgAccountRequestDetailResponseDto;
+};
+
+export type GetRequestResponse = GetRequestResponses[keyof GetRequestResponses];
+
+export type GetEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 탭 필터 (EXPOSED, UPCOMING, ENDED — 대소문자 무관)
+         */
+        status?: string;
+        /**
+         * 페이지 번호 (0부터)
+         */
+        page?: number;
+        /**
+         * 페이지 크기 (1~100)
+         */
+        size?: number;
+    };
+    url: '/api/admin/events';
+};
+
+export type GetEventsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminApprovedEventListResponseDto;
+};
+
+export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
+
+export type GetSubmissionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 신청 상태 필터 (IN_REVIEW, APPROVED, REJECTED — 대소문자 무관)
+         */
+        status?: string;
+        /**
+         * 페이지 번호 (0부터)
+         */
+        page?: number;
+        /**
+         * 페이지 크기 (1~100)
+         */
+        size?: number;
+    };
+    url: '/api/admin/event-submissions';
+};
+
+export type GetSubmissionsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminEventSubmissionListResponseDto;
+};
+
+export type GetSubmissionsResponse = GetSubmissionsResponses[keyof GetSubmissionsResponses];
+
+export type GetSubmission1Data = {
+    body?: never;
+    path: {
+        /**
+         * 조회할 신청 id
+         */
+        submissionId: number;
+    };
+    query?: never;
+    url: '/api/admin/event-submissions/{submissionId}';
+};
+
+export type GetSubmission1Responses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminEventSubmissionDetailResponseDto;
+};
+
+export type GetSubmission1Response = GetSubmission1Responses[keyof GetSubmission1Responses];
+
+export type GetEmailChangeRequestsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 처리 상태 필터 (PENDING, APPROVED, REJECTED — 대소문자 무관)
+         */
+        status?: string;
+        /**
+         * 페이지 번호 (0부터)
+         */
+        page?: number;
+        /**
+         * 페이지 크기 (1~100)
+         */
+        size?: number;
+    };
+    url: '/api/admin/email-change-requests';
+};
+
+export type GetEmailChangeRequestsResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoAdminEmailChangeRequestListResponseDto;
+};
+
+export type GetEmailChangeRequestsResponse = GetEmailChangeRequestsResponses[keyof GetEmailChangeRequestsResponses];
 
 export type DeleteFriendData = {
     body?: never;

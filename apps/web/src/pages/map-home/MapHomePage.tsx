@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { decodeGridCenter } from "@/entities/cell";
 import { useAuthStore } from "@/features/auth/model/auth-store";
+import { useEventHeartbeat } from "@/features/event/model/use-event-heartbeat";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
 import { useHomeCellDetailStore } from "@/features/map-home/model/home-cell-detail-store";
 import { useMissionSelectionStore } from "@/features/map-home/model/mission-selection-store";
 import { useThemeFilterStore } from "@/features/map-home/model/theme-filter-store";
@@ -22,12 +24,15 @@ import { useDocumentTitle } from "@/shared/use-document-title";
 import { useMapShell } from "@/widgets/map-shell/use-map-shell";
 import { VideoMiniPanel } from "@/widgets/video-mini-panel/VideoMiniPanel";
 import { CardPlayNotice } from "./ui/CardPlayNotice";
+import { EventVideoMiniPanel } from "./ui/EventVideoMiniPanel";
 import { HomePanelSwitch } from "./ui/HomePanelSwitch";
 import { HomeSearchBox } from "./ui/HomeSearchBox";
 import { RegionReloadButton } from "./ui/RegionReloadButton";
 import { useHomeChipEntry } from "./ui/use-home-chip-entry";
 import { useHomeCloseHandlers } from "./ui/use-home-close-handlers";
+import { useEventOverlayPublish } from "./ui/use-event-overlay-publish";
 import { useHomeEntryLifecycle } from "./ui/use-home-entry-lifecycle";
+import { useMapFocusEntry } from "./ui/use-map-focus-entry";
 import { useHomeOverlayPublish } from "./ui/use-home-overlay-publish";
 import { useHomePanelState } from "./ui/use-home-panel-state";
 
@@ -62,6 +67,13 @@ export const MapHomePage = () => {
   const miniSelection = useVideoMiniPanelStore((s) => s.selected);
   const openMiniPanel = useVideoMiniPanelStore((s) => s.open);
   const closeMiniPanel = useVideoMiniPanelStore((s) => s.close);
+  // 행사방 (MSG-516 AC 10) — 캡슐 세그먼트 선택이 열고, 뒤로가기·캡슐 ✕·테마 활성화가
+  // 닫는다. 뒤로가기는 2단(MSG-518 AC 12) — useHomeCloseHandlers가 배선한다
+  const eventRoom = useEventRoomStore((s) => s.room);
+  // 행사 영상 미니 패널 (MSG-520 AC 1·3) — 카드 클릭(EventRoomPanel)이 선택하고,
+  // X·Escape(back 3단)가 닫는다. 영상 수명은 방·위치에 종속(스토어가 함께 해제)
+  const eventVideoId = useEventRoomStore((s) => s.videoId);
+  const closeEventVideo = useEventRoomStore((s) => s.closeVideo);
 
   // 내 점령 격자 id — 빗금 판정(테마 셀 ∩ 점령)과 셀 상세 열림 판정용.
   // 표시는 셸 상시 층(MSG-263 D9) 소유이고, 홈은 같은 뷰포트 쿼리를 구독만 한다(캐시 공유)
@@ -167,7 +179,16 @@ export const MapHomePage = () => {
     searchGridId,
     eventChip,
     gridMembership,
+    // 행사방 열림 중에는 행사 오버레이 게시 훅이 단독 게시자다 (MSG-517 AC 6)
+    suspended: eventRoom !== null,
   });
+  // 행사 위치 영역 채색·라벨·격자 클릭 강조 게시 — 열림 동안 유지, 닫으면 걷힘 (MSG-517 AC 6·7).
+  // 단독 게시 보장은 두 guard의 상호 배타가 맡는다 — 홈 훅은 suspended(=방 열림)면, 이
+  // 훅은 room === null이면 스토어를 건드리지 않아 한 커밋에 게시자는 항상 하나다.
+  // 선언 순서는 안전 조건이 아니다 (React가 destroy 전부 → create 전부 순으로 실행)
+  useEventOverlayPublish(eventRoom);
+  // 열람 heartbeat (MSG-517 AC 5, 확정 2) — 행사방이 열려 있는 동안 30초 주기, 닫으면 중단
+  useEventHeartbeat(eventRoom?.occurrenceId ?? null);
 
   // 상세 패널의 "전체 보기" — 상세를 닫고 패널 안 전체 지역 리스트를 연다 (MSG-328)
   const openRegionList = useRegionPanelStore((s) => s.openRegionList);
@@ -194,6 +215,9 @@ export const MapHomePage = () => {
   });
 
   useHomeEntryLifecycle();
+  // focus 딥링크 진입 (MSG-554 AC 6) — 관리자 콘솔 "지도에서 보기"가 여는 `/?focus=lat,lng`.
+  // 파라미터가 없으면 무동작이라 기존 진입 경로는 그대로다
+  useMapFocusEntry({ moveTo, zoomTo });
 
   // 격자 상세 (MSG-325·326) — 쿼리 3종 + 맥락 줄 파생은 훅이 소유한다 (리뷰 반영: 페이지 분할).
   // MSG-474: 비로그인은 grids/{gridId} 미발사 — 핫구역 응답의 이름 재료로 조립한다
@@ -227,7 +251,7 @@ export const MapHomePage = () => {
   }, [hotSummary.hotGridIds, openUploadModal, viewportCenter]);
 
   // Escape·닫기 핸들러 — 미니 패널 우선순위 조합 (리뷰 반영 — 300줄 초과 분할)
-  const { closeDetailMiniFirst, closeThemeMiniFirst } =
+  const { closeDetailMiniFirst, closeThemeMiniFirst, backEventRoomMiniFirst } =
     useHomeCloseHandlers(activeTheme);
 
   // 패널 분기 + "장소 불러오기" 대상 (리뷰 반영 — 300줄 초과 분할)
@@ -236,6 +260,7 @@ export const MapHomePage = () => {
     selectedMission,
     selectedCourse,
     selectedCellId,
+    eventRoomOpen: eventRoom !== null,
     committedRegion,
     currentRegion,
     zoom: viewportZoom,
@@ -265,6 +290,8 @@ export const MapHomePage = () => {
           onCloseDetail={closeDetailMiniFirst}
           onBackFromDetail={closeDetail}
           onViewAll={handleViewAll}
+          eventRoom={eventRoom}
+          onEventRoomBack={backEventRoomMiniFirst}
           hotSummary={hotSummary}
           regionName={committedRegion?.regionName ?? null}
           onHotUpload={handleHotUpload}
@@ -298,6 +325,9 @@ export const MapHomePage = () => {
 
       {miniSelection && (
         <VideoMiniPanel selected={miniSelection} onClose={closeMiniPanel} />
+      )}
+      {eventVideoId !== null && (
+        <EventVideoMiniPanel videoId={eventVideoId} onClose={closeEventVideo} />
       )}
       <CardPlayNotice
         notice={cardPlay.notice}

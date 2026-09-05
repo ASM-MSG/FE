@@ -7,7 +7,8 @@ import type { UserProfileResponseDto } from "../../../shared/api/sdk";
 
 /**
  * 서버가 정본인 신원 필드 (MSG-426 결정 E2) — `GET /api/users/me`에서 온다.
- * 스트릭·수집률·앱 버전은 이 조회에 없어 여전히 mock/빌드값이다.
+ * 스트릭·수집률은 `features/profile/api/use-activity-query`(MSG-564), 앱 버전은 빌드값이다.
+ * 구 `ProfileData`(스트릭·수집률 mock 계약)는 소비처가 0이 되어 MSG-564에서 삭제됐다.
  */
 export interface ProfileIdentity {
   nickname: string;
@@ -28,20 +29,3 @@ export const toProfileIdentity = (
   profileImageUrl: dto.profileImageUrl,
   joinedAt: dto.createdAt,
 });
-
-/**
- * 프로필 화면 데이터 계약 — 조회 실패·로딩 중 폴백으로 쓰이는 mock의 형태이기도 하다.
- * [MSG-426] `locationEnabled`는 유일 사용처인 편집 화면 위치정보 토글이 기준 16으로
- * 제거되면서, `appVersion`은 표시값이 빌드 주입(`Constants.expoConfig.version`, 결정 Q4)으로
- * 바뀌면서 계약에서 빠졌다 — 남겨 두면 화면이 읽지 않는 거짓 mock이 된다.
- */
-export interface ProfileData extends ProfileIdentity {
-  email: string;
-  /** 연속 스트릭 일수 — 도감 MOCK_COLLECTION_SUMMARY.streakDays와 같은 사용자 값 (AC 4) */
-  streakDays: number;
-  /** 수집률 — 지역 라벨 + 백분율 (mock 단계는 시 단위 "부산") */
-  collectionRate: {
-    regionLabel: string;
-    pct: number;
-  };
-}

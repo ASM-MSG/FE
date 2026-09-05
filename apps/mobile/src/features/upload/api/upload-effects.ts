@@ -4,6 +4,8 @@ import {
   highlightPreview,
   issuePresignedUrl,
   upload,
+  upload1,
+  type EventVideoUploadResponseDto,
   type PresignedUrlRequestDto,
   type VideoUploadResponseDto,
 } from "../../../shared/api/sdk";
@@ -91,7 +93,9 @@ export const buildAnalyzeEffects = (
 
 /**
  * 업로드 확정 (기준 24) — presign(purpose 미전송=UPLOAD) → 원본 S3 PUT →
- * `POST /api/videos`(s3Key·lat·lng·durationSec·recordedAt=업로드 시각, visibility 미전송).
+ * `POST /api/videos`(s3Key·lat·lng·durationSec·recordedAt=업로드 시각·visibility).
+ * visibility는 PUBLIC도 **명시 전송**한다(MSG-572 D6) — 서버 "생략 시 PUBLIC"에 기대지 않아
+ * 선택값=전송값이 단정 하나로 고정된다.
  *
  * 환류 F1 — **선택 구간을 전달할 필드가 없다.** `VideoUploadRequestDto`에 startSec/endSec
  * (또는 highlight: [start, end])이 없다. 그래서 여기서 올리는 것은 잘라낸 구간이 아니라
@@ -101,10 +105,21 @@ export const buildAnalyzeEffects = (
  * 웹은 ffmpeg.wasm 클라이언트 트리밍으로 이 구멍을 메웠으나 모바일에는 그 수단이 없고,
  * 티켓이 모바일 트리밍을 제외 범위로 뒀다 — 백엔드에 필드 추가를 요청해야 한다(D1·R1·F1).
  * **의도된 구조적 공백이므로 코드로 고치지 말 것** (리뷰 반복 방지).
+ *
+ * MSG-560 D12 — 행사 귀속(input.event)이면 확정만 갈라진다:
+ * `POST /api/event-occurrences/{occurrenceId}/locations/{locationId}/videos`(upload1)로
+ * path 귀속하고 body는 `s3Key·durationSec·recordedAt`뿐이다(좌표 없음 — DTO에 필드가 없다).
+ * presign·S3 PUT 단계는 두 모드가 같다(행사 전용 presign purpose 없음). 응답
+ * `EventVideoUploadResponseDto`는 `{videoId, gridId, …}`라 성공 정산 인자와 구조 호환이다.
  */
+/** 확정 응답 — 일반·행사 두 명세 모두 `{videoId, gridId, …}`를 가진다 (성공 정산 입력) */
+export type ConfirmUploadResult =
+  | VideoUploadResponseDto
+  | EventVideoUploadResponseDto;
+
 export const buildConfirmEffects = (
   input: ConfirmUploadInput,
-): UploadFlowEffects<VideoUploadResponseDto> => ({
+): UploadFlowEffects<ConfirmUploadResult> => ({
   presign: presignEffect({
     extension: fileExtension(input.fileName),
     contentType: input.contentType,
@@ -114,6 +129,21 @@ export const buildConfirmEffects = (
   putToS3: (presign) =>
     uploadFileToS3(presign.uploadUrl, input.uri, input.contentType),
   finalize: async (s3Key) => {
+    if (input.event !== undefined) {
+      const { data } = await upload1({
+        path: {
+          occurrenceId: input.event.occurrenceId,
+          locationId: input.event.locationId,
+        },
+        body: {
+          s3Key,
+          durationSec: input.durationSec,
+          recordedAt: new Date().toISOString(),
+        },
+        throwOnError: true,
+      });
+      return unwrapEnvelope(data);
+    }
     const { data } = await upload({
       body: {
         s3Key,
@@ -123,6 +153,7 @@ export const buildConfirmEffects = (
         durationSec: input.durationSec,
         // recordedAt = 업로드 시각 (파일 메타 추출은 범위 제외 — 웹 결정 B 준용)
         recordedAt: new Date().toISOString(),
+        visibility: input.visibility,
       },
       throwOnError: true,
     });

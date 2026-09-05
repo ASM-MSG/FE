@@ -97,6 +97,44 @@ adb devices          # R3CT...  device   ("unauthorized"면 팝업 승인이 안
 
 ---
 
+### 1-D. 두 번째 에뮬레이터로 병렬 실기 (다른 세션이 5554·8081을 쓰고 있을 때 — MSG-572 실측)
+
+`emulator-5554`와 8081 Metro가 다른 워크트리 세션 것이면 **종료·재사용하지 않는다**(그쪽 실기가 끊긴다). 그 Metro가 **아무도 안 쓰는 유령**(세션이 끝났는데 남은 것)이면 함정 11대로 죽이고 이 레포에서 재기동하는 쪽이 맞다 — 살아 있는 세션의 것인지 먼저 가른다. AVD를 하나 더 띄우고 Metro를 8082에 올린 뒤, **앱 dev 메뉴에서 번들 주소를 8082로 바꿔 준다**.
+
+> **`adb reverse tcp:8081 tcp:8082`는 에뮬레이터에서 효과가 없다** (MSG-572 실측 — 7분 허비). RN 디버그 호스트 기본값이 `localhost`가 아니라 **호스트 루프백 `10.0.2.2:8081`** 이라 reverse를 우회해 **타 세션의 8081 Metro 번들(다른 브랜치 코드)** 을 조용히 실행한다 — 내 변경이 화면에 안 보이면 코드 결함이 아니라 이 함정을 먼저 의심한다. 딥링크 `url=10.0.2.2:8082`도 RN 번들 호스트는 바꾸지 못한다.
+
+```bash
+# 0) 누가 쓰는지 확인 — cwd가 내 워크트리가 아니면 남의 것
+lsof -nP -iTCP:8081 -sTCP:LISTEN            # pid
+lsof -p <pid> | awk '$4=="cwd"{print $9}'
+adb -s emulator-5554 emu avd name
+
+# 1) 두 번째 AVD (FillMap_Pixel8 ↔ FillMap_Pixel8_verify 중 비어 있는 것)
+$ANDROID_HOME/emulator/emulator -avd FillMap_Pixel8 -no-snapshot-load &
+adb devices                                  # emulator-5556  device
+
+# 2) dev client APK가 없으면 기존 AVD에서 이식 (재빌드 0, 약 1초 — 네이티브 의존성 변경이 없을 때만)
+adb -s emulator-5554 pull "$(adb -s emulator-5554 shell pm path kr.fillmap.app | sed 's/^package://')" "$TMPDIR/fillmap-dev.apk"
+adb -s emulator-5556 install -r "$TMPDIR/fillmap-dev.apk"
+
+# 3) 워크트리 .env — gitignore라 비어 있다. 없으면 EXPO_PUBLIC_API_BASE_URL 부트 throw.
+#    기존 체크아웃의 것을 복사하거나 0-2절대로 새로 만든다
+cp <기존 체크아웃 경로>/apps/mobile/.env apps/mobile/.env
+
+# 4) Metro를 8082로
+cd apps/mobile && npx expo start --dev-client --port 8082 &
+adb -s emulator-5556 shell am start -n kr.fillmap.app/.MainActivity
+
+# 5) 앱 dev 메뉴(keyevent 82) → "Change Bundle Location" → 10.0.2.2:8082 → APPLY
+adb -s emulator-5556 shell input keyevent 82
+```
+
+- 번들 주소 설정은 그 AVD의 앱 데이터에 남는다 — 다음 실기에서 8082 Metro가 없으면 앱이 못 붙으니, 이 AVD는 "8082 전용"으로 기억해 두거나 같은 메뉴에서 되돌린다.
+- 새 AVD는 로그인·로케일·geo fix가 비어 있다 — 로그인은 사용자가 직접(카카오 웹 로그인, 자격 증명 입력은 사용자 몫), 지도 티켓이면 ko-KR·서면역 fix를 다시 건다.
+- 내 번들이 서빙되는지 확증: 8082 Metro 로그에 연결이 찍히는지 보거나(`CI=1`로 띄우면 로그가 거의 없다), 번들을 직접 받아 변경 문자열을 grep한다: `curl -s 'http://localhost:8082/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&transform.routerRoot=src%2Fapp' | grep -c '<변경 문자열>'`
+- 비로그인 대조(웹 격자 목록 등)는 브라우저보다 웹이 부르는 공개 API를 토큰 없이 `curl`하는 쪽이 빠르고 정확하다.
+- 끝나면 내 것만 정리한다: 8082 Metro pid kill + `adb -s emulator-5556 emu kill`. 5554·8081은 건드리지 않는다.
+
 ## 2. 빌드가 필요한지 판단
 
 기기에 이미 최신 dev client APK가 깔려 있으면 3단계를 건너뛰고 [4. Metro](#4-metro-기동-빌드와-별도-프로세스로)로 간다. 아래에 하나라도 해당하면 빌드해야 한다.
@@ -158,7 +196,7 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 
 ## 4. Metro 기동 (빌드와 별도 프로세스로)
 
-**포트는 8081로 고정한다.** dev client는 콜드 스타트에서 저장된 서버 주소를 무시하고 8081로 되돌아간다 — 8082로 띄우면 앱이 붙지 않는다.
+**포트는 8081로 고정한다.** dev client는 콜드 스타트에서 저장된 서버 주소를 무시하고 8081로 되돌아간다 — 8082로 띄우면 앱이 붙지 않는다. 8081을 다른 세션이 쓰고 있어 8082에 올려야 하면 앱 dev 메뉴 "Change Bundle Location"으로 `10.0.2.2:8082`를 지정한다(1-D — `adb reverse`로는 안 된다).
 
 ```bash
 cd apps/mobile
@@ -352,6 +390,54 @@ adb shell am start -n kr.fillmap.app/.MainActivity \
 
 `android:dev` 스크립트는 진입 직전에 항상 `force-stop`을 건다. 2026-08-21에 빌드·설치·Metro가 전부 정상인데
 화면만 검게 나와 한참 헤맨 원인이 정확히 이것이었다.
+
+### 함정 9. 입력창을 눌러도 소프트 키보드 자판이 안 뜬다 (플로팅 툴바만 뜬다)
+
+**증상** — `TextInput` 포커스 시 `dumpsys input_method`는 `mInputShown=true`인데 화면에는 자판 없이 Gboard **좌측 플로팅 툴바**(지우기·엔터·이모지·≡)만 뜨고, `settings put secure show_ime_with_hard_keyboard 1`도 효과가 없다. uiautomator 덤프에 `com.google.android.inputmethod.latin` 노드 0개.
+
+**원인** — 하드웨어 키보드가 아니다(`getevent -p`에 키보드 장치 없음). Gboard가 **스타일러스 필기 모드**로 동작한다 — 에뮬레이터 virtio 멀티터치가 스타일러스로 등록돼(`dumpsys input_method`의 `isStylusHandwritingEnabled=true`, `mStylusIds=[2..12]`) 자판 대신 필기 툴바를 띄운다. MSG-562 R2 검증에서 두 검증자가 "하드웨어 키보드 모드"로 오판해 확인불가로 남겼던 항목.
+
+**대응** — 시스템 필기 설정을 끄고 Gboard 상태를 초기화한다. 검증 후 원복.
+
+```bash
+adb shell settings put secure stylus_handwriting_enabled 0
+adb shell pm clear com.google.android.inputmethod.latin     # 필기 온보딩 패널이 뜨면 Cancel
+# … 입력창 탭 → 도킹 자판 확인 …
+adb shell settings delete secure stylus_handwriting_enabled  # 원복
+```
+
+**덤으로 주의** — `adb shell dumpsys window windows | head`처럼 큰 덤프를 파이프로 끊으면 그 직후 몇 초간 `device offline`이 나고 `adb reverse`가 풀린다. 덤프는 `grep`으로만 걸러 끝까지 읽히게 하고, offline 뒤에는 `adb reverse tcp:8081 tcp:8081`을 다시 건다.
+
+### 함정 10. 핀치 줌이 안 된다 — `adb shell input`은 단일 포인터다
+
+**증상** — 줌아웃 클러스터 마커처럼 **줌 단이 달라야 보이는 기준**을 에뮬레이터에서 확인하려는데 `input swipe`로는 핀치가 안 되고, `input` 서브커맨드에 멀티터치가 없다. MSG-566 1차 실기가 이 이유로 클러스터 항목을 "미실행"으로 남겼다.
+
+**원인** — `input`은 포인터 1개만 합성한다. 지도 SDK 줌은 두 손가락 거리 변화만 본다(더블탭 줌인은 되지만 줌아웃은 두 손가락 탭이라 역시 불가).
+
+**대응** — 멀티터치 프로토콜 B를 `sendevent`로 직접 쏜다. 스크립트가 있다: `apps/mobile/scripts/emu-pinch.sh`.
+
+```bash
+adb root                                                              # google_apis 이미지만 됨(Play 이미지 불가)
+adb push apps/mobile/scripts/emu-pinch.sh /data/local/tmp/pinch.sh
+adb shell sh /data/local/tmp/pinch.sh 320 60                          # 간격 320→60px = 줌아웃 약 1단, 2회면 격자→클러스터 층
+adb shell sh /data/local/tmp/pinch.sh 60 320                          # 줌인
+adb unroot; adb reverse tcp:8081 tcp:8081                             # root 토글마다 adbd가 재시작돼 reverse가 풀린다
+```
+
+**두 번 걸린 함정** — (1) 일반 셸은 `/dev/input/event1` 쓰기 권한이 없어 `Permission denied`가 이벤트 수만큼 찍힌다 → `adb root` 선행. (2) root 뒤에도 무반응이면 툴타입이다 — 에뮬레이터 virtio 터치 장치는 `BTN_TOUCH`가 없고 `BTN_STYLUS`만 있어(함정 9의 스타일러스 오인과 같은 뿌리) `ABS_MT_TOOL_TYPE=0`(finger)·`ABS_MT_PRESSURE`를 명시해야 제스처로 인식된다. 스크립트는 둘 다 반영돼 있다.
+
+### 함정 11. "Metro 가동 중"인데 첫 콜드 스타트가 옛 코드를 받는다 — 다른 워크트리의 Metro
+
+**증상** — `lsof -ti tcp:8081 -sTCP:LISTEN`에 pid가 있고 `curl localhost:8081/status`도 `packager-status:running`인데, 앱을 콜드 스타트하면 방금 고친 화면이 아니라 **삭제한 UI가 그대로** 보인다. Metro 로그의 `Android Bundled (N modules)` 모듈 수도 예상과 다르다.
+
+**원인** — 8081을 물고 있는 Metro가 **다른 워크트리**(예: `~/projects/FE-MSG-558`)에서 띄운 것이다. 워크트리가 여러 개면 어느 cwd의 Metro인지 포트만으로는 구분이 안 된다. MSG-567 검증에서 오케스트레이터가 "Metro 가동 중"으로 넘긴 8081이 머지된 MSG-565 브랜치의 번들을 서빙하고 있었다(2026-09-04).
+
+**대응** — 넘겨받은 Metro는 cwd부터 확인하고, 다르면 죽이고 이 레포에서 8081로 재기동한다(함정 3대로 8082는 안 붙는다).
+
+```bash
+PID=$(lsof -ti tcp:8081 -sTCP:LISTEN); lsof -p $PID | grep cwd     # cwd가 지금 레포인가
+kill $PID && (cd apps/mobile && npx expo start --dev-client --port 8081)
+```
 
 ### 에뮬레이터 재현 성공 경로 (막혔을 때 통째로 다시 밟을 순서)
 

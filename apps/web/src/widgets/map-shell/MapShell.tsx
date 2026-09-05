@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/app/routes";
-import type { LatLng } from "@/entities/cell";
+import { eventGridIdSet } from "@/features/event/model/event-location-overlay";
+import { useEventRoomStore } from "@/features/event/model/event-room-store";
+import { useEventLocationsQuery } from "@/features/event/model/use-event-locations-query";
 import { buildCellClickHandler } from "./grid-click-routing";
 import { gateRouteClusters } from "./cluster-route-gate";
 import { useMapOverlayStore } from "./map-overlay-store";
@@ -29,9 +31,10 @@ import { useCommittedRegionBootstrap } from "@/features/region/model/use-committ
 import { MapCanvas, type MapCanvasHandle } from "@/pages/map-home/ui/MapCanvas";
 import { MapControls } from "@/pages/map-home/ui/MapControls";
 import { ThemeChipsBar } from "@/pages/map-home/ui/ThemeChipsBar";
-import { SEOMYEON_CENTER, getCurrentPosition } from "@/shared/geolocation";
+import { getCurrentPosition } from "@/shared/geolocation";
 import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
 import { useSidebarStore } from "./sidebar-store";
+import { useMapEntryCenter } from "./use-map-entry-center";
 import type { MapShellContext } from "./use-map-shell";
 
 /**
@@ -167,6 +170,16 @@ export const MapShell = () => {
     },
     [selectCell, expandSidebar, navigate],
   );
+  // 행사방 열림 중 행사 위치 격자 (MSG-517 AC 7·8) — 소속 격자는 점령이어도 섹션
+  // 핸들러(위치 강조)로 위임한다. 개요 패널·게시 훅과 같은 queryKey라 조회는 1회다
+  const eventRoom = useEventRoomStore((s) => s.room);
+  const { locations: eventLocations } = useEventLocationsQuery(
+    eventRoom?.occurrenceId ?? null,
+  );
+  const eventGridIds = useMemo(
+    () => eventGridIdSet(eventLocations),
+    [eventLocations],
+  );
   const handleCellClick = useMemo(
     () =>
       buildCellClickHandler({
@@ -177,8 +190,15 @@ export const MapShell = () => {
         // 점령 우선 라우팅(MSG-329)의 칩 한정 예외 (MSG-462 AC 12)
         missionChipActive:
           activeTheme === "festival" || activeTheme === "popup",
+        eventGridIds,
       }),
-    [occupiedIds, openGridDetail, onOverlayCellClick, activeTheme],
+    [
+      occupiedIds,
+      openGridDetail,
+      onOverlayCellClick,
+      activeTheme,
+      eventGridIds,
+    ],
   );
   // 확정 지역·영역 최초 채택 — 지도 데이터 조회 전체의 bbox 근원 (AC 9)
   useCommittedRegionBootstrap();
@@ -188,18 +208,10 @@ export const MapShell = () => {
   const isHome = pathname === ROUTES.home;
 
   const mapRef = useRef<MapCanvasHandle>(null);
-  const [initialCenter, setInitialCenter] = useState<LatLng>(SEOMYEON_CENTER);
-
-  // 진입 시 현재 위치로 초기 중심 설정 (권한 거부/실패 시 서면 폴백)
-  useEffect(() => {
-    let active = true;
-    getCurrentPosition().then((coords) => {
-      if (active) setInitialCenter(coords);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+  // 진입 시 현재 위치로 초기 중심 설정 (권한 거부/실패 시 서면 폴백) —
+  // focus 딥링크 진입에서는 위치 조회를 건너뛴다 (MSG-554 AC 6: 늦게 도착한 위치가
+  // focus 이동을 덮어쓰지 않게 한다)
+  const initialCenter = useMapEntryCenter();
 
   const context = useMemo<MapShellContext>(
     () => ({

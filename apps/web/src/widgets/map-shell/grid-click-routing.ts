@@ -22,9 +22,20 @@ export const buildCellClickHandler =
     sectionHandler: ((cellId: string) => void) | null;
     /** 축제·팝업 칩 활성 — 점령 우선 라우팅의 칩 한정 예외 (MSG-462 AC 12) */
     missionChipActive?: boolean;
+    /**
+     * 행사방 열림 중 행사 위치 격자 (MSG-517 AC 7·8) — 소속 격자는 점령 여부와 무관하게
+     * 섹션 핸들러(위치 강조)로 위임한다 (missionChipActive 예외와 동형). 소속이 아닌
+     * 격자는 기존 경로 그대로 — 점령이면 격자 상세가 행사방 위를 덮는다 (panel-branch).
+     */
+    eventGridIds?: ReadonlySet<string>;
   }) =>
   (cellId: string): void => {
-    if (!deps.missionChipActive && deps.occupiedIds.includes(cellId)) {
+    const eventGrid = deps.eventGridIds?.has(cellId) ?? false;
+    if (
+      !deps.missionChipActive &&
+      !eventGrid &&
+      deps.occupiedIds.includes(cellId)
+    ) {
       deps.openGridDetail(cellId);
       return;
     }

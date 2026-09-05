@@ -12,6 +12,14 @@ import {
   selectAggregationItems,
   toClusterMarkers,
 } from "./grid-aggregation-query";
+import {
+  clusterSourceForTheme,
+  hotZoneAggregationQueryArgs,
+  hotZoneAggregationQueryOptions,
+  missionAggregationQueryArgs,
+  missionAggregationQueryOptions,
+  selectThemeClusters,
+} from "./theme-aggregation-query";
 
 /**
  * 저줌 지역 집계 조회 훅 (MSG-428) — 상태 3종(인증·테마·뷰포트)을 읽어 옵션 팩토리에
@@ -27,6 +35,11 @@ import {
  * 실패 상태는 `shared/api/gated-query-status`(2인자, 웹 parity 판)로 파생한다 —
  * 모바일에 동명 3인자 구현(`model/home-sheet-state`)이 하나 더 있으나 그쪽은 시트 상태
  * 전용이고, 집계 실패는 시트에 넣지 않는다(승인 Q7: 지도 위 Toast 오버레이).
+ *
+ * MSG-558 확장부터 **칩 택일 저줌 집계 훅**이다 — 칩 없음은 점령 집계, 핫은 핫구역 집계,
+ * 축제·팝업은 미션 집계, 경로는 없음(`clusterSourceForTheme`, 웹 MapShell 택일 이식).
+ * 이름은 그대로 둔다 — 리네임은 화면 import 헝크(557 인접)를 건드린다(리스크 R10, 후속).
+ * 실패·재시도는 **활성 소스 하나**만 본다 — 칩 화면에 점령 집계의 옛 실패가 올라오지 않는다.
  */
 export interface GridAggregationResult {
   /** 지도에 게시할 지역 집계 마커 — 게이트가 닫혔거나 개별 격자 줌이면 빈 배열 */
@@ -39,32 +52,46 @@ export const useGridAggregationQuery = (
   viewport: Viewport | null,
 ): GridAggregationResult => {
   const { isAuthenticated, hydrated } = useAuth();
-  const themeActive = useSelectedTheme() !== null;
+  const theme = useSelectedTheme();
+  const themeActive = theme !== null;
   // 지도 준비 전(뷰포트 null)에는 격자 줌을 넣어 단위 미판정(null) 상태로 둔다 —
   // 어차피 bounds가 null이라 발사되지 않지만, 단위가 임의로 정해지지 않게 한다
   const zoom = viewport?.zoom ?? GRID_MIN_ZOOM;
-  const gate = {
-    bounds: viewport?.bounds ?? null,
-    zoom,
-    isAuthenticated,
-    hydrated,
-    themeActive,
-  };
+  const bounds = viewport?.bounds ?? null;
+  const gate = { bounds, zoom, isAuthenticated, hydrated, themeActive };
+  const themeGate = { theme, bounds, zoom };
   const { unit, enabled } = gridAggregationQueryArgs(gate);
+  const mission = missionAggregationQueryArgs(themeGate);
+  const hot = hotZoneAggregationQueryArgs(themeGate);
 
   const query = useQuery(gridAggregationQueryOptions(gate));
-  const { isError, retry } = gatedQueryStatus(query, enabled);
+  const missionQuery = useQuery(missionAggregationQueryOptions(themeGate));
+  const hotQuery = useQuery(hotZoneAggregationQueryOptions(themeGate));
   const items = selectAggregationItems(enabled, query.data);
+  const { data: missionData } = missionQuery;
+  const { data: hotData } = hotQuery;
   const clusters = useMemo(
-    () => toClusterMarkers(items, unit, zoom),
-    [items, unit, zoom],
+    () =>
+      themeActive
+        ? selectThemeClusters({ theme, unit, zoom, missionData, hotData })
+        : toClusterMarkers(items, unit, zoom),
+    [themeActive, theme, unit, zoom, missionData, hotData, items],
   );
+
+  // 활성 소스 하나의 상태만 본다 — 경로 칩(none)은 집계 층이 없어 실패도 없다
+  const active = {
+    occupied: { query, enabled },
+    mission: { query: missionQuery, enabled: mission.enabled },
+    hot: { query: hotQuery, enabled: hot.enabled },
+    none: { query, enabled: false },
+  }[clusterSourceForTheme(theme)];
+  const { isError, retry } = gatedQueryStatus(active.query, active.enabled);
 
   return {
     clusters,
     // 게이트가 닫힌 뒤에도 마지막 실패는 쿼리에 남는다 — 격자 줌으로 복귀했거나 칩을
-    // 켠 화면에 집계 실패 안내가 따라 올라오지 않도록 활성 구간에서만 노출한다 (S1·S7)
-    isError: enabled && isError,
+    // 바꾼 화면에 집계 실패 안내가 따라 올라오지 않도록 활성 구간에서만 노출한다 (S1·S7)
+    isError: active.enabled && isError,
     retry,
   };
 };

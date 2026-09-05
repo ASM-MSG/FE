@@ -10,13 +10,10 @@ import { MOCK_PROFILE } from "./mock-profile";
  * MSG-425: "스트릭이 도감 mock과 일치한다" 케이스를 제거했다 — 도감이 실 API
  * (`collections/summary.currentStreak`)로 전환되며 앵커였던 `MOCK_COLLECTION_SUMMARY`가
  * 삭제됐고, 두 화면의 스트릭 정합은 이제 서버가 보장한다(mock 간 정합 불변식이 무의미).
+ * MSG-564: "부산 라벨" 케이스를 제거했다 — 수집률이 `use-activity-query` 실값으로 바뀌며
+ * `collectionRate` 필드 자체가 mock에서 사라졌다.
  */
 describe("MOCK_PROFILE 불변식 (구 AC 19)", () => {
-  it("수집률 지역 라벨이 '부산'이다 — 서울 문자열 금지 (AC 4 로직)", () => {
-    expect(MOCK_PROFILE.collectionRate.regionLabel).toBe("부산");
-    expect(JSON.stringify(MOCK_PROFILE)).not.toContain("서울");
-  });
-
   it("가입일이 유효한 ISO 날짜다 — 포맷터(formatJoinedDate) 입력 계약", () => {
     expect(Number.isNaN(Date.parse(MOCK_PROFILE.joinedAt))).toBe(false);
   });
