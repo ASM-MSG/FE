@@ -39,8 +39,10 @@ export const MAP_SCALE_1KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("1km");
 export const MAP_SCALE_2KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("2km");
 /** 축척 `4km` 단 — 시 마커 클릭이 들어가는 구 구간 줌 */
 export const MAP_SCALE_4KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("4km");
-/** 축척 `8km` 단 — 집계 unit SIGUNGU/SIDO 경계이자 모바일 줌 하한(MAP_MIN_ZOOM) */
+/** 축척 `8km` 단 — 집계 unit SIGUNGU/SIDO 경계 */
 export const MAP_SCALE_8KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("8km");
+/** 축척 `16km` 단 — 모바일 줌 하한(MAP_MIN_ZOOM, MSG-574). 시(SIDO) 구간의 가장 좁은 끝 */
+export const MAP_SCALE_16KM_ZOOM = MIN_ZOOM + SCALE_BY_ZOOM.indexOf("16km");
 
 /**
  * zoom을 유효 범위로 클램프(비정수는 내림)해 축척 라벨을 반환한다.
