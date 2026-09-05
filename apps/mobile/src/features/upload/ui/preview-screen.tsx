@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MapPin, Sparkles } from "lucide-react-native";
 import { palette, semantic } from "@fillmap/design-tokens";
-import { AppHeader, Button, Selector } from "@fillmap/ui-native";
+import { AppHeader, Button, Selector, cx } from "@fillmap/ui-native";
 import { VISIBILITY_OPTIONS } from "../../video-actions/model/video-menu";
 import { useUploadLocation } from "../api/use-upload-location";
 import { useConfirmUpload } from "../api/use-upload-mutations";
@@ -203,7 +203,11 @@ export const PreviewScreen = () => {
                     }}
                     disabled={confirm.isPending}
                     onPress={select}
-                    className="min-h-11 flex-row items-center gap-xs"
+                    // 비활성 시 Selector만 스스로 dim 되고 라벨은 밝게 남던 것을 행 단위로 맞춘다 (PR #142 Claude 리뷰 🟢)
+                    className={cx(
+                      "min-h-11 flex-row items-center gap-xs",
+                      confirm.isPending && "opacity-50",
+                    )}
                   >
                     <Selector
                       type="radio"
