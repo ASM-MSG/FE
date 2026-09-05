@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Bounds } from "../../../entities/cell/model/grid";
-import { MAP_SCALE_8KM_ZOOM } from "./map-scale";
+import { MAP_SCALE_16KM_ZOOM } from "./map-scale";
 import { GRID_MIN_ZOOM, buildVisibleCells } from "./visible-grid";
 import { cellIndexAt } from "../../../entities/cell/model/grid";
 import {
@@ -12,11 +12,11 @@ import * as mobileAggregationUnit from "./aggregation-unit";
 
 /**
  * L2·L3·L4·L5·L6: 줌 → 집계 단위 판정과 bbox 상한 클램프가 웹 원본과 전건 동일하고,
- * 격자 층과 마커 층이 상호 배타이며, 줌 하한에서 SIDO에 도달할 수 없다 (MSG-428).
+ * 격자 층과 마커 층이 상호 배타이며, 줌 하한이 시(SIDO) 구간 안에 있다 (MSG-428 → MSG-574).
  *
- * SIDO를 단위 테이블에서 빼지 않고 남긴 이유(승인 Q2): 시그니처를 웹과 같게 둬야
- * 전건 비교가 성립한다. 배제는 "필터"가 아니라 줌 하한(MAP_MIN_ZOOM)이 만드는
- * "도달 불가"로 강제하고, 그것을 L6이 단정한다.
+ * SIDO를 단위 테이블에서 빼지 않고 남긴 이유(MSG-428 승인 Q2): 시그니처를 웹과 같게 둬야
+ * 전건 비교가 성립한다. MSG-428은 하한(8km 단)으로 SIDO를 "도달 불가"로 막았고, MSG-574가
+ * 하한을 16km 단으로 내려 SIDO 구간의 가장 좁은 끝만 열었다 — L6이 그 경계를 단정한다.
  *
  * 웹 원본은 변수 경로 동적 import (map-query-policy.parity.test.ts 선례).
  */
@@ -209,22 +209,22 @@ describe("격자 층 · 마커 층 상호 배타 (L3)", () => {
   });
 });
 
-describe("줌 하한 — 시(SIDO) 단위 도달 불가 (L6)", () => {
-  it("MAP_MIN_ZOOM이 축척 8km 단(=10)이고 그 줌의 단위가 SIGUNGU다 — 하한에서 SIDO가 나올 수 없다", () => {
-    expect(mobileAggregationUnit.MAP_MIN_ZOOM).toBe(MAP_SCALE_8KM_ZOOM);
-    expect(mobileAggregationUnit.MAP_MIN_ZOOM).toBe(10);
+describe("줌 하한 — 시(SIDO) 구간의 가장 좁은 끝 (L6, MSG-574)", () => {
+  it("MAP_MIN_ZOOM이 축척 16km 단(=9)이고 그 줌의 단위가 SIDO다 — 하한에서 시 마커가 보인다", () => {
+    expect(mobileAggregationUnit.MAP_MIN_ZOOM).toBe(MAP_SCALE_16KM_ZOOM);
+    expect(mobileAggregationUnit.MAP_MIN_ZOOM).toBe(9);
     expect(
       mobileAggregationUnit.aggregationUnitForZoom(
         mobileAggregationUnit.MAP_MIN_ZOOM,
       ),
-    ).toBe("SIGUNGU");
+    ).toBe("SIDO");
   });
 
-  it("하한 이상 전 구간(10~21)에서 SIDO가 한 번도 나오지 않는다", () => {
-    for (let zoom = mobileAggregationUnit.MAP_MIN_ZOOM; zoom <= 21; zoom++) {
-      expect(mobileAggregationUnit.aggregationUnitForZoom(zoom)).not.toBe(
-        "SIDO",
-      );
-    }
+  it("하한 바로 위(10)는 SIGUNGU다 — 8km 단 이하 구간의 동작은 MSG-428 그대로", () => {
+    expect(
+      mobileAggregationUnit.aggregationUnitForZoom(
+        mobileAggregationUnit.MAP_MIN_ZOOM + 1,
+      ),
+    ).toBe("SIGUNGU");
   });
 });

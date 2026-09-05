@@ -1,5 +1,6 @@
 import type { Bounds } from "../../../entities/cell/model/grid";
 import {
+  MAP_SCALE_16KM_ZOOM,
   MAP_SCALE_4KM_ZOOM,
   MAP_SCALE_500M_ZOOM,
   MAP_SCALE_8KM_ZOOM,
@@ -32,14 +33,17 @@ export const aggregationUnitForZoom = (
 };
 
 /**
- * 지도 줌 하한 (MSG-428 승인 Q3) — **모바일 전용 상수**(웹에는 없다).
- * MVP는 부산 전용이라 시(SIDO) 단위 마커를 만들지 않는데, 단위 테이블에서 SIDO를 빼면
- * 위 네 함수의 시그니처가 웹과 갈라져 parity 전건 비교가 무너진다(승인 Q2). 그래서
- * 테이블은 웹과 동일하게 두고 **카메라가 SIDO 구간(zoom 6~9)에 진입하지 못하게** 막는다 —
- * 배제가 필터가 아니라 도달 불가로 강제된다. 전국 확장 시 이 한 줄만 되돌리면 된다.
- * 하한 = 구 구간(1km~8km)의 가장 넓은 끝 = 축척 8km 단.
+ * 지도 줌 하한 — **모바일 전용 상수**(웹 `MapCanvas`에는 하한이 없다).
+ * MSG-428은 "MVP 부산 전용"으로 8km 단(구 구간 끝)에 뒀고, MSG-574가 시(SIDO) 구간이
+ * 보이도록 16km 단으로 내렸다. 웹처럼 SDK 기본(zoom 6, 128km)까지 열지 않는 이유는
+ * 서버 제약이다: 집계(`/api/grids/aggregation`)와 역지오코딩 둘 다 **지도 중심**이 한국
+ * 서비스 범위(위도 33~39·경도 124~132) 밖이면 400을 낸다. 앱 지도는 화면 전체를 덮고
+ * 시트가 아래를 가려 카메라 중심이 보이는 중심보다 약 500px 남쪽인데, 16km 단에서는 그
+ * 오프셋이 약 1.1°라 부산 어디를 봐도 중심이 범위 안이고(실측), 32km 단부터는 2.2°로
+ * 부산 남해안에서 범위를 벗어난다. 집계 요청 폭도 16km 단 세로 약 5.4°로 SIDO 상한(10°)
+ * 안이라 클램프가 개입하지 않는다. 시 마커·시 탭 드릴인(4km 단)은 이 하한에서 동작한다.
  */
-export const MAP_MIN_ZOOM = MAP_SCALE_8KM_ZOOM;
+export const MAP_MIN_ZOOM = MAP_SCALE_16KM_ZOOM;
 
 /**
  * unit별 bbox 한 변 span 상한(도) — 서버 명세 제약(초과 시 400/4402).
