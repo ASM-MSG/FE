@@ -23,35 +23,56 @@ const center = { lat: 35.1579, lng: 129.0594 };
 
 describe("buildConfirmInput — 업로드 확정 입력 조립 (기준 25·26)", () => {
   it("durationSec이 원본 길이가 아니라 선택 구간 길이다 (기준 25, D1)", () => {
-    const input = buildConfirmInput(video, { start: 3, end: 8 }, center);
+    const input = buildConfirmInput(
+      video,
+      { start: 3, end: 8 },
+      center,
+      null,
+      "PUBLIC",
+    );
 
     expect(input.durationSec).toBe(5);
   });
 
   it("소수 구간은 반올림한 초로 보낸다 (기준 25)", () => {
     expect(
-      buildConfirmInput(video, { start: 3.2, end: 8.9 }, center).durationSec,
+      buildConfirmInput(video, { start: 3.2, end: 8.9 }, center, null, "PUBLIC")
+        .durationSec,
     ).toBe(6);
   });
 
   it("반올림 후에도 서버 계약 1~30을 항상 만족한다 (기준 25 — 경계)", () => {
     expect(
-      buildConfirmInput(video, { start: 0, end: 0.2 }, center).durationSec,
+      buildConfirmInput(video, { start: 0, end: 0.2 }, center, null, "PUBLIC")
+        .durationSec,
     ).toBe(1);
     expect(
-      buildConfirmInput(video, { start: 0, end: 120 }, center).durationSec,
+      buildConfirmInput(video, { start: 0, end: 120 }, center, null, "PUBLIC")
+        .durationSec,
     ).toBe(CONFIRM_DURATION_MAX_SEC);
   });
 
   it("lat·lng가 넘겨받은 좌표 그대로다 — resolveMapCenter() 결과 (기준 26, D8)", () => {
-    const input = buildConfirmInput(video, { start: 3, end: 8 }, center);
+    const input = buildConfirmInput(
+      video,
+      { start: 3, end: 8 },
+      center,
+      null,
+      "PUBLIC",
+    );
 
     expect(input.lat).toBe(center.lat);
     expect(input.lng).toBe(center.lng);
   });
 
   it("presign 입력(파일명·크기·MIME)은 선택한 원본 파일 메타를 그대로 싣는다 — 트리밍 없이 원본을 올린다 (D1)", () => {
-    const input = buildConfirmInput(video, { start: 3, end: 8 }, center);
+    const input = buildConfirmInput(
+      video,
+      { start: 3, end: 8 },
+      center,
+      null,
+      "PUBLIC",
+    );
 
     expect(input.uri).toBe(video.uri);
     expect(input.fileName).toBe("clip.mp4");
@@ -64,6 +85,8 @@ describe("buildConfirmInput — 업로드 확정 입력 조립 (기준 25·26)",
       { ...video, mimeType: null },
       { start: 3, end: 8 },
       center,
+      null,
+      "PUBLIC",
     );
 
     expect(input.contentType).toBe("video/mp4");
@@ -122,6 +145,7 @@ describe("buildConfirmInput — 행사 귀속 확정 입력 (AC 9·D12)", () => 
       { start: 3, end: 8 },
       null,
       eventTarget,
+      "PUBLIC",
     );
 
     expect(input.event).toEqual({ occurrenceId: 5, locationId: 11 });
@@ -130,8 +154,14 @@ describe("buildConfirmInput — 행사 귀속 확정 입력 (AC 9·D12)", () => 
     expect(input.durationSec).toBe(5);
   });
 
-  it("행사 대상이 없으면 종전대로 좌표를 싣는다 — 기본값 = 기존 동작", () => {
-    const input = buildConfirmInput(video, { start: 3, end: 8 }, center);
+  it("행사 대상이 null이면 종전대로 좌표를 싣는다 — 기존 동작", () => {
+    const input = buildConfirmInput(
+      video,
+      { start: 3, end: 8 },
+      center,
+      null,
+      "PUBLIC",
+    );
 
     expect(input.event).toBeUndefined();
     expect(input).toMatchObject({ lat: center.lat, lng: center.lng });
@@ -160,5 +190,36 @@ describe("canPublishUpload — 행사 모드는 좌표 대기가 없다 (AC 9·D
         submitting: false,
       }),
     ).toBe(false);
+  });
+});
+
+/**
+ * MSG-572 (D4·D5): 공개 범위는 5번째 **필수** 인자다 — 기본값을 두면 호출부 누락이 조용히
+ * PUBLIC으로 나가 AC 3 "명시 전송"이 뒤집힌다. 일반 분기만 싣고, 행사 분기는 DTO에 필드가
+ * 없어 `undefined`다(AC 8).
+ */
+describe("buildConfirmInput — 공개 범위 (MSG-572 AC 2·8)", () => {
+  it("일반 업로드는 넘겨받은 visibility를 그대로 싣는다 (AC 2)", () => {
+    const input = buildConfirmInput(
+      video,
+      { start: 3, end: 8 },
+      center,
+      null,
+      "PRIVATE",
+    );
+
+    expect(input.visibility).toBe("PRIVATE");
+  });
+
+  it("행사 귀속 업로드는 visibility를 싣지 않는다 — 행사 DTO에 필드가 없다 (AC 8)", () => {
+    const input = buildConfirmInput(
+      video,
+      { start: 3, end: 8 },
+      null,
+      eventTarget,
+      "PRIVATE",
+    );
+
+    expect(input.visibility).toBeUndefined();
   });
 });

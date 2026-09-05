@@ -82,6 +82,7 @@ const confirmInput = {
   lat: 35.1579,
   lng: 129.0594,
   durationSec: 5,
+  visibility: "PRIVATE" as const,
 };
 
 afterEach(() => {
@@ -162,8 +163,30 @@ describe("buildConfirmEffects — 업로드 확정 단계열 (기준 24·25·26)
       lat: 35.1579,
       lng: 129.0594,
       durationSec: 5,
+      visibility: "PRIVATE",
     });
     expect(typeof body.recordedAt).toBe("string");
+  });
+});
+
+/**
+ * MSG-572 (D6): 무조작 게시도 `visibility: "PUBLIC"`을 **키 포함 명시 전송**한다 — 서버 "생략 시
+ * PUBLIC"에 기대지 않아 선택값=전송값이 단정 하나로 고정된다.
+ */
+describe("buildConfirmEffects — 공개 범위 전송 (MSG-572 AC 3)", () => {
+  it("무조작 게시(PUBLIC)도 body에 visibility 키를 포함해 명시 전송한다 (AC 3)", async () => {
+    const { buildConfirmEffects, createOrchestration, runUploadFlow } =
+      await loadEffects();
+    const observed = stubFetch(respondUpload);
+
+    await runUploadFlow(
+      createOrchestration(),
+      buildConfirmEffects({ ...confirmInput, visibility: "PUBLIC" }),
+    );
+
+    const body = observed.at(-1)!.body as Record<string, unknown>;
+    expect("visibility" in body).toBe(true);
+    expect(body.visibility).toBe("PUBLIC");
   });
 });
 
