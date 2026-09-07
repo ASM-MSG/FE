@@ -31,7 +31,7 @@ export const useReverseGeocodeQuery = (
   center: LatLng | null,
 ): ReverseGeocodeResult => {
   const { isAuthenticated, hydrated } = useAuth();
-  const debounced = useDebouncedValue(center, REVERSE_GEOCODE_DEBOUNCE_MS);
+  const { debounced } = useDebouncedValue(center, REVERSE_GEOCODE_DEBOUNCE_MS);
   const active = debounced !== null && isAuthenticated;
   // 디바운스 훅은 마운트 초기값을 지연 없이 노출하므로, 중심이 null인 경우는
   // 지도 뷰포트 미확정뿐이다 — 재수화 전과 함께 "아직 모름"으로 둔다 (PR #72 리뷰)

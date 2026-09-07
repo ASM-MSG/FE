@@ -11464,36 +11464,6 @@
       ]
     },
     {
-      "id": "87e568e1c91e5320",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "d890b2ba5b42bb16",
-          "source_digest": "fnv1a64:23a9d65c4817d444",
-          "file": "apps/mobile/src/features/event/model/event-selection.ts",
-          "lang": "typescript",
-          "start_line": 82,
-          "end_line": 82,
-          "kind": "Block",
-          "is_fragment": true,
-          "fragment_kind": "conditional-guard",
-          "reason_code": "exact-conditional-guard"
-        },
-        {
-          "id": "f88dbf1046244575",
-          "source_digest": "fnv1a64:71bef92a68fd1014",
-          "file": "apps/mobile/src/features/search/model/search-store.ts",
-          "lang": "typescript",
-          "start_line": 38,
-          "end_line": 38,
-          "kind": "Block",
-          "is_fragment": true,
-          "fragment_kind": "conditional-guard",
-          "reason_code": "exact-conditional-guard"
-        }
-      ]
-    },
-    {
       "id": "87f3dbce61fa5508",
       "note": "repeated across 6 directories — extract a shared abstraction — high-parameter (18 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -20898,16 +20868,16 @@
       ]
     },
     {
-      "id": "e2188f92c1775a3a",
+      "id": "61824a7dabf154a0",
       "note": "duplicated across 2 directories — consolidate one shared interface/protocol contract",
       "members": [
         {
-          "id": "e1fab99b289c1aae",
-          "source_digest": "fnv1a64:3edd65e56e63c9ea",
+          "id": "24f6cae7b8eb81b4",
+          "source_digest": "fnv1a64:53f71285f1820f0a",
           "file": "apps/mobile/src/features/map-home/ui/grid-map.tsx",
           "lang": "typescript",
-          "start_line": 114,
-          "end_line": 201,
+          "start_line": 128,
+          "end_line": 225,
           "kind": "Class",
           "name": "GridMapProps",
           "is_fragment": false
@@ -23092,7 +23062,7 @@
       ]
     },
     {
-      "id": "f747def826db3cce",
+      "id": "a540cbe0c2ee956a",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
@@ -23106,12 +23076,12 @@
           "is_fragment": false
         },
         {
-          "id": "28d37f5058b99279",
-          "source_digest": "fnv1a64:5e181d703b98d5d5",
+          "id": "071c3c036d9ab0cd",
+          "source_digest": "fnv1a64:2c8e8a9a39e599bf",
           "file": "apps/mobile/src/shared/use-debounced-value.ts",
           "lang": "typescript",
           "start_line": 1,
-          "end_line": 20,
+          "end_line": 24,
           "kind": "Block",
           "is_fragment": false
         }
@@ -24447,6 +24417,318 @@
           "lang": "typescript",
           "start_line": 29,
           "end_line": 39,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "6b2d3aaa463f681d",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "578868a6d9d171fd",
+          "source_digest": "fnv1a64:084a227fa3fc62fe",
+          "file": "apps/mobile/src/test/zone-fixture.ts",
+          "lang": "typescript",
+          "start_line": 7,
+          "end_line": 16,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "4665bff74a5c5ec5",
+          "source_digest": "fnv1a64:084a227fa3fc62fe",
+          "file": "apps/web/src/test/zone-fixture.ts",
+          "lang": "typescript",
+          "start_line": 7,
+          "end_line": 16,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "37e0655c6610d052",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (10 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "fc9c81e2acb1f7f9",
+          "source_digest": "fnv1a64:ab5bc04148aed73c",
+          "file": "apps/web/src/features/search/model/zone-search.ts",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 145,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1726b9f327c32fbe",
+          "source_digest": "fnv1a64:f2a3f6f5792beb98",
+          "file": "apps/mobile/src/features/search/model/zone-search.ts",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 144,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "b82d1f749de35089",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "39943303467dc506",
+          "source_digest": "fnv1a64:53861bb51191d62f",
+          "file": "apps/mobile/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 180,
+          "end_line": 205,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "845b1bc499547360",
+          "source_digest": "fnv1a64:872f834aab03cdf1",
+          "file": "apps/web/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 173,
+          "end_line": 198,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "2eaeb0e7a7922b11",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "7f205379571a595d",
+          "source_digest": "fnv1a64:8e0ee9ef64640ec0",
+          "file": "apps/mobile/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 98,
+          "end_line": 154,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1320694d09dff059",
+          "source_digest": "fnv1a64:6cc2f0a3d70c3968",
+          "file": "apps/web/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 91,
+          "end_line": 147,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "8019dcc7826c11b9",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "7d5e05d87955890e",
+          "source_digest": "fnv1a64:8955ed24b7d66b2b",
+          "file": "apps/mobile/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 143,
+          "end_line": 190,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "761f5f022da53ca8",
+          "source_digest": "fnv1a64:e78c71a18b83e4f0",
+          "file": "apps/web/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 136,
+          "end_line": 183,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "1954d014bca86129",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "8f761bff34b832d5",
+          "source_digest": "fnv1a64:0f6f17a0af390d96",
+          "file": "apps/mobile/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 22,
+          "end_line": 70,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "bd71873f47b970d9",
+          "source_digest": "fnv1a64:2bb3056ffbfba3eb",
+          "file": "apps/web/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 15,
+          "end_line": 63,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "3306a37d3333bf17",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "1c1f5c9853905650",
+          "source_digest": "fnv1a64:aa0595113a53adca",
+          "file": "apps/web/src/features/search/model/use-place-search-query.ts",
+          "lang": "typescript",
+          "start_line": 13,
+          "end_line": 50,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "aa6ea3ed30289d64",
+          "source_digest": "fnv1a64:05bfe89050707c53",
+          "file": "apps/mobile/src/features/search/api/use-place-search-query.ts",
+          "lang": "typescript",
+          "start_line": 24,
+          "end_line": 50,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "fd25a724fc1f6729",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "c027ad93b9951989",
+          "source_digest": "fnv1a64:0966866b72019d0b",
+          "file": "apps/mobile/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 56,
+          "end_line": 104,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "64a0de3793172375",
+          "source_digest": "fnv1a64:0bc44ae3ee68ac6e",
+          "file": "apps/web/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 49,
+          "end_line": 97,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "654a8dfa75c488d2",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "35aaaa4985ffe02b",
+          "source_digest": "fnv1a64:fc185b6f738c461c",
+          "file": "apps/mobile/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 8,
+          "end_line": 22,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "b5cc0825ea3ee3c0",
+          "source_digest": "fnv1a64:629ef33927a79813",
+          "file": "apps/web/src/features/search/model/zone-search.test.ts",
+          "lang": "typescript",
+          "start_line": 4,
+          "end_line": 11,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "84bc9c8cdf114b1a",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "558d7bb7b54eb081",
+          "source_digest": "fnv1a64:b02f1757ca3ef679",
+          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
+          "lang": "typescript",
+          "start_line": 168,
+          "end_line": 197,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "68ed309e2f705be4",
+          "source_digest": "fnv1a64:1a544f4ae03b954a",
+          "file": "apps/mobile/src/features/search/ui/search-result-lists.tsx",
+          "lang": "typescript",
+          "start_line": 68,
+          "end_line": 93,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "f5cd0303617e3369",
+      "note": "consolidate `` — 2 copies",
+      "members": [
+        {
+          "id": "f3b833ff5dd0ee2f",
+          "source_digest": "fnv1a64:3dcf1b15f335865e",
+          "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
+          "lang": "typescript",
+          "start_line": 130,
+          "end_line": 143,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "4ce8db3c158f7c73",
+          "source_digest": "fnv1a64:edf68f19512ebe3e",
+          "file": "apps/web/src/pages/map-home/ui/HomeSearchBox.tsx",
+          "lang": "typescript",
+          "start_line": 141,
+          "end_line": 154,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "1234d6c550b981f8",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "27acc7f3651261a1",
+          "source_digest": "fnv1a64:4d2943ac322bf987",
+          "file": "apps/mobile/src/features/search/api/use-place-search-query.test.ts",
+          "lang": "typescript",
+          "start_line": 40,
+          "end_line": 49,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "3992e1c721f38bb4",
+          "source_digest": "fnv1a64:47d897e91b1aae32",
+          "file": "apps/web/src/features/dex/model/use-region-videos-query.test.tsx",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 41,
           "kind": "Block",
           "is_fragment": false
         }

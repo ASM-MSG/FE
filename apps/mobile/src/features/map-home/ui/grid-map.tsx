@@ -25,7 +25,11 @@ import {
 import { cellIdFor } from "../../../entities/cell/model/cell-id";
 import { buildDashedRectOutline } from "../model/dashed-outline";
 import { buildHatchSegments } from "../model/hatch-pattern";
-import { buildVisibleCells, type VisibleCell } from "../model/visible-grid";
+import {
+  GRID_MIN_ZOOM,
+  buildVisibleCells,
+  type VisibleCell,
+} from "../model/visible-grid";
 import type { Viewport } from "../model/viewport";
 import type { RouteWaypoint } from "../model/route-overlay";
 import { drillInZoomForUnit } from "../model/aggregation-unit";
@@ -110,6 +114,15 @@ export interface GridMapRef {
   moveTo: (center: LatLng) => void;
   /** 줌은 그대로 두고 중심만 이동 — AI 추천 카드 탭 (MSG-556 D8, 웹 `moveTo` 대응) */
   panTo: (center: LatLng) => void;
+  /**
+   * 격자 검색 결과로 이동 (MSG-578 D3) — 현재 줌이 `GRID_MIN_ZOOM` 미만이면 그 단으로
+   * 올리고(강조 셀이 저줌 게이트에서 걷히므로), 이미 그 이상이면 줌을 유지한다.
+   * 판정은 이 컴포넌트가 이미 드는 `belowGridZoom`으로 한다 — 화면이 `viewport.zoom`을
+   * 읽으면 effect 의존성에 뷰포트가 들어가 idle마다 재발화한다.
+   */
+  focusTo: (center: LatLng) => void;
+  /** 구역 사각형이 화면에 들어오게 이동 (MSG-578 D4) — 웹 `MapCanvas.fitBounds` 대응, 패딩 없음 */
+  fitBounds: (bounds: Bounds) => void;
 }
 
 interface GridMapProps {
@@ -380,6 +393,21 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       mapRef.current?.animateCameraTo({
         latitude: center.lat,
         longitude: center.lng,
+        duration: 500,
+      });
+    },
+    focusTo: (center) => {
+      mapRef.current?.animateCameraTo({
+        latitude: center.lat,
+        longitude: center.lng,
+        zoom: belowGridZoom ? GRID_MIN_ZOOM : undefined,
+        duration: 500,
+      });
+    },
+    fitBounds: ({ sw, ne }) => {
+      mapRef.current?.animateCameraWithTwoCoords({
+        coord1: { latitude: sw.lat, longitude: sw.lng },
+        coord2: { latitude: ne.lat, longitude: ne.lng },
         duration: 500,
       });
     },

@@ -33,6 +33,7 @@ import {
   defaultSheetQueries,
   deriveSheetState,
 } from "../model/home-sheet-state";
+import { parseHomeFocus } from "../model/home-focus";
 import { locateBottomOffset } from "../model/locate-offset";
 import { nextTracking } from "../model/location-overlay";
 import {
@@ -40,6 +41,7 @@ import {
   useSelectedMissionId,
 } from "../model/mission-selection";
 import { homePanelKind } from "../model/panel-branch";
+import { regionFocusTarget } from "../model/region-focus";
 import {
   clearSelectedRegion,
   closeRegionList,
@@ -100,14 +102,30 @@ export const MapHomeScreen = () => {
   const insets = useSafeAreaInsets();
   const mapRef = useRef<GridMapRef>(null);
   const sheetRef = useRef<HomeSheetRef>(null);
-  // 검색 복귀 params (MSG-297 AC 3·10·11) — 검색 화면이 navigate로 전달한 목적지 좌표
-  const { lat, lng, ts } = useLocalSearchParams<{
+  // 검색 복귀 params (MSG-297 AC 3·10·11, MSG-578 D1 확장) — 검색 화면이 navigate로
+  // 전달한 목적지: 장소 lat/lng · 격자 gridId · 구역 bounds. 파싱·가드는 home-focus
+  const {
+    lat,
+    lng,
+    gridId,
+    bounds: boundsParam,
+    ts,
+  } = useLocalSearchParams<{
     lat?: string;
     lng?: string;
+    gridId?: string;
+    bounds?: string;
     ts?: string;
   }>();
   /** 검색 목적지 이동이 발생하면 초기 현재 위치 이동을 건너뛴다 — 카메라 경합 방지 */
   const movedToSearchTargetRef = useRef(false);
+  /**
+   * 격자 검색 하이라이트 (MSG-578 D2) — 웹 `searchGridId` 페이지 로컬 상태 미러. 자동 해제
+   * 없음, 새 격자 선택 시 교체. 장소·구역 선택은 건드리지 않고 홈 이탈(언마운트) 시 소멸한다.
+   */
+  const [searchHighlight, setSearchHighlight] = useState<GridCellIndex | null>(
+    null,
+  );
 
   /**
    * 지도 타일 첫 표시 완료 (MSG-445) — 진입 스플래시 해제 조건의 한 축.
@@ -284,6 +302,42 @@ export const MapHomeScreen = () => {
     onUpload: () => router.push("/upload"),
   });
 
+  // 검색의 전체 지역 행 탭(MSG-578 D11)으로 지역이 골라지면 테마·상세·이벤트 선택을 비운다 —
+  // 시트 분기는 격자 > 상세 > 칩 목록 > 기본 순이라 다른 패널이 열려 있으면 고른 지역이
+  // 헤더에 닿지 못한다(codex 리뷰 P2). 홈 자체의 "전체 보기" 경로에서는 이미 기본 시트라 no-op
+  useEffect(() => {
+    if (selectedRegion === null) return;
+    event.handlers.close();
+    applySelection(
+      closeTheme({
+        activeTheme: null,
+        selectedMissionId: null,
+        selectedGridId: null,
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 지역이 바뀔 때만
+  }, [selectedRegion]);
+
+  // 지역이 골라지면(검색 전체 지역 탭·홈 "전체 보기") 그 지역의 첫 격자(최신순) 중심으로 이동한다 —
+  // 지역 API에는 좌표가 없어 시트용 격자 목록을 재사용한다(2026-09-07 사용자 결정, A1 번복).
+  // 이동이 onViewportChange → clearSelectedRegion을 부르므로 헤더는 새 중심의 라이브 행정동으로
+  // 이어진다(그 격자가 속한 지역 = 고른 지역). 격자 0개면 이동할 곳이 없어 헤더만 바뀐다
+  const movedToRegionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (selectedRegion === null) {
+      movedToRegionRef.current = null;
+      return;
+    }
+    const target = regionFocusTarget(
+      regionGrids.data,
+      selectedRegion.regionCode,
+      movedToRegionRef.current,
+    );
+    if (target === null) return;
+    movedToRegionRef.current = selectedRegion.regionCode;
+    mapRef.current?.moveTo(target);
+  }, [selectedRegion, regionGrids.data]);
+
   // Android 하드웨어 뒤로가기 (A5) — 헤더 `‹`와 같은 규칙을 타고, 최상위에서만 화면을 벗어난다
   useFocusEffect(
     useCallback(() => {
@@ -318,17 +372,20 @@ export const MapHomeScreen = () => {
     });
   };
 
-  // 검색 복귀 카메라 이동 (MSG-297 AC 3·10·11) — ts는 요청 식별자: 같은 구를
-  // 연속 선택해도 params가 달라져 재이동한다. 초기 현재 위치 이동보다 우선.
+  // 검색 복귀 카메라 이동 (MSG-297 AC 3·10·11, MSG-578 D1~D4) — ts는 요청 식별자: 같은
+  // 목적지를 연속 선택해도 params가 달라져 재이동한다. 초기 현재 위치 이동보다 우선.
+  // 장소 → moveTo(줌 16) / 격자 → focusTo(줌 보장) + 하이라이트 / 구역 → fitBounds
   useEffect(() => {
-    if (typeof lat !== "string" || typeof lng !== "string" || !ts) return;
-    const target = { lat: Number(lat), lng: Number(lng) };
-    // 딥링크로 훼손된 params가 올 수 있다 — NaN·좌표 범위 밖 값을 네이티브 지도에 넘기지 않는다
-    if (!Number.isFinite(target.lat) || Math.abs(target.lat) > 90) return;
-    if (!Number.isFinite(target.lng) || Math.abs(target.lng) > 180) return;
+    if (!ts) return;
+    const focus = parseHomeFocus({ lat, lng, gridId, bounds: boundsParam });
+    if (focus === null) return;
     movedToSearchTargetRef.current = true;
-    mapRef.current?.moveTo(target);
-  }, [lat, lng, ts]);
+    if (focus.kind === "point") mapRef.current?.moveTo(focus.center);
+    else if (focus.kind === "grid") {
+      mapRef.current?.focusTo(focus.center);
+      setSearchHighlight(focus.cell);
+    } else mapRef.current?.fitBounds(focus.bounds);
+  }, [lat, lng, gridId, boundsParam, ts]);
 
   useEffect(() => {
     // 초기 중심 결정: 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만
@@ -427,6 +484,7 @@ export const MapHomeScreen = () => {
             // 스플래시를 붙잡고 있다. 상한 타이머가 있어 이 신호가 안 와도 갇히지 않는다
             onReady={() => setMapReady(true)}
             onCellTap={handleCellTap}
+            highlightCell={searchHighlight ?? undefined}
             occupiedCells={overlays.occupiedCells}
             themeCells={
               event.overlayCells ?? overlays.classification?.themeOnly
