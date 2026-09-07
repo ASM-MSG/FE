@@ -153,7 +153,7 @@ export const SearchScreen = () => {
             {/* 회색 구분 밴드 (Figma divider, h 8) */}
             <View className="h-2 w-full bg-surface" />
 
-            {/* 전체 지역 (S10, D11·D12) — 행 탭 시 시트 지역 교체 + 홈 복귀, 지도 이동 없음 */}
+            {/* 전체 지역 (S10, D11·D12) — 행 탭 시 시트 지역 교체 + 홈 복귀, 홈이 첫 격자 중심으로 지도 이동(A1 번복) */}
             <View className="px-5 pb-lg pt-md">
               <Text className="text-fm-body-strong text-foreground-muted">
                 전체 지역

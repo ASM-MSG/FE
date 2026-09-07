@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { MapIconButton } from "@fillmap/ui-native";
 import type { GridCellIndex } from "../../../entities/cell/model/grid";
-import { cellCenterAt } from "../../../entities/cell/model/grid-5179";
 import {
   SEOMYEON_CENTER,
   resolveMapCenterWithPermission,
@@ -42,6 +41,7 @@ import {
   useSelectedMissionId,
 } from "../model/mission-selection";
 import { homePanelKind } from "../model/panel-branch";
+import { regionFocusTarget } from "../model/region-focus";
 import {
   clearSelectedRegion,
   closeRegionList,
@@ -328,18 +328,14 @@ export const MapHomeScreen = () => {
       movedToRegionRef.current = null;
       return;
     }
-    const data = regionGrids.data;
-    const first = data?.grids[0];
-    if (
-      !first ||
-      data.regionCode !== selectedRegion.regionCode ||
-      movedToRegionRef.current === selectedRegion.regionCode
-    )
-      return;
-    movedToRegionRef.current = selectedRegion.regionCode;
-    mapRef.current?.moveTo(
-      cellCenterAt({ gridX: first.gridX, gridY: first.gridY }),
+    const target = regionFocusTarget(
+      regionGrids.data,
+      selectedRegion.regionCode,
+      movedToRegionRef.current,
     );
+    if (target === null) return;
+    movedToRegionRef.current = selectedRegion.regionCode;
+    mapRef.current?.moveTo(target);
   }, [selectedRegion, regionGrids.data]);
 
   // Android 하드웨어 뒤로가기 (A5) — 헤더 `‹`와 같은 규칙을 타고, 최상위에서만 화면을 벗어난다

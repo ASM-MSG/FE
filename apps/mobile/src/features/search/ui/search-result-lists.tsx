@@ -121,7 +121,7 @@ export const PlaceResultList = ({
     ) : (
       places.map((place, index) => (
         <Pressable
-          key={`${place.gridId}-${place.name}`}
+          key={`${place.gridId}-${place.name}-${place.address}`}
           accessibilityRole="button"
           accessibilityLabel={`${place.name}, ${place.address}`}
           onPress={() => onSelect({ lat: place.lat, lng: place.lng })}
