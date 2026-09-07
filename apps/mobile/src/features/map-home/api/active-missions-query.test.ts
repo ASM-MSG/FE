@@ -27,7 +27,7 @@ const SEOMYEON: Bounds = {
   sw: { lat: 35.15, lng: 129.05 },
   ne: { lat: 35.17, lng: 129.07 },
 };
-/** 부산 전역 — 한 변 0.5° 초과 (조회 비활성, 서버 400/12401 구간) */
+/** 부산 전역 — 한 변 0.5° 초과 (중심 0.5°로 잘라 조회 — MSG-581) */
 const WIDE: Bounds = {
   sw: { lat: 35.0, lng: 128.8 },
   ne: { lat: 35.4, lng: 129.4 },
@@ -55,8 +55,17 @@ describe("activeMissionsQueryOptions — 직전 데이터 유지", () => {
     expect(options.placeholderData(previous, undefined)).toBeUndefined();
   });
 
-  it("bbox가 0.5°를 넘어 조회가 비활성이면 같은 칩이라도 비운다 — 비활성 쿼리는 응답이 없어 placeholder가 영원히 남는다", () => {
+  it("bbox가 0.5°를 넘어도 같은 칩이면 유지한다 — 광역 줌은 잘라서 조회하므로 비활성이 아니다 (MSG-581)", () => {
     const options = activeMissionsQueryOptions("route", WIDE, true);
+
+    expect(options.enabled).toBe(true);
+    expect(
+      options.placeholderData(previous, previousQueryWithType("COURSE")),
+    ).toBe(previous);
+  });
+
+  it("뷰포트가 미확정(null)이면 같은 칩이라도 비운다 — 비활성 쿼리는 응답이 없어 placeholder가 영원히 남는다", () => {
+    const options = activeMissionsQueryOptions("route", null, true);
 
     expect(options.enabled).toBe(false);
     expect(
