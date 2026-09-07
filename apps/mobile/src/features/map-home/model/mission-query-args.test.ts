@@ -14,7 +14,7 @@ const VIEWPORT: Bounds = {
   sw: { lat: 35.15, lng: 129.05 },
   ne: { lat: 35.165, lng: 129.07 },
 };
-/** 명세 상한(한 변 0.5도)을 넘긴 뷰포트 — 조회하지 않는다 */
+/** 명세 상한(한 변 0.5도)을 넘긴 뷰포트 — 중심 기준 0.5°로 잘라 조회한다 (MSG-581) */
 const TOO_WIDE: Bounds = {
   sw: { lat: 35, lng: 128 },
   ne: { lat: 36, lng: 129 },
@@ -38,10 +38,22 @@ describe("활성 미션 조회 인자 (D1)", () => {
     );
   });
 
-  it("칩이 없거나 뷰포트가 미확정·상한 초과면 조회하지 않는다", () => {
+  it("칩이 없거나 뷰포트가 미확정이면 조회하지 않는다", () => {
     expect(activeMissionsQueryArgs(null, VIEWPORT).enabled).toBe(false);
     expect(activeMissionsQueryArgs("festival", null).enabled).toBe(false);
-    expect(activeMissionsQueryArgs("festival", TOO_WIDE).enabled).toBe(false);
+  });
+
+  it("상한 초과 뷰포트는 중심 기준 0.5°×0.5°로 잘라 조회한다 — 광역 줌에서도 목록이 비지 않는다 (MSG-581)", () => {
+    expect(activeMissionsQueryArgs("festival", TOO_WIDE)).toEqual({
+      query: {
+        type: "EVENT",
+        swLat: 35.25,
+        swLng: 128.25,
+        neLat: 35.75,
+        neLng: 128.75,
+      },
+      enabled: true,
+    });
   });
 });
 
