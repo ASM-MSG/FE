@@ -24683,16 +24683,16 @@
       ]
     },
     {
-      "id": "c32b0a045dfc4041",
+      "id": "f5cd0303617e3369",
       "note": "consolidate `` — 2 copies",
       "members": [
         {
-          "id": "152ad273377ae2e7",
+          "id": "f3b833ff5dd0ee2f",
           "source_digest": "fnv1a64:3dcf1b15f335865e",
           "file": "apps/mobile/src/features/search/ui/search-screen.tsx",
           "lang": "typescript",
-          "start_line": 126,
-          "end_line": 139,
+          "start_line": 130,
+          "end_line": 143,
           "kind": "Block",
           "is_fragment": false
         },

@@ -301,6 +301,22 @@ export const MapHomeScreen = () => {
     onUpload: () => router.push("/upload"),
   });
 
+  // 검색의 전체 지역 행 탭(MSG-578 D11)으로 지역이 골라지면 테마·상세·이벤트 선택을 비운다 —
+  // 시트 분기는 격자 > 상세 > 칩 목록 > 기본 순이라 다른 패널이 열려 있으면 고른 지역이
+  // 헤더에 닿지 못한다(codex 리뷰 P2). 홈 자체의 "전체 보기" 경로에서는 이미 기본 시트라 no-op
+  useEffect(() => {
+    if (selectedRegion === null) return;
+    event.handlers.close();
+    applySelection(
+      closeTheme({
+        activeTheme: null,
+        selectedMissionId: null,
+        selectedGridId: null,
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 지역이 바뀔 때만
+  }, [selectedRegion]);
+
   // Android 하드웨어 뒤로가기 (A5) — 헤더 `‹`와 같은 규칙을 타고, 최상위에서만 화면을 벗어난다
   useFocusEffect(
     useCallback(() => {

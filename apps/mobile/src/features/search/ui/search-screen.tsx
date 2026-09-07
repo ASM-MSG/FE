@@ -68,9 +68,13 @@ export const SearchScreen = () => {
     search.searchNow(q);
   };
 
-  /** 홈 복귀 + 카메라 목적지 — 매 복귀마다 5키 전부 실어 이전 params 잔존을 막는다 (D1) */
+  /**
+   * 홈 복귀 + 카메라 목적지 — 매 복귀마다 5키 전부 실어 이전 params 잔존을 막는다 (D1).
+   * `dismissTo`(POP_TO)라야 **기존 홈 인스턴스**로 돌아가 params만 갱신된다 — `navigate`는
+   * 홈을 새로 마운트해 줌 16으로 리셋됐고(줌 18 실측) 하이라이트·뒤로가기 스택도 어긋났다(codex 리뷰 P2)
+   */
   const goHome = (target: HomeFocusTarget) => {
-    router.navigate({
+    router.dismissTo({
       pathname: "/home",
       params: homeFocusParams(target, Date.now()),
     });
