@@ -33,17 +33,13 @@ export const useActiveMissionsQuery = (
   bounds: Bounds | null,
 ): ActiveMissionsResult => {
   const { isAuthenticated, hydrated } = useAuth();
-  const options = activeMissionsQueryOptions(chip, bounds);
-  const active = options.enabled && isAuthenticated;
+  const options = activeMissionsQueryOptions(chip, bounds, isAuthenticated);
+  const active = options.enabled;
   // 게이트 판정이 확정됐는가 — 재수화 전이나 뷰포트 미확정에는 "조회 안 함"이 아니라
   // "아직 모름"이므로 접지 않는다 (MSG-423 관례, PR #72 리뷰)
   const settled = hydrated && (bounds !== null || chip === null);
 
-  const queryResult = useQuery({
-    ...options,
-    select: unwrapEnvelope,
-    enabled: active,
-  });
+  const queryResult = useQuery({ ...options, select: unwrapEnvelope });
 
   return {
     missions: queryResult.data ?? EMPTY_MISSIONS,

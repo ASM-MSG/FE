@@ -39,7 +39,7 @@ const previous = { developCode: 0, message: "ok", data: [] } as never;
 
 describe("activeMissionsQueryOptions — 직전 데이터 유지", () => {
   it("같은 칩(type)의 bbox 이동 중에는 이전 목록을 유지한다 — 깜빡임 방지", () => {
-    const options = activeMissionsQueryOptions("route", SEOMYEON);
+    const options = activeMissionsQueryOptions("route", SEOMYEON, true);
 
     expect(
       options.placeholderData(previous, previousQueryWithType("COURSE")),
@@ -47,7 +47,7 @@ describe("activeMissionsQueryOptions — 직전 데이터 유지", () => {
   });
 
   it("칩이 바뀌면 비운다 — 지역축제 목록이 경로추천 카드로 그려지지 않는다", () => {
-    const options = activeMissionsQueryOptions("route", SEOMYEON);
+    const options = activeMissionsQueryOptions("route", SEOMYEON, true);
 
     expect(
       options.placeholderData(previous, previousQueryWithType("EVENT")),
@@ -56,7 +56,16 @@ describe("activeMissionsQueryOptions — 직전 데이터 유지", () => {
   });
 
   it("bbox가 0.5°를 넘어 조회가 비활성이면 같은 칩이라도 비운다 — 비활성 쿼리는 응답이 없어 placeholder가 영원히 남는다", () => {
-    const options = activeMissionsQueryOptions("route", WIDE);
+    const options = activeMissionsQueryOptions("route", WIDE, true);
+
+    expect(options.enabled).toBe(false);
+    expect(
+      options.placeholderData(previous, previousQueryWithType("COURSE")),
+    ).toBeUndefined();
+  });
+
+  it("비로그인이면 bbox·칩이 열려 있어도 비운다 — 세션 만료 직후 직전 목록 잔존 방지 (PR #147 리뷰)", () => {
+    const options = activeMissionsQueryOptions("route", SEOMYEON, false);
 
     expect(options.enabled).toBe(false);
     expect(
@@ -65,7 +74,7 @@ describe("activeMissionsQueryOptions — 직전 데이터 유지", () => {
   });
 
   it("쿼리 키에 type과 bbox가 실린다", () => {
-    const options = activeMissionsQueryOptions("festival", SEOMYEON);
+    const options = activeMissionsQueryOptions("festival", SEOMYEON, true);
 
     expect(options.enabled).toBe(true);
     expect(options.queryKey[0].query).toEqual({

@@ -23,13 +23,18 @@ type PreviousMissionsQuery =
  * 키·type과 무관하게 이 옵저버가 마지막으로 데이터를 가졌던 쿼리의 것이다 — bbox가
  * 0.5°를 넘어 조회가 닫힌 구간에서 칩을 바꾸면 직전 칩 목록이 새 칩 카드로 그려졌다
  * (MSG-579: 경로추천에 지역축제, 지역축제에 코스). 그래서 정책을 펼친 뒤 placeholder만
- * 덮어쓴다 — 비활성이거나 type이 다르면 비운다.
+ * 덮어쓴다 — 비활성이거나 type이 다르면 비운다. 게이트는 bbox·칩·인증 세 축을 여기 한 곳에
+ * 모은다(`GridAggregationGate` 선례) — 세션 만료는 캐시를 비우지 않아(`onSessionExpired`) 인증 축이
+ * 빠지면 만료 직후 직전 목록이 남을 수 있다.
  */
 export const activeMissionsQueryOptions = (
   chip: MissionChip | null,
   bounds: Bounds | null,
+  /** 인증 게이트 — 익명 호출은 401(웹 2026-08-15 실측). placeholder 판정에도 같은 축을 넣는다 (PR #147 리뷰) */
+  isAuthenticated: boolean,
 ) => {
-  const { query, enabled } = activeMissionsQueryArgs(chip, bounds);
+  const { query, enabled: gateEnabled } = activeMissionsQueryArgs(chip, bounds);
+  const enabled = gateEnabled && isAuthenticated;
   return {
     ...getActiveMissionsInViewportOptions({ query }),
     enabled,
