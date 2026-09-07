@@ -439,6 +439,14 @@ PID=$(lsof -ti tcp:8081 -sTCP:LISTEN); lsof -p $PID | grep cwd     # cwd가 지�
 kill $PID && (cd apps/mobile && npx expo start --dev-client --port 8081)
 ```
 
+### 함정 12. 지도 조작 중 앱이 통째로 꺼진다 — 커스텀 뷰 마커 비트맵 recycle (라이브러리 버그)
+
+**증상** — 붉은 에러 화면 없이 앱이 그냥 사라진다. `adb logcat -d -b crash`에 `SIGABRT` + `Abort message: 'JNI DETECTED ERROR ... bitmap decoding: could not lock pixels'` + `from com.naver.maps.map.renderer.MapRenderer.nativeRender()`가 찍히고, 직전에 `W/Bitmap: Called getDensity() on a recycle()'d bitmap!`가 있다.
+
+**원인** — `@mj-studio/react-native-naver-map` 2.9.0 안드로이드의 `RNCNaverMapMarker.removeCustomView()`가 지도 아이콘이 아직 참조 중인 비트맵을 먼저 `recycle()`하고 아이콘을 교체한다. 커스텀 뷰 마커(경로 번호·클러스터·미션 이름표)가 언마운트되는 순간 GL 렌더 스레드가 그 비트맵을 잠그려다 네이티브 abort. 줌 변경으로 클러스터가 교체되거나 경로를 해제할 때 확률적으로 재현된다(2026-09-07 실측, 프로세스 uptime 182초). 에뮬레이터·Metro 문제가 아니다.
+
+**대응** — `patches/@mj-studio__react-native-naver-map@2.9.0.patch`에 recycle 제거가 들어 있다(GC에 맡김). Kotlin 변경이라 **dev client 재빌드**가 필요하다 — 옛 APK를 쓰면 패치 전 코드로 돌아간다. 같은 시그니처가 다시 보이면 APK가 패치 이후에 빌드된 것인지부터 확인한다.
+
 ### 에뮬레이터 재현 성공 경로 (막혔을 때 통째로 다시 밟을 순서)
 
 2026-08-20에 실제로 통한 경로다. 개별 대응이 안 먹으면 이 순서로 초기화한다.

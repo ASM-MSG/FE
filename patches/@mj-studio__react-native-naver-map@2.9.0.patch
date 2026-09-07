@@ -77,6 +77,21 @@ index c92093f93ff92013db5574361eb0a21853f356cd..7dacb623e928c3bfedc973775f7b70ae
        registerDirectEvent(this, NaverMapOptionChangeEvent.EVENT_NAME)
        registerDirectEvent(this, NaverMapCameraChangeEvent.EVENT_NAME)
        registerDirectEvent(this, NaverMapCameraIdleEvent.EVENT_NAME)
+diff --git a/android/src/main/java/com/mjstudio/reactnativenavermap/overlay/marker/RNCNaverMapMarker.kt b/android/src/main/java/com/mjstudio/reactnativenavermap/overlay/marker/RNCNaverMapMarker.kt
+index 509e1ec715d475671f26797a70fc2872cd6fde9c..1d771624fe55010629419f231079f91ba0f6c6a8 100644
+--- a/android/src/main/java/com/mjstudio/reactnativenavermap/overlay/marker/RNCNaverMapMarker.kt
++++ b/android/src/main/java/com/mjstudio/reactnativenavermap/overlay/marker/RNCNaverMapMarker.kt
+@@ -88,7 +88,9 @@ class RNCNaverMapMarker(
+   fun removeCustomView(index: Int) {
+     customView = null
+     ViewChangesTracker.getInstance().removeMarker(this)
+-    if (customViewBitmap != null && !customViewBitmap!!.isRecycled) customViewBitmap!!.recycle()
++    // FillMap 패치: overlay.icon이 아직 이 비트맵을 참조하는 상태에서 recycle하면 GL 렌더 스레드가
++    // "could not lock pixels"로 네이티브 abort(앱 종료)한다. GC에 맡긴다 — 2026-09-07 실측.
++    customViewBitmap = null
+     isImageSetFromSubview = false
+     setImageWithLastImage()
+     super.removeView(children.elementAt(index))
 diff --git a/lib/typescript/commonjs/src/component/NaverMapView.d.ts b/lib/typescript/commonjs/src/component/NaverMapView.d.ts
 index 83f41067be85014cf8c43f5d970c9b361e12cf12..f6e7e8041b27b25ea1100095dbe16e342b4a105d 100644
 --- a/lib/typescript/commonjs/src/component/NaverMapView.d.ts
