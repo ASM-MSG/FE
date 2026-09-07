@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  Fragment,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -173,6 +174,16 @@ interface GridMapProps {
     onWaypointTap?: (seq: number) => void;
   };
   /**
+   * 코스 경로 여러 개 (MSG-580, 웹 `routes` 대응) — 경로추천 칩 목록 상태의 **모든 코스**,
+   * 상세를 열면 그 코스만. `route`(단일)와 함께 오면 둘 다 그린다. `id`는 마커 key.
+   */
+  routes?: {
+    id: string;
+    path: LatLng[];
+    waypoints: RouteWaypoint[];
+    onWaypointTap?: (seq: number) => void;
+  }[];
+  /**
    * 선택된 미션의 이름표 마커 (MSG-427 승인 Q4) — **선택된 미션에만** 붙인다.
    * Figma 9개 프레임 어디에도 이름표가 없고 RN에는 hover가 없어(스펙 R4), 티켓
    * [동작 요구]의 "이름표가 붙는다"를 지도가 글자로 덮이지 않는 최소 범위로 충족한다.
@@ -262,6 +273,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     accentCells,
     accentColor,
     route,
+    routes,
     missionLabel,
     onViewportChange,
     clusters,
@@ -290,6 +302,12 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
    * (드래그 중 매 프레임 발사 방지 — 요구 5).
    */
   const viewportSeededRef = useRef(false);
+
+  /** 단일 `route`(AI 추천)와 `routes`(홈 경로추천)를 한 목록으로 — 렌더 경로는 하나다 */
+  const routeList = [
+    ...(route ? [{ id: "route", ...route }] : []),
+    ...(routes ?? []),
+  ];
 
   const highlight = useMemo(() => {
     if (!highlightCell) return null;
@@ -488,56 +506,65 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             width={HATCH_LINE_WIDTH}
           />
         ))}
-      {/* 추천 경로 폴리라인 + 번호 웨이포인트 마커 (AC 10 — 경로추천 선택 시에만 전달됨) */}
-      {themeColor && route && route.path.length >= 2 && (
-        <NaverMapPolylineOverlay
-          coords={route.path.map(({ lat, lng }) => ({
-            latitude: lat,
-            longitude: lng,
-          }))}
-          color={themeColor}
-          width={ROUTE_LINE_WIDTH}
-        />
-      )}
+      {/* 추천 경로 폴리라인 + 번호 웨이포인트 마커 — 목록 상태의 모든 코스 + 상세의 그 코스
+          (MSG-580, 웹 `routes` 대응). `route`(단일)는 AI 추천(MSG-556 D8)이 쓰는 기존 계약 */}
       {themeColor &&
-        route?.waypoints.map(({ seq, coord, active }) => (
-          <NaverMapMarkerOverlay
-            key={seq}
-            latitude={coord.lat}
-            longitude={coord.lng}
-            width={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
-            height={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
-            anchor={{ x: 0.5, y: 0.5 }}
-            onTap={route?.onWaypointTap && (() => route?.onWaypointTap?.(seq))}
-          >
-            {/* 커스텀 뷰 마커 — Figma 14094:5419: 테마 색 원 + 흰 테두리 2px + 흰 번호.
-                네이티브 마커 서브뷰라 nativewind 클래스 대신 토큰 값을 style로 직접 주입,
-                Android 서브뷰 평탄화 방지로 collapsable={false} (스펙 리스크 1 — 실패 시
-                caption 텍스트 폴백 예정) */}
-            <View
-              collapsable={false}
-              style={{
-                width: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
-                height: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
-                borderRadius: ROUTE_MARKER_SIZE,
-                backgroundColor: themeColor,
-                borderWidth: active ? ROUTE_MARKER_ACTIVE_RING : 2,
-                borderColor: semantic.onPrimary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: semantic.onPrimary,
-                  fontSize: 14,
-                  fontWeight: "600",
-                }}
+        routeList.map((line) => (
+          <Fragment key={line.id}>
+            {line.path.length >= 2 && (
+              <NaverMapPolylineOverlay
+                coords={line.path.map(({ lat, lng }) => ({
+                  latitude: lat,
+                  longitude: lng,
+                }))}
+                color={themeColor}
+                width={ROUTE_LINE_WIDTH}
+              />
+            )}
+            {line.waypoints.map(({ seq, coord, active }) => (
+              <NaverMapMarkerOverlay
+                key={seq}
+                latitude={coord.lat}
+                longitude={coord.lng}
+                width={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
+                height={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
+                anchor={{ x: 0.5, y: 0.5 }}
+                onTap={line.onWaypointTap && (() => line.onWaypointTap?.(seq))}
               >
-                {seq}
-              </Text>
-            </View>
-          </NaverMapMarkerOverlay>
+                {/* 커스텀 뷰 마커 — Figma 14094:5419: 테마 색 원 + 흰 테두리 2px + 흰 번호.
+                    네이티브 마커 서브뷰라 nativewind 클래스 대신 토큰 값을 style로 직접 주입,
+                    Android 서브뷰 평탄화 방지로 collapsable={false} (스펙 리스크 1 — 실패 시
+                    caption 텍스트 폴백 예정) */}
+                <View
+                  collapsable={false}
+                  style={{
+                    width: active
+                      ? ROUTE_MARKER_ACTIVE_SIZE
+                      : ROUTE_MARKER_SIZE,
+                    height: active
+                      ? ROUTE_MARKER_ACTIVE_SIZE
+                      : ROUTE_MARKER_SIZE,
+                    borderRadius: ROUTE_MARKER_SIZE,
+                    backgroundColor: themeColor,
+                    borderWidth: active ? ROUTE_MARKER_ACTIVE_RING : 2,
+                    borderColor: semantic.onPrimary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: semantic.onPrimary,
+                      fontSize: 14,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {seq}
+                  </Text>
+                </View>
+              </NaverMapMarkerOverlay>
+            ))}
+          </Fragment>
         ))}
       {/* 지역 집계 마커 (MSG-428 S2·S3·S4) — 저줌에서만 채워져 들어온다.
           key는 regionCode 기반 안정 키라 재조회에도 같은 지역이면 마커가 유지된다 */}
