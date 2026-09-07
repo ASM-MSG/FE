@@ -435,7 +435,7 @@ export const MapHomeScreen = () => {
             hatchCells={overlays.classification?.both}
             accentCells={event.accentCells}
             accentColor={event.accentColor}
-            route={overlays.route}
+            routes={overlays.routes}
             missionLabel={event.mapLabel ?? overlays.missionLabel}
             clusters={aggregation.clusters}
             onViewportChange={(next) => {
