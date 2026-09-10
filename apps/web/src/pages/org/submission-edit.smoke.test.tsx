@@ -19,6 +19,7 @@ import { useSubmissionWizardStore } from "@/features/event-submission/model/subm
 import { getSubmissionQueryKey } from "@/shared/api/generated/@tanstack/react-query.gen";
 import type { EventSubmissionDetailResponseDto } from "@/shared/api/generated/types.gen";
 import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
+import { freezeDate } from "@/test/freeze-date";
 import {
   rejectedEditableDetail,
   submissionDetail,
@@ -161,6 +162,8 @@ const originalRevokeObjectURL = URL.revokeObjectURL;
 
 beforeEach(() => {
   detailVisits.length = 0;
+  // 행사 기간 픽스처(2026-09-05~07)가 "endsOn < 오늘(KST)" 규칙에 걸려 09-08부터 실패하던 시한폭탄 (MSG-593)
+  freezeDate("2026-09-01T03:00:00Z");
   useSubmissionWizardStore.setState(
     useSubmissionWizardStore.getInitialState(),
     true,
@@ -172,6 +175,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
   URL.createObjectURL = originalCreateObjectURL;
   URL.revokeObjectURL = originalRevokeObjectURL;
 });
