@@ -7,13 +7,15 @@ import {
   kakaoLoginNotice,
   resolveKakaoLoginReason,
 } from "../model/kakao-login-failure";
-import appIcon from "../assets/fillmap-app-icon.png";
+import symbol from "../assets/fillmap-symbol.png";
 import { KakaoLoginButton } from "./kakao-login-button";
 
 /**
  * SOURCE: Figma "소셜 로그인" (node 14094:4867, 390×844) — 모바일 로그인 화면 본체.
- * 구성: 타이틀·서브카피 → halo 원형 위 앱 아이콘·태그라인(flex-1 중앙) → SNS 안내
+ * 구성: 타이틀·서브카피 → 브랜드 심볼·태그라인(flex-1 중앙, MSG-588에서 halo 원 제거) → SNS 안내
  * → 카카오 버튼 → 약관 플레인 텍스트(링크·탭 동작 없음 — 제외 범위).
+ * 심볼 자산은 356×416 알파 PNG(feelmap-logo-pack symbol-color, 렌더 104dp의 4x — MSG-588)라
+ * 정사각 박스에 contain으로 얹어 비율(약 6:7)을 지킨다.
  * 웹 LoginContent(MSG-46)의 카피·토큰 매핑을 승계한다 — 타이틀은 Figma 26px 대신
  * text-fm-display(20px) 다운스케일 확정. Figma 상단 126px은 상태바 포함 수치라
  * SafeAreaView + pt-section(64px 토큰)으로 처리하고 픽셀 고정하지 않는다.
@@ -50,9 +52,12 @@ export const LoginScreen = () => {
           </Text>
         </View>
         <View className="flex-1 items-center justify-center gap-lg">
-          <View className="size-52.5 items-center justify-center rounded-full bg-surface">
-            <Image source={appIcon} alt="필맵 로고" className="size-26" />
-          </View>
+          <Image
+            source={symbol}
+            alt="필맵 로고"
+            resizeMode="contain"
+            className="size-26"
+          />
           <Text className="text-fm-base text-foreground-body">
             기록하고, 모으고, 탐험하는 지도
           </Text>
