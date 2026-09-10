@@ -131,7 +131,7 @@ adb -s emulator-5556 shell input keyevent 82
 
 - 번들 주소 설정은 그 AVD의 앱 데이터에 남는다 — 다음 실기에서 8082 Metro가 없으면 앱이 못 붙으니, 이 AVD는 "8082 전용"으로 기억해 두거나 같은 메뉴에서 되돌린다.
 - 새 AVD는 로그인·로케일·geo fix가 비어 있다 — 로그인은 사용자가 직접(카카오 웹 로그인, 자격 증명 입력은 사용자 몫), 지도 티켓이면 ko-KR·서면역 fix를 다시 건다.
-- 내 번들이 서빙되는지 확증: 8082 Metro 로그에 연결이 찍히는지 보거나(`CI=1`로 띄우면 로그가 거의 없다), 번들을 직접 받아 변경 문자열을 grep한다: `curl -s 'http://localhost:8082/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&transform.routerRoot=src%2Fapp' | grep -c '<변경 문자열>'`
+- 내 번들이 서빙되는지 확증: 8082 Metro 로그에 연결이 찍히는지 보거나(**`CI=1`로 띄우지 마라** — 로그만 줄어드는 게 아니라 파일 감시가 꺼져 수정이 번들에 안 실린다. MSG-588 실측: 스테일 번들을 보고 코드 결함으로 오독할 뻔했다), 번들을 직접 받아 변경 문자열을 grep한다: `curl -s 'http://localhost:8082/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&transform.routerRoot=src%2Fapp' | grep -c '<변경 문자열>'`
 - 비로그인 대조(웹 격자 목록 등)는 브라우저보다 웹이 부르는 공개 API를 토큰 없이 `curl`하는 쪽이 빠르고 정확하다.
 - 끝나면 내 것만 정리한다: 8082 Metro pid kill + `adb -s emulator-5556 emu kill`. 5554·8081은 건드리지 않는다.
 
