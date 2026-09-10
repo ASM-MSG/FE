@@ -13,7 +13,7 @@ import { preset } from "./index";
  * 4.5(카카오 로고 18px)·15.5(카카오 버튼 62px)·52.5(로그인 halo 210px)는 MSG-293 로그인 화면 보충.
  * 1.75(테마 배지 패딩 7px)·50(대표 영상 썸네일 200px)는 MSG-298 테마 시트 보충.
  * 1.25(CellBadge 세로 패딩 5px — ui-web 미러)·6.5(Checkbox 원형 26px)는 MSG-420 ui-native 보충.
- * 13(온보딩 3장 테마 격자 52px)은 MSG-421 온보딩 보충.
+ * 13(온보딩 TopBar 52px — MSG-590 시안, 원래는 MSG-421 3장 테마 격자)은 MSG-421 온보딩 보충.
  * 9.5(지도 홈 테마 칩 높이 38px — 웹 ThemeChip h-9.5 미러)는 MSG-423 보충.
  * 18.5(미션 카드 썸네일 긴 변 74px — 축제 가로 74×56 / 팝업 세로 56×74)는 MSG-427 보충.
  * 2.25(도감 업로드 잔디 셀 9px — 웹 UploadGrassGrid size-2.25 미러)는 MSG-430 보충.

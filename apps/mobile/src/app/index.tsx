@@ -68,14 +68,9 @@ export default function Index() {
   if (isStorybook) return <StorybookUI />;
   if (entry === null) return null;
   if (entry === "onboarding") {
-    // 시작하기·건너뛰기 모두 완료로 저장하고 다시 판정 — 비로그인이면 로그인으로 replace돼
-    // 뒤로가기로 온보딩에 돌아오지 않는다 (MSG-421 Q1 · MSG-561 D4)
-    return (
-      <OnboardingScreen
-        onDone={() => setCompleted(true)}
-        onSkip={() => setCompleted(true)}
-      />
-    );
+    // 시작하기는 완료로 저장하고 다시 판정 — 비로그인이면 로그인으로 replace돼
+    // 뒤로가기로 온보딩에 돌아오지 않는다 (MSG-561 D4, 건너뛰기는 MSG-590에서 삭제)
+    return <OnboardingScreen onDone={() => setCompleted(true)} />;
   }
   // 앱은 로그인 필수 — 세션이 없으면 로그인 화면으로 (MSG-561 D4·D5, 로그인 후 목적지는 홈 고정)
   if (entry === "login") return <Redirect href="/login" />;
