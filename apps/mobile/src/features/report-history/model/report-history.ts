@@ -1,3 +1,7 @@
+import {
+  resolveListState,
+  type ListState,
+} from "../../../shared/api/list-state";
 import { formatKstDate } from "../../../shared/format";
 
 /**
@@ -41,22 +45,17 @@ export interface MyReportItem {
 }
 
 /** 목록 영역의 배타 상태 (기준 19) */
-export type ReportListState = "loading" | "error" | "empty" | "list";
+export type ReportListState = ListState;
 
 /**
- * 로딩·실패·빈·목록을 한 값으로 판정한다 (기준 19).
- * 실패가 로딩보다 우선한다 — 재시도 왕복 중에 실패 안내와 [다시 시도]가 사라졌다
- * 다시 나타나면 사용자가 재시도를 두 번 누르게 된다.
+ * 로딩·실패·빈·목록을 한 값으로 판정한다 (기준 19) — 판정 규칙은 `shared/api/list-state`
+ * (MSG-570 차단 목록이 같은 판정을 쓰게 되면서 올렸다). 실패가 로딩보다 우선한다.
  */
 export const resolveReportListState = (input: {
   isPending: boolean;
   isError: boolean;
   items: readonly MyReportItem[];
-}): ReportListState => {
-  if (input.isError) return "error";
-  if (input.isPending) return "loading";
-  return input.items.length === 0 ? "empty" : "list";
-};
+}): ReportListState => resolveListState(input);
 
 /** 열람용 사유 라벨 — 목록 행이 좁아 제출 화면(REPORT_REASONS)보다 축약형이다 (승인 Q5) */
 const REPORT_REASON_LABELS = {

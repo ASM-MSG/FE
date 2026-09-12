@@ -7,11 +7,8 @@ import {
   canSubmitReport,
   REPORT_REASONS,
   type ReportReasonId,
-} from "../../video-actions/model/report";
-import {
-  EMPTY_REPORT_FORM,
-  reportFormReducer,
-} from "../../video-actions/model/report-form";
+} from "../model/report";
+import { EMPTY_REPORT_FORM, reportFormReducer } from "../model/report-form";
 
 interface ReportModalProps {
   visible: boolean;

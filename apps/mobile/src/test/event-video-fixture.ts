@@ -34,6 +34,7 @@ export const EVENT_VIDEO_DETAIL: EventVideoDetailResponseDto = {
   durationSec: 5,
   recordedAt: "2026-09-01T01:39:10Z",
   createdAt: "2026-09-01T01:39:12Z",
+  uploaderId: 7,
   uploaderNickname: "강정만두",
   interactionLocked: false,
   helpfulCount: 1,

@@ -3,6 +3,7 @@ import type {
   GridVideoResponseDto,
 } from "../../../shared/api/sdk";
 import { formatRelativeTime, formatViewCount } from "../../../shared/format";
+import type { BlockTarget } from "../../user-block/model/user-block";
 
 /**
  * "이 격자의 영상" 목록 병합·소유 판정·행 문구 (MSG-431 L13~L15) — 순수 함수.
@@ -33,6 +34,8 @@ export interface GridVideoRow {
   title: string;
   /** 행 보조 — "조회 214 · 3일 전" (조회수 미보유면 상대시간만) */
   meta: string;
+  /** 차단 대상 작성자 (MSG-570) — 전역 DTO의 `userId`·`nickname`, 내 영상은 null */
+  author: BlockTarget | null;
 }
 
 const fromGlobal = (
@@ -47,6 +50,7 @@ const fromGlobal = (
   // @는 FE가 붙인다 — 명세 주석 계약 (웹 toFeedItemFromGlobal과 동일)
   title: `@${dto.nickname}`,
   meta: `조회 ${formatViewCount(dto.viewCount)} · ${formatRelativeTime(dto.recordedAt, now)}`,
+  author: { userId: dto.userId, nickname: dto.nickname },
 });
 
 const fromMine = (dto: GridVideoResponseDto, now?: Date): GridVideoRow => ({
@@ -58,6 +62,7 @@ const fromMine = (dto: GridVideoResponseDto, now?: Date): GridVideoRow => ({
   title: "내 영상",
   // my-videos 응답에 조회수가 없다 — 0으로 꾸미지 않고 상대시간만 낸다
   meta: formatRelativeTime(dto.createdAt, now),
+  author: null,
 });
 
 /**

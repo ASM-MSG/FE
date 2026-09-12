@@ -21,6 +21,7 @@ export const eventComment = (
 
 export const EVENT_VIDEO_DETAIL: EventVideoDetailResponseDto = {
   videoId: 42,
+  uploaderId: 7,
   occurrenceId: 7,
   occurrenceStatus: "LIVE",
   locationId: 4,

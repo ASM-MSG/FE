@@ -37,8 +37,9 @@ type DetailEnvelope = ApiResponseDtoEventVideoDetailResponseDto;
 /**
  * 상세 캐시 seed — 봉투를 유지한 채 data만 갱신하고 갱신된 상세를 돌려준다.
  * 캐시 부재(시트 닫힘 후 gc)면 no-op·undefined.
+ * MSG-570 댓글 작성자 차단(`use-event-video-sheet`)도 이 경로로 상세를 갱신한다 — 상세 invalidate 금지.
  */
-const seedDetail = (
+export const seedDetail = (
   queryClient: QueryClient,
   videoId: number,
   update: (detail: EventVideoDetailResponseDto) => EventVideoDetailResponseDto,

@@ -794,6 +794,10 @@ export type RouteRecommendResponseDto = {
      * 언급 지역 신호 (MSG-468) — 문장이 화면 밖 지역을 말했으면 이동·축소 제안 재료가 실린다. 무신호(지역 무언급·동명 다수·대조 실패·충분히 담김)가 기본값
      */
     mentionedArea: MentionedAreaDto | null;
+    /**
+     * 동선 전체의 종합 추천 이유(FR-ROUTE-20). 사용자 문장을 근거로 이번 지점 구성을 설명한다. 빈 목록 응답(후보 없음, 무관 문장, 도보 절단)은 null이고 notice가 그 자리를 맡는다
+     */
+    summary: string | null;
 };
 
 /**
@@ -1307,9 +1311,21 @@ export type PasswordChangeRequestDto = {
  */
 export type OidcLoginRequestDto = {
     /**
-     * 소셜 제공자(카카오 등)에서 발급받은 OIDC ID Token
+     * 소셜 제공자(카카오·애플)에서 발급받은 OIDC ID Token
      */
     idToken: string;
+    /**
+     * 앱이 요청마다 만든 nonce 원문 (APPLE 필수, 카카오는 무시). 앱은 이 값의 SHA-256 16진 소문자를 애플 로그인 시트에 넘기고 원문을 서버에 보낸다 — 원문을 시트에 넘기면 대조가 항상 실패한다(2421)
+     */
+    nonce?: string;
+    /**
+     * 애플 authorizationCode (APPLE 필수). 첫 로그인인지 가리지 말고 매번 보낸다 — 서버가 계정이 없을 때만 교환한다. 5분 안에 1회만 교환 가능
+     */
+    authorizationCode?: string;
+    /**
+     * 애플이 첫 승인에만 주는 이름을 한 문자열로 조립한 값 (선택). 계정을 새로 만들 때만 닉네임으로 쓰고, 2~20자 밖이면 기본 닉네임(필맵러+4자리)으로 대체한다
+     */
+    fullName?: string;
 };
 
 export type ApiResponseDtoLoginResponseDto = {
@@ -1379,7 +1395,7 @@ export type LoginRequestDto = {
  */
 export type DevSocialLoginRequestDto = {
     /**
-     * 소셜 제공자 (기본 KAKAO)
+     * 소셜 제공자 (기본 KAKAO, APPLE 가능 — 애플 왕복 없이 계정만 만든다)
      */
     provider?: string;
     /**
@@ -1511,13 +1527,29 @@ export type OrgAccountResendResponseDto = {
  */
 export type OrgAccountRequestRejectRequestDto = {
     /**
-     * 반려 사유 (최대 500자). 관리자가 신청자에게 수기로 통보할 때 쓴다
+     * 반려 사유 (최대 500자). 요청자에게 발송되는 반려 안내 메일에 그대로 실린다
      */
     reason: string;
     /**
      * 상세 조회로 받은 마지막 접수 시각. 값이 다르면 검토 이후 요청이 바뀐 것이라 반려가 거부된다
      */
     updatedAt: string;
+};
+
+export type ApiResponseDtoOrgAccountRequestRejectResponseDto = {
+    developCode: number;
+    message: string;
+    data: OrgAccountRequestRejectResponseDto;
+};
+
+/**
+ * 계정 발급 요청 반려 결과
+ */
+export type OrgAccountRequestRejectResponseDto = {
+    /**
+     * 반려 안내 메일 발송 성공 여부. true 는 SES 접수까지의 성공이고 배달 확인은 아니다
+     */
+    emailSent: boolean;
 };
 
 /**
@@ -1922,6 +1954,38 @@ export type VideoPlaybackResponseDto = {
      * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
      */
     nickname: string;
+    /**
+     * 작성자 사용자 ID (videos.user_id). 차단(POST /api/users/{userId}/block)의 경로 값
+     */
+    userId: number;
+};
+
+export type ApiResponseDtoListBlockedUserResponseDto = {
+    developCode: number;
+    message: string;
+    data: Array<BlockedUserResponseDto>;
+};
+
+/**
+ * 내가 차단한 사용자 목록 항목
+ */
+export type BlockedUserResponseDto = {
+    /**
+     * 차단한 사용자 ID. 해제(DELETE /api/users/{userId}/block)의 경로 값
+     */
+    userId: number;
+    /**
+     * 닉네임 원문(조회 시점 값, 사본 아님)
+     */
+    nickname: string;
+    /**
+     * 프로필 이미지 URL. 없으면 null
+     */
+    profileImageUrl: string | null;
+    /**
+     * 차단 시각(최초 차단 시각, 재차단해도 바뀌지 않는다)
+     */
+    blockedAt: string;
 };
 
 export type ApiResponseDtoListTrendingKeywordResponseDto = {
@@ -2836,6 +2900,10 @@ export type GridGlobalVideoResponseDto = {
      * 작성자 닉네임 원문. @ 등 화면 표기는 FE 가 붙인다
      */
     nickname: string;
+    /**
+     * 작성자 사용자 ID (videos.user_id). 차단(POST /api/users/{userId}/block)의 경로 값
+     */
+    userId: number;
 };
 
 /**
@@ -3668,6 +3736,10 @@ export type EventVideoDetailResponseDto = {
      * 댓글 첫 페이지 (오래된 순 20건)
      */
     comments: EventVideoCommentPageResponseDto;
+    /**
+     * 작성자 사용자 ID (videos.user_id). 차단(POST /api/users/{userId}/block)의 경로 값
+     */
+    uploaderId: number;
 };
 
 export type ApiResponseDtoEventVideoCommentPageResponseDto = {
@@ -3707,9 +3779,9 @@ export type EventOccurrenceChipResponseDto = {
      */
     endsAt: string;
     /**
-     * 서버 시각 기준 파생 상태 — 이 목록에는 두 값만 담긴다
+     * 서버 시각 기준 파생 상태 — 이 목록에는 세 값만 담긴다 (아카이브 회차는 빠진다)
      */
-    status: 'UPCOMING' | 'LIVE';
+    status: 'UPCOMING' | 'LIVE' | 'UPLOAD_GRACE';
 };
 
 export type ApiResponseDtoEventOccurrenceDetailResponseDto = {
@@ -3758,6 +3830,10 @@ export type EventOccurrenceDetailResponseDto = {
      * 같은 시리즈의 지난 회차 — 최신순. 없으면 빈 배열
      */
     previousOccurrences: Array<PreviousOccurrenceDto>;
+    /**
+     * 대표 이미지 공개 URL — 이미지가 없는 회차는 null 이고 나머지 필드는 그대로다
+     */
+    imageUrl: string | null;
 };
 
 /**
@@ -3869,7 +3945,7 @@ export type EventLocationResponseDto = {
      */
     participationMethod: string | null;
     /**
-     * 커버 이미지 공개 URL — 참여형 승인분만 값이 있다
+     * 커버 이미지 공개 URL — 참여형 승인분과 시드 위치에 값이 있다. 없으면 null 이고 나머지 필드는 그대로다
      */
     imageUrl: string | null;
 };
@@ -3926,6 +4002,10 @@ export type EventLocationVideoResponseDto = {
      * 댓글 수
      */
     commentCount: number;
+    /**
+     * 작성자 사용자 ID (videos.user_id). 차단(POST /api/users/{userId}/block)의 경로 값
+     */
+    uploaderId: number;
 };
 
 export type ApiResponseDtoListRegionVideoResponseDto = {
@@ -5148,6 +5228,44 @@ export type HighlightPreviewResponses = {
 
 export type HighlightPreviewResponse = HighlightPreviewResponses[keyof HighlightPreviewResponses];
 
+export type UnblockData = {
+    body?: never;
+    path: {
+        /**
+         * 차단을 해제할 사용자 ID
+         */
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}/block';
+};
+
+export type UnblockResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type BlockData = {
+    body?: never;
+    path: {
+        /**
+         * 차단할 사용자 ID
+         */
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}/block';
+};
+
+export type BlockResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type IssueProfileImagePresignedUrlData = {
     body: ProfileImagePresignRequestDto;
     path?: never;
@@ -5625,7 +5743,7 @@ export type OauthLoginData = {
     };
     path: {
         /**
-         * 소셜 제공자
+         * 소셜 제공자 (KAKAO|APPLE)
          */
         provider: string;
     };
@@ -5882,8 +6000,10 @@ export type Reject2Responses = {
     /**
      * OK
      */
-    200: unknown;
+    200: ApiResponseDtoOrgAccountRequestRejectResponseDto;
 };
+
+export type Reject2Response = Reject2Responses[keyof Reject2Responses];
 
 export type Approve1Data = {
     body: OrgAccountRequestApproveRequestDto;
@@ -6204,6 +6324,24 @@ export type UpdateCommentResponses = {
 
 export type UpdateCommentResponse = UpdateCommentResponses[keyof UpdateCommentResponses];
 
+export type WhoamiData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/test/protected';
+};
+
+export type WhoamiResponses = {
+    /**
+     * OK
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type WhoamiResponse = WhoamiResponses[keyof WhoamiResponses];
+
 export type GetZonesData = {
     body?: never;
     path?: never;
@@ -6252,6 +6390,22 @@ export type GetMeResponses = {
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
+
+export type GetBlockedUsersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/users/me/blocks';
+};
+
+export type GetBlockedUsersResponses = {
+    /**
+     * OK
+     */
+    200: ApiResponseDtoListBlockedUserResponseDto;
+};
+
+export type GetBlockedUsersResponse = GetBlockedUsersResponses[keyof GetBlockedUsersResponses];
 
 export type GetTrendingKeywordsData = {
     body?: never;
@@ -6520,6 +6674,24 @@ export type GetMySubmissionsResponses = {
 };
 
 export type GetMySubmissionsResponse = GetMySubmissionsResponses[keyof GetMySubmissionsResponses];
+
+export type ProbeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/org/authorization-probe';
+};
+
+export type ProbeResponses = {
+    /**
+     * OK
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ProbeResponse = ProbeResponses[keyof ProbeResponses];
 
 export type GetInboxData = {
     body?: never;
@@ -7406,6 +7578,24 @@ export type FindMyBadgesResponses = {
 };
 
 export type FindMyBadgesResponse = FindMyBadgesResponses[keyof FindMyBadgesResponses];
+
+export type Probe1Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/authorization-probe';
+};
+
+export type Probe1Responses = {
+    /**
+     * OK
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type Probe1Response = Probe1Responses[keyof Probe1Responses];
 
 export type GetStatusData = {
     body?: never;

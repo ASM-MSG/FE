@@ -204,6 +204,11 @@ export const ProfileScreen = () => {
               label="신고 관리"
               onPress={() => router.navigate("/profile/reports")}
             />
+            {/* MSG-570 기준 12 — 차단한 사용자 목록·해제 */}
+            <SettingRow
+              label="차단한 사용자"
+              onPress={() => router.navigate("/profile/blocks")}
+            />
           </ProfileSection>
 
           {/* 계정 (기준 7~10) — 앱 버전은 정보 행(› 없음). [MSG-448] 약관 2행도 동작 행 */}

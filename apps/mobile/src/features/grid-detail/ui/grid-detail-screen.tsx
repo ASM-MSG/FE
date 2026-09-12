@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,19 +10,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Share2 } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
-import { BottomSheet, Button, MapIconButton, Toast } from "@fillmap/ui-native";
+import { BottomSheet, Button, MapIconButton } from "@fillmap/ui-native";
 import { serverGridIdFromCellId } from "../../../entities/cell/model/cell-id";
-import { useReportVideo } from "../../video-actions/api/use-video-mutations";
-import {
-  reportFailureNotice,
-  type ReportReasonId,
-} from "../../video-actions/model/report";
-import { useAutoDismissToast } from "../../video-actions/model/use-auto-dismiss-toast";
 import { GridMap } from "../../map-home/ui/grid-map";
 import { useGridVideosQuery } from "../api/use-grid-videos-query";
 import { deriveCellDetail } from "../model/cell-detail";
 import { GridVideoRow } from "./grid-video-row";
-import { ReportModal } from "./report-modal";
 import { VideoPreview } from "./video-preview";
 
 /** 상세 지도 줌 — 100m 셀이 Figma(14094:4194)처럼 화면 폭의 1/3 규모로 보이는 수준 */
@@ -69,7 +62,8 @@ interface GridDetailScreenProps {
  * `deriveCellDetail` mock이다(이 티켓의 목적은 신고 배선이지 격자 상세 실연동이 아니다 —
  * 남은 mock은 빌드 리포트에 명시하고 환류한다). 영상 목록은 전역·내 영상 2개 응답의
  * videoId 교집합으로 소유를 판정해(`useGridVideosQuery`) 행마다 ⋯ 를 얹고, 도감 갤러리와
- * **같은** 시트를 연다 — 내 영상은 공개 범위·삭제, 타인 영상은 신고하기.
+ * **같은** 시트를 연다 — 내 영상은 공개 범위·삭제, 타인 영상은 신고하기·사용자 차단.
+ * 신고 모달·발사·토스트는 MSG-570에서 `VideoActionsMenu`로 흡수됐다(재생 화면과 공유).
  *
  * **화면 상단의 격자 단위 ⋯(수정/삭제/신고)는 제거했다** (스펙 신고 배선 결정 4의 "정리"
  * 판정 = 제거). 세 항목 모두 영상 단위 메뉴와 의미가 겹치면서 대상이 불분명했다:
@@ -81,9 +75,6 @@ interface GridDetailScreenProps {
 export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [reportTarget, setReportTarget] = useState<number | null>(null);
-  const [reportToast, setReportToast] = useAutoDismissToast();
-  const [reportFailure, setReportFailure] = useAutoDismissToast();
 
   const detail = useMemo(() => deriveCellDetail(cellId), [cellId]);
   // 라우트 셀 id(구 위경도 스텝 체계)를 서버 격자 id(EPSG:5179)로 옮긴다 — 두 체계를
@@ -91,40 +82,8 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
   const gridId = useMemo(() => serverGridIdFromCellId(cellId), [cellId]);
   const videos = useGridVideosQuery(gridId);
 
-  /**
-   * 신고 모달 닫기 — **대상과 실패 안내를 함께 비운다**. 실패 안내는 3초 자동 소멸이라
-   * 그 사이에 닫고 다른 영상의 신고 모달을 열면 A의 실패 문구가 B의 카드에 뜬다
-   * (모달 로컬 선택 상태와 같은 부류의 잔존 — MSG-431 재작업에서 함께 잡았다).
-   */
-  const closeReport = () => {
-    setReportTarget(null);
-    setReportFailure(null);
-  };
-
-  const report = useReportVideo({
-    onReported: () => {
-      closeReport();
-      setReportToast("신고가 접수되었어요");
-    },
-    onFailed: (error) => {
-      const notice = reportFailureNotice(error);
-      if (notice.shouldClose) {
-        closeReport();
-        setReportToast(notice.message);
-        return;
-      }
-      setReportFailure(notice.message);
-    },
-  });
-
   // 유일한 진입 경로(지도 탭)는 항상 인코딩 id를 만든다 — 형식 밖 param은 렌더 없음
   if (!detail) return null;
-
-  const handleReportSubmit = (reasonId: ReportReasonId) => {
-    if (reportTarget === null) return;
-    // 연타 방어는 `mutate`에 씌워진 in-flight 가드가 맡는다 (guardMutate — codex 리뷰 2)
-    report.mutate({ videoId: reportTarget, reasonId });
-  };
 
   return (
     <View className="flex-1 bg-surface-elevated">
@@ -232,33 +191,12 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
                   // gridId는 목록이 도착했다는 것 자체가 non-null임을 뜻한다(쿼리 게이트)
                   gridId={gridId ?? ""}
                   gridLabel={detail.label}
-                  onReport={(target) => setReportTarget(target.videoId)}
                 />
               ))}
             </View>
           )}
         </ScrollView>
       </BottomSheet>
-
-      {/* 영상 신고 모달 (AC 9~13) — 대상 videoId는 영상 행이 정한다 */}
-      <ReportModal
-        visible={reportTarget !== null}
-        onClose={closeReport}
-        onSubmit={handleReportSubmit}
-        submitting={report.isPending}
-        failureMessage={reportFailure}
-      />
-
-      {/* 신고 접수·중복 안내 토스트 — 홈 인디케이터 위 오버레이, 자동 소멸 */}
-      {reportToast !== null && (
-        <View
-          pointerEvents="none"
-          className="absolute inset-x-0 px-md"
-          style={{ bottom: insets.bottom + 16 }}
-        >
-          <Toast title={reportToast} />
-        </View>
-      )}
     </View>
   );
 };

@@ -36,6 +36,8 @@ export interface EventCommentsPagesResult {
   /** 다음 페이지 이어받기 — 진행 중이거나 더 없으면 아무것도 하지 않는다 */
   loadMore: () => void;
   isLoadingMore: boolean;
+  /** 이어받은 페이지를 비운다 (MSG-570 기준 11) — 댓글 작성자 차단 후 첫 페이지 seed와 함께 */
+  reset: () => void;
 }
 
 interface ExtraPagesState {
@@ -91,5 +93,6 @@ export const useEventCommentsPages = (
     hasNext: cursor !== null,
     loadMore,
     isLoadingMore,
+    reset: () => setExtra({ videoId, pages: [] }),
   };
 };

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptResponses, AddHelpfulData, AddHelpfulResponses, Approve1Data, Approve1Responses, Approve2Data, Approve2Responses, ApproveData, ApproveEmailChangeData, ApproveEmailChangeResponses, ApproveResponses, ChangePasswordData, ChangePasswordResponses, CreateCommentData, CreateCommentResponses, CreateData, CreateResponses, DeleteCommentData, DeleteCommentResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetAccountsData, GetAccountsResponses, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponses, GetApprovedEventsData, GetApprovedEventsResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetCommentsData, GetCommentsResponses, GetConsentStatusData, GetConsentStatusResponses, GetDistrictsData, GetDistrictsResponses, GetEmailChangeRequestsData, GetEmailChangeRequestsResponses, GetEventLocationsByGridData, GetEventLocationsByGridResponses, GetEventsData, GetEventsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZoneAggregatesData, GetHotZoneAggregatesResponses, GetHotZonesData, GetHotZonesResponses, GetInboxData, GetInboxResponses, GetLocationsData, GetLocationsResponses, GetLocationVideosData, GetLocationVideosResponses, GetMeData, GetMeResponses, GetMissionAggregatesData, GetMissionAggregatesResponses, GetMissionDetailData, GetMissionDetailResponses, GetMissionsByGridData, GetMissionsByGridResponses, GetMissionVideosData, GetMissionVideosResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetMyProgressData, GetMyProgressResponses, GetMySubmissionsData, GetMySubmissionsResponses, GetNationalStatData, GetNationalStatResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetOccurrenceDetailData, GetOccurrenceDetailResponses, GetOccurrencesInViewportData, GetOccurrencesInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetProfileData, GetProfileResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetRequestData, GetRequestResponses, GetRequestsData, GetRequestsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetStatusData, GetStatusResponses, GetSubmission1Data, GetSubmission1Responses, GetSubmissionData, GetSubmissionResponses, GetSubmissionsData, GetSubmissionsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUnreadCountData, GetUnreadCountResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoDetailData, GetVideoDetailResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetViewerCountData, GetViewerCountResponses, GetZonesData, GetZonesResponses, HeartbeatData, HeartbeatResponses, HighlightPreviewData, HighlightPreviewResponses, IssueDirectData, IssueDirectResponses, IssueImagePresignedUrlData, IssueImagePresignedUrlResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, MarkAllReadData, MarkAllReadResponses, MarkReadData, MarkReadResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, RecommendData, RecommendResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, Reject2Data, Reject2Responses, Reject3Data, Reject3Responses, RejectData, RejectEmailChangeData, RejectEmailChangeResponses, RejectResponses, RemoveHelpfulData, RemoveHelpfulResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestEmailChangeData, RequestEmailChangeResponses, RequestResetData, RequestResetResponses, RequestResponses, ResendPasswordData, ResendPasswordResponses, ResetPasswordData, ResetPasswordResponses, ResubmitData, ResubmitResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetInitialPasswordData, SetInitialPasswordResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, SubmitConsentsData, SubmitConsentsResponses, SubmitData, SubmitResponses, UnblindVideoData, UnblindVideoResponses, UnpublishData, UnpublishResponses, UnregisterData, UnregisterResponses, UpdateCommentData, UpdateCommentResponses, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponses, UpdateMarketingConsentData, UpdateMarketingConsentResponses, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileData, UpdateProfileImageData, UpdateProfileImageResponses, UpdateProfileResponses, UpdateResponses, UpdateSubscriptionData, UpdateSubscriptionResponses, Upload1Data, Upload1Responses, UploadData, UploadMissionVideoData, UploadMissionVideoResponses, UploadResponses, WalkPathsData, WalkPathsResponses } from './types.gen';
+import type { AcceptData, AcceptResponses, AddHelpfulData, AddHelpfulResponses, Approve1Data, Approve1Responses, Approve2Data, Approve2Responses, ApproveData, ApproveEmailChangeData, ApproveEmailChangeResponses, ApproveResponses, BlockData, BlockResponses, ChangePasswordData, ChangePasswordResponses, CreateCommentData, CreateCommentResponses, CreateData, CreateResponses, DeleteCommentData, DeleteCommentResponses, DeleteData, DeleteFriendData, DeleteFriendResponses, DeleteMeData, DeleteMeResponses, DeleteResponses, FindMyBadgesData, FindMyBadgesResponses, GetAccountsData, GetAccountsResponses, GetActiveMissionsInViewportData, GetActiveMissionsInViewportResponses, GetApprovedEventsData, GetApprovedEventsResponses, GetBlockedUsersData, GetBlockedUsersResponses, GetCellData, GetCellResponses, GetCollectionGridsData, GetCollectionGridsResponses, GetCommentsData, GetCommentsResponses, GetConsentStatusData, GetConsentStatusResponses, GetDistrictsData, GetDistrictsResponses, GetEmailChangeRequestsData, GetEmailChangeRequestsResponses, GetEventLocationsByGridData, GetEventLocationsByGridResponses, GetEventsData, GetEventsResponses, GetExploreRegionsData, GetExploreRegionsResponses, GetFriendGridAggregatesData, GetFriendGridAggregatesResponses, GetFriendGridsData, GetFriendGridsResponses, GetFriendGridVideosData, GetFriendGridVideosResponses, GetFriendProfileData, GetFriendProfileResponses, GetFriendsData, GetFriendsResponses, GetGridCoverData, GetGridCoverResponses, GetGridGlobalVideosData, GetGridGlobalVideosResponses, GetGridHourlyUploadsData, GetGridHourlyUploadsResponses, GetGridVideosData, GetGridVideosResponses, GetHotZoneAggregatesData, GetHotZoneAggregatesResponses, GetHotZonesData, GetHotZonesResponses, GetInboxData, GetInboxResponses, GetLocationsData, GetLocationsResponses, GetLocationVideosData, GetLocationVideosResponses, GetMeData, GetMeResponses, GetMissionAggregatesData, GetMissionAggregatesResponses, GetMissionDetailData, GetMissionDetailResponses, GetMissionsByGridData, GetMissionsByGridResponses, GetMissionVideosData, GetMissionVideosResponses, GetMyFriendCodeData, GetMyFriendCodeResponses, GetMyProgressData, GetMyProgressResponses, GetMySubmissionsData, GetMySubmissionsResponses, GetNationalStatData, GetNationalStatResponses, GetOccupiedAggregatesInViewportData, GetOccupiedAggregatesInViewportResponses, GetOccupiedInViewportData, GetOccupiedInViewportResponses, GetOccurrenceDetailData, GetOccurrenceDetailResponses, GetOccurrencesInViewportData, GetOccurrencesInViewportResponses, GetPlaybackData, GetPlaybackResponses, GetPreferencesData, GetPreferencesResponses, GetProfileData, GetProfileResponses, GetReceivedRequestsData, GetReceivedRequestsResponses, GetRegionGridsData, GetRegionGridsResponses, GetRegionVideosData, GetRegionVideosResponses, GetReportsData, GetReportsResponses, GetRequestData, GetRequestResponses, GetRequestsData, GetRequestsResponses, GetStatByGridData, GetStatByGridResponses, GetStatByPointData, GetStatByPointResponses, GetStatsData, GetStatsResponses, GetStatusData, GetStatusResponses, GetSubmission1Data, GetSubmission1Responses, GetSubmissionData, GetSubmissionResponses, GetSubmissionsData, GetSubmissionsResponses, GetSummaryData, GetSummaryResponses, GetTrendingKeywordsData, GetTrendingKeywordsResponses, GetUnreadCountData, GetUnreadCountResponses, GetUploadHistoryData, GetUploadHistoryResponses, GetVideoDetailData, GetVideoDetailResponses, GetVideoForReviewData, GetVideoForReviewResponses, GetViewerCountData, GetViewerCountResponses, GetZonesData, GetZonesResponses, HeartbeatData, HeartbeatResponses, HighlightPreviewData, HighlightPreviewResponses, IssueDirectData, IssueDirectResponses, IssueImagePresignedUrlData, IssueImagePresignedUrlResponses, IssuePresignedUrlData, IssuePresignedUrlResponses, IssueProfileImagePresignedUrlData, IssueProfileImagePresignedUrlResponses, LoginData, LoginResponses, LogoutData, LogoutResponses, MarkAllReadData, MarkAllReadResponses, MarkReadData, MarkReadResponses, OauthCodeLoginData, OauthCodeLoginResponses, OauthLoginData, OauthLoginResponses, PreviewData, PreviewResponses, Probe1Data, Probe1Responses, ProbeData, ProbeResponses, RecommendData, RecommendResponses, RedirectToKakaoAuthorizeData, RedirectToKakaoAuthorizeResponses, RegisterData, RegisterResponses, ReissueData, ReissueResponses, Reject1Data, Reject1Responses, Reject2Data, Reject2Responses, Reject3Data, Reject3Responses, RejectData, RejectEmailChangeData, RejectEmailChangeResponses, RejectResponses, RemoveHelpfulData, RemoveHelpfulResponses, RemoveProfileImageData, RemoveProfileImageResponses, ReplaceData, ReplaceFeaturedData, ReplaceFeaturedResponses, ReplaceResponses, ReportData, ReportResponses, RequestData, RequestEmailChangeData, RequestEmailChangeResponses, RequestResetData, RequestResetResponses, RequestResponses, ResendPasswordData, ResendPasswordResponses, ResetPasswordData, ResetPasswordResponses, ResubmitData, ResubmitResponses, ReverseGeocodeData, ReverseGeocodeResponses, SearchPlacesData, SearchPlacesResponses, SetInitialPasswordData, SetInitialPasswordResponses, SetVisibilityData, SetVisibilityResponses, SignupData, SignupResponses, SocialLoginData, SocialLoginResponses, SubmitConsentsData, SubmitConsentsResponses, SubmitData, SubmitResponses, UnblindVideoData, UnblindVideoResponses, UnblockData, UnblockResponses, UnpublishData, UnpublishResponses, UnregisterData, UnregisterResponses, UpdateCommentData, UpdateCommentResponses, UpdateData, UpdateLocationConsentData, UpdateLocationConsentResponses, UpdateMarketingConsentData, UpdateMarketingConsentResponses, UpdateNicknameData, UpdateNicknameResponses, UpdateProfileData, UpdateProfileImageData, UpdateProfileImageResponses, UpdateProfileResponses, UpdateResponses, UpdateSubscriptionData, UpdateSubscriptionResponses, Upload1Data, Upload1Responses, UploadData, UploadMissionVideoData, UploadMissionVideoResponses, UploadResponses, WalkPathsData, WalkPathsResponses, WhoamiData, WhoamiResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -283,6 +283,28 @@ export const highlightPreview = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
+ * 사용자 차단 해제
+ *
+ * 내가 걸은 차단을 푼다. 차단한 적 없는 사용자나 존재하지 않는 userId 도 200 이다(멱등). 차단으로 삭제된 친구 관계는 되살아나지 않는다. 상대가 나를 차단한 행은 그대로라 그 경우 서로의 콘텐츠는 계속 보이지 않는다.
+ */
+export const unblock = <ThrowOnError extends boolean = false>(options: Options<UnblockData, ThrowOnError>): RequestResult<UnblockResponses, unknown, ThrowOnError> => (options.client ?? client).delete<UnblockResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/{userId}/block',
+    ...options
+});
+
+/**
+ * 사용자 차단
+ *
+ * 경로의 사용자를 차단한다. 차단하면 두 사람 사이의 친구 관계(수락됨·대기 중, 방향 무관)가 함께 삭제되고, 이후 서로의 영상과 댓글이 목록·재생·상세에서 보이지 않는다. 이미 차단한 사용자를 다시 차단해도 성공하며 최초 차단 시각이 유지된다(멱등). 자기 자신은 400 + 1430, 존재하지 않는 사용자는 404 + 1404 다. 신고는 차단과 무관하게 계속 할 수 있다.
+ */
+export const block = <ThrowOnError extends boolean = false>(options: Options<BlockData, ThrowOnError>): RequestResult<BlockResponses, unknown, ThrowOnError> => (options.client ?? client).post<BlockResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/{userId}/block',
+    ...options
+});
+
+/**
  * 프로필 이미지 업로드용 presigned URL 발급
  *
  * 프로필 이미지를 S3 에 직접 올릴 presigned URL 을 발급한다. 이 URL 로 PUT 업로드한 뒤 받은 s3Key 로 변경 확정(PUT /api/users/me/profile-image)을 호출한다. 허용 형식은 jpg·jpeg·png·webp 이고 크기 상한은 5MB 다 — 확장자와 Content-Type 이 어긋나거나 허용 밖이면 1415, 선언 크기가 상한을 넘으면 1413.
@@ -434,7 +456,7 @@ export const register = <ThrowOnError extends boolean = false>(options: Options<
 /**
  * 미션 영상 목록 조회
  *
- * 그 미션의 대상 격자에서 미션 기간에 촬영된 공개(PUBLIC)·READY 영상을 촬영 시각(recordedAt) 최신순으로 페이지 조회한다 — 촬영 시각이 같으면 videoId 내림차순으로 갈린다. 기간이 없는 미션(코스·지속형)은 기간 조건 없이 과거 영상까지 담고, 기간이 끝난 미션도 목록은 그대로 조회된다. 비공개·친구 공개·삭제·블라인드·인코딩 미완 영상은 본인 것이라도 제외되며, 응답은 누가 부르든 같다. 첫 요청은 cursor 없이 부르고, hasNext 가 true 면 응답의 nextCursor 를 다음 요청 cursor 로 넘기면 이어진다. 커서는 발급된 그 미션 전용이라 다른 미션 커서는 400(INVALID_CURSOR)이고, 형식이 깨진 커서도 같다. size 는 1~50 밖이면 클램프된다. 조건에 맞는 영상이 없거나 존재하지 않는 missionId 는 빈 페이지다. 썸네일은 presigned GET URL 로 내려준다.
+ * 그 미션의 대상 격자에서 미션 기간에 촬영된 공개(PUBLIC)·READY 영상을 촬영 시각(recordedAt) 최신순으로 페이지 조회한다 — 촬영 시각이 같으면 videoId 내림차순으로 갈린다. 기간이 없는 미션(코스·지속형)은 기간 조건 없이 과거 영상까지 담고, 기간이 끝난 미션도 목록은 그대로 조회된다. 비공개·친구 공개·삭제·블라인드·인코딩 미완 영상은 본인 것이라도 제외된다. 로그인 요청이면 요청자와 차단 관계(어느 방향이든)인 작성자의 영상도 빠지고, 그 밖에는 응답이 누가 부르든 같다. 첫 요청은 cursor 없이 부르고, hasNext 가 true 면 응답의 nextCursor 를 다음 요청 cursor 로 넘기면 이어진다. 커서는 발급된 그 미션 전용이라 다른 미션 커서는 400(INVALID_CURSOR)이고, 형식이 깨진 커서도 같다. size 는 1~50 밖이면 클램프된다. 조건에 맞는 영상이 없거나 존재하지 않는 missionId 는 빈 페이지다. 썸네일은 presigned GET URL 로 내려준다.
  */
 export const getMissionVideos = <ThrowOnError extends boolean = false>(options: Options<GetMissionVideosData, ThrowOnError>): RequestResult<GetMissionVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetMissionVideosResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -509,7 +531,7 @@ export const accept = <ThrowOnError extends boolean = false>(options: Options<Ac
  *
  * 영상 상세가 첫 페이지(20건)를 이미 품고 있으므로 이 API 는 둘째 페이지부터를 위한 것이다. cursor 는 직전 응답의 nextCursor 를 그대로 넣는다(첫 페이지는 생략). 형식이 깨졌거나 다른 영상 목록에서 받은 커서면 400 + developCode 13402 다. size 는 1~50 범위 밖이면 잘라서 적용하고 생략하면 20 이다.
  *
- * 아카이브된 행사에서도 조회할 수 있고 댓글이 없으면 실패가 아니라 빈 페이지다. 비로그인으로도 조회할 수 있다.
+ * 아카이브된 행사에서도 조회할 수 있고 댓글이 없으면 실패가 아니라 빈 페이지다. 비로그인으로도 조회할 수 있다. 로그인 요청이면 영상 작성자와 차단 관계(어느 방향이든)일 때 상세와 같은 404 + 13406 이고, 차단 관계인 작성자의 댓글은 목록에서 빠진다(댓글 수는 그대로다).
  */
 export const getComments = <ThrowOnError extends boolean = false>(options: Options<GetCommentsData, ThrowOnError>): RequestResult<GetCommentsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetCommentsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -545,7 +567,7 @@ export const createComment = <ThrowOnError extends boolean = false>(options: Opt
  *
  * cursor 는 직전 응답의 nextCursor 를 그대로 넣는다(첫 페이지는 생략). 형식이 깨졌거나 다른 위치 피드에서 받은 커서면 400 + developCode 13402 다. size 는 1~50 범위 밖이면 잘라서 적용하고 생략하면 20 이다.
  *
- * 아카이브된 행사에서도 조회할 수 있고 영상이 없으면 실패가 아니라 빈 페이지다. 존재하지 않거나 노출 기간 전인 회차는 404 + 13404, 위치가 없거나 그 회차의 위치가 아니면 404 + 13405 다. 비로그인으로도 조회할 수 있다.
+ * 아카이브된 행사에서도 조회할 수 있고 영상이 없으면 실패가 아니라 빈 페이지다. 존재하지 않거나 노출 기간 전인 회차는 404 + 13404, 위치가 없거나 그 회차의 위치가 아니면 404 + 13405 다. 비로그인으로도 조회할 수 있다. 로그인 요청이면 요청자와 차단 관계(어느 방향이든)인 작성자의 영상은 빠지고(위치 카드의 영상 수는 그대로다), 항목의 uploaderId 는 작성자 식별자라 차단(POST /api/users/{userId}/block)의 경로 값으로 쓴다.
  */
 export const getLocationVideos = <ThrowOnError extends boolean = false>(options: Options<GetLocationVideosData, ThrowOnError>): RequestResult<GetLocationVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetLocationVideosResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -688,7 +710,7 @@ export const changePassword = <ThrowOnError extends boolean = false>(options: Op
 /**
  * 소셜 로그인 (OIDC)
  *
- * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다. 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다.
+ * 소셜 제공자의 ID Token으로 로그인/가입하고 JWT 액세스 토큰과 리프레시 토큰을 발급받는다. 웹(X-Client-Type: web, 기본)은 리프레시가 HttpOnly 쿠키(Set-Cookie)로 내려가 body 의 refreshToken 이 null 이고, 앱(app)은 body 로 내려간다. provider=apple 은 nonce 원문과 authorizationCode 가 필수이고(첫 로그인에서만 애플 토큰 교환), fullName 은 계정 생성 때만 닉네임으로 쓴다.
  */
 export const oauthLogin = <ThrowOnError extends boolean = false>(options: Options<OauthLoginData, ThrowOnError>): RequestResult<OauthLoginResponses, unknown, ThrowOnError> => (options.client ?? client).post<OauthLoginResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -843,7 +865,7 @@ export const resendPassword = <ThrowOnError extends boolean = false>(options: Op
 /**
  * 계정 발급 요청 반려
  *
- * 요청을 반려하고 사유를 저장한다. 사유는 필수이며 <b>메일은 발송되지 않는다</b> — 반려 통보는 당분간 수기이고 저장된 사유가 그 재료다.
+ * 요청을 반려하고 사유를 저장한 뒤, 요청자의 공식 이메일로 <b>반려 사유를 담은 안내 메일을 발송</b>한다 (필맵 서식 HTML + 평문 대체본). 사유는 필수다. 발송 실패는 반려를 뒤집지 않고 <code>emailSent:false</code> 로만 드러나며, 그때는 저장된 사유로 수기 통보한다(재발송 API 없음).
  *
  * 없는 요청은 404(1421), 이미 처리된 요청은 409(1422), 검토 이후 요청 내용이 바뀌었으면 409(1426) 다.
  */
@@ -1111,6 +1133,12 @@ export const updateComment = <ThrowOnError extends boolean = false>(options: Opt
     }
 });
 
+export const whoami = <ThrowOnError extends boolean = false>(options?: Options<WhoamiData, ThrowOnError>): RequestResult<WhoamiResponses, unknown, ThrowOnError> => (options?.client ?? client).get<WhoamiResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/test/protected',
+    ...options
+});
+
 /**
  * 구역 목록 조회
  *
@@ -1141,6 +1169,17 @@ export const deleteMe = <ThrowOnError extends boolean = false>(options: Options<
 export const getMe = <ThrowOnError extends boolean = false>(options?: Options<GetMeData, ThrowOnError>): RequestResult<GetMeResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMeResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/users/me',
+    ...options
+});
+
+/**
+ * 내가 차단한 사용자 목록
+ *
+ * 내가 차단한 사용자 전부를 차단 시각 내림차순으로 페이지 없이 반환한다. 닉네임·프로필 이미지는 조회 시점 값이다. 나를 차단한 사용자는 포함되지 않고, 차단이 없으면 빈 배열이다.
+ */
+export const getBlockedUsers = <ThrowOnError extends boolean = false>(options?: Options<GetBlockedUsersData, ThrowOnError>): RequestResult<GetBlockedUsersResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetBlockedUsersResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/users/me/blocks',
     ...options
 });
 
@@ -1279,6 +1318,12 @@ export const getApprovedEvents = <ThrowOnError extends boolean = false>(options?
 export const getMySubmissions = <ThrowOnError extends boolean = false>(options?: Options<GetMySubmissionsData, ThrowOnError>): RequestResult<GetMySubmissionsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMySubmissionsResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/org/event-submissions/my',
+    ...options
+});
+
+export const probe = <ThrowOnError extends boolean = false>(options?: Options<ProbeData, ThrowOnError>): RequestResult<ProbeResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ProbeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/org/authorization-probe',
     ...options
 });
 
@@ -1430,7 +1475,7 @@ export const getCell = <ThrowOnError extends boolean = false>(options: Options<G
 /**
  * 격자 전역 영상 목록 조회
  *
- * 그 격자에 쌓인 공개(PUBLIC)·READY 영상을 전역(본인·타인 포함)에서 조회수(viewCount) → 최신(createdAt) 순으로 페이지 조회한다. 비공개·삭제·인코딩 미완 영상은 본인 것이라도 제외한다. 첫 요청은 cursor 없이 부르고, hasNext 가 true 면 응답의 nextCursor 를 다음 요청 cursor 로 넘기면 이어진다. 무효 커서는 400(INVALID_CURSOR)이고, size 는 1~50 밖이면 클램프된다. 후보가 없거나 존재하지 않는 gridId 는 빈 페이지다. 썸네일은 presigned GET URL 로 내려준다.
+ * 그 격자에 쌓인 공개(PUBLIC)·READY 영상을 전역(본인·타인 포함)에서 조회수(viewCount) → 최신(createdAt) 순으로 페이지 조회한다. 비공개·삭제·인코딩 미완 영상은 본인 것이라도 제외한다. 첫 요청은 cursor 없이 부르고, hasNext 가 true 면 응답의 nextCursor 를 다음 요청 cursor 로 넘기면 이어진다. 무효 커서는 400(INVALID_CURSOR)이고, size 는 1~50 밖이면 클램프된다. 후보가 없거나 존재하지 않는 gridId 는 빈 페이지다. 썸네일은 presigned GET URL 로 내려준다. 로그인 요청이면 요청자와 차단 관계(어느 방향이든)인 작성자의 영상은 빠지고, 비로그인이면 차단과 무관하게 같은 결과다. 항목의 userId 는 작성자 식별자라 차단(POST /api/users/{userId}/block)의 경로 값으로 쓴다.
  */
 export const getGridGlobalVideos = <ThrowOnError extends boolean = false>(options: Options<GetGridGlobalVideosData, ThrowOnError>): RequestResult<GetGridGlobalVideosResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetGridGlobalVideosResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1617,7 +1662,7 @@ export const getMyFriendCode = <ThrowOnError extends boolean = false>(options?: 
  *
  * 영상 하나의 재생본 presigned GET URL 과 표시 재료를 돌려준다. 소속 행사 회차·위치·대표 격자와 그 표시명 재료가 함께 담겨, 상세 화면이 추가 호출 없이 위치줄을 그린다.
  *
- * 피드에 보이는 영상만 열린다 — 삭제·블라인드·비공개·처리 미완료 영상은 올린 본인에게도 404 + developCode 13406 이다(본인 영상 확인은 GET /api/videos/{videoId}). 행사 영상이 아닌 영상 id 도 같은 404 다.
+ * 피드에 보이는 영상만 열린다 — 삭제·블라인드·비공개·처리 미완료 영상은 올린 본인에게도 404 + developCode 13406 이다(본인 영상 확인은 GET /api/videos/{videoId}). 행사 영상이 아닌 영상 id 도 같은 404 이고, 작성자와 차단 관계(어느 방향이든)인 요청자에게도 같은 404 다.
  *
  * interactionLocked 는 아카이브 전환(행사 종료 + 30일)부터 true 이며 댓글·도움돼요 입력 UI 를 비활성화하는 재료다(기존 수는 계속 표시. 유예 기간에는 반응을 계속 남길 수 있다). 재생 URL 을 발급받은 타인 조회는 조회수를 올린다 — 비로그인 조회도 포함이고 올린 본인은 제외다.
  */
@@ -1630,7 +1675,7 @@ export const getVideoDetail = <ThrowOnError extends boolean = false>(options: Op
 /**
  * 뷰포트 내 행사 회차 목록 조회
  *
- * 지도 화면 bbox(남서~북동 좌표) 안에 노출 영역이 걸친 행사 회차를 반환한다. 담기는 것은 진행 중이거나, 시작 2주 전부터의 노출 기간에 든 예정 회차뿐이다 — 종료된 행사(업로드 유예·아카이브)는 칩에 담기지 않고 상세·격자 역조회로만 접근한다. 아직 노출 기간 전인 예정 회차는 존재 자체를 숨긴다.
+ * 지도 화면 bbox(남서~북동 좌표) 안에 노출 영역이 걸친 행사 회차를 반환한다. 담기는 것은 진행 중이거나, 시작 2주 전부터의 노출 기간에 든 예정 회차이거나, 종료 뒤 30일의 업로드 유예 기간에 든 회차다 — 아카이브(종료 30일 경과) 회차만 칩에서 빠지고 상세·격자 역조회로 접근한다. 아직 노출 기간 전인 예정 회차는 존재 자체를 숨긴다.
  *
  * 정렬은 시 이름 → 시작일 → 회차 id 오름차순이라, 시 칩 아래에 그 시의 행사 칩을 나열하는 화면이 매 요청 같은 순서를 받는다. 보이는 범위에 행사가 없으면 실패가 아니라 빈 배열이다.
  *
@@ -1733,6 +1778,12 @@ export const getCollectionGrids = <ThrowOnError extends boolean = false>(options
 export const findMyBadges = <ThrowOnError extends boolean = false>(options?: Options<FindMyBadgesData, ThrowOnError>): RequestResult<FindMyBadgesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<FindMyBadgesResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/badges',
+    ...options
+});
+
+export const probe1 = <ThrowOnError extends boolean = false>(options?: Options<Probe1Data, ThrowOnError>): RequestResult<Probe1Responses, unknown, ThrowOnError> => (options?.client ?? client).get<Probe1Responses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/authorization-probe',
     ...options
 });
 

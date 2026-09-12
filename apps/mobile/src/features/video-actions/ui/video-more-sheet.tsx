@@ -18,6 +18,8 @@ interface VideoMoreSheetProps {
   onSelectVisibility: (visibility: VideoVisibility) => void;
   onDelete: () => void;
   onReport: () => void;
+  /** 타인 영상 "사용자 차단" (MSG-570 기준 2) — 신고하기 아래 */
+  onBlock: () => void;
 }
 
 /**
@@ -26,7 +28,7 @@ interface VideoMoreSheetProps {
  * 있는 일은 하나의 목록이어야 하기 때문이고, `mine`으로만 갈라진다.
  *
  * 내 영상: "공개 범위" 섹션 라벨 + 전체 공개/나만 보기 2행(현재 상태에만 ✓) + 구분선 +
- * "영상 삭제"(빨간 글씨). 타인 영상: "신고하기" 1행.
+ * "영상 삭제"(빨간 글씨). 타인 영상: "신고하기" + "사용자 차단"(MSG-570) 2행.
  * 딤·시트 쉘·취소 버튼·홈 인디케이터 인셋은 `ui-native/ActionSheet`가 소유한다.
  *
  * **행에 아이콘을 지정하지 않는 것이 정본이다** — Figma 14856:515/518/521은 텍스트만이며,
@@ -40,6 +42,7 @@ export const VideoMoreSheet = ({
   onSelectVisibility,
   onDelete,
   onReport,
+  onBlock,
 }: VideoMoreSheetProps) => {
   const insets = useSafeAreaInsets();
 
@@ -64,7 +67,10 @@ export const VideoMoreSheet = ({
           <ActionSheetItem label="영상 삭제" danger onPress={onDelete} />
         </>
       ) : (
-        <ActionSheetItem label="신고하기" onPress={onReport} />
+        <>
+          <ActionSheetItem label="신고하기" onPress={onReport} />
+          <ActionSheetItem label="사용자 차단" onPress={onBlock} />
+        </>
       )}
     </ActionSheet>
   );

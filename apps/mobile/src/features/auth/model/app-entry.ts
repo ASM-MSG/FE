@@ -18,6 +18,7 @@ export const PROTECTED_ROUTES = [
   "dex/history",
   "grid/[cellId]",
   "profile",
+  "profile/blocks",
   "profile/consent",
   "profile/edit",
   "profile/reports",
