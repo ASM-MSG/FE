@@ -7,6 +7,7 @@ import type { VideoPlaybackResponseDto } from "@/shared/api/generated";
  */
 export const READY_PLAYBACK: VideoPlaybackResponseDto = {
   videoId: 42,
+  userId: 7,
   nickname: "필맵퍼",
   playbackUrl: "https://cdn.example.com/blurred.mp4",
   thumbnailUrl: null,

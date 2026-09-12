@@ -36,10 +36,14 @@ export interface EventCommentsPagesResult {
   /** 다음 페이지 이어받기 — 진행 중이거나 더 없으면 아무것도 하지 않는다 */
   loadMore: () => void;
   isLoadingMore: boolean;
+  /** 이어받은 페이지를 비운다 (MSG-570 기준 11) — 댓글 작성자 차단 후 첫 페이지 seed와 함께 */
+  reset: () => void;
 }
 
 interface ExtraPagesState {
   videoId: number;
+  /** `reset()` 세대 — 리셋 전에 띄운 "더 보기" 응답이 리셋 뒤에 붙지 않게 (codex 리뷰 P2) */
+  generation: number;
   pages: EventVideoCommentPageResponseDto[];
 }
 
@@ -55,12 +59,16 @@ export const useEventCommentsPages = (
   onLoadError?: (error: unknown) => void,
 ): EventCommentsPagesResult => {
   const queryClient = useQueryClient();
-  const [extra, setExtra] = useState<ExtraPagesState>({ videoId, pages: [] });
+  const [extra, setExtra] = useState<ExtraPagesState>({
+    videoId,
+    generation: 0,
+    pages: [],
+  });
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // 영상 교체 시 축적 리셋 — 렌더 중 상태 조정 (React 공식 "adjusting state" 패턴)
   if (extra.videoId !== videoId) {
-    setExtra({ videoId, pages: [] });
+    setExtra({ videoId, generation: 0, pages: [] });
   }
   const pages = extra.videoId === videoId ? extra.pages : [];
 
@@ -69,13 +77,14 @@ export const useEventCommentsPages = (
   const loadMore = () => {
     if (cursor === null || isLoadingMore) return;
     setIsLoadingMore(true);
+    const generation = extra.generation;
     void (async () => {
       try {
         const page = await fetchCommentsPage(queryClient, videoId, cursor);
-        // 요청 중 영상이 교체됐으면 폐기 — 새 영상 목록에 이전 페이지가 섞이지 않게
+        // 요청 중 영상이 교체됐거나 리셋(차단)됐으면 폐기 — 이전 페이지가 새 목록에 섞이지 않게
         setExtra((prev) =>
-          prev.videoId === videoId
-            ? { videoId, pages: [...prev.pages, page] }
+          prev.videoId === videoId && prev.generation === generation
+            ? { ...prev, pages: [...prev.pages, page] }
             : prev,
         );
       } catch (error) {
@@ -91,5 +100,11 @@ export const useEventCommentsPages = (
     hasNext: cursor !== null,
     loadMore,
     isLoadingMore,
+    reset: () =>
+      setExtra((prev) => ({
+        videoId,
+        generation: prev.generation + 1,
+        pages: [],
+      })),
   };
 };

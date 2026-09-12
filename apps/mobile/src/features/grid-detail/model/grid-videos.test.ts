@@ -19,6 +19,7 @@ const globalVideo = (
   viewCount: number;
   recordedAt: string;
   nickname: string;
+  userId: number;
 } => ({
   videoId,
   thumbnailUrl: `https://cdn.test/${videoId}.jpg`,
@@ -26,6 +27,8 @@ const globalVideo = (
   viewCount,
   recordedAt: "2026-08-16T12:00:00+09:00",
   nickname,
+  // 작성자 id — MSG-570 차단 경로 값. videoId와 다른 값으로 두어 혼동 단정을 막는다
+  userId: videoId + 1000,
 });
 
 const myVideo = (videoId: number) => ({
@@ -76,6 +79,22 @@ describe("buildGridVideoRows — 소유 판정 (L14)", () => {
       [33, true],
       [11, false],
     ]);
+  });
+});
+
+describe("buildGridVideoRows — 차단 대상 작성자 (MSG-570 기준 2·4)", () => {
+  it("타인 영상 행은 전역 DTO의 userId·닉네임을 차단 대상으로 갖고, 내 영상 행은 null이다 (기준 2·4)", () => {
+    const [mineRow, otherRow] = buildGridVideoRows(
+      [globalVideo(11, "부산러버")],
+      [myVideo(33)],
+      NOW,
+    );
+
+    expect(otherRow).toMatchObject({
+      mine: false,
+      author: { userId: 1011, nickname: "부산러버" },
+    });
+    expect(mineRow).toMatchObject({ mine: true, author: null });
   });
 });
 

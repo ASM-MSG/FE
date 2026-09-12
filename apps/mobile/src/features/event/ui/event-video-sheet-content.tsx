@@ -1,7 +1,15 @@
 import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Heart, MessageCircle } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
-import { Button, Toast, cx } from "@fillmap/ui-native";
+import {
+  ActionSheet,
+  ActionSheetItem,
+  Button,
+  Toast,
+  cx,
+} from "@fillmap/ui-native";
+import { BlockUserDialog } from "../../user-block/ui/block-user-dialog";
 import type { HomeSheetContentContext } from "../../map-home/ui/home-sheet";
 import { SheetHeader } from "../../map-home/ui/sheet-header";
 import { SheetScrollView } from "../../map-home/ui/sheet-scroll-view";
@@ -25,6 +33,8 @@ import { EventVideoPlayer } from "./event-video-player";
  * `eventVideoTitle` 폴백만, 배지 이모지 없음, 댓글 오래된순, 아바타 첫 글자 폴백, 재생
  * 컨트롤은 expo-video 네이티브. 헤더 ⋯(유틸리티 메뉴)는 제외 범위.
  * 토스트는 시트 안 인라인(`ActionToast` Modal은 3초간 전 화면 터치를 삼켜 재생 조작을 막는다).
+ * **[MSG-570 기준 10·11] 타인 댓글 길게 누르기 → "사용자 차단" 1행 액션시트 → 확인 다이얼로그**
+ * — 성공 시 그 작성자 댓글이 상세 seed로 빠지고 "차단했어요"가 같은 인라인 토스트로 뜬다.
  */
 interface EventVideoSheetContentProps extends HomeSheetContentContext {
   video: EventVideoInput;
@@ -49,9 +59,18 @@ export const EventVideoSheetContent = ({
     submitComment,
     submitDisabled,
     toast,
+    commentBlockTarget,
+    commentMenu,
+    openCommentMenu,
+    closeCommentMenu,
+    blockTarget,
+    confirmBlockFromMenu,
+    closeBlockDialog,
+    onBlocked,
     back,
     close,
   } = useEventVideoSheet(video.videoId);
+  const insets = useSafeAreaInsets();
   const helpfulByMe = detail?.helpfulByMe ?? false;
   const helpfulDisabled = interaction?.helpfulDisabled ?? true;
   // 키보드 회피 (A2 대안 — R2 실기에서 footer가 자판 뒤에 가려져 채택)
@@ -144,12 +163,20 @@ export const EventVideoSheetContent = ({
                 </Text>
               ) : (
                 <View className="gap-md">
-                  {comments.comments.map((comment) => (
-                    <EventVideoCommentRow
-                      key={comment.commentId}
-                      comment={comment}
-                    />
-                  ))}
+                  {comments.comments.map((comment) => {
+                    const target = commentBlockTarget(comment);
+                    return (
+                      <EventVideoCommentRow
+                        key={comment.commentId}
+                        comment={comment}
+                        onLongPress={
+                          target === null
+                            ? undefined
+                            : () => openCommentMenu(target)
+                        }
+                      />
+                    );
+                  })}
                 </View>
               )}
               {comments.hasNext && (
@@ -184,6 +211,23 @@ export const EventVideoSheetContent = ({
               submitDisabled={submitDisabled}
             />
           </View>
+
+          {/* 댓글 작성자 차단 (MSG-570 기준 10) — 1행 액션시트 + 공용 확인 다이얼로그 */}
+          <ActionSheet
+            visible={commentMenu !== null}
+            onClose={closeCommentMenu}
+            bottomInset={insets.bottom}
+          >
+            <ActionSheetItem
+              label="사용자 차단"
+              onPress={confirmBlockFromMenu}
+            />
+          </ActionSheet>
+          <BlockUserDialog
+            target={blockTarget}
+            onClose={closeBlockDialog}
+            onBlocked={onBlocked}
+          />
         </>
       )}
     </View>
