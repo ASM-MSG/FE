@@ -121,6 +121,23 @@ describe("사용자 차단 mutation (기준 4·6·7·8)", () => {
     expect(onBlocked).toHaveBeenCalledTimes(1);
   });
 
+  it("성공하면 차단 목록 캐시도 무효화되고 완료 콜백이 제출한 userId를 받는다 — 목록 화면 재진입 30초 안에도 새 행이 보인다 (기준 12·13, codex P2)", async () => {
+    const { mutations, keys, queryClient } = await loadModule();
+    const listKey = keys.getBlockedUsersQueryKey();
+    queryClient.setQueryData(listKey, blockedEnvelope([3]));
+    stubFetch(() => envelopeResponse(null));
+    const onBlocked = vi.fn();
+    const observer = new MutationObserver(
+      queryClient,
+      mutations.blockUserMutationOptions({ queryClient, onBlocked }),
+    );
+
+    await observer.mutate({ userId: USER_ID });
+
+    expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
+    expect(onBlocked).toHaveBeenCalledWith(USER_ID);
+  });
+
   it("실패하면 어떤 쿼리도 무효화되지 않고 완료 콜백 없이 실패 콜백만 불린다 — 다이얼로그가 남는다 (기준 7)", async () => {
     const { mutations, keys, queryClient } = await loadModule();
     const gridKey = keys.getGridGlobalVideosQueryKey({

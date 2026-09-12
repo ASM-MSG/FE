@@ -37,7 +37,7 @@ const useGuardedMutation = <TData, TVariables>(
 };
 
 export const useBlockUser = (callbacks?: {
-  onBlocked?: () => void;
+  onBlocked?: (userId: number) => void;
   onError?: () => void;
 }) =>
   useGuardedMutation(USER_BLOCK_MUTATION_KEYS.block, (queryClient) =>

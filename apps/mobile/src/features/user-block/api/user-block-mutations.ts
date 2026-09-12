@@ -33,7 +33,7 @@ export interface UserBlockInput {
 }
 
 /**
- * 차단 (기준 4·6·7) — `POST /api/users/{userId}/block`. 성공 시 콘텐츠 목록을 무효화하고
+ * 차단 (기준 4·6·7) — `POST /api/users/{userId}/block`. 성공 시 콘텐츠 목록과 차단 목록을 무효화하고
  * 완료 콜백을 부른다. 실패 시 아무것도 무효화하지 않아 다이얼로그가 열린 채 재시도할 수 있다.
  */
 export const blockUserMutationOptions = ({
@@ -42,7 +42,8 @@ export const blockUserMutationOptions = ({
   onError,
 }: {
   queryClient: QueryClient;
-  onBlocked?: () => void;
+  /** 성공 콜백은 **제출한** userId를 받는다 — 호출부가 다이얼로그 상태(닫힘·다른 대상)에 기대지 않게 */
+  onBlocked?: (userId: number) => void;
   onError?: () => void;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof blockFn>>,
@@ -52,9 +53,12 @@ export const blockUserMutationOptions = ({
   mutationKey: USER_BLOCK_MUTATION_KEYS.block,
   mutationFn: (input, context) =>
     blockFn({ path: { userId: input.userId } }, context),
-  onSuccess: () => {
+  onSuccess: (_data, variables) => {
     invalidateAfterBlockChange(queryClient);
-    onBlocked?.();
+    // 차단 목록은 seed하지 않는다(blockedAt·프로필 이미지는 서버만 안다) — 30초 stale 창 안에
+    // 목록 화면으로 돌아와도 새 행이 보이도록 무효화 (codex 리뷰 P2)
+    void queryClient.invalidateQueries({ queryKey: getBlockedUsersQueryKey() });
+    onBlocked?.(variables.userId);
   },
   onError: () => onError?.(),
 });

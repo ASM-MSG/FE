@@ -84,7 +84,7 @@ export interface EventVideoSheet extends EventVideoDetailResult {
   confirmBlockFromMenu: () => void;
   closeBlockDialog: () => void;
   /** 차단 성공 — 상세 캐시 seed(그 작성자 댓글 제거) + 이어받은 페이지 리셋 + 토스트 (기준 11) */
-  onBlocked: () => void;
+  onBlocked: (blockedUserId: number) => void;
   /**
    * `‹`·`✕` — `use-event-home`의 `handlers.back/close`와 같은 모듈 액션. 시트 스위치의
    * 접촉면 예산(≤8줄) 때문에 prop 주입 대신 여기서 묶는다 (D11·D13)
@@ -132,13 +132,13 @@ export const useEventVideoSheet = (videoId: number): EventVideoSheet => {
     comment.authorNickname === me?.nickname
       ? null
       : { userId: comment.authorId, nickname: comment.authorNickname };
-  const onBlocked = () => {
-    const target = blockTarget;
+  // 제출한 userId로 처리 — 요청 중 다이얼로그를 닫거나 다른 작성자를 고르면 `blockTarget`은
+  // 이미 null·다른 값이다 (codex 리뷰 P2, createComment의 videoId 대조와 같은 레이스 차단)
+  const onBlocked = (blockedUserId: number) => {
     setBlockTarget(null);
-    if (target === null) return;
     // 상세 invalidate 금지(조회수 부작용) — seed + 페이지 리셋으로만 목록에서 뺀다 (A5)
     seedDetail(queryClient, videoId, (previous) =>
-      removeCommentsByAuthor(previous, target.userId),
+      removeCommentsByAuthor(previous, blockedUserId),
     );
     comments.reset();
     setToast("차단했어요");

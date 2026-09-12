@@ -12,8 +12,11 @@ interface BlockUserDialogProps {
   target: BlockTarget | null;
   /** 취소·딤 탭·Android back — 요청 없이 닫기 (기준 3) */
   onClose: () => void;
-  /** 차단 성공 — 호출부가 닫고 토스트·후속(pop 등)을 처리한다 (기준 5) */
-  onBlocked: () => void;
+  /**
+   * 차단 성공 — 호출부가 닫고 토스트·후속(pop 등)을 처리한다 (기준 5). 인자는 **제출한** userId:
+   * 요청 중 다이얼로그가 닫히거나 다른 대상으로 바뀌어도 `target`이 아닌 이 값으로 후속을 처리한다
+   */
+  onBlocked: (userId: number) => void;
 }
 
 /**
@@ -36,9 +39,9 @@ export const BlockUserDialog = ({
     onClose();
   };
   const block = useBlockUser({
-    onBlocked: () => {
+    onBlocked: (userId) => {
       setFailure(null);
-      onBlocked();
+      onBlocked(userId);
     },
     onError: () => setFailure("차단하지 못했어요. 잠시 후 다시 시도해 주세요"),
   });
