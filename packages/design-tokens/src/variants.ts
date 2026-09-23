@@ -82,7 +82,12 @@ export interface SkeletonBaseProps {
 }
 
 /** SOURCE: Figma "FeelMap MapIconButton" (node 13404:693) — Icon 속성 */
-export type MapIconButtonIcon = "back" | "locate";
+/**
+ * zoom-in·zoom-out은 MSG-601 iOS 실기 환류로 추가 — 네이버 SDK 내장 +/-를 끄고 우리 버튼으로
+ * 그린다(iOS SDK는 +/-를 오른쪽 세로 중앙에 고정해 시트를 모르고, 시트가 절반이면 뒤로 숨는다).
+ * Figma 원 노드에는 없는 값 — locate와 같은 흰 원형 규격을 공유한다.
+ */
+export type MapIconButtonIcon = "back" | "locate" | "zoom-in" | "zoom-out";
 
 export interface MapIconButtonBaseProps {
   /** 기본 "back" */

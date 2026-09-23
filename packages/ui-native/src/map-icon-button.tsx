@@ -1,5 +1,5 @@
 import { Pressable } from "react-native";
-import { ChevronLeft, Locate } from "lucide-react-native";
+import { ChevronLeft, Locate, Minus, Plus } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import type {
   MapIconButtonBaseProps,
@@ -11,9 +11,19 @@ import { cx } from "./lib/cx";
  * SOURCE: Figma "FeelMap MapIconButton" (node 13404:693) — 지도 위 아이콘 버튼 (40px).
  * back은 배경 없는 아이콘, locate는 흰 원형 + Raised 그림자.
  */
+const RAISED = "bg-surface-elevated shadow-raised active:opacity-80";
 const iconVariant: Record<MapIconButtonIcon, string> = {
   back: "active:bg-surface",
-  locate: "bg-surface-elevated shadow-raised active:opacity-80",
+  locate: RAISED,
+  "zoom-in": RAISED,
+  "zoom-out": RAISED,
+};
+
+const a11yLabel: Record<MapIconButtonIcon, string> = {
+  back: "뒤로 가기",
+  locate: "내 위치",
+  "zoom-in": "지도 확대",
+  "zoom-out": "지도 축소",
 };
 
 interface MapIconButtonProps extends MapIconButtonBaseProps {
@@ -40,7 +50,7 @@ export const MapIconButton = ({
 }: MapIconButtonProps) => (
   <Pressable
     accessibilityRole="button"
-    accessibilityLabel={icon === "back" ? "뒤로 가기" : "내 위치"}
+    accessibilityLabel={a11yLabel[icon]}
     accessibilityState={{ disabled: !!disabled, selected: active }}
     disabled={disabled}
     onPress={onPress}
@@ -53,6 +63,10 @@ export const MapIconButton = ({
   >
     {icon === "back" ? (
       <ChevronLeft size={22} color={semantic.textPrimary} />
+    ) : icon === "zoom-in" ? (
+      <Plus size={20} color={semantic.textPrimary} />
+    ) : icon === "zoom-out" ? (
+      <Minus size={20} color={semantic.textPrimary} />
     ) : (
       <Locate
         size={20}
