@@ -157,6 +157,7 @@
 - MSG-482: [모바일] "알림 받기" 단일 토글의 카테고리를 서버 8종으로 — `features/profile/model/notification-toggle.ts`의 `NOTIFICATION_CATEGORIES`가 MSG-426 시점 5종 리터럴이라 FRIEND(MSG-416)·MISSION_NEARBY(MSG-418)·EVENT(MSG-442)가 빠져 "알림 받기"를 꺼도 친구·행사 알림이 계속 왔다. `Record<NotificationCategory, true>` 키 파생으로 바꿔 생성 타입에 카테고리가 늘면 컴파일이 깨진다. 화면·SDK 변경 0
 - MSG-602: [모바일] **알림함 + 미읽음 배지** — `features/notifications`에 inbox 축 신설(model `inbox.ts` 커서·평탄화·낙관 읽음·`unreadHint` / api `use-inbox-query`(getInboxInfiniteOptions, 첫 페이지 `{}`)·`use-unread-count-query`(포커스·포그라운드 재조회)·`inbox-mutations`(markRead·markAllRead 낙관+롤백+unread 무효화) / ui `notification-inbox-screen`(FlatList·RefreshControl·4상태)·`notification-row`·`notification-category-icon`), 라우트 `profile/notifications`(PROTECTED), `HomeTopBar hasUnread`(아바타 빨간 점), 프로필 설정 첫 행 `알림함 ›`+"새 알림 N개". `shared/api/infinite-list.ts`(제네릭 접기) · `shared/format.normalizeUtcIso` · `test/inbox-fixture.ts`. 시안 없음 — FE 설계(docs/spec/MSG-602.md)
 - MSG-603: [모바일] **행사 알림 구독 토글** — `features/event`에 `model/event-subscription.ts`(노출·값 파생, 종료 회차 null)·`api/event-subscription-mutation.ts`(PUT `/api/event-occurrences/{id}/notification` 낙관+응답 enabled 기록+롤백)·`ui/event-notification-row.tsx`(🔔 행사 알림 + Switch + 인라인 오류). `EventOverview.notification` 재료 추가, 개요 시트 기간 행 아래 렌더(예정·진행 중만). 시안 없음 — FE 설계(docs/spec/MSG-603.md)
+- MSG-604: [모바일] **iOS 푸시 FCM 토큰** — `@react-native-firebase/app`·`messaging`(disableSPM + 정적 프레임워크), `GoogleService-Info.plist`(커밋), `ios.infoPlist.UIBackgroundModes`. `notifications-adapter.readDevicePushToken` iOS 분기: expo APNs 토큰 → `setAPNSToken` → `getToken`(FCM 등록 토큰). Android 경로 무변경. 서버 등록·재등록·포그라운드 배너 시뮬레이터 검증, FCM 경유 수신은 실기기 필요
 
 ## 티켓 이력 (2026-08-13 이후 — 티켓당 한 줄 append)
 
@@ -252,3 +253,4 @@
 - MSG-482: [모바일] 알림 카테고리 5종 → 8종(FRIEND·MISSION_NEARBY·EVENT 추가) — 지라는 웹 알림 설정 화면을 지목했으나 그 화면은 MSG-477에서 삭제됐고 preferences 소비처는 모바일 "알림 받기" 토글뿐이라 모바일로 재해석(스펙 `docs/spec/MSG-482.md`). 상수를 타입 완전성 강제 `Record` 파생으로 바꿔 재발 방지. vitest 8건 PATCH 캡처 + Android 실기 ON/OFF/재진입
 - MSG-602: [모바일] 알림함 화면 + 미읽음 배지 — MSG-434 API 4종 소비. 시안이 없어(앱 ver 6에 알림함 프레임 없음) 사용자 결정으로 FE가 앱 관례로 설계(홈 아바타 빨간 점 → 프로필 행 → 알림함 목록·탭 읽음·모두 읽음). 딥링크는 MSG-432 이후. 하네스가 티켓 생성
 - MSG-603: [모바일] 행사 알림 구독 토글 — MSG-442 API 소비. 서버는 시작·일정 변경 알림을 구독자에게 보내는데 켜는 UI가 없어 수신자 0이던 공백. 시안 없이 개요 시트에 토글 행(예정·진행 중만). Android 실기 콜드 스타트 후 ON 유지 확인. 하네스가 티켓 생성
+- MSG-604: [모바일] iOS 푸시 — Firebase Messaging으로 FCM 등록 토큰 발급(A안). expo-notifications의 APNs 원시 토큰은 서버(FCM Admin)가 못 보내던 공백. 실측 결함 2건(SPM×정적 링크, RNFirebase 자체 APNs 등록 타임아웃) 우회. 하네스가 티켓 생성
