@@ -53,6 +53,7 @@ const load = async () => {
 
   return {
     queryClient,
+    inboxKey,
     unreadKey,
     seed,
     readFlags,
@@ -116,15 +117,34 @@ describe("markRead (L7)", () => {
     expect(t.unreadOf()).toBe(1);
   });
 
-  it("실패하면 목록·안읽음 두 캐시를 스냅숏으로 되돌린다", async () => {
+  it("실패하면 되돌리지 않고 목록·안읽음 두 캐시를 무효화해 서버 정본으로 재동기화한다 (codex P2)", async () => {
     const t = await load();
     t.seed([item(2), item(1)], 2);
     stubFetch(() => errorEnvelope(10404, "없는 알림", 404));
 
     await t.markRead.mutate({ notificationId: 1 }).catch(() => {});
 
-    expect(t.readFlags()).toEqual([false, false]);
-    expect(t.unreadOf()).toBe(2);
+    expect(t.queryClient.getQueryState(t.inboxKey)?.isInvalidated).toBe(true);
+    expect(t.queryClient.getQueryState(t.unreadKey)?.isInvalidated).toBe(true);
+  });
+
+  it("겹친 요청 중 하나가 실패해도 다른 요청이 성공한 읽음은 캐시에 남는다 (codex P2)", async () => {
+    const t = await load();
+    t.seed([item(2), item(1)], 2);
+    stubFetch((request) =>
+      request.url.endsWith("/1/read")
+        ? errorEnvelope(10500, "서버 오류", 500)
+        : envelopeResponse(null),
+    );
+
+    await Promise.all([
+      t.markRead.mutate({ notificationId: 1 }).catch(() => {}),
+      t.markRead.mutate({ notificationId: 2 }),
+    ]);
+
+    // 스냅숏 롤백이었다면 2번까지 안읽음으로 되돌아갔다 — 무효화 방식은 낙관값을 유지한 채 재조회를 예약한다
+    expect(t.readFlags()).toEqual([true, true]);
+    expect(t.queryClient.getQueryState(t.inboxKey)?.isInvalidated).toBe(true);
   });
 
   it("성공 후 안읽음 캐시를 무효화한다 — 서버 정본으로 재수렴", async () => {
@@ -153,14 +173,14 @@ describe("markAllRead (L7)", () => {
     expect(t.unreadOf()).toBe(0);
   });
 
-  it("실패하면 되돌린다", async () => {
+  it("실패하면 목록·안읽음을 무효화한다", async () => {
     const t = await load();
     t.seed([item(3), item(1)], 2);
     stubFetch(() => errorEnvelope(10500, "서버 오류", 500));
 
     await t.markAllRead.mutate().catch(() => {});
 
-    expect(t.readFlags()).toEqual([false, false]);
-    expect(t.unreadOf()).toBe(2);
+    expect(t.queryClient.getQueryState(t.inboxKey)?.isInvalidated).toBe(true);
+    expect(t.queryClient.getQueryState(t.unreadKey)?.isInvalidated).toBe(true);
   });
 });
