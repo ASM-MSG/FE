@@ -461,6 +461,10 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onLoaded={Platform.OS === "android" ? onReady : undefined}
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
+      // 축척 바는 **명시적으로 켠다** — 래퍼 스펙 기본값은 true지만 Android 실기에서
+      // `ScaleBarView`가 GONE으로 남아 있었다(뷰 계층 dump, MSG-601). 로고처럼 콘텐츠 패딩을
+      // 따라 시트 위로 올라온다. 두 플랫폼 모두 오른쪽 아래라 홈 화면이 컨트롤 묶음을 그 위로 띄운다.
+      isShowScaleBar
       mapPadding={
         bottomInset === undefined ? undefined : { bottom: bottomInset }
       }
