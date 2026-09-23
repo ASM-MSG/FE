@@ -13,13 +13,23 @@ import type { PreferencesEnvelope } from "../model/notification-toggle";
  * `renderHook` 대신 실제 `QueryClient` + `MutationObserver`로 훅과 **같은 옵션 객체**를
  * 구동한다 (reset-session-cache.test 선례). 네트워크는 fetch 스텁 한 곳에서만 가른다.
  *
- * 요청 URL·body를 단정하는 이유: 기준 2가 "5개 카테고리 전부에 어떤 값이 나가는가"를
+ * 요청 URL·body를 단정하는 이유: 기준 2가 "8개 카테고리 전부에 어떤 값이 나가는가"를
  * 규정하는 수용 기준 자체이기 때문이다(구현 세부가 아니다 — 서버에 마스터 스위치가 없어
  * FE의 합성 규칙이 곧 계약이다).
  */
 
 const API_BASE = "https://api.test.local";
-const CATEGORIES = ["BADGE", "HOTZONE", "REMIND", "VIDEO", "WEEKLY"] as const;
+// MSG-482: 서버 8종 — 친구(FRIEND)·근접 미션(MISSION_NEARBY)·행사(EVENT)가 빠져 있던 결함 고정
+const CATEGORIES = [
+  "BADGE",
+  "HOTZONE",
+  "REMIND",
+  "VIDEO",
+  "WEEKLY",
+  "FRIEND",
+  "MISSION_NEARBY",
+  "EVENT",
+] as const;
 
 const loadToggle = async () => {
   vi.stubEnv("EXPO_PUBLIC_API_BASE_URL", API_BASE);
@@ -103,14 +113,14 @@ afterEach(() => {
 });
 
 describe("알림 받기 토글 저장 (기준 2)", () => {
-  it("토글을 끄면 5개 카테고리 전부에 enabled:false PATCH가 발사된다 (기준 2)", async () => {
+  it("토글을 끄면 8개 카테고리 전부에 enabled:false PATCH가 발사된다 (기준 2, MSG-482 AC2)", async () => {
     const { observer, seed } = await loadToggle();
     seed([]);
     const received = stubFetch(() => preferencesResponse(false));
 
     await observer.mutate(false);
 
-    expect(received).toHaveLength(5);
+    expect(received).toHaveLength(8);
     expect(received.map((r) => categoryOf(r.pathname)).sort()).toEqual(
       [...CATEGORIES].sort(),
     );
@@ -125,14 +135,14 @@ describe("알림 받기 토글 저장 (기준 2)", () => {
     ).toBe(true);
   });
 
-  it("토글을 켜면 같은 5개 카테고리에 enabled:true PATCH가 발사된다 (기준 2)", async () => {
+  it("토글을 켜면 같은 8개 카테고리에 enabled:true PATCH가 발사된다 (기준 2)", async () => {
     const { observer, seed } = await loadToggle();
     seed(CATEGORIES.map((category) => ({ category, enabled: false })));
     const received = stubFetch(() => preferencesResponse(true));
 
     await observer.mutate(true);
 
-    expect(received).toHaveLength(5);
+    expect(received).toHaveLength(8);
     expect(received.every((r) => JSON.parse(r.body).enabled === true)).toBe(
       true,
     );
@@ -157,7 +167,7 @@ describe("낙관 전환과 성공 기록 (기준 3)", () => {
     expect(masterOf()).toBe(false);
     // 재조회가 있었다면 GET이 섞인다 — 5건 전부 PATCH여야 한다 (invalidate 금지)
     expect(received.every((r) => r.method === "PATCH")).toBe(true);
-    expect(received).toHaveLength(5);
+    expect(received).toHaveLength(8);
   });
 });
 
@@ -197,12 +207,12 @@ describe("연타 가드 (기준 6)", () => {
     });
 
     toggle(false);
-    await vi.waitFor(() => expect(received).toHaveLength(5));
+    await vi.waitFor(() => expect(received).toHaveLength(8));
     toggle(true);
     release();
-    await vi.waitFor(() => expect(received).toHaveLength(5));
+    await vi.waitFor(() => expect(received).toHaveLength(8));
 
-    expect(received).toHaveLength(5);
+    expect(received).toHaveLength(8);
     expect(received.every((r) => JSON.parse(r.body).enabled === false)).toBe(
       true,
     );
