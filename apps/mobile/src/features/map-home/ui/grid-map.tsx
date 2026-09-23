@@ -461,10 +461,6 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onLoaded={Platform.OS === "android" ? onReady : undefined}
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
-      // 축척 바는 iOS SDK가 오른쪽 아래에 두어 우리 컨트롤 묶음(+/−/내 위치)과 겹친다 —
-      // 내장 줌 컨트롤을 끈 화면에서는 함께 끈다(MSG-601 iOS 실측). Android는 왼쪽 아래라
-      // 안 겹치지만 두 플랫폼을 같게 둔다. 로고는 라이선스상 유지.
-      isShowScaleBar={showZoomControls}
       mapPadding={
         bottomInset === undefined ? undefined : { bottom: bottomInset }
       }
