@@ -60,5 +60,15 @@
     "tailwindcss": "^3.4.0",
     "typescript": "catalog:",
     "vitest": "^4.1.10"
+  },
+  "expo": {
+    "autolinking": {
+      "android": {
+        "exclude": [
+          "@react-native-firebase/app",
+          "@react-native-firebase/messaging"
+        ]
+      }
+    }
   }
 }
