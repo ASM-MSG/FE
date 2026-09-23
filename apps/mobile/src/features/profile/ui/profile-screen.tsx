@@ -12,7 +12,9 @@ import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
 import { formatProgressRate } from "../../dex/model/region-label";
 import { PermissionSettingsNotice } from "../../permissions/ui/permission-settings-notice";
+import { useUnreadCountQuery } from "../../notifications/api/use-unread-count-query";
 import { usePushRegistration } from "../../notifications/api/use-push-registration";
+import { unreadHint } from "../../notifications/model/inbox";
 import { useActivityQuery } from "../api/use-activity-query";
 import { useNotificationToggle } from "../api/use-notification-toggle";
 import { useProfileQuery } from "../api/use-profile-query";
@@ -74,6 +76,7 @@ export const ProfileScreen = () => {
   const activity = useActivityQuery();
   const notifications = useNotificationToggle();
   const push = usePushRegistration();
+  const unread = useUnreadCountQuery();
   const notificationNotice = resolveNotificationNotice({
     permission: push.permission,
     pushError: push.error,
@@ -163,6 +166,12 @@ export const ProfileScreen = () => {
 
           {/* 설정 (기준 1~6) — [MSG-448] "준비 중" 2행이 실제 목적지로 배선됐다 */}
           <ProfileSection title="설정">
+            {/* 알림함 (MSG-602) — 안읽음이 있으면 "새 알림 N개" 캡션 (PRD MSG-434 FR-6) */}
+            <SettingRow
+              label="알림함"
+              hint={unreadHint(unread.data)}
+              onPress={() => router.navigate("/profile/notifications")}
+            />
             <SettingRow
               label="위치정보 동의 관리"
               onPress={() => router.navigate("/profile/consent")}

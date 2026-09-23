@@ -21,6 +21,7 @@ export const PROTECTED_ROUTES = [
   "profile/blocks",
   "profile/consent",
   "profile/edit",
+  "profile/notifications",
   "profile/reports",
   "search",
   "terms/[docKey]",

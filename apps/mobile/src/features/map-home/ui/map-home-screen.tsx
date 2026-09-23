@@ -13,6 +13,8 @@ import type { PermissionState } from "../../../shared/permission-state";
 import { splashGate } from "../../../shared/splash";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useEventHome } from "../../event/api/use-event-home";
+import { useUnreadCountQuery } from "../../notifications/api/use-unread-count-query";
+import { hasUnread } from "../../notifications/model/inbox";
 import { EventChip } from "../../event/ui/event-chip";
 import { EventSheetSwitch } from "../../event/ui/event-sheet-switch";
 import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
@@ -100,6 +102,8 @@ const NAV_BAR_HEIGHT = 64;
 export const MapHomeScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // 홈 아바타 빨간 점 (MSG-602) — 화면·포그라운드 복귀 때 다시 센다
+  const unreadCount = useUnreadCountQuery();
   const mapRef = useRef<GridMapRef>(null);
   const sheetRef = useRef<HomeSheetRef>(null);
   // 검색 복귀 params (MSG-297 AC 3·10·11, MSG-578 D1 확장) — 검색 화면이 navigate로
@@ -524,6 +528,7 @@ export const MapHomeScreen = () => {
           onToggleTheme={handleToggleTheme}
           onOpenSearch={() => router.push("/search")}
           onOpenProfile={() => router.navigate("/profile")}
+          hasUnread={hasUnread(unreadCount.data)}
           chipsTrailing={eventChip}
         />
         {aggregation.isError && (

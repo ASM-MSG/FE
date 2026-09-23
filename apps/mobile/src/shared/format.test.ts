@@ -31,3 +31,17 @@ describe("formatRelativeTime (AC 5 — 최근 업로드 경과 시간)", () => {
     expect(formatRelativeTime("2026-08-04T12:00:00+09:00", now)).toBe("5분 전");
   });
 });
+
+describe("normalizeUtcIso (MSG-602 L6)", () => {
+  it("마커 없는 시각에 Z를 붙이고, 마커가 있거나 날짜만이면 그대로 둔다", async () => {
+    const { normalizeUtcIso } = await import("./format");
+    expect(normalizeUtcIso("2026-09-23T07:00:00")).toBe("2026-09-23T07:00:00Z");
+    expect(normalizeUtcIso("2026-09-23T07:00:00Z")).toBe(
+      "2026-09-23T07:00:00Z",
+    );
+    expect(normalizeUtcIso("2026-09-23T16:00:00+09:00")).toBe(
+      "2026-09-23T16:00:00+09:00",
+    );
+    expect(normalizeUtcIso("2026-09-23")).toBe("2026-09-23");
+  });
+});
