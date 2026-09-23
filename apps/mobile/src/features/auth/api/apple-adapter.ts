@@ -62,6 +62,10 @@ export const requestAppleCredential = async (): Promise<OidcCredential> => {
     idToken: credential.identityToken,
     nonce: raw,
     authorizationCode: credential.authorizationCode,
-    fullName: fullNameRetainer.remember(assembleFullName(credential.fullName)),
+    // `credential.user`는 애플이 이 앱에 대해 고정 발급하는 사용자 식별자 — 계정별 보관 키(codex P2)
+    fullName: fullNameRetainer.remember(
+      credential.user,
+      assembleFullName(credential.fullName),
+    ),
   };
 };

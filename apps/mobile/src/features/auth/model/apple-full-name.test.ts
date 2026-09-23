@@ -38,22 +38,33 @@ describe("assembleFullName (L1)", () => {
 });
 
 describe("createFullNameRetainer (L8)", () => {
-  it("첫 시도의 fullName을 기억해, 다음 시도에서 애플이 이름을 주지 않아도 이전 값을 돌려준다", () => {
+  it("첫 시도의 fullName을 기억해, 같은 사용자의 다음 시도에서 애플이 이름을 주지 않아도 이전 값을 돌려준다", () => {
     const retainer = createFullNameRetainer();
 
-    expect(retainer.remember("김필맵")).toBe("김필맵");
-    expect(retainer.remember(undefined)).toBe("김필맵");
+    expect(retainer.remember("user-a", "김필맵")).toBe("김필맵");
+    expect(retainer.remember("user-a", undefined)).toBe("김필맵");
   });
 
   it("새 값이 오면 그 값으로 갈아치운다", () => {
     const retainer = createFullNameRetainer();
-    retainer.remember("김필맵");
+    retainer.remember("user-a", "김필맵");
 
-    expect(retainer.remember("이필맵")).toBe("이필맵");
-    expect(retainer.remember(undefined)).toBe("이필맵");
+    expect(retainer.remember("user-a", "이필맵")).toBe("이필맵");
+    expect(retainer.remember("user-a", undefined)).toBe("이필맵");
+  });
+
+  it("다른 애플 사용자로 바뀌면 이전 사용자의 이름을 돌려주지 않는다 — 타인 이름 가입 차단 (codex P2)", () => {
+    const retainer = createFullNameRetainer();
+    retainer.remember("user-a", "김필맵");
+
+    expect(retainer.remember("user-b", undefined)).toBe(undefined);
+    // 원 사용자로 돌아와도 키가 바뀐 적 없으니 그대로 복원된다
+    expect(retainer.remember("user-a", undefined)).toBe("김필맵");
   });
 
   it("아무것도 기억한 적이 없으면 undefined다 (경계)", () => {
-    expect(createFullNameRetainer().remember(undefined)).toBe(undefined);
+    expect(createFullNameRetainer().remember("user-a", undefined)).toBe(
+      undefined,
+    );
   });
 });

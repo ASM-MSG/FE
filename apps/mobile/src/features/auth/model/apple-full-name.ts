@@ -28,13 +28,17 @@ export const assembleFullName = (
  * 첫 시도의 이름을 프로세스 동안 들고 있다가, 서버 오류 뒤 재시도에서 애플이 이름을 주지 않아도
  * 다시 실어 보낸다(BE 권장 — 없으면 닉네임이 `필맵러XXXX`로 만들어진다). 성공 후 비우지 않는다:
  * 기존 계정에 온 fullName은 서버가 무시한다(A7).
+ *
+ * **애플 사용자 식별자(`credential.user`)별로 묶는다** (codex P2) — 같은 프로세스에서 다른 애플
+ * 계정으로 갈아타면 이전 사용자의 이름이 새 계정의 닉네임으로 가입되는 경로가 생긴다. 키가 다르면
+ * 보관값을 버리고 새 키로 시작한다.
  */
 export const createFullNameRetainer = () => {
-  let retained: string | undefined;
+  let retained: { user: string; name: string } | undefined;
   return {
-    remember: (fresh: string | undefined): string | undefined => {
-      if (fresh !== undefined) retained = fresh;
-      return retained;
+    remember: (user: string, fresh: string | undefined): string | undefined => {
+      if (fresh !== undefined) retained = { user, name: fresh };
+      return retained?.user === user ? retained.name : undefined;
     },
   };
 };
