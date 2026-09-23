@@ -5,6 +5,7 @@ import { SheetScrollView } from "../../map-home/ui/sheet-scroll-view";
 import { SheetStatusView } from "../../map-home/ui/sheet-status-view";
 import type { EventHome, EventOverview } from "../api/use-event-home";
 import { EventLocationRow } from "./event-location-row";
+import { EventNotificationRow } from "./event-notification-row";
 import { EventStatusBadge } from "./event-status-badge";
 
 /**
@@ -54,6 +55,14 @@ export const EventOverviewSheetContent = ({
             </View>
           )}
         </View>
+
+        {/* 행사 알림 토글 (MSG-603) — 예정·진행 중 회차에만 */}
+        {overview.notification !== null && (
+          <EventNotificationRow
+            occurrenceId={overview.occurrenceId}
+            view={overview.notification}
+          />
+        )}
 
         <View className="gap-xs">
           <Text className="text-fm-body-strong text-foreground">

@@ -11214,16 +11214,16 @@
       ]
     },
     {
-      "id": "4a14652618aa7826",
+      "id": "f5206db246dd6014",
       "note": "consolidate `view` — 2 copies",
       "members": [
         {
-          "id": "cd7ad8b013b9b219",
+          "id": "817df21375d7e787",
           "source_digest": "fnv1a64:a80c69c9eb057d4c",
           "file": "apps/mobile/src/features/event/ui/event-overview-sheet-content.tsx",
           "lang": "typescript",
-          "start_line": 49,
-          "end_line": 54,
+          "start_line": 50,
+          "end_line": 55,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -20394,8 +20394,8 @@
       ]
     },
     {
-      "id": "20d2226974c62ed7",
-      "note": "consolidate `view` — 15 copies",
+      "id": "0893768bd48981b2",
+      "note": "consolidate `view` — 16 copies",
       "members": [
         {
           "id": "8408856b374397ef",
@@ -20514,6 +20514,17 @@
           "lang": "typescript",
           "start_line": 69,
           "end_line": 74,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "b7a62201adef51a6",
+          "source_digest": "fnv1a64:c406ca9f023f5ec3",
+          "file": "apps/mobile/src/features/event/ui/event-notification-row.tsx",
+          "lang": "typescript",
+          "start_line": 28,
+          "end_line": 33,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -21779,16 +21790,16 @@
       ]
     },
     {
-      "id": "f4745dbdbf0e1495",
+      "id": "d648b80eba7a2b73",
       "note": "consolidate `view` — 2 copies",
       "members": [
         {
-          "id": "a5b8d6f50b166175",
+          "id": "6961ca2a2215aa23",
           "source_digest": "fnv1a64:4d6aaee62be74c0c",
           "file": "apps/mobile/src/features/event/ui/event-overview-sheet-content.tsx",
           "lang": "typescript",
-          "start_line": 72,
-          "end_line": 79,
+          "start_line": 81,
+          "end_line": 88,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
