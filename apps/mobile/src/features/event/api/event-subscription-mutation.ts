@@ -1,6 +1,6 @@
 import {
-  useIsMutating,
   useMutation,
+  useMutationState,
   useQueryClient,
   type QueryClient,
   type UseMutationOptions,
@@ -43,6 +43,10 @@ const nextSeq = (occurrenceId: number): number => {
 };
 const isLatest = (occurrenceId: number, seq: number): boolean =>
   latestSeq.get(occurrenceId) === seq;
+/** 마지막 요청이 끝나면 항목을 지운다 — 세션 동안 만진 회차마다 쌓이지 않게 (PR #159 리뷰) */
+const releaseSeq = (occurrenceId: number, seq: number): void => {
+  if (isLatest(occurrenceId, seq)) latestSeq.delete(occurrenceId);
+};
 
 /** 상세 봉투의 notificationOn만 기록 — 캐시가 없으면(시트 열기 전) 아무것도 하지 않는다 */
 const writeNotificationOn = (
@@ -116,16 +120,29 @@ export const eventSubscriptionMutationOptions = (
     )
       writeNotificationOn(queryClient, occurrenceId, context.previous);
   },
+  onSettled: (_data, _error, { occurrenceId }, context) => {
+    if (context !== undefined) releaseSeq(occurrenceId, context.seq);
+  },
 });
 
-/** 행 훅 — 진행 중 표시는 같은 회차 mutation 전부를 센다(재마운트에도 유지, codex P2) */
+/**
+ * 행 훅 — `isPending`·`isError`를 이 컴포넌트의 `useMutation` 인스턴스가 아니라 **같은 회차
+ * mutationKey의 최신 mutation**에서 읽는다(PR #159 리뷰). 위치 상세에 들어갔다 돌아오면 행이
+ * 재마운트돼 인스턴스 로컬 상태가 초기화되는데, 그 사이 끝난 옛 요청의 실패 안내와 진행 중 표시가
+ * 사라지면 안 된다. `useMutationState`는 MutationCache 삽입 순이라 마지막 원소가 최신 요청이다.
+ */
 export const useEventSubscription = (occurrenceId: number) => {
   const queryClient = useQueryClient();
   const mutation = useMutation(
     eventSubscriptionMutationOptions(queryClient, occurrenceId),
   );
-  const inFlight = useIsMutating({
-    mutationKey: eventSubscriptionMutationKey(occurrenceId),
+  const statuses = useMutationState({
+    filters: { mutationKey: eventSubscriptionMutationKey(occurrenceId) },
+    select: (m) => m.state.status,
   });
-  return { ...mutation, isPending: inFlight > 0 };
+  return {
+    mutate: mutation.mutate,
+    isPending: statuses.includes("pending"),
+    isError: statuses.at(-1) === "error",
+  };
 };
