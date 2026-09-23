@@ -2720,7 +2720,7 @@
       ]
     },
     {
-      "id": "b810bee9e259b979",
+      "id": "3f9ddac746788b65",
       "note": "consolidate `view` — 23 copies",
       "members": [
         {
@@ -2878,12 +2878,12 @@
           "is_fragment": false
         },
         {
-          "id": "004d1bd3cf337313",
+          "id": "66639795074a8c3f",
           "source_digest": "fnv1a64:375873ad3f9e31b6",
           "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
           "lang": "typescript",
-          "start_line": 180,
-          "end_line": 184,
+          "start_line": 182,
+          "end_line": 186,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -7657,16 +7657,16 @@
       ]
     },
     {
-      "id": "5a132aeb83b954a5",
+      "id": "6d5461c11a24bcc8",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (12 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
         {
-          "id": "85007647c1b17d5e",
-          "source_digest": "fnv1a64:2588a1ff0c693e06",
+          "id": "7c900a077b534caf",
+          "source_digest": "fnv1a64:c6eb23da6eeae88c",
           "file": "apps/mobile/src/features/ai-route/ui/ai-route-screen.tsx",
           "lang": "typescript",
           "start_line": 1,
-          "end_line": 304,
+          "end_line": 307,
           "kind": "Block",
           "is_fragment": false
         },
@@ -8597,7 +8597,7 @@
       ]
     },
     {
-      "id": "66f94b5d581960d7",
+      "id": "2a5860f1d411b29f",
       "note": "repeated across 3 directories — extract a shared abstraction",
       "members": [
         {
@@ -8634,12 +8634,12 @@
           "is_fragment": false
         },
         {
-          "id": "60c5146e477d864c",
+          "id": "4cefbf3a068fe0fc",
           "source_digest": "fnv1a64:f15bf3548a8d1f62",
           "file": "apps/mobile/src/features/map-home/ui/grid-map.tsx",
           "lang": "typescript",
-          "start_line": 211,
-          "end_line": 211,
+          "start_line": 255,
+          "end_line": 255,
           "kind": "Function",
           "name": "cellKey",
           "is_fragment": false
@@ -19975,16 +19975,16 @@
       ]
     },
     {
-      "id": "61824a7dabf154a0",
+      "id": "fedab7ac07642234",
       "note": "duplicated across 2 directories — consolidate one shared interface/protocol contract",
       "members": [
         {
-          "id": "24f6cae7b8eb81b4",
-          "source_digest": "fnv1a64:53f71285f1820f0a",
+          "id": "4a23c903e63fbe00",
+          "source_digest": "fnv1a64:68fa5678396373bf",
           "file": "apps/mobile/src/features/map-home/ui/grid-map.tsx",
           "lang": "typescript",
-          "start_line": 128,
-          "end_line": 225,
+          "start_line": 136,
+          "end_line": 245,
           "kind": "Class",
           "name": "GridMapProps",
           "is_fragment": false
@@ -22156,16 +22156,16 @@
       ]
     },
     {
-      "id": "e1627a800d7ef9da",
+      "id": "879be8a79aebe6aa",
       "note": "consolidate `view` — 4 copies",
       "members": [
         {
-          "id": "b2ad4ea2108a065e",
+          "id": "68fc9e881d0f341e",
           "source_digest": "fnv1a64:3d4963c6a683fee8",
           "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
           "lang": "typescript",
-          "start_line": 126,
-          "end_line": 141,
+          "start_line": 128,
+          "end_line": 143,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -24735,7 +24735,7 @@
       ]
     },
     {
-      "id": "94d7bf43a423a2a4",
+      "id": "0c571d6fb90ee724",
       "note": "consolidate `pressable` — 6 copies",
       "members": [
         {
@@ -24772,12 +24772,12 @@
           "is_fragment": false
         },
         {
-          "id": "860bae0ea704d9f0",
+          "id": "935afda7483fb370",
           "source_digest": "fnv1a64:b8ed2e12b39cbff4",
           "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
           "lang": "typescript",
-          "start_line": 166,
-          "end_line": 173,
+          "start_line": 168,
+          "end_line": 175,
           "kind": "Block",
           "name": "pressable",
           "is_fragment": false

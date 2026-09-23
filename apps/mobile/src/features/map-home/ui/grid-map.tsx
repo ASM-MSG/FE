@@ -24,6 +24,7 @@ import {
 } from "../../../entities/cell/model/grid";
 import { cellIdFor } from "../../../entities/cell/model/cell-id";
 import { buildDashedRectOutline } from "../model/dashed-outline";
+import { MIN_ZOOM } from "../model/map-scale";
 import { steppedZoom } from "../model/zoom-step";
 import { buildHatchSegments } from "../model/hatch-pattern";
 import {
@@ -139,6 +140,12 @@ interface GridMapProps {
   showCellGrid?: boolean;
   /** SDK 기본 줌 컨트롤(+/−) 표시 여부 (기본 true — 홈 불변). 상세 지도는 Figma에 없어 숨긴다 (MSG-296 검증 재작업 2, 핀치 줌은 유지) */
   showZoomControls?: boolean;
+  /**
+   * 축척 바 표시 — 기본 true(명시. 래퍼 스펙 기본값도 true지만 Android 실기에서 `ScaleBarView`가
+   * GONE으로 남아 있어 prop을 항상 보낸다, MSG-601). 두 SDK 모두 콘텐츠 영역 **오른쪽 아래**에
+   * 그리므로 내장 줌 컨트롤(같은 모서리)을 켠 채 두는 화면은 겹침을 피해 끈다(PR #156 리뷰).
+   */
+  showScaleBar?: boolean;
   /**
    * 지도 콘텐츠 하단 인셋(px) → `mapPadding.bottom` — 바텀 내비·시트가 덮는 높이 (MSG-601 iOS 환류).
    * `panTo`·`fitBounds`·`zoomBy`의 중심과 SDK 로고·축척이 보이는 영역 기준이 된다. 카메라 이벤트
@@ -289,6 +296,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     initialZoom = DEFAULT_ZOOM,
     showCellGrid = true,
     showZoomControls = true,
+    showScaleBar = true,
     bottomInset,
     minZoom,
     onCellTap,
@@ -438,7 +446,8 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       mapRef.current?.animateCameraTo({
         latitude: camera.lat,
         longitude: camera.lng,
-        zoom: steppedZoom(camera.zoom, delta, minZoom ?? 0),
+        // minZoom 미지정 = "하한 없음(SDK 기본)" — 0이 아니라 축척 표 하한(SDK 유효 범위)으로 (PR #156 리뷰)
+        zoom: steppedZoom(camera.zoom, delta, minZoom ?? MIN_ZOOM),
         duration: 300,
       });
     },
@@ -461,10 +470,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onLoaded={Platform.OS === "android" ? onReady : undefined}
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
-      // 축척 바는 **명시적으로 켠다** — 래퍼 스펙 기본값은 true지만 Android 실기에서
-      // `ScaleBarView`가 GONE으로 남아 있었다(뷰 계층 dump, MSG-601). 로고처럼 콘텐츠 패딩을
-      // 따라 시트 위로 올라온다. 두 플랫폼 모두 오른쪽 아래라 홈 화면이 컨트롤 묶음을 그 위로 띄운다.
-      isShowScaleBar
+      isShowScaleBar={showScaleBar}
       mapPadding={
         bottomInset === undefined ? undefined : { bottom: bottomInset }
       }
