@@ -11,8 +11,9 @@ import {
 } from "./notification-toggle";
 
 /**
- * 템플릿 ① 순수 로직 — 알림 5종 봉투 ↔ `알림 받기` 단일 토글 파생 (기준 2·3·4·5).
- * 서버에 마스터 스위치가 없어 FE가 5종을 합성한다(스펙 Q1 결정: 표시=some / 저장=일괄).
+ * 템플릿 ① 순수 로직 — 알림 카테고리 8종 봉투 ↔ `알림 받기` 단일 토글 파생 (기준 2·3·4·5).
+ * 서버에 마스터 스위치가 없어 FE가 전 종을 합성한다(스펙 Q1 결정: 표시=some / 저장=일괄).
+ * MSG-482: 5종 리터럴이 서버 8종(FRIEND·MISSION_NEARBY·EVENT 추가)에 뒤처져 있던 결함을 고정한다.
  */
 
 const envelope = (
@@ -23,7 +24,7 @@ const envelope = (
   data: { preferences },
 });
 
-describe("readPreferences — 봉투에서 5종 수신 상태를 읽는다 (기준 4)", () => {
+describe("readPreferences — 봉투에서 8종 수신 상태를 읽는다 (기준 4)", () => {
   it("저장 행이 없는 카테고리는 true로 병합된다 — opt-out 기본 (기준 4)", () => {
     expect(readPreferences(envelope([]))).toEqual({
       BADGE: true,
@@ -31,7 +32,23 @@ describe("readPreferences — 봉투에서 5종 수신 상태를 읽는다 (기�
       REMIND: true,
       VIDEO: true,
       WEEKLY: true,
+      FRIEND: true,
+      MISSION_NEARBY: true,
+      EVENT: true,
     });
+  });
+
+  it("설정 대상 카테고리는 서버 8종 그대로다 — MSG-426의 5종에 FRIEND·MISSION_NEARBY·EVENT가 더해진다 (MSG-482 AC1)", () => {
+    expect(NOTIFICATION_CATEGORIES).toEqual([
+      "BADGE",
+      "HOTZONE",
+      "REMIND",
+      "VIDEO",
+      "WEEKLY",
+      "FRIEND",
+      "MISSION_NEARBY",
+      "EVENT",
+    ]);
   });
 
   it("저장된 off 행은 false로, 나머지는 true로 읽는다 (기준 4)", () => {
@@ -48,8 +65,8 @@ describe("readPreferences — 봉투에서 5종 수신 상태를 읽는다 (기�
   });
 });
 
-describe("deriveMasterToggle — 5종에서 단일 토글 표시값을 파생한다 (기준 3·4)", () => {
-  it("5종 전부 off면 토글이 꺼짐으로 보인다 (기준 4)", () => {
+describe("deriveMasterToggle — 8종에서 단일 토글 표시값을 파생한다 (기준 3·4)", () => {
+  it("8종 전부 off면 토글이 꺼짐으로 보인다 (기준 4)", () => {
     const allOff = readPreferences(
       envelope(
         NOTIFICATION_CATEGORIES.map((category) => ({
@@ -82,7 +99,7 @@ describe("deriveMasterToggle — 5종에서 단일 토글 표시값을 파생한
 });
 
 describe("applyMasterToggle — 낙관 전환 값을 봉투에 기록한다 (기준 3)", () => {
-  it("5종 전부를 같은 값으로 기록한다 — 저장 행이 없던 카테고리도 채운다 (기준 2·3)", () => {
+  it("8종 전부를 같은 값으로 기록한다 — 저장 행이 없던 카테고리도 채운다 (기준 2·3)", () => {
     const next = applyMasterToggle(
       envelope([{ category: "BADGE", enabled: true }]),
       false,
@@ -94,6 +111,9 @@ describe("applyMasterToggle — 낙관 전환 값을 봉투에 기록한다 (기
       REMIND: false,
       VIDEO: false,
       WEEKLY: false,
+      FRIEND: false,
+      MISSION_NEARBY: false,
+      EVENT: false,
     });
   });
 
