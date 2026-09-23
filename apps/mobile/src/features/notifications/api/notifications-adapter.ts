@@ -21,6 +21,13 @@ let modulePromise: Promise<NotificationsModule> | null = null;
 const loadNotifications = (): Promise<NotificationsModule> =>
   (modulePromise ??= import("expo-notifications"));
 
+/** iOS 전용 — 같은 이유(네이티브 부재 빌드 내성)로 지연 로드하고 같은 방식으로 캐시한다 (MSG-604). */
+type MessagingModule = typeof import("@react-native-firebase/messaging");
+
+let messagingModulePromise: Promise<MessagingModule> | null = null;
+const loadMessaging = (): Promise<MessagingModule> =>
+  (messagingModulePromise ??= import("@react-native-firebase/messaging"));
+
 /**
  * 포그라운드에서도 알림 배너를 띄운다 — 앱을 보고 있을 때 알림을 놓치지 않게.
  * 최초 1회만 등록한다. 탭 라우팅·콜드 스타트 조회는 MSG-567에서 삭제됐다(푸시에 `data` 없음).
@@ -72,8 +79,7 @@ export const requestPermission = async (): Promise<PushPermissionStatus> => {
  */
 export const readDevicePushToken = async (): Promise<string> => {
   if (Platform.OS === "ios") {
-    const { getMessaging, getToken, setAPNSToken } =
-      await import("@react-native-firebase/messaging");
+    const { getMessaging, getToken, setAPNSToken } = await loadMessaging();
     try {
       // APNs 등록은 expo-notifications의 AppDelegate 구독자가 받는다(검증된 경로). RNFirebase 자체
       // 등록(`registerDeviceForRemoteMessages`)은 그 델리게이트 콜백을 못 받아 타임아웃됐다(실측).
@@ -84,7 +90,9 @@ export const readDevicePushToken = async (): Promise<string> => {
       return await getToken(messaging);
     } catch (error) {
       // 호출부는 실패를 "failed"로만 접는다(설계) — 원인은 개발 빌드에서만 남긴다.
-      if (__DEV__) console.warn("[push] iOS FCM 토큰 취득 실패", error);
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        console.warn("[push] iOS FCM 토큰 취득 실패", error);
+      }
       throw error;
     }
   }
