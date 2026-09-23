@@ -32,6 +32,10 @@ import {
   viewerCountLabel,
   type EventLocationCardView,
 } from "../model/event-overview";
+import {
+  eventSubscriptionView,
+  type EventSubscriptionView,
+} from "../model/event-subscription";
 import { formatEventPeriod } from "../model/event-period";
 import { eventRoomMode } from "../model/event-room-mode";
 import {
@@ -85,6 +89,8 @@ export interface EventOverview {
   cards: EventLocationCardView[];
   /** `● N명 보는 중` — 0은 값, 조회 실패·캐시 장애(null)는 미표시 (MSG-560 D9) */
   viewerLabel: string | null;
+  /** 행사 알림 토글 재료 (MSG-603) — 종료 회차·미도착은 null(행 없음) */
+  notification: EventSubscriptionView | null;
   /** loading / error / list — 상세·위치가 둘 다 도착해야 list (D11) */
   state: SheetState;
   retry: () => void;
@@ -324,6 +330,7 @@ export const useEventHome = ({
       periodLabel,
       cards: toLocationCardViews(room.locations),
       viewerLabel: viewerCountLabel(viewerCount),
+      notification: eventSubscriptionView(detail),
       // 실패를 로딩으로 위장하지 않는다 — 어느 조회든 실패면 재시도 행 (D11)
       state: room.isError
         ? "error"
