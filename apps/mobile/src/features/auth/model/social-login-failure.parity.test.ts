@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { developCodeOf, toKakaoLoginFailure } from "./kakao-login-failure";
+import { developCodeOf, toKakaoLoginFailure } from "./social-login-failure";
 
 /**
  * 기준 2: 서버 실패 해석은 웹 MSG-325 원본과 동등해야 한다 (parity).

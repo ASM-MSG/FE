@@ -25,6 +25,18 @@ import {
  */
 export const GRID_MIN_ZOOM = 16;
 
+/**
+ * 한 번에 게시할 셀 수 상한 — 줌 게이트의 **두 번째 방어선** (MSG-601 iOS 실기 환류).
+ * 줌 게이트만으로는 부족하다: iOS 카메라 이벤트에서 `zoom`이 비어 오면 호출부가
+ * `initialZoom`(≥16)으로 대체해 게이트가 열리고, 줌아웃된 광역 뷰포트(시뮬레이터 기본
+ * 위치가 샌프란시스코라 세계 지도 축척까지 빠졌다)에 100m 셀 수백만 개를 만들려다
+ * JS 스레드가 CPU 100%로 13분 넘게 멈춰 화면 전체가 터치를 잃었다.
+ * 값: 줌 16 폰 뷰포트(≈1.2×2.5km)가 약 300셀, 태블릿·줌 16 하한에서도 1000 미만이라
+ * 2000이면 정상 경로는 절대 걸리지 않고 광역만 걸린다. 넘으면 격자를 숨긴다(빈 배열) —
+ * 줌 게이트와 같은 결과라 화면 분기가 늘지 않는다.
+ */
+export const MAX_VISIBLE_CELLS = 2000;
+
 /** 지도에 게시할 셀 한 칸 — 순수 데이터(id + Bounds), GridMap prop 계약 */
 export interface VisibleCell {
   id: string;
@@ -51,6 +63,9 @@ export const buildVisibleCells = (
   );
   const rowTo =
     Math.ceil((viewport.ne.lat - GRID_ORIGIN.lat) / GRID_LAT_STEP) - 1;
+
+  const count = (rowTo - rowFrom + 1) * (colTo - colFrom + 1);
+  if (count > MAX_VISIBLE_CELLS) return [];
 
   const cells: VisibleCell[] = [];
   for (let row = rowFrom; row <= rowTo; row++) {

@@ -94,6 +94,8 @@ export const GridDetailScreen = ({ cellId }: GridDetailScreenProps) => {
           initialZoom={DETAIL_ZOOM}
           showCellGrid={false}
           showZoomControls={false}
+          // 44% 높이 지도의 하단을 시트가 덮어 축척 바가 보이지 않는다 — MSG-601 이전과 같게 끈다
+          showScaleBar={false}
           highlightCell={detail.index}
         />
       </View>

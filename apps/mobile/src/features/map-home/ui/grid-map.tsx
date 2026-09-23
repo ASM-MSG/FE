@@ -24,6 +24,8 @@ import {
 } from "../../../entities/cell/model/grid";
 import { cellIdFor } from "../../../entities/cell/model/cell-id";
 import { buildDashedRectOutline } from "../model/dashed-outline";
+import { MIN_ZOOM } from "../model/map-scale";
+import { steppedZoom } from "../model/zoom-step";
 import { buildHatchSegments } from "../model/hatch-pattern";
 import {
   GRID_MIN_ZOOM,
@@ -123,6 +125,12 @@ export interface GridMapRef {
   focusTo: (center: LatLng) => void;
   /** 구역 사각형이 화면에 들어오게 이동 (MSG-578 D4) — 웹 `MapCanvas.fitBounds` 대응, 패딩 없음 */
   fitBounds: (bounds: Bounds) => void;
+  /**
+   * 중심을 유지한 채 줌을 한 단 올리거나 내린다 — 홈 +/- 버튼 (MSG-601 iOS 환류).
+   * SDK 내장 줌 컨트롤(`showZoomControls`) 대체: 내장 컨트롤은 시트를 몰라 iOS에서 세로 중앙에
+   * 떠 있고 시트가 절반이면 뒤로 숨는다. 클램프는 `steppedZoom`(minZoom~21).
+   */
+  zoomBy: (delta: 1 | -1) => void;
 }
 
 interface GridMapProps {
@@ -132,6 +140,18 @@ interface GridMapProps {
   showCellGrid?: boolean;
   /** SDK 기본 줌 컨트롤(+/−) 표시 여부 (기본 true — 홈 불변). 상세 지도는 Figma에 없어 숨긴다 (MSG-296 검증 재작업 2, 핀치 줌은 유지) */
   showZoomControls?: boolean;
+  /**
+   * 축척 바 표시 — 기본 true(명시. 래퍼 스펙 기본값도 true지만 Android 실기에서 `ScaleBarView`가
+   * GONE으로 남아 있어 prop을 항상 보낸다, MSG-601). 두 SDK 모두 콘텐츠 영역 **오른쪽 아래**에
+   * 그리므로 내장 줌 컨트롤(같은 모서리)을 켠 채 두는 화면은 겹침을 피해 끈다(PR #156 리뷰).
+   */
+  showScaleBar?: boolean;
+  /**
+   * 지도 콘텐츠 하단 인셋(px) → `mapPadding.bottom` — 바텀 내비·시트가 덮는 높이 (MSG-601 iOS 환류).
+   * `panTo`·`fitBounds`·`zoomBy`의 중심과 SDK 로고·축척이 보이는 영역 기준이 된다. 카메라 이벤트
+   * region은 `coveringBounds`(뷰 전체)라 격자·조회 bbox는 불변.
+   */
+  bottomInset?: number;
   /**
    * 카메라 줌 하한 (MSG-428 S6) — 핀치 아웃·SDK 줌 컨트롤 어느 쪽으로도 이보다 넓게
    * 나가지 못한다. **기본은 하한 없음**(SDK 기본): 하한은 집계 마커 사다리를 가진 지도
@@ -276,6 +296,8 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     initialZoom = DEFAULT_ZOOM,
     showCellGrid = true,
     showZoomControls = true,
+    showScaleBar = true,
+    bottomInset,
     minZoom,
     onCellTap,
     highlightCell,
@@ -315,6 +337,10 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
    * (드래그 중 매 프레임 발사 방지 — 요구 5).
    */
   const viewportSeededRef = useRef(false);
+  /** 마지막 카메라(중심·줌) — `zoomBy`가 중심을 유지하려고 읽는다. 첫 이벤트 전에는 초기값 */
+  const cameraRef = useRef<{ lat: number; lng: number; zoom: number } | null>(
+    null,
+  );
 
   /** 단일 `route`(AI 추천)와 `routes`(홈 경로추천)를 한 목록으로 — 렌더 경로는 하나다 */
   const routeList = [
@@ -411,6 +437,20 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         duration: 500,
       });
     },
+    zoomBy: (delta) => {
+      const camera = cameraRef.current ?? {
+        lat: initialCenter.lat,
+        lng: initialCenter.lng,
+        zoom: initialZoom,
+      };
+      mapRef.current?.animateCameraTo({
+        latitude: camera.lat,
+        longitude: camera.lng,
+        // minZoom 미지정 = "하한 없음(SDK 기본)" — 0이 아니라 축척 표 하한(SDK 유효 범위)으로 (PR #156 리뷰)
+        zoom: steppedZoom(camera.zoom, delta, minZoom ?? MIN_ZOOM),
+        duration: 300,
+      });
+    },
   }));
 
   return (
@@ -430,6 +470,10 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onLoaded={Platform.OS === "android" ? onReady : undefined}
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
+      isShowScaleBar={showScaleBar}
+      mapPadding={
+        bottomInset === undefined ? undefined : { bottom: bottomInset }
+      }
       minZoom={minZoom}
       locationOverlay={
         currentLocation === undefined
@@ -447,6 +491,11 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         console.warn("[GridMap] custom style load failed:", message);
       }}
       onCameraChanged={(camera) => {
+        cameraRef.current = {
+          lat: camera.latitude,
+          lng: camera.longitude,
+          zoom: camera.zoom ?? initialZoom,
+        };
         setBelowGridZoom(isBelowGridZoom(camera.zoom ?? initialZoom));
         if (onGestureCameraChange && isGestureCameraChange(camera.reason)) {
           onGestureCameraChange();

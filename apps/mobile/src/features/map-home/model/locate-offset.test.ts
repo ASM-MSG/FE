@@ -4,7 +4,11 @@ import {
   sheetStagePositions,
   type SheetStage,
 } from "./sheet-snap";
-import { LOCATE_GAP, locateBottomOffset } from "./locate-offset";
+import {
+  LOCATE_GAP,
+  locateBottomOffset,
+  mapBottomInset,
+} from "./locate-offset";
 
 /**
  * L11: 내 위치 버튼의 하단 오프셋이 시트 1·2·3단계 각각에서 그 단계의 시트 상단보다
@@ -47,6 +51,31 @@ describe("locateBottomOffset — 시트 단계별 내 위치 버튼 위치 (L11)
   it("컨테이너 미측정(높이 0)이면 피크 높이 기준값으로 시작한다 — 진입 첫 프레임에 버튼이 바닥으로 튀지 않는다", () => {
     expect(locateBottomOffset(2, 0, BOTTOM_OFFSET)).toBe(
       BOTTOM_OFFSET + PEEK_HEIGHT + LOCATE_GAP,
+    );
+  });
+});
+
+describe("mapBottomInset — 시트 위 보이는 영역 기준 지도 하단 인셋 (MSG-601 환류)", () => {
+  it("2·3단계는 바텀 내비 + 그 단계의 시트 노출 높이다", () => {
+    for (const stage of [2, 3] as const) {
+      expect(mapBottomInset(stage, CONTAINER_HEIGHT, BOTTOM_OFFSET)).toBe(
+        sheetTopFromScreenBottom(stage),
+      );
+    }
+  });
+
+  it("1단계(전체 확장)는 2단계 값으로 캡한다 — 콘텐츠 영역이 10%만 남는 인셋을 SDK에 넘기지 않는다", () => {
+    expect(mapBottomInset(1, CONTAINER_HEIGHT, BOTTOM_OFFSET)).toBe(
+      mapBottomInset(2, CONTAINER_HEIGHT, BOTTOM_OFFSET),
+    );
+  });
+
+  it("4단계(숨김)와 미측정(높이 0)은 피크 기준값이다 — 내 위치 버튼과 같은 규칙", () => {
+    expect(mapBottomInset(4, CONTAINER_HEIGHT, BOTTOM_OFFSET)).toBe(
+      mapBottomInset(3, CONTAINER_HEIGHT, BOTTOM_OFFSET),
+    );
+    expect(mapBottomInset(2, 0, BOTTOM_OFFSET)).toBe(
+      BOTTOM_OFFSET + PEEK_HEIGHT,
     );
   });
 });

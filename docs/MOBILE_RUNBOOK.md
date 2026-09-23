@@ -4,7 +4,7 @@
 
 > **왜 이 문서가 있나:** 하네스의 실동작 검증이 웹 dev 서버 기준으로만 규정돼 있어, 모바일 티켓(MSG-419~431)이 정적 게이트(vitest·typecheck·lint)만으로 통과해 왔다. 2026-08-20 실기 시도에서 함정 6가지에 순차로 걸렸고 전부 재발할 문제라 절차로 굳혔다. 검증 스킬에서의 진입점은 `.claude/skills/page-verification/SKILL.md` 절차 3-B.
 
-> **범위:** Android만 다룬다. iOS 실기는 현재 개발 환경에 Xcode 커맨드라인 도구가 없어 제외 — 필요해지면 별도 티켓.
+> **범위:** Android만 다룬다. iOS 실기 절차는 아직 없다 — 2026-09-23(MSG-601) 실측으로 이 Mac에 Xcode 26.6·iPhone 17 시뮬레이터·CocoaPods 1.17이 있으나 `ios/`는 미생성(gitignore)이고, `usesAppleSignIn` 엔타이틀먼트는 유료 개발자 팀 서명이 필요하다. best-effort 절차는 `docs/spec/MSG-601.md` "iOS 검증 절차" 참조, 정식 런북화는 별도 티켓.
 
 **Expo Go로는 이 앱이 뜨지 않는다.** 네이버 지도·expo-notifications 등 네이티브 모듈을 쓰므로 **dev client**(직접 빌드한 debug APK)가 필요하다. `expo start`를 플래그 없이 띄우면 Expo Go 경로로 안내되고 앱은 즉시 강제 종료된다 — 항상 `--dev-client`.
 

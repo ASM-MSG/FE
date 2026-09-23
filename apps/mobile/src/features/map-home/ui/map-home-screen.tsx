@@ -34,7 +34,7 @@ import {
   deriveSheetState,
 } from "../model/home-sheet-state";
 import { parseHomeFocus } from "../model/home-focus";
-import { locateBottomOffset } from "../model/locate-offset";
+import { locateBottomOffset, mapBottomInset } from "../model/locate-offset";
 import { nextTracking } from "../model/location-overlay";
 import {
   setSelectedMissionId,
@@ -503,6 +503,13 @@ export const MapHomeScreen = () => {
               clearSelectedRegion();
             }}
             currentLocation={location}
+            // SDK 내장 +/-는 끄고 아래 버튼 묶음으로 — 시트를 따라가게 (MSG-601 iOS 환류)
+            showZoomControls={false}
+            bottomInset={mapBottomInset(
+              sheetLayout.stage,
+              sheetLayout.containerHeight,
+              bottomOffset,
+            )}
             onGestureCameraChange={() =>
               setTracking((prev) =>
                 nextTracking(prev, { kind: "camera", reason: "Gesture" }),
@@ -523,11 +530,15 @@ export const MapHomeScreen = () => {
           <ClusterErrorNotice onRetry={aggregation.retry} />
         )}
 
-        {/* 내 위치 — 시트 단계에 따라 함께 올라가 가려지지 않는다.
+        {/* 지도 컨트롤 묶음(+ / − / 내 위치) — 시트 단계에 따라 함께 올라가 가려지지 않는다.
+            +/-는 SDK 내장 컨트롤 대신 우리 버튼(MSG-601 iOS 환류 — 내장은 시트를 모른다).
+            SDK 축척 바는 두 플랫폼 모두 콘텐츠 영역 **오른쪽** 아래에 그려 이 묶음과 겹치므로
+            축척 바 높이·SDK 하단 마진만큼(`pb-xxl` 48 — 실측 바 상단이 콘텐츠 바닥 위 약 50pt) 띄운다
+            (축척은 사용자 결정으로 유지. Android도 오른쪽 아래 — 뷰 계층 dump x 873~1048/1080).
             FAB(기록하기)는 바텀 내비 카메라와 기능 중복으로 제거 (MSG-317 AC 16) */}
         <View
           pointerEvents="box-none"
-          className="absolute inset-x-0 items-end px-md"
+          className="absolute inset-x-0 items-end gap-sm px-md pb-xxl"
           style={{
             bottom: locateBottomOffset(
               sheetLayout.stage,
@@ -536,6 +547,14 @@ export const MapHomeScreen = () => {
             ),
           }}
         >
+          <MapIconButton
+            icon="zoom-in"
+            onPress={() => mapRef.current?.zoomBy(1)}
+          />
+          <MapIconButton
+            icon="zoom-out"
+            onPress={() => mapRef.current?.zoomBy(-1)}
+          />
           <MapIconButton
             icon="locate"
             active={tracking}

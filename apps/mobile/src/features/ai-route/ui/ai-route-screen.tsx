@@ -228,6 +228,9 @@ export const AiRouteScreen = () => {
             route={overlays.route}
             onViewportChange={handleViewportChange}
             onCellTap={peekSheet}
+            // 이 화면은 SDK 내장 +/-를 그대로 쓴다 — 축척 바가 같은 오른쪽 아래 모서리라 겹치므로
+            // 끈다(MSG-601 이전과 같은 모습. 홈처럼 컨트롤 묶음으로 바꾸는 건 별도 티켓)
+            showScaleBar={false}
           />
         </View>
 

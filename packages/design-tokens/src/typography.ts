@@ -17,10 +17,24 @@ export interface TypographyToken {
 
 /** 이름은 Figma Text Styles(FeelMap/*)와 1:1 */
 export const typography = {
+  /** FeelMap/display-lg — 화면 헤드라인 (MSG-601 로그인 시안, lh 1.25 실측) */
+  "display-lg": {
+    fontWeight: 600,
+    fontSize: 28,
+    lineHeight: 35,
+    letterSpacing: 0,
+  },
   /** FeelMap/Display — 모달 타이틀 */
   display: { fontWeight: 600, fontSize: 20, lineHeight: 26, letterSpacing: 0 },
   /** FeelMap/Heading — 화면 헤더 */
   heading: { fontWeight: 500, fontSize: 16, lineHeight: 20, letterSpacing: 0 },
+  /** FeelMap/title-lg — 로고 락업 워드마크 (MSG-601 로그인 시안, lh 1.4 실측) */
+  "title-lg": {
+    fontWeight: 600,
+    fontSize: 18,
+    lineHeight: 25,
+    letterSpacing: 0,
+  },
   /** FeelMap/Title — 시트 타이틀 */
   title: { fontWeight: 600, fontSize: 15, lineHeight: 19, letterSpacing: 0 },
   /** FeelMap/Base — 본문/입력 */

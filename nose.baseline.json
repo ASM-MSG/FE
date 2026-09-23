@@ -2421,13 +2421,39 @@
       ]
     },
     {
-      "id": "21a6ca6a3580c017",
+      "id": "03dec58b4c09ea28",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "c981195ca6856506",
+          "source_digest": "fnv1a64:053e4a956aec6e69",
+          "file": "apps/mobile/src/features/auth/model/apple-nonce.test.ts",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 24,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "d13880377ac8ace3",
+          "source_digest": "fnv1a64:13a0d5904337f5a5",
+          "file": "apps/mobile/src/features/auth/model/apple-nonce.test.ts",
+          "lang": "typescript",
+          "start_line": 42,
+          "end_line": 49,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "169328b13e1cb7ab",
       "note": "local duplication — extract a method from the repeated block",
       "members": [
         {
-          "id": "6740500cd9edbe6b",
+          "id": "6f1cfbd041a9120f",
           "source_digest": "fnv1a64:f821447d5f2503d8",
-          "file": "apps/mobile/src/features/auth/api/kakao-login-mutation.ts",
+          "file": "apps/mobile/src/features/auth/api/oidc-login-mutation.ts",
           "lang": "typescript",
           "start_line": 2,
           "end_line": 9,
@@ -2441,6 +2467,704 @@
           "lang": "typescript",
           "start_line": 2,
           "end_line": 9,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "f0f144d5d179a52e",
+      "note": "local duplication — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "c29451e4e9d5134b",
+          "source_digest": "fnv1a64:77df6d40e59d1712",
+          "file": "apps/mobile/src/features/auth/api/use-dev-login.ts",
+          "lang": "typescript",
+          "start_line": 32,
+          "end_line": 49,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "dc8ca9b970e40902",
+          "source_digest": "fnv1a64:33d789bda5887f90",
+          "file": "apps/mobile/src/features/auth/api/oidc-login-mutation.ts",
+          "lang": "typescript",
+          "start_line": 99,
+          "end_line": 115,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "318af985c4d4006d",
+      "note": "repeated across 7 directories — extract a shared abstraction — high-parameter (18 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "83f065fc67a38305",
+          "source_digest": "fnv1a64:4bda003a9928b261",
+          "file": "apps/mobile/src/features/ai-route/api/route-recommend-mutation.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 362,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "00e80863d01d6dbe",
+          "source_digest": "fnv1a64:b562239791050fbd",
+          "file": "apps/mobile/src/features/video-actions/api/video-mutations.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 356,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "f12647fa5c70831d",
+          "source_digest": "fnv1a64:43f4a548f38339a8",
+          "file": "apps/mobile/src/features/auth/api/oidc-login-mutation.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 283,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "df2cb523e5f121a1",
+          "source_digest": "fnv1a64:7ab579481b63aca2",
+          "file": "apps/mobile/src/features/user-block/api/user-block-mutations.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 261,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "c9b9884efc6a29b6",
+          "source_digest": "fnv1a64:22968ef0cd99615f",
+          "file": "apps/mobile/src/features/event/api/event-video-mutations.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 243,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "550baae39321331b",
+          "source_digest": "fnv1a64:1491ab04aa990de3",
+          "file": "apps/mobile/src/features/profile/api/use-notification-toggle.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 210,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "37c7795192016805",
+          "source_digest": "fnv1a64:a45fab8a87ce41fe",
+          "file": "apps/mobile/src/features/profile/api/marketing-consent-mutation.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 187,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "0a41e871b8cf6eff",
+          "source_digest": "fnv1a64:29dac2a22dff6e74",
+          "file": "apps/mobile/src/features/profile/api/use-profile-image-upload.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 175,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "aa4c9e9a9c09a61d",
+          "source_digest": "fnv1a64:a566aabfdf9fc714",
+          "file": "apps/mobile/src/features/profile/api/use-remove-profile-image.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 120,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "5051f2c3798f50eb",
+          "source_digest": "fnv1a64:82442ccd5228876f",
+          "file": "apps/mobile/src/features/profile/api/use-update-nickname.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 108,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "6bffc25be1241e61",
+          "source_digest": "fnv1a64:a47fbf3e929ad427",
+          "file": "apps/mobile/src/features/dex/api/use-badge-mutations.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 104,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "f1ce9d548edea18d",
+          "source_digest": "fnv1a64:af8d3fa405718272",
+          "file": "apps/mobile/src/features/profile/api/delete-account-mutation.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 95,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "38c485ba2d9ef152",
+      "note": "duplicated across 2 directories — extract a helper",
+      "members": [
+        {
+          "id": "a00564e4921e8262",
+          "source_digest": "fnv1a64:266f346e81e6ef10",
+          "file": "apps/mobile/src/features/auth/model/social-login-failure.ts",
+          "lang": "typescript",
+          "start_line": 74,
+          "end_line": 78,
+          "kind": "Function",
+          "name": "developCodeOf",
+          "is_fragment": false
+        },
+        {
+          "id": "caeede26f985987f",
+          "source_digest": "fnv1a64:ff503e44c23cac3b",
+          "file": "apps/mobile/src/features/auth/model/social-login-failure.ts",
+          "lang": "typescript",
+          "start_line": 96,
+          "end_line": 100,
+          "kind": "Function",
+          "name": "errorCodeOf",
+          "is_fragment": false
+        },
+        {
+          "id": "c3e40ae30236d057",
+          "source_digest": "fnv1a64:266f346e81e6ef10",
+          "file": "apps/web/src/features/auth/model/kakao-oauth.ts",
+          "lang": "typescript",
+          "start_line": 80,
+          "end_line": 84,
+          "kind": "Function",
+          "name": "developCodeOf",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "73788a1cfb68127a",
+      "note": "consolidate `codedError` — 2 copies",
+      "members": [
+        {
+          "id": "2cc3a7fd815253ae",
+          "source_digest": "fnv1a64:c95f2b2e16cdc12c",
+          "file": "apps/mobile/src/features/auth/api/apple-adapter.ts",
+          "lang": "typescript",
+          "start_line": 28,
+          "end_line": 29,
+          "kind": "Function",
+          "name": "codedError",
+          "is_fragment": false
+        },
+        {
+          "id": "e5e7a0c53c1dcde1",
+          "source_digest": "fnv1a64:c95f2b2e16cdc12c",
+          "file": "apps/mobile/src/features/auth/api/kakao-adapter.ts",
+          "lang": "typescript",
+          "start_line": 26,
+          "end_line": 27,
+          "kind": "Function",
+          "name": "codedError",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "7570111eba7b5d90",
+      "note": "consolidate `view` — 2 copies",
+      "members": [
+        {
+          "id": "b62dd42c2db117b5",
+          "source_digest": "fnv1a64:443653867d2c95d6",
+          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
+          "lang": "typescript",
+          "start_line": 119,
+          "end_line": 130,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "7625dd4e319652fa",
+          "source_digest": "fnv1a64:228042c52dd5a52e",
+          "file": "apps/mobile/src/features/auth/ui/login-screen.tsx",
+          "lang": "typescript",
+          "start_line": 71,
+          "end_line": 81,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "3f9ddac746788b65",
+      "note": "consolidate `view` — 23 copies",
+      "members": [
+        {
+          "id": "39ee78a845f37eed",
+          "source_digest": "fnv1a64:e50ad16d25809228",
+          "file": "apps/mobile/src/features/map-home/ui/mission-status-badge.tsx",
+          "lang": "typescript",
+          "start_line": 36,
+          "end_line": 58,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "5b5ce040f646e059",
+          "source_digest": "fnv1a64:c3e76768bd19f6ca",
+          "file": "apps/mobile/src/features/event/ui/event-status-badge.tsx",
+          "lang": "typescript",
+          "start_line": 16,
+          "end_line": 30,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "5a5d3b4d3265ca3d",
+          "source_digest": "fnv1a64:d71428976be88090",
+          "file": "apps/mobile/src/features/map-home/ui/course-spot-row.tsx",
+          "lang": "typescript",
+          "start_line": 51,
+          "end_line": 65,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "f4b9bad618dd1690",
+          "source_digest": "fnv1a64:d69e565fce14b4a2",
+          "file": "apps/mobile/src/features/ai-route/ui/route-stop-card.tsx",
+          "lang": "typescript",
+          "start_line": 63,
+          "end_line": 74,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "e5c4450f021a0dd2",
+          "source_digest": "fnv1a64:3ac1d3b5ffc868ce",
+          "file": "apps/mobile/src/features/map-home/ui/grid-detail-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 87,
+          "end_line": 97,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "bcaa2827e4ded075",
+          "source_digest": "fnv1a64:013c4d36ed7e1761",
+          "file": "apps/mobile/src/features/dex/ui/featured-profile-preview.tsx",
+          "lang": "typescript",
+          "start_line": 44,
+          "end_line": 51,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "5eada8bc5827ae4c",
+          "source_digest": "fnv1a64:2550d280264cfb66",
+          "file": "packages/ui-native/src/cell-badge.tsx",
+          "lang": "typescript",
+          "start_line": 20,
+          "end_line": 27,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "7f1253bb5553fd8f",
+          "source_digest": "fnv1a64:525017fa6f2719d5",
+          "file": "apps/mobile/src/features/map-home/ui/theme-badge-header.tsx",
+          "lang": "typescript",
+          "start_line": 18,
+          "end_line": 24,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "d87e2c9a3d2221eb",
+          "source_digest": "fnv1a64:908243fd72efc8d4",
+          "file": "apps/mobile/src/features/ai-route/ui/route-stop-card.tsx",
+          "lang": "typescript",
+          "start_line": 49,
+          "end_line": 53,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "b6d7ff0eb28a4af8",
+          "source_digest": "fnv1a64:b594527e865e20d8",
+          "file": "apps/mobile/src/features/auth/ui/login-hero.tsx",
+          "lang": "typescript",
+          "start_line": 93,
+          "end_line": 97,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "52e98f6af814a660",
+          "source_digest": "fnv1a64:996761f2f0910f07",
+          "file": "apps/mobile/src/features/dex/ui/badge-medal.tsx",
+          "lang": "typescript",
+          "start_line": 87,
+          "end_line": 91,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "c6f0bf3932651886",
+          "source_digest": "fnv1a64:235f3a70cbe10567",
+          "file": "apps/mobile/src/features/dex/ui/upload-history-screen.tsx",
+          "lang": "typescript",
+          "start_line": 76,
+          "end_line": 80,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "dc01fad553649038",
+          "source_digest": "fnv1a64:22505771dc2e6069",
+          "file": "apps/mobile/src/features/event/ui/event-location-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 60,
+          "end_line": 64,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "da7d08015ae49a31",
+          "source_digest": "fnv1a64:7de13f766b5056b9",
+          "file": "apps/mobile/src/features/event/ui/event-location-type-badge.tsx",
+          "lang": "typescript",
+          "start_line": 18,
+          "end_line": 22,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "66639795074a8c3f",
+          "source_digest": "fnv1a64:375873ad3f9e31b6",
+          "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
+          "lang": "typescript",
+          "start_line": 182,
+          "end_line": 186,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "0c95fc9ed81594d2",
+          "source_digest": "fnv1a64:ae9a38e7fecf1561",
+          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
+          "lang": "typescript",
+          "start_line": 19,
+          "end_line": 23,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "c61876af3cb6c5b6",
+          "source_digest": "fnv1a64:f5d4c559285a787f",
+          "file": "apps/mobile/src/features/grid-detail/ui/video-preview.tsx",
+          "lang": "typescript",
+          "start_line": 41,
+          "end_line": 45,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "9cf3a6d3f62f0a84",
+          "source_digest": "fnv1a64:26da3815b275faf2",
+          "file": "apps/mobile/src/features/map-home/ui/grid-detail-sheet-content.tsx",
+          "lang": "typescript",
+          "start_line": 81,
+          "end_line": 85,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "4403bab033a3cd4e",
+          "source_digest": "fnv1a64:49e3ea4c66569c26",
+          "file": "packages/ui-native/src/video-card.stories.tsx",
+          "lang": "typescript",
+          "start_line": 54,
+          "end_line": 58,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "60567387695527d7",
+          "source_digest": "fnv1a64:f4190910275304cd",
+          "file": "packages/ui-native/src/video-card.tsx",
+          "lang": "typescript",
+          "start_line": 110,
+          "end_line": 114,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "c4508cf5222ec309",
+          "source_digest": "fnv1a64:f8a49325616b251b",
+          "file": "apps/mobile/src/features/ai-route/ui/route-result-header.tsx",
+          "lang": "typescript",
+          "start_line": 25,
+          "end_line": 27,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "21563a4ec026d98c",
+          "source_digest": "fnv1a64:b06cff6cb4515594",
+          "file": "apps/mobile/src/features/event/ui/event-badge-header.tsx",
+          "lang": "typescript",
+          "start_line": 13,
+          "end_line": 15,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "1e3447da2a65184b",
+          "source_digest": "fnv1a64:ebb874acba9b557b",
+          "file": "apps/mobile/src/features/event/ui/event-location-row.tsx",
+          "lang": "typescript",
+          "start_line": 39,
+          "end_line": 41,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "cbddfcc1b45a6d68",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "3ac9c735cf27ba89",
+          "source_digest": "fnv1a64:d8595415fc71b609",
+          "file": "apps/mobile/src/features/auth/model/social-login-failure.ts",
+          "lang": "typescript",
+          "start_line": 62,
+          "end_line": 87,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "2057101efb2ef9e4",
+          "source_digest": "fnv1a64:07ca137bf0c80269",
+          "file": "apps/web/src/features/auth/model/kakao-oauth.ts",
+          "lang": "typescript",
+          "start_line": 68,
+          "end_line": 93,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "d370deeef00bb3bd",
+      "note": "repeated across 10 directories — extract a shared abstraction — high-parameter (18 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "32402751080b14c5",
+          "source_digest": "fnv1a64:13b827d245783921",
+          "file": "apps/web/src/shared/api/auth-pipeline.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 460,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "229ae6331c64b01c",
+          "source_digest": "fnv1a64:26cd36f40a63515e",
+          "file": "apps/mobile/src/shared/api/auth-pipeline.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 339,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "dbd60d317bbbb77f",
+          "source_digest": "fnv1a64:1b64cd1d92f79573",
+          "file": "apps/mobile/src/features/upload/api/upload-effects.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 333,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "7d7a94e89130cbe2",
+          "source_digest": "fnv1a64:2d36e2a184f30684",
+          "file": "apps/web/src/shared/naver-maps/naver-sdk-loader.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 315,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "aaf8ecfaae088132",
+          "source_digest": "fnv1a64:83c882d72840e95a",
+          "file": "apps/mobile/src/features/auth/model/configure-auth.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 248,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "5d50e3030e837962",
+          "source_digest": "fnv1a64:5f63fdd1dd2c15c3",
+          "file": "apps/mobile/src/features/upload/api/s3-upload.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 153,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "3e22d63f63dc1698",
+          "source_digest": "fnv1a64:4038aa63c5a928c0",
+          "file": "apps/mobile/src/features/profile/model/profile-image-pick.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 115,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "a1a464da9122feee",
+          "source_digest": "fnv1a64:512e8889dcdae01c",
+          "file": "apps/web/src/shared/geolocation.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 92,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "e25ee33f74a2c992",
+          "source_digest": "fnv1a64:3d056659c53a9555",
+          "file": "apps/mobile/src/shared/api/error-interceptor.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 85,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "1e8a0594889fd5e0",
+          "source_digest": "fnv1a64:41945d6130ca9230",
+          "file": "apps/web/src/features/upload/api/s3-upload.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 75,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "f6a5b0f01f35672f",
+          "source_digest": "fnv1a64:289d0c73b95f3187",
+          "file": "apps/mobile/src/shared/api/client-config.storybook.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 64,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "5fba790ba75d150a",
+          "source_digest": "fnv1a64:4b0a1f974e79d4da",
+          "file": "apps/mobile/src/features/upload/model/location-label.parity.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 63,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "f6ab262b7af4b5d8",
+          "source_digest": "fnv1a64:7ec02134e4240f0d",
+          "file": "apps/mobile/src/features/auth/api/apple-adapter.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 38,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "67f5c26d2c1d24df",
+          "source_digest": "fnv1a64:19bb043263d989bb",
+          "file": "apps/mobile/src/features/auth/api/kakao-adapter.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 38,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "5cb89b3fd17a81b9",
+          "source_digest": "fnv1a64:b13135bbec416fed",
+          "file": "apps/mobile/src/shared/api/client-config.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 36,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "68a2ee8d1e1743bd",
+          "source_digest": "fnv1a64:ab93a3f7b3f1aa02",
+          "file": "apps/web/src/shared/api/client-config.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 32,
           "kind": "Block",
           "is_fragment": false
         }
@@ -6228,32 +6952,6 @@
       ]
     },
     {
-      "id": "526ff3a8258fe630",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "a81beb7c1426fce1",
-          "source_digest": "fnv1a64:d8595415fc71b609",
-          "file": "apps/mobile/src/features/auth/model/kakao-login-failure.ts",
-          "lang": "typescript",
-          "start_line": 46,
-          "end_line": 71,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "2057101efb2ef9e4",
-          "source_digest": "fnv1a64:07ca137bf0c80269",
-          "file": "apps/web/src/features/auth/model/kakao-oauth.ts",
-          "lang": "typescript",
-          "start_line": 68,
-          "end_line": 93,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "52d3b7c840edf975",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
@@ -6959,16 +7657,16 @@
       ]
     },
     {
-      "id": "5a132aeb83b954a5",
+      "id": "6d5461c11a24bcc8",
       "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (12 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
         {
-          "id": "85007647c1b17d5e",
-          "source_digest": "fnv1a64:2588a1ff0c693e06",
+          "id": "7c900a077b534caf",
+          "source_digest": "fnv1a64:c6eb23da6eeae88c",
           "file": "apps/mobile/src/features/ai-route/ui/ai-route-screen.tsx",
           "lang": "typescript",
           "start_line": 1,
-          "end_line": 304,
+          "end_line": 307,
           "kind": "Block",
           "is_fragment": false
         },
@@ -7899,7 +8597,7 @@
       ]
     },
     {
-      "id": "66f94b5d581960d7",
+      "id": "2a5860f1d411b29f",
       "note": "repeated across 3 directories — extract a shared abstraction",
       "members": [
         {
@@ -7936,12 +8634,12 @@
           "is_fragment": false
         },
         {
-          "id": "60c5146e477d864c",
+          "id": "4cefbf3a068fe0fc",
           "source_digest": "fnv1a64:f15bf3548a8d1f62",
           "file": "apps/mobile/src/features/map-home/ui/grid-map.tsx",
           "lang": "typescript",
-          "start_line": 211,
-          "end_line": 211,
+          "start_line": 255,
+          "end_line": 255,
           "kind": "Function",
           "name": "cellKey",
           "is_fragment": false
@@ -8444,32 +9142,6 @@
           "lang": "typescript",
           "start_line": 58,
           "end_line": 69,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "6da2f06da26bf0f2",
-      "note": "local duplication — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "c29451e4e9d5134b",
-          "source_digest": "fnv1a64:77df6d40e59d1712",
-          "file": "apps/mobile/src/features/auth/api/use-dev-login.ts",
-          "lang": "typescript",
-          "start_line": 32,
-          "end_line": 49,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "bfebe5d4f31a8836",
-          "source_digest": "fnv1a64:33d789bda5887f90",
-          "file": "apps/mobile/src/features/auth/api/kakao-login-mutation.ts",
-          "lang": "typescript",
-          "start_line": 68,
-          "end_line": 84,
           "kind": "Block",
           "is_fragment": false
         }
@@ -12172,45 +12844,6 @@
           "start_line": 4,
           "end_line": 8,
           "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "916f3d724def1020",
-      "note": "duplicated across 2 directories — extract a helper",
-      "members": [
-        {
-          "id": "6a30b393166062da",
-          "source_digest": "fnv1a64:266f346e81e6ef10",
-          "file": "apps/mobile/src/features/auth/model/kakao-login-failure.ts",
-          "lang": "typescript",
-          "start_line": 58,
-          "end_line": 62,
-          "kind": "Function",
-          "name": "developCodeOf",
-          "is_fragment": false
-        },
-        {
-          "id": "2f4a7e733d9cda27",
-          "source_digest": "fnv1a64:ff503e44c23cac3b",
-          "file": "apps/mobile/src/features/auth/model/kakao-login-failure.ts",
-          "lang": "typescript",
-          "start_line": 80,
-          "end_line": 84,
-          "kind": "Function",
-          "name": "errorCodeOf",
-          "is_fragment": false
-        },
-        {
-          "id": "c3e40ae30236d057",
-          "source_digest": "fnv1a64:266f346e81e6ef10",
-          "file": "apps/web/src/features/auth/model/kakao-oauth.ts",
-          "lang": "typescript",
-          "start_line": 80,
-          "end_line": 84,
-          "kind": "Function",
-          "name": "developCodeOf",
           "is_fragment": false
         }
       ]
@@ -16900,34 +17533,6 @@
       ]
     },
     {
-      "id": "6ae08906ebf5d550",
-      "note": "consolidate `view` — 2 copies",
-      "members": [
-        {
-          "id": "b62dd42c2db117b5",
-          "source_digest": "fnv1a64:443653867d2c95d6",
-          "file": "apps/mobile/src/features/auth/ui/signup-consent-screen.tsx",
-          "lang": "typescript",
-          "start_line": 119,
-          "end_line": 130,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        },
-        {
-          "id": "be8501dcfc50e9ba",
-          "source_digest": "fnv1a64:d36dc643edd872cf",
-          "file": "apps/mobile/src/features/auth/ui/login-screen.tsx",
-          "lang": "typescript",
-          "start_line": 41,
-          "end_line": 51,
-          "kind": "Block",
-          "name": "view",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "cac18c74afea234f",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -18402,162 +19007,6 @@
       ]
     },
     {
-      "id": "da725c6342d56dfa",
-      "note": "repeated across 10 directories — extract a shared abstraction — high-parameter (18 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "32402751080b14c5",
-          "source_digest": "fnv1a64:13b827d245783921",
-          "file": "apps/web/src/shared/api/auth-pipeline.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 460,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "229ae6331c64b01c",
-          "source_digest": "fnv1a64:26cd36f40a63515e",
-          "file": "apps/mobile/src/shared/api/auth-pipeline.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 339,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "dbd60d317bbbb77f",
-          "source_digest": "fnv1a64:1b64cd1d92f79573",
-          "file": "apps/mobile/src/features/upload/api/upload-effects.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 333,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "7d7a94e89130cbe2",
-          "source_digest": "fnv1a64:2d36e2a184f30684",
-          "file": "apps/web/src/shared/naver-maps/naver-sdk-loader.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 315,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "aaf8ecfaae088132",
-          "source_digest": "fnv1a64:83c882d72840e95a",
-          "file": "apps/mobile/src/features/auth/model/configure-auth.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 248,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "5d50e3030e837962",
-          "source_digest": "fnv1a64:5f63fdd1dd2c15c3",
-          "file": "apps/mobile/src/features/upload/api/s3-upload.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 153,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "3e22d63f63dc1698",
-          "source_digest": "fnv1a64:4038aa63c5a928c0",
-          "file": "apps/mobile/src/features/profile/model/profile-image-pick.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 115,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "a1a464da9122feee",
-          "source_digest": "fnv1a64:512e8889dcdae01c",
-          "file": "apps/web/src/shared/geolocation.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 92,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "e25ee33f74a2c992",
-          "source_digest": "fnv1a64:3d056659c53a9555",
-          "file": "apps/mobile/src/shared/api/error-interceptor.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 85,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "1e8a0594889fd5e0",
-          "source_digest": "fnv1a64:41945d6130ca9230",
-          "file": "apps/web/src/features/upload/api/s3-upload.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 75,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "f6a5b0f01f35672f",
-          "source_digest": "fnv1a64:289d0c73b95f3187",
-          "file": "apps/mobile/src/shared/api/client-config.storybook.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 64,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "5fba790ba75d150a",
-          "source_digest": "fnv1a64:4b0a1f974e79d4da",
-          "file": "apps/mobile/src/features/upload/model/location-label.parity.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 63,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "67f5c26d2c1d24df",
-          "source_digest": "fnv1a64:5a32fc60615251dd",
-          "file": "apps/mobile/src/features/auth/api/kakao-adapter.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 38,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "5cb89b3fd17a81b9",
-          "source_digest": "fnv1a64:b13135bbec416fed",
-          "file": "apps/mobile/src/shared/api/client-config.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 36,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "68a2ee8d1e1743bd",
-          "source_digest": "fnv1a64:ab93a3f7b3f1aa02",
-          "file": "apps/web/src/shared/api/client-config.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 32,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "dac75c66b985051d",
       "note": "duplicated across 2 directories — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -19526,16 +19975,16 @@
       ]
     },
     {
-      "id": "61824a7dabf154a0",
+      "id": "fedab7ac07642234",
       "note": "duplicated across 2 directories — consolidate one shared interface/protocol contract",
       "members": [
         {
-          "id": "24f6cae7b8eb81b4",
-          "source_digest": "fnv1a64:53f71285f1820f0a",
+          "id": "4a23c903e63fbe00",
+          "source_digest": "fnv1a64:68fa5678396373bf",
           "file": "apps/mobile/src/features/map-home/ui/grid-map.tsx",
           "lang": "typescript",
-          "start_line": 128,
-          "end_line": 225,
+          "start_line": 136,
+          "end_line": 245,
           "kind": "Class",
           "name": "GridMapProps",
           "is_fragment": false
@@ -21707,16 +22156,16 @@
       ]
     },
     {
-      "id": "e1627a800d7ef9da",
+      "id": "879be8a79aebe6aa",
       "note": "consolidate `view` — 4 copies",
       "members": [
         {
-          "id": "b2ad4ea2108a065e",
+          "id": "68fc9e881d0f341e",
           "source_digest": "fnv1a64:3d4963c6a683fee8",
           "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
           "lang": "typescript",
-          "start_line": 126,
-          "end_line": 141,
+          "start_line": 128,
+          "end_line": 143,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -24286,7 +24735,7 @@
       ]
     },
     {
-      "id": "94d7bf43a423a2a4",
+      "id": "0c571d6fb90ee724",
       "note": "consolidate `pressable` — 6 copies",
       "members": [
         {
@@ -24323,12 +24772,12 @@
           "is_fragment": false
         },
         {
-          "id": "860bae0ea704d9f0",
+          "id": "935afda7483fb370",
           "source_digest": "fnv1a64:b8ed2e12b39cbff4",
           "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
           "lang": "typescript",
-          "start_line": 166,
-          "end_line": 173,
+          "start_line": 168,
+          "end_line": 175,
           "kind": "Block",
           "name": "pressable",
           "is_fragment": false
@@ -24407,132 +24856,6 @@
           "end_line": 42,
           "kind": "Class",
           "name": "AccountRequestDraft",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "a2e58e9857db9300",
-      "note": "repeated across 7 directories — extract a shared abstraction — high-parameter (18 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "83f065fc67a38305",
-          "source_digest": "fnv1a64:4bda003a9928b261",
-          "file": "apps/mobile/src/features/ai-route/api/route-recommend-mutation.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 362,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "00e80863d01d6dbe",
-          "source_digest": "fnv1a64:b562239791050fbd",
-          "file": "apps/mobile/src/features/video-actions/api/video-mutations.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 356,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "df2cb523e5f121a1",
-          "source_digest": "fnv1a64:7ab579481b63aca2",
-          "file": "apps/mobile/src/features/user-block/api/user-block-mutations.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 261,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "c9b9884efc6a29b6",
-          "source_digest": "fnv1a64:22968ef0cd99615f",
-          "file": "apps/mobile/src/features/event/api/event-video-mutations.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 243,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "550baae39321331b",
-          "source_digest": "fnv1a64:1491ab04aa990de3",
-          "file": "apps/mobile/src/features/profile/api/use-notification-toggle.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 210,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "37c7795192016805",
-          "source_digest": "fnv1a64:a45fab8a87ce41fe",
-          "file": "apps/mobile/src/features/profile/api/marketing-consent-mutation.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 187,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "0a41e871b8cf6eff",
-          "source_digest": "fnv1a64:29dac2a22dff6e74",
-          "file": "apps/mobile/src/features/profile/api/use-profile-image-upload.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 175,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "977c30de5383937e",
-          "source_digest": "fnv1a64:f203380283efb929",
-          "file": "apps/mobile/src/features/auth/api/kakao-login-mutation.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 173,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "aa4c9e9a9c09a61d",
-          "source_digest": "fnv1a64:a566aabfdf9fc714",
-          "file": "apps/mobile/src/features/profile/api/use-remove-profile-image.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 120,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "5051f2c3798f50eb",
-          "source_digest": "fnv1a64:82442ccd5228876f",
-          "file": "apps/mobile/src/features/profile/api/use-update-nickname.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 108,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "6bffc25be1241e61",
-          "source_digest": "fnv1a64:a47fbf3e929ad427",
-          "file": "apps/mobile/src/features/dex/api/use-badge-mutations.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 104,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "f1ce9d548edea18d",
-          "source_digest": "fnv1a64:af8d3fa405718272",
-          "file": "apps/mobile/src/features/profile/api/delete-account-mutation.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 95,
-          "kind": "Block",
           "is_fragment": false
         }
       ]
