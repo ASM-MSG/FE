@@ -158,6 +158,7 @@
 - MSG-602: [모바일] **알림함 + 미읽음 배지** — `features/notifications`에 inbox 축 신설(model `inbox.ts` 커서·평탄화·낙관 읽음·`unreadHint` / api `use-inbox-query`(getInboxInfiniteOptions, 첫 페이지 `{}`)·`use-unread-count-query`(포커스·포그라운드 재조회)·`inbox-mutations`(markRead·markAllRead 낙관+롤백+unread 무효화) / ui `notification-inbox-screen`(FlatList·RefreshControl·4상태)·`notification-row`·`notification-category-icon`), 라우트 `profile/notifications`(PROTECTED), `HomeTopBar hasUnread`(아바타 빨간 점), 프로필 설정 첫 행 `알림함 ›`+"새 알림 N개". `shared/api/infinite-list.ts`(제네릭 접기) · `shared/format.normalizeUtcIso` · `test/inbox-fixture.ts`. 시안 없음 — FE 설계(docs/spec/MSG-602.md)
 - MSG-603: [모바일] **행사 알림 구독 토글** — `features/event`에 `model/event-subscription.ts`(노출·값 파생, 종료 회차 null)·`api/event-subscription-mutation.ts`(PUT `/api/event-occurrences/{id}/notification` 낙관+응답 enabled 기록+롤백)·`ui/event-notification-row.tsx`(🔔 행사 알림 + Switch + 인라인 오류). `EventOverview.notification` 재료 추가, 개요 시트 기간 행 아래 렌더(예정·진행 중만). 시안 없음 — FE 설계(docs/spec/MSG-603.md)
 - MSG-604: [모바일] **iOS 푸시 FCM 토큰** — `@react-native-firebase/app`·`messaging`(disableSPM + 정적 프레임워크), `GoogleService-Info.plist`(커밋), `ios.infoPlist.UIBackgroundModes`. `notifications-adapter.readDevicePushToken` iOS 분기: expo APNs 토큰 → `setAPNSToken` → `getToken`(FCM 등록 토큰). Android 경로 무변경. 서버 등록·재등록·포그라운드 배너 시뮬레이터 검증, FCM 경유 수신은 실기기 필요
+- MSG-604(부수): **약관 본문 5종** — `entities/terms/model/terms-bodies.ts`(서비스 이용약관·개인정보 수집 및 이용·위치기반서비스 이용약관·마케팅 정보 수신·개인정보 처리방침, 평문). MSG-448 자리표시(body null) 해소. 법률 검토 전 초안, 문의 `support@fillmap.kr`
 
 ## 티켓 이력 (2026-08-13 이후 — 티켓당 한 줄 append)
 
