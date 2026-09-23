@@ -28,6 +28,9 @@ export const palette = {
   // 브랜드 규정색이라 시맨틱 매핑 없이 원시 토큰으로만 사용한다.
   "kakao-yellow": "#FEE500",
   "kakao-black": "#000000",
+  // 애플 브랜드 고정색 (MSG-601 iOS 애플 로그인) — HIG "Sign in with Apple" 검정 버튼 규정색.
+  // 값은 kakao-black과 같지만 브랜드 귀속이 달라 별도 원시 토큰으로 둔다(시맨틱 매핑 없음, A4).
+  "apple-black": "#000000",
   // 지도 홈 테마 필터 색 4종 (MSG-252 A1) — Figma 지도 홈 프레임(13845:6974 계열) 실측값.
   // 기존 error(#EF4444)·success(#22C55E)와 값이 달라 신규 토큰으로 둔다(근사 사용 금지 — 스펙 R2).
   // Figma 변수 미등록 상태의 선등록 — SEED v3(ver 7) 전환 시 값만 교체한다.

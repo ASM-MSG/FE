@@ -73,8 +73,10 @@ apps/mobile (tailwind.config.js) →  @fillmap/tailwind-preset/native (+ nativew
 
 | 클래스 | weight / size / line-height | 용도 (Figma Text Style) |
 |---|---|---|
+| `text-fm-display-lg` | 600 / 28 / 35 | 화면 헤드라인 (FeelMap/display-lg — MSG-601 로그인 시안) |
 | `text-fm-display` | 600 / 20 / 26 | 모달 타이틀 (FeelMap/Display) |
 | `text-fm-heading` | 500 / 16 / 20 | 화면 헤더 (FeelMap/Heading) |
+| `text-fm-title-lg` | 600 / 18 / 25 | 로고 락업 워드마크 (FeelMap/title-lg — MSG-601 로그인 시안) |
 | `text-fm-title` | 600 / 15 / 19 | 시트 타이틀 (FeelMap/Title) |
 | `text-fm-base` | 400 / 14 / 20 | 본문/입력 (FeelMap/Base) |
 | `text-fm-body-strong` | 600 / 13 / 17 | 카드 제목 (FeelMap/Body Strong) |

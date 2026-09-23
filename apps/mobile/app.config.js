@@ -81,6 +81,9 @@ export default (_ctx) => ({
   ios: {
     icon: "./assets/expo.icon",
     bundleIdentifier: "kr.fillmap.app",
+    // MSG-601: Sign in with Apple 엔타이틀먼트(`com.apple.developer.applesignin`) 주입.
+    // 번들 ID가 곧 client_id라 환경변수가 없다. 유료 개발자 팀 서명이 있어야 빌드된다(스펙 R1).
+    usesAppleSignIn: true,
   },
   android: {
     /**
@@ -142,6 +145,10 @@ export default (_ctx) => ({
     // MSG-444: 카카오 로그인 네이티브 설정 — AndroidManifest의 `kakao{앱키}` 스킴 인가
     // 핸들러와 iOS CFBundleURLTypes를 플러그인이 주입한다. 키가 없으면 등록하지 않는다(위 주석).
     ...kakaoPlugins,
+    // MSG-601: 애플 로그인 — iOS 전용 플러그인(엔타이틀먼트 주입)이라 Android prebuild 산출물은
+    // 무변화. 카카오와 달리 키가 없어 무조건 등록한다. `expo-crypto`(nonce)는 플러그인 없이 autolink
+    // 되지만 네이티브 모듈이라 Android도 `prebuild --clean` + 재빌드가 필요하다(스펙 R2).
+    "expo-apple-authentication",
     [
       "expo-build-properties",
       {

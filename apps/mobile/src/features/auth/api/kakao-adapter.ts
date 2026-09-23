@@ -1,4 +1,4 @@
-import { KAKAO_NOT_CONFIGURED } from "../model/kakao-login-failure";
+import { KAKAO_NOT_CONFIGURED } from "../model/social-login-failure";
 
 /**
  * 카카오 네이티브 SDK 격리 경계 (기준 5·7·8) — 네이티브 모듈을 만지는 유일한 지점.
