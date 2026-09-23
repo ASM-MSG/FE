@@ -20,7 +20,7 @@ export const EventNotificationRow = ({
   occurrenceId: number;
   view: EventSubscriptionView;
 }) => {
-  const subscription = useEventSubscription();
+  const subscription = useEventSubscription(occurrenceId);
   return (
     <View className="gap-xxs rounded-md border border-border bg-surface-soft px-md py-sm">
       <View className="flex-row items-center gap-sm">

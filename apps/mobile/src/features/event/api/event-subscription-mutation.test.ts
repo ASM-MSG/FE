@@ -35,14 +35,12 @@ const load = async () => {
     queryClient.getQueryData<{
       data: { notificationOn: boolean; title: string };
     }>(key)?.data;
-  return {
-    seed,
-    cached,
-    observer: new MutationObserver(
+  const observe = () =>
+    new MutationObserver(
       queryClient,
-      eventSubscriptionMutationOptions(queryClient),
-    ),
-  };
+      eventSubscriptionMutationOptions(queryClient, OCCURRENCE_ID),
+    );
+  return { seed, cached, observer: observe(), observe };
 };
 
 const stubFetch = (
@@ -106,6 +104,62 @@ describe("행사 알림 구독 토글 (L3)", () => {
     await t.observer
       .mutate({ occurrenceId: OCCURRENCE_ID, enabled: true })
       .catch(() => {});
+
+    expect(t.cached()?.notificationOn).toBe(false);
+  });
+  it("재마운트로 겹친 두 요청 — 늦게 온 앞 요청의 응답은 뒤 요청의 값을 덮지 않는다 (codex P2)", async () => {
+    const t = await load();
+    t.seed(false);
+    let releaseFirst!: () => void;
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    stubFetch(async (request) => {
+      const { enabled } = JSON.parse(await request.clone().text()) as {
+        enabled: boolean;
+      };
+      if (enabled) await firstGate; // 켜기(앞 요청)는 붙잡아 두고 끄기(뒤 요청)가 먼저 끝난다
+      return envelopeResponse({ enabled });
+    });
+
+    const first = t.observer.mutate({
+      occurrenceId: OCCURRENCE_ID,
+      enabled: true,
+    });
+    // 위치 상세에 들어갔다 돌아온 새 행 = 새 observer
+    await t.observe().mutate({ occurrenceId: OCCURRENCE_ID, enabled: false });
+    expect(t.cached()?.notificationOn).toBe(false);
+
+    releaseFirst();
+    await first;
+
+    expect(t.cached()?.notificationOn).toBe(false);
+  });
+
+  it("겹친 두 요청 중 앞 요청이 늦게 실패해도 뒤 요청의 낙관값은 롤백되지 않는다 (codex P2)", async () => {
+    const t = await load();
+    t.seed(false);
+    let failFirst!: () => void;
+    const firstGate = new Promise<void>((resolve) => {
+      failFirst = resolve;
+    });
+    stubFetch(async (request) => {
+      const { enabled } = JSON.parse(await request.clone().text()) as {
+        enabled: boolean;
+      };
+      if (enabled) {
+        await firstGate;
+        return errorEnvelope(10500, "서버 오류", 500);
+      }
+      return envelopeResponse({ enabled });
+    });
+
+    const first = t.observer
+      .mutate({ occurrenceId: OCCURRENCE_ID, enabled: true })
+      .catch(() => {});
+    await t.observe().mutate({ occurrenceId: OCCURRENCE_ID, enabled: false });
+    failFirst();
+    await first;
 
     expect(t.cached()?.notificationOn).toBe(false);
   });
