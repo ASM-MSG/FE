@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatDuration, formatRelativeTime, formatViewCount } from "./format";
+import {
+  formatDuration,
+  formatRelativeTime,
+  formatViewCount,
+  normalizeUtcIso,
+} from "./format";
 
 describe("formatDuration (AC 4 — 대표 영상 길이 mm:ss 뱃지)", () => {
   it('초를 "m:ss"로 표기한다 — 24 → "0:24"', () => {
@@ -33,8 +38,7 @@ describe("formatRelativeTime (AC 5 — 최근 업로드 경과 시간)", () => {
 });
 
 describe("normalizeUtcIso (MSG-602 L6)", () => {
-  it("마커 없는 시각에 Z를 붙이고, 마커가 있거나 날짜만이면 그대로 둔다", async () => {
-    const { normalizeUtcIso } = await import("./format");
+  it("마커 없는 시각에 Z를 붙이고, 마커가 있거나 날짜만이면 그대로 둔다", () => {
     expect(normalizeUtcIso("2026-09-23T07:00:00")).toBe("2026-09-23T07:00:00Z");
     expect(normalizeUtcIso("2026-09-23T07:00:00Z")).toBe(
       "2026-09-23T07:00:00Z",

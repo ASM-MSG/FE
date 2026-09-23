@@ -51,7 +51,7 @@ const VISUALS: Partial<Record<InboxCategory, CategoryVisual>> = {
   MODERATION: {
     Icon: ShieldAlert,
     color: semantic.error,
-    bgClass: "bg-theme-hot/10",
+    bgClass: "bg-error/10",
   },
   EVENT: {
     Icon: PartyPopper,

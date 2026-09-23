@@ -20394,8 +20394,8 @@
       ]
     },
     {
-      "id": "2474f998228a9930",
-      "note": "consolidate `view` — 14 copies",
+      "id": "20d2226974c62ed7",
+      "note": "consolidate `view` — 15 copies",
       "members": [
         {
           "id": "8408856b374397ef",
@@ -20514,6 +20514,17 @@
           "lang": "typescript",
           "start_line": 69,
           "end_line": 74,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "fd7cab968721f704",
+          "source_digest": "fnv1a64:aef1a3a7373f8f89",
+          "file": "apps/mobile/src/features/notifications/ui/notification-inbox-parts.tsx",
+          "lang": "typescript",
+          "start_line": 47,
+          "end_line": 52,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25097,6 +25108,34 @@
           "start_line": 22,
           "end_line": 84,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "19540d203ed107e9",
+      "note": "consolidate `pressable` — 2 copies",
+      "members": [
+        {
+          "id": "6019ef48506f80e3",
+          "source_digest": "fnv1a64:7cc306d647eac5b8",
+          "file": "apps/mobile/src/features/notifications/ui/notification-inbox-parts.tsx",
+          "lang": "typescript",
+          "start_line": 27,
+          "end_line": 37,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "4663155c8a62d623",
+          "source_digest": "fnv1a64:4309d30ea8793d56",
+          "file": "apps/mobile/src/app/dev/api-smoke.tsx",
+          "lang": "typescript",
+          "start_line": 55,
+          "end_line": 64,
+          "kind": "Block",
+          "name": "pressable",
           "is_fragment": false
         }
       ]
