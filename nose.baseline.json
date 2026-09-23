@@ -16128,40 +16128,27 @@
       ]
     },
     {
-      "id": "b7083d1707b7023e",
-      "note": "repeated across 3 directories — extract a shared abstraction",
+      "id": "10b31e23562375fb",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
-          "id": "98825592dfd058f7",
-          "source_digest": "fnv1a64:e9debae64769df9b",
+          "id": "d6c86aa7d82a239a",
+          "source_digest": "fnv1a64:83beab251ea81c19",
           "file": "apps/mobile/src/shared/format.ts",
           "lang": "typescript",
-          "start_line": 74,
-          "end_line": 74,
-          "kind": "Function",
-          "name": "two",
+          "start_line": 101,
+          "end_line": 117,
+          "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "fbcf0068c612bf20",
-          "source_digest": "fnv1a64:b1f71ca15a1a355d",
-          "file": "apps/web/src/features/org-submissions/model/submission-format.ts",
-          "lang": "typescript",
-          "start_line": 63,
-          "end_line": 63,
-          "kind": "Function",
-          "name": "pad",
-          "is_fragment": false
-        },
-        {
-          "id": "7e1e2bd6fcfaab51",
-          "source_digest": "fnv1a64:e9debae64769df9b",
+          "id": "b1227e753502bec8",
+          "source_digest": "fnv1a64:d42442d95133a195",
           "file": "apps/web/src/features/profile/model/profile-format.ts",
           "lang": "typescript",
-          "start_line": 8,
-          "end_line": 8,
-          "kind": "Function",
-          "name": "two",
+          "start_line": 20,
+          "end_line": 36,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
@@ -20407,8 +20394,8 @@
       ]
     },
     {
-      "id": "200e5b4202b09b1c",
-      "note": "consolidate `view` — 14 copies",
+      "id": "20d2226974c62ed7",
+      "note": "consolidate `view` — 15 copies",
       "members": [
         {
           "id": "8408856b374397ef",
@@ -20532,6 +20519,17 @@
           "is_fragment": false
         },
         {
+          "id": "fd7cab968721f704",
+          "source_digest": "fnv1a64:aef1a3a7373f8f89",
+          "file": "apps/mobile/src/features/notifications/ui/notification-inbox-parts.tsx",
+          "lang": "typescript",
+          "start_line": 47,
+          "end_line": 52,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
           "id": "c72a0c323fd97cba",
           "source_digest": "fnv1a64:53c2fc3fc37da918",
           "file": "apps/mobile/src/features/grid-detail/ui/grid-detail-screen.tsx",
@@ -20543,12 +20541,12 @@
           "is_fragment": false
         },
         {
-          "id": "888fc50941768daa",
+          "id": "c1626fadf6ad4546",
           "source_digest": "fnv1a64:205a75eeb4909991",
           "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
           "lang": "typescript",
-          "start_line": 49,
-          "end_line": 52,
+          "start_line": 51,
+          "end_line": 54,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25110,6 +25108,34 @@
           "start_line": 22,
           "end_line": 84,
           "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "19540d203ed107e9",
+      "note": "consolidate `pressable` — 2 copies",
+      "members": [
+        {
+          "id": "6019ef48506f80e3",
+          "source_digest": "fnv1a64:7cc306d647eac5b8",
+          "file": "apps/mobile/src/features/notifications/ui/notification-inbox-parts.tsx",
+          "lang": "typescript",
+          "start_line": 27,
+          "end_line": 37,
+          "kind": "Block",
+          "name": "pressable",
+          "is_fragment": false
+        },
+        {
+          "id": "4663155c8a62d623",
+          "source_digest": "fnv1a64:4309d30ea8793d56",
+          "file": "apps/mobile/src/app/dev/api-smoke.tsx",
+          "lang": "typescript",
+          "start_line": 55,
+          "end_line": 64,
+          "kind": "Block",
+          "name": "pressable",
           "is_fragment": false
         }
       ]

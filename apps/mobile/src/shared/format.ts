@@ -71,6 +71,18 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const hasTimezoneMarker = (timePart: string): boolean =>
   /(?:Z|[+-]\d{2}:?\d{2})$/.test(timePart);
 
+/**
+ * 타임존 마커 없는 서버 ISO 시각을 UTC로 못 박는다 (MSG-602 — `formatKstDate`의 보정을
+ * 알림함 상대 시간이 두 번째로 쓰게 돼 뽑았다). 마커가 있거나 시각부가 없으면 그대로.
+ * `Date`는 미표기 ISO를 로컬 시간으로 읽어 KST 기기에서 9시간이 밀린다.
+ */
+export const normalizeUtcIso = (iso: string): string => {
+  const timePart = iso.split("T")[1];
+  return timePart === undefined || hasTimezoneMarker(timePart)
+    ? iso
+    : `${iso}Z`;
+};
+
 const two = (n: number): string => String(n).padStart(2, "0");
 
 /**
@@ -97,7 +109,7 @@ export const formatKstDate = (iso: string): string => {
   }
 
   // 마커가 없으면 UTC를 명시해 파싱한다 — 미표기 ISO를 로컬 시간으로 읽는 Date 규약 회피
-  const utcMs = Date.parse(hasTimezoneMarker(timePart) ? iso : `${iso}Z`);
+  const utcMs = Date.parse(normalizeUtcIso(iso));
   if (Number.isNaN(utcMs)) return iso;
 
   const kst = new Date(utcMs + KST_OFFSET_MS);
