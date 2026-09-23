@@ -73,10 +73,14 @@ export const oidcLoginMutationOptions = ({
     const { idToken, nonce, authorizationCode, fullName } =
       await requestCredential();
     if (!idToken) {
-      // 카카오 콘솔 OpenID Connect 미활성 / 애플 identityToken null — 서버를 부를 재료가 없다
+      // 카카오 콘솔 OpenID Connect 미활성 / 애플 identityToken null — 서버를 부를 재료가 없다.
+      // 판정·사용자 문구는 `code`로 갈리지만 message는 로그(크래시·Sentry)에서 직접 읽히므로
+      // provider별로 쓴다 — 애플 실패를 카카오 콘솔 문제로 오인하지 않게 (PR #156 리뷰 반영)
       throw Object.assign(
         new Error(
-          "소셜 제공자에서 ID 토큰을 받지 못했습니다 — 카카오는 콘솔의 OpenID Connect 활성화를 확인하세요.",
+          provider === "kakao"
+            ? "카카오에서 ID 토큰을 받지 못했습니다 — 콘솔의 OpenID Connect 활성화를 확인하세요."
+            : "Apple에서 identityToken을 받지 못했습니다.",
         ),
         { code: MISSING_ID_TOKEN },
       );
