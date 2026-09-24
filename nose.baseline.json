@@ -13416,7 +13416,7 @@
       ]
     },
     {
-      "id": "6431520ce17dc5ce",
+      "id": "6e659abdc23ef0e2",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
@@ -13430,12 +13430,12 @@
           "is_fragment": false
         },
         {
-          "id": "ea6148ca7f844c06",
+          "id": "5332a2b49947aa1a",
           "source_digest": "fnv1a64:816227ff2e2ceb80",
           "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
           "lang": "typescript",
-          "start_line": 142,
-          "end_line": 150,
+          "start_line": 127,
+          "end_line": 135,
           "kind": "Block",
           "is_fragment": false
         }

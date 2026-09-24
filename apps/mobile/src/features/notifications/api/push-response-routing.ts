@@ -8,6 +8,10 @@ import { pushRouteFor } from "../model/notification-route";
  * - **게이트 대기**: 콜드 스타트는 세션 재수화·약관 게이트·index의 `/home` Redirect가 끝난 뒤에 움직여야
  *   한다(먼저 push하면 Redirect가 덮는다). `ready`가 false면 마지막 1건만 보류하고 ready 때 이동한다.
  * - **대상 없음·훼손 → 홈**: `pushRouteFor`가 접는다. 앱은 죽지 않는다 (FR-10).
+ * - **세션 경계**: `ready`가 false로 내려가면(로그아웃·약관 게이트) 보류분을 **버린다**. 라우터는 앱 수명
+ *   동안 하나라 사용자를 모른다 — A가 로그아웃한 뒤 도착한 탭을 B의 세션에서 여는 창을 닫는다
+ *   (PR #161 리뷰, `aiRouteStore.resetForSessionEnd` 선례와 같은 부류). 콜드 스타트의 보류는 마운트 뒤에
+ *   쌓이므로 영향이 없다.
  */
 export interface PushResponse {
   /** 알림 요청 식별자 — 중복 제거 키 */
@@ -51,7 +55,11 @@ export const createPushResponseRouter = (
     },
     setReady: (next) => {
       ready = next;
-      if (!ready || pending === null) return;
+      if (!ready) {
+        pending = null; // 세션 경계 — 이전 사용자 앞으로 온 보류분을 다음 사용자에게 열지 않는다
+        return;
+      }
+      if (pending === null) return;
       const response = pending;
       pending = null;
       go(response);

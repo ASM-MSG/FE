@@ -6,7 +6,10 @@ import {
   readLastPushResponse,
   type PushResponseEvent,
 } from "./notifications-adapter";
-import { createPushResponseRouter } from "./push-response-routing";
+import {
+  createPushResponseRouter,
+  type PushResponseRouter,
+} from "./push-response-routing";
 
 /**
  * 푸시 탭 → 화면 이동 배선 (MSG-605 FR-7) — 앱 셸 상주. 판정·중복 제거·게이트 대기는
@@ -17,14 +20,19 @@ import { createPushResponseRouter } from "./push-response-routing";
  */
 export const usePushResponseRouting = (ready: boolean): void => {
   const router = useRouter();
+  // 렌더 중 ref 쓰기 금지(react-doctor) — 최신 라우터는 effect에서 갱신하고, 라우터 인스턴스는 null 가드 지연 초기화
   const latestRouter = useRef(router);
-  latestRouter.current = router;
-  const pushRouter = useRef(
-    createPushResponseRouter({
+  useEffect(() => {
+    latestRouter.current = router;
+  }, [router]);
+  const pushRouterRef = useRef<PushResponseRouter | null>(null);
+  if (pushRouterRef.current === null) {
+    pushRouterRef.current = createPushResponseRouter({
       navigate: (href) => latestRouter.current.navigate(href),
       now: Date.now,
-    }),
-  ).current;
+    });
+  }
+  const pushRouter = pushRouterRef.current;
 
   useEffect(() => {
     pushRouter.setReady(ready);

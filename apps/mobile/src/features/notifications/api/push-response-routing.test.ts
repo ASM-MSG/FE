@@ -92,4 +92,17 @@ describe("createPushResponseRouter (L3)", () => {
 
     expect(navigate).not.toHaveBeenCalled();
   });
+
+  it("ready가 false로 내려가면 그 전에 보류된 탭은 버린다 — 다음 사용자 세션에서 열리지 않는다 (PR #161 리뷰)", () => {
+    const navigate = vi.fn();
+    const router = createPushResponseRouter({ navigate, now: () => 5 });
+
+    router.handle(video("a")); // A 로그아웃 직후 도착
+    router.setReady(false); // 로그인 화면 등 세션 경계
+    router.setReady(true); // B 로그인
+
+    expect(navigate).not.toHaveBeenCalled();
+    router.handle(video("b"));
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
 });

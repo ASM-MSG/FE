@@ -8,17 +8,13 @@ import {
 } from "react";
 import { ActivityIndicator, BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader } from "@fillmap/ui-native";
 import type { RecentRegion } from "../../../entities/dex/model/dex";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
-import {
-  DEFAULT_DEX_TAB,
-  parseDexTab,
-  selectDexTab,
-  type DexTab,
-} from "../model/dex-tab";
+import { selectDexTab } from "../model/dex-tab";
+import { useDexTab } from "../model/use-dex-tab";
 import {
   deriveRecentRegions,
   excludeRemovedRegions,
@@ -58,19 +54,8 @@ import { RegionGalleryView } from "./region-gallery-view";
  */
 export const DexScreen = () => {
   const insets = useSafeAreaInsets();
-  // 알림 딥링크 `/dex?tab=badges&ts=…` (MSG-605) — 첫 진입은 초기값으로, 이미 떠 있으면 요청마다(ts) 다시 적용한다.
-  // tab 값만 보면 사용자가 다른 탭으로 옮긴 뒤 같은 뱃지 알림이 와도 effect가 안 돈다 (codex P2)
-  const { tab: tabParam, ts: tsParam } = useLocalSearchParams<{
-    tab?: string;
-    ts?: string;
-  }>();
-  const [tab, setTab] = useState<DexTab>(
-    () => parseDexTab(tabParam) ?? DEFAULT_DEX_TAB,
-  );
-  useEffect(() => {
-    const next = parseDexTab(tabParam);
-    if (next !== null) setTab(next);
-  }, [tabParam, tsParam]);
+  // 탭 상태 + 알림 딥링크 파라미터 (MSG-605) — `useDexTab`이 소유한다(react-doctor 복잡도 상한)
+  const [tab, setTab] = useDexTab();
   const [selected, setSelected] = useState<RecentRegion | null>(null);
   const [removedRegionNames, setRemovedRegionNames] = useState<string[]>([]);
 
