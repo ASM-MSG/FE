@@ -10,7 +10,7 @@ import {
   bootstrapAuth,
   useAuth,
 } from "../features/auth/model/auth-session";
-import { useConsentGate } from "../features/auth/model/use-consent-gate";
+import { useConsentGateState } from "../features/auth/model/use-consent-gate";
 import { SignupConsentScreen } from "../features/auth/ui/signup-consent-screen";
 import { usePushForegroundHandler } from "../features/notifications/api/use-push-foreground-handler";
 import { usePushTokenSync } from "../features/notifications/api/use-push-registration";
@@ -40,7 +40,8 @@ if (process.env.EXPO_PUBLIC_STORYBOOK !== "1") {
  * QueryProvider 하위여야 게이트 훅이 useQuery를 쓸 수 있어 별도 컴포넌트로 뺐다.
  */
 const AppShell = () => {
-  const showConsentGate = useConsentGate();
+  const { show: showConsentGate, resolved: consentResolved } =
+    useConsentGateState();
   const { hydrated, isAuthenticated } = useAuth();
   const pathname = usePathname();
 
@@ -54,12 +55,15 @@ const AppShell = () => {
   usePushForegroundHandler();
   /**
    * 푸시 탭 라우팅 (MSG-605, BE MSG-432 data 계약) — 게이트가 전부 열린 뒤에만 움직인다:
-   * 세션 재수화·로그인·약관 동의, 그리고 index의 `/home` Redirect가 끝난 뒤(pathname이 `/`·`/login`을
-   * 벗어난 뒤). 먼저 push하면 Redirect가 덮어 로그인 사용자도 홈에 머문다. 그 전의 탭은 보류된다.
+   * 세션 재수화·로그인·약관 동의(조회가 **끝난 뒤**의 판정 — 조회 중 `show=false`를 열림으로 보면 곧 뜨는
+   * 동의 화면이 네비게이터를 내려 목적지를 잃는다, codex 리뷰), 그리고 index의 `/home` Redirect가 끝난 뒤
+   * (pathname이 `/`·`/login`을 벗어난 뒤). 먼저 push하면 Redirect가 덮어 로그인 사용자도 홈에 머문다.
+   * 그 전의 탭은 보류된다.
    */
   usePushResponseRouting(
     hydrated &&
       isAuthenticated &&
+      consentResolved &&
       !showConsentGate &&
       pathname !== "/" &&
       pathname !== "/login",
