@@ -1,3 +1,11 @@
+import {
+  LOCATION_TERMS_BODY,
+  MARKETING_TERMS_BODY,
+  PRIVACY_COLLECTION_BODY,
+  PRIVACY_POLICY_BODY,
+  SERVICE_TERMS_BODY,
+} from "./terms-bodies";
+
 /**
  * 약관 문서 카탈로그 (MSG-448 기준 1·2·7) — 문서 5종을 뷰어 1개가 공유하는 구조의 정본.
  * 순수 도메인 모듈 — 플랫폼(window·router·RN) 무의존.
@@ -35,12 +43,25 @@ export interface TermsDocument {
  * `privacy-collection`(수집·이용 동의)과 `privacy-policy`(처리방침)는 법적으로 다른 문서라
  * 키를 합치지 않는다 (승인 Q2).
  */
+/** 본문은 `terms-bodies.ts`가 소유한다 — 문구 확정·개정은 그 파일 한 곳만 고친다 */
 export const TERMS_DOCUMENTS: readonly TermsDocument[] = [
-  { key: "service", title: "서비스 이용약관", body: null },
-  { key: "privacy-collection", title: "개인정보 수집 및 이용", body: null },
-  { key: "location", title: "위치기반서비스 이용약관", body: null },
-  { key: "marketing", title: "마케팅 정보 수신", body: null },
-  { key: "privacy-policy", title: "개인정보 처리방침", body: null },
+  { key: "service", title: "서비스 이용약관", body: SERVICE_TERMS_BODY },
+  {
+    key: "privacy-collection",
+    title: "개인정보 수집 및 이용",
+    body: PRIVACY_COLLECTION_BODY,
+  },
+  {
+    key: "location",
+    title: "위치기반서비스 이용약관",
+    body: LOCATION_TERMS_BODY,
+  },
+  { key: "marketing", title: "마케팅 정보 수신", body: MARKETING_TERMS_BODY },
+  {
+    key: "privacy-policy",
+    title: "개인정보 처리방침",
+    body: PRIVACY_POLICY_BODY,
+  },
 ] as const;
 
 /**

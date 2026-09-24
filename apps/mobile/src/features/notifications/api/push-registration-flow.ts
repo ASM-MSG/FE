@@ -53,7 +53,11 @@ export const enablePush = async (deps: PushDeps): Promise<EnablePushResult> => {
     await deps.registerToken(token);
     await deps.saveStoredToken(token);
     return { status: "enabled" };
-  } catch {
+  } catch (error) {
+    // 실패 사유는 화면에 싣지 않는다(설계) — 개발 빌드에서만 원인을 남긴다 (MSG-604 iOS 실기 진단)
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.warn("[push] enablePush 실패", error);
+    }
     return { status: "failed" };
   }
 };

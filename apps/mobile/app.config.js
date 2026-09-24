@@ -84,6 +84,13 @@ export default (_ctx) => ({
     // MSG-601: Sign in with Apple 엔타이틀먼트(`com.apple.developer.applesignin`) 주입.
     // 번들 ID가 곧 client_id라 환경변수가 없다. 유료 개발자 팀 서명이 있어야 빌드된다(스펙 R1).
     usesAppleSignIn: true,
+    // MSG-604: Firebase iOS 앱 설정(fillmap-edd7d / kr.fillmap.app) — `@react-native-firebase/app`
+    // 플러그인이 Xcode 프로젝트에 복사하고 AppDelegate에 `FirebaseApp.configure()`를 주입한다.
+    // iOS 푸시는 APNs 원시 토큰이 아니라 FCM 등록 토큰이어야 서버(FCM Admin)가 보낼 수 있다.
+    googleServicesFile: "./GoogleService-Info.plist",
+    // 백그라운드 원격 알림 수신 모드 — messaging 플러그인은 엔타이틀먼트(aps-environment)만 주입하고
+    // UIBackgroundModes는 넣지 않는다(prebuild 실측). 없으면 앱이 백그라운드일 때 data 메시지가 안 온다.
+    infoPlist: { UIBackgroundModes: ["remote-notification"] },
   },
   android: {
     /**
@@ -149,9 +156,20 @@ export default (_ctx) => ({
     // 무변화. 카카오와 달리 키가 없어 무조건 등록한다. `expo-crypto`(nonce)는 플러그인 없이 autolink
     // 되지만 네이티브 모듈이라 Android도 `prebuild --clean` + 재빌드가 필요하다(스펙 R2).
     "expo-apple-authentication",
+    // MSG-604: iOS FCM 등록 토큰 발급 — messaging 플러그인이 `aps-environment` 엔타이틀먼트와
+    // `remote-notification` 백그라운드 모드를 주입한다. Android는 expo-notifications 경로 그대로라
+    // Firebase 플러그인의 google-services gradle 적용만 겹치고 동작은 무변화(같은 google-services.json).
+    // `disableSPM`: RNFirebase 26은 기본으로 Firebase를 Swift Package(SPM)로 가져오는데, 이 경우
+    // 정적 링크(use_frameworks 없음·static 모두)를 pod install이 거부한다(실측 "SPM + static linkage
+    // is not supported"). 동적 프레임워크는 네이버 지도·카카오 pod와의 호환을 새로 검증해야 하므로
+    // SPM을 끄고 종전 CocoaPods 경로(+ 정적 프레임워크)를 쓴다.
+    ["@react-native-firebase/app", { ios: { disableSPM: true } }],
+    "@react-native-firebase/messaging",
     [
       "expo-build-properties",
       {
+        // MSG-604: Firebase iOS SDK(CocoaPods 경로)가 정적 프레임워크를 요구한다 — 위 disableSPM과 한 쌍.
+        ios: { useFrameworks: "static" },
         android: {
           extraMavenRepos: [
             // 네이버 지도 SDK 배포 저장소 (라이브러리 공식 Expo 설치 절차)

@@ -21,6 +21,13 @@ let modulePromise: Promise<NotificationsModule> | null = null;
 const loadNotifications = (): Promise<NotificationsModule> =>
   (modulePromise ??= import("expo-notifications"));
 
+/** iOS 전용 — 같은 이유(네이티브 부재 빌드 내성)로 지연 로드하고 같은 방식으로 캐시한다 (MSG-604). */
+type MessagingModule = typeof import("@react-native-firebase/messaging");
+
+let messagingModulePromise: Promise<MessagingModule> | null = null;
+const loadMessaging = (): Promise<MessagingModule> =>
+  (messagingModulePromise ??= import("@react-native-firebase/messaging"));
+
 /**
  * 포그라운드에서도 알림 배너를 띄운다 — 앱을 보고 있을 때 알림을 놓치지 않게.
  * 최초 1회만 등록한다. 탭 라우팅·콜드 스타트 조회는 MSG-567에서 삭제됐다(푸시에 `data` 없음).
@@ -61,12 +68,38 @@ export const requestPermission = async (): Promise<PushPermissionStatus> => {
 };
 
 /**
- * FCM **기기 토큰** — Expo 푸시 토큰이 아니다. 서버(`POST /api/notifications/tokens`)가
+ * FCM **등록 토큰** — Expo 푸시 토큰이 아니다. 서버(`POST /api/notifications/tokens`)가
  * FCM 토큰을 직접 받는 계약이라 발송이 Expo 서비스를 거치지 않는다.
- * Play 서비스 부재·설정 누락 등으로 실패할 수 있어 호출부가 흡수한다.
+ *
+ * - Android: `expo-notifications`의 기기 토큰이 곧 FCM 토큰이다(종전 경로).
+ * - iOS(MSG-604): `expo-notifications`는 **APNs 원시 토큰**을 돌려줘 서버(FCM Admin)가 보낼 수
+ *   없다. Firebase Messaging이 APNs 토큰을 FCM에 등록해 만든 등록 토큰을 쓴다. 모듈은 같은
+ *   이유(네이티브 부재 빌드 내성)로 지연 로드한다.
+ * Play 서비스 부재·APNs 미등록·설정 누락 등으로 실패할 수 있어 호출부가 흡수한다.
  */
-export const readDevicePushToken = async (): Promise<string> =>
-  String((await (await loadNotifications()).getDevicePushTokenAsync()).data);
+export const readDevicePushToken = async (): Promise<string> => {
+  if (Platform.OS === "ios") {
+    const { getMessaging, getToken, setAPNSToken } = await loadMessaging();
+    try {
+      // APNs 등록은 expo-notifications의 AppDelegate 구독자가 받는다(검증된 경로). RNFirebase 자체
+      // 등록(`registerDeviceForRemoteMessages`)은 그 델리게이트 콜백을 못 받아 타임아웃됐다(실측).
+      // 그래서 expo가 받은 APNs 토큰을 Firebase에 건네 FCM 등록 토큰으로 바꾼다.
+      const apns = await (await loadNotifications()).getDevicePushTokenAsync();
+      const messaging = getMessaging();
+      await setAPNSToken(messaging, String(apns.data));
+      return await getToken(messaging);
+    } catch (error) {
+      // 호출부는 실패를 "failed"로만 접는다(설계) — 원인은 개발 빌드에서만 남긴다.
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        console.warn("[push] iOS FCM 토큰 취득 실패", error);
+      }
+      throw error;
+    }
+  }
+  return String(
+    (await (await loadNotifications()).getDevicePushTokenAsync()).data,
+  );
+};
 
 /** 서버 계약의 platform 값 — iOS 확장 시 이 파생만 늘어난다 (스펙 추정 6) */
 export const devicePlatform = (): string =>
