@@ -264,32 +264,6 @@
       ]
     },
     {
-      "id": "925fe10582e49fac",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "79217106c4287e4d",
-          "source_digest": "fnv1a64:88a82e91c3e11714",
-          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
-          "lang": "typescript",
-          "start_line": 107,
-          "end_line": 120,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "165f7469ad26177e",
-          "source_digest": "fnv1a64:d090030619f84df9",
-          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
-          "lang": "typescript",
-          "start_line": 148,
-          "end_line": 157,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "03b5790efcca84a1",
       "note": "local duplication — extract a method from the repeated block — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
@@ -8476,32 +8450,6 @@
       ]
     },
     {
-      "id": "b29407bb5cc78aff",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "dd105c79ffb789a3",
-          "source_digest": "fnv1a64:efb74a500324466b",
-          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
-          "lang": "typescript",
-          "start_line": 82,
-          "end_line": 95,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "2bfe605b73f7d199",
-          "source_digest": "fnv1a64:335a76e18c123da9",
-          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
-          "lang": "typescript",
-          "start_line": 112,
-          "end_line": 120,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
       "id": "65d5e243b173ebf1",
       "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
       "members": [
@@ -10925,32 +10873,6 @@
           "lang": "typescript",
           "start_line": 3,
           "end_line": 18,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "bb566060a339f30e",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "55bbc11db68bd096",
-          "source_digest": "fnv1a64:a7eebd83bd7abe34",
-          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
-          "lang": "typescript",
-          "start_line": 117,
-          "end_line": 231,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "02354c2de9cf664d",
-          "source_digest": "fnv1a64:4b2812f9fd49114c",
-          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
-          "lang": "typescript",
-          "start_line": 154,
-          "end_line": 186,
           "kind": "Block",
           "is_fragment": false
         }
@@ -14076,32 +13998,6 @@
           "lang": "typescript",
           "start_line": 5,
           "end_line": 34,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "c235bbbd0142fcd4",
-      "note": "duplicated across 2 directories — extract a method from the repeated block",
-      "members": [
-        {
-          "id": "98be5f0dd9d148c9",
-          "source_digest": "fnv1a64:a2eff2b0e1c12a4c",
-          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
-          "lang": "typescript",
-          "start_line": 63,
-          "end_line": 72,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "854f4a07f11fb70a",
-          "source_digest": "fnv1a64:bb15228197cdb645",
-          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
-          "lang": "typescript",
-          "start_line": 105,
-          "end_line": 112,
           "kind": "Block",
           "is_fragment": false
         }
@@ -25053,6 +24949,110 @@
           "end_line": 65,
           "kind": "Block",
           "name": "pressable",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "26cd8509b5ca432a",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "79217106c4287e4d",
+          "source_digest": "fnv1a64:88a82e91c3e11714",
+          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
+          "lang": "typescript",
+          "start_line": 107,
+          "end_line": 120,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "7bf4a940f4991008",
+          "source_digest": "fnv1a64:d090030619f84df9",
+          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
+          "lang": "typescript",
+          "start_line": 151,
+          "end_line": 160,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "b29407bb5cc78aff",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "dd105c79ffb789a3",
+          "source_digest": "fnv1a64:efb74a500324466b",
+          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
+          "lang": "typescript",
+          "start_line": 82,
+          "end_line": 95,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "2bfe605b73f7d199",
+          "source_digest": "fnv1a64:335a76e18c123da9",
+          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
+          "lang": "typescript",
+          "start_line": 112,
+          "end_line": 120,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "c235bbbd0142fcd4",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "98be5f0dd9d148c9",
+          "source_digest": "fnv1a64:a2eff2b0e1c12a4c",
+          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
+          "lang": "typescript",
+          "start_line": 63,
+          "end_line": 72,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "854f4a07f11fb70a",
+          "source_digest": "fnv1a64:bb15228197cdb645",
+          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
+          "lang": "typescript",
+          "start_line": 105,
+          "end_line": 112,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "fdae97c6edc650c6",
+      "note": "duplicated across 2 directories — extract a method from the repeated block",
+      "members": [
+        {
+          "id": "55bbc11db68bd096",
+          "source_digest": "fnv1a64:a7eebd83bd7abe34",
+          "file": "apps/web/src/pages/map-home/ui/EventVideoMiniPanel.tsx",
+          "lang": "typescript",
+          "start_line": 117,
+          "end_line": 231,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "10a7535c4a0f6115",
+          "source_digest": "fnv1a64:4b2812f9fd49114c",
+          "file": "apps/mobile/src/features/event/api/use-event-video-sheet.ts",
+          "lang": "typescript",
+          "start_line": 157,
+          "end_line": 189,
+          "kind": "Block",
           "is_fragment": false
         }
       ]

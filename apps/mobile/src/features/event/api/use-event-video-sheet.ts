@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { EventVideoCommentResponseDto } from "../../../shared/api/sdk";
-import { useProfileQuery } from "../../profile/api/use-profile-query";
+import { useCurrentUserId } from "../../auth/model/use-current-user-id";
 import type { BlockTarget } from "../../user-block/model/user-block";
 import { useAutoDismissToast } from "../../video-actions/model/use-auto-dismiss-toast";
 import type { EventLocationSelection } from "../model/event-location";
@@ -121,15 +121,18 @@ export const useEventVideoSheet = (videoId: number): EventVideoSheet => {
 
   const interaction = detail === null ? null : eventVideoInteraction(detail);
 
-  // 댓글 작성자 차단 (MSG-570 기준 10·11)
+  // 댓글 작성자 차단 (MSG-570 기준 10·11). 내 댓글 판정은 토큰의 사용자 id와 `authorId` 비교다 —
+  // 닉네임은 중복이 허용돼(약관 제4조 3항) 동명이인의 댓글에서 차단 경로가 사라지고, 닉네임을 바꾼 뒤엔
+  // 내 옛 댓글이 타인으로 보인다(#163 리뷰). 영상 소유 판정(`canReportVideo`)과 같은 규칙.
+  // 토큰 파싱 실패(null)면 타인으로 보고 메뉴를 그린다 — 차단 경로 유지 우선(영상과 같은 정책).
   const queryClient = useQueryClient();
-  const { data: me } = useProfileQuery();
+  const myUserId = useCurrentUserId();
   const [commentMenu, setCommentMenu] = useState<BlockTarget | null>(null);
   const [blockTarget, setBlockTarget] = useState<BlockTarget | null>(null);
   const commentBlockTarget = (
     comment: EventVideoCommentResponseDto,
   ): BlockTarget | null =>
-    comment.authorNickname === me?.nickname
+    comment.authorId === myUserId
       ? null
       : { userId: comment.authorId, nickname: comment.authorNickname };
   // 제출한 userId로 처리 — 요청 중 다이얼로그를 닫거나 다른 작성자를 고르면 `blockTarget`은
