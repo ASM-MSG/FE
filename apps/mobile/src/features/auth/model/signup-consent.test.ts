@@ -5,6 +5,7 @@ import {
   INITIAL_CONSENT_STATE,
   canSubmitConsent,
   isAllAgreed,
+  toConsentSubmitBody,
   toggleAll,
   toggleItem,
 } from "./signup-consent";
@@ -138,5 +139,21 @@ describe("CTA 활성 조건 (AC 16·17)", () => {
     expect(
       canSubmitConsent({ ...INITIAL_CONSENT_STATE, marketing: true }),
     ).toBe(false);
+  });
+});
+
+/** MSG-606 M6 — 가입 동의 5종을 서버 body로 옮긴다(필수 4 + 마케팅 선택값) */
+describe("toConsentSubmitBody", () => {
+  it("모두 동의는 5필드 true, 마케팅만 끄면 marketing만 false", () => {
+    expect(toConsentSubmitBody(toggleAll(true))).toEqual({
+      ageOver14: true,
+      serviceTerms: true,
+      privacyPolicy: true,
+      locationTerms: true,
+      marketing: true,
+    });
+    expect(
+      toConsentSubmitBody(toggleItem(toggleAll(true), "marketing")),
+    ).toMatchObject({ locationTerms: true, marketing: false });
   });
 });

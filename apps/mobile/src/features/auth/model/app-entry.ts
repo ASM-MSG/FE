@@ -4,8 +4,17 @@
  * 플랫폼 API·라우터 무의존(RN 경계 규칙, `consent-gate.ts`와 같은 배치).
  */
 
-/** 로그인 없이 도달 가능한 라우트 — 진입점·로그인·dev 로그인(실기 세션 확보, `__DEV__` 가드 있음) */
-export const PUBLIC_ROUTES = ["index", "login", "dev/api-smoke"] as const;
+/**
+ * 로그인 없이 도달 가능한 라우트 — 진입점·로그인·dev 로그인(실기 세션 확보, `__DEV__` 가드 있음)·
+ * 약관 뷰어(MSG-606 H3 — 로그인 화면의 약관·처리방침 링크가 열어야 하므로 로그인 전에도 읽힌다.
+ * 본문은 공개 문서라 보호할 것이 없다).
+ */
+export const PUBLIC_ROUTES = [
+  "index",
+  "login",
+  "dev/api-smoke",
+  "terms/[docKey]",
+] as const;
 
 /**
  * `Stack.Protected`에 등재되는 보호 라우트 — `src/app/**` 파일과 1:1 (`/index` 절단).
@@ -16,7 +25,6 @@ export const PROTECTED_ROUTES = [
   "ai-route",
   "dex",
   "dex/history",
-  "grid/[cellId]",
   "profile",
   "profile/blocks",
   "profile/consent",
@@ -24,7 +32,6 @@ export const PROTECTED_ROUTES = [
   "profile/notifications",
   "profile/reports",
   "search",
-  "terms/[docKey]",
   "upload",
   "upload/analyzing",
   "upload/highlight",

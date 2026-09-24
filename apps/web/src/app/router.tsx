@@ -14,6 +14,7 @@ import { DexPanel } from "@/pages/dex/DexPanel";
 import { MapHomePage } from "@/pages/map-home/MapHomePage";
 import { KakaoCallbackPage } from "@/pages/oauth-callback/KakaoCallbackPage";
 import { ProfilePanel } from "@/pages/profile/ProfilePanel";
+import { TermsPage } from "@/pages/terms/TermsPage";
 import { MapShell } from "@/widgets/map-shell/MapShell";
 import { SectionPanel } from "@/widgets/section-panel/SectionPanel";
 
@@ -133,7 +134,26 @@ export const consoleRoutes: RouteObject[] = [
   },
 ];
 
+/**
+ * 약관·개인정보 처리방침 공개 페이지 (MSG-606 H2) — AppLayout의 **형제**다: 지도 셸·위치동의 게이트·
+ * 로그인 모달 밖에서 비로그인으로 읽힌다(앱스토어 심사 Privacy Policy URL, 앱 로그인 화면 링크).
+ * `/privacy`·`/terms`는 심사·외부 링크용 별칭이다.
+ */
+export const termsRoutes: RouteObject[] = [
+  {
+    path: "/terms/:docKey",
+    element: <TermsPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  { path: "/terms", element: <Navigate to="/terms/service" replace /> },
+  {
+    path: "/privacy",
+    element: <Navigate to="/terms/privacy-policy" replace />,
+  },
+];
+
 export const router = createBrowserRouter([
+  ...termsRoutes,
   // 로그인은 라우트가 아니라 모달(LoginModal, AppLayout 마운트)이다 — MSG-46 후속 2 G7.
   // /login 직접 진입은 무매칭이라 아래 errorElement 화면으로 수렴한다 (신규 404 페이지 없음)
   {

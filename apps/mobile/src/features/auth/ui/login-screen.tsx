@@ -1,4 +1,11 @@
-import { Image, Platform, ScrollView, Text, View } from "react-native";
+import {
+  Image,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Toast } from "@fillmap/ui-native";
@@ -36,6 +43,27 @@ import { LoginHero } from "./login-hero";
  * 로그인 성공 후 이동은 `/home` 하나다. 미동의 계정 분기는 여기서 하지 않는다 —
  * 루트 `AppShell`의 동의 게이트가 `isAuthenticated` 전이를 보고 스스로 뜬다 (MSG-422).
  */
+/** 약관 문서 링크 — 로그인 전 공개 뷰어로 push (MSG-606 H3) */
+const TermsLink = ({
+  label,
+  docKey,
+}: {
+  label: string;
+  docKey: "service" | "privacy-policy";
+}) => {
+  const router = useRouter();
+  return (
+    <Pressable
+      accessibilityRole="link"
+      onPress={() => router.push(`/terms/${docKey}`)}
+    >
+      <Text className="text-fm-caption text-foreground-body underline">
+        {label}
+      </Text>
+    </Pressable>
+  );
+};
+
 export const LoginScreen = () => {
   const router = useRouter();
   const onLoggedIn = () => router.replace("/home");
@@ -103,10 +131,18 @@ export const LoginScreen = () => {
               pending={pending}
             />
           )}
-          {/* 약관·처리방침 링크 연결은 해당 페이지 티켓에서 (웹 MSG-46 AC 7과 동일한 제외 범위) */}
-          <Text className="text-center text-fm-caption text-foreground-muted">
-            로그인 시 서비스 약관과 개인정보 처리 방침에 동의합니다
-          </Text>
+          {/* 약관·처리방침은 로그인 전에도 열린다 (MSG-606 H3 — `terms/[docKey]`는 공개 라우트) */}
+          <View className="flex-row flex-wrap items-center justify-center">
+            <Text className="text-fm-caption text-foreground-muted">
+              로그인 시{" "}
+            </Text>
+            <TermsLink label="서비스 이용약관" docKey="service" />
+            <Text className="text-fm-caption text-foreground-muted">과 </Text>
+            <TermsLink label="개인정보 처리방침" docKey="privacy-policy" />
+            <Text className="text-fm-caption text-foreground-muted">
+              에 동의합니다
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

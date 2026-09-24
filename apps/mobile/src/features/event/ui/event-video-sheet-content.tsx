@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Heart, MessageCircle } from "lucide-react-native";
@@ -9,7 +10,10 @@ import {
   Toast,
   cx,
 } from "@fillmap/ui-native";
+import { useProfileQuery } from "../../profile/api/use-profile-query";
 import { BlockUserDialog } from "../../user-block/ui/block-user-dialog";
+import { VideoActionsMenu } from "../../video-actions/ui/video-actions-menu";
+import { VideoMoreButton } from "../../video-actions/ui/video-more-button";
 import type { HomeSheetContentContext } from "../../map-home/ui/home-sheet";
 import { SheetHeader } from "../../map-home/ui/sheet-header";
 import { SheetScrollView } from "../../map-home/ui/sheet-scroll-view";
@@ -31,7 +35,9 @@ import { EventVideoPlayer } from "./event-video-player";
  *
  * 시안과 의도적으로 다른 지점(스펙 Figma 오탐 방지): 조회수 미표시(DTO 부재), 제목은
  * `eventVideoTitle` 폴백만, 배지 이모지 없음, 댓글 오래된순, 아바타 첫 글자 폴백, 재생
- * 컨트롤은 expo-video 네이티브. 헤더 ⋯(유틸리티 메뉴)는 제외 범위.
+ * 컨트롤은 expo-video 네이티브. **헤더 ⋯은 타인 영상에만 그린다(MSG-606 M1, Guideline 1.2)** — 격자·도감·재생
+ * 화면과 같은 `VideoActionsMenu`(신고하기·사용자 차단)를 재사용한다. 내 영상 판정은 getMe에 userId가
+ * 없어 닉네임 일치로 한다(닉네임은 서버 유일). 댓글 신고 API는 없어 댓글은 차단만 있다.
  * 토스트는 시트 안 인라인(`ActionToast` Modal은 3초간 전 화면 터치를 삼켜 재생 조작을 막는다).
  * **[MSG-570 기준 10·11] 타인 댓글 길게 누르기 → "사용자 차단" 1행 액션시트 → 확인 다이얼로그**
  * — 성공 시 그 작성자 댓글이 상세 seed로 빠지고 "차단했어요"가 같은 인라인 토스트로 뜬다.
@@ -71,6 +77,10 @@ export const EventVideoSheetContent = ({
     close,
   } = useEventVideoSheet(video.videoId);
   const insets = useSafeAreaInsets();
+  const myNickname = useProfileQuery().data?.nickname ?? null;
+  const [videoMenuOpen, setVideoMenuOpen] = useState(false);
+  const canReportVideo =
+    detail !== null && detail.uploaderNickname !== myNickname;
   const helpfulByMe = detail?.helpfulByMe ?? false;
   const helpfulDisabled = interaction?.helpfulDisabled ?? true;
   // 키보드 회피 (A2 대안 — R2 실기에서 footer가 자판 뒤에 가려져 채택)
@@ -84,9 +94,34 @@ export const EventVideoSheetContent = ({
     >
       <SheetHeader
         title={detail?.locationName ?? video.locationName}
+        action={
+          canReportVideo ? (
+            <VideoMoreButton onPress={() => setVideoMenuOpen(true)} />
+          ) : undefined
+        }
         onBack={back}
         onClose={close}
       />
+      {detail !== null && canReportVideo && (
+        <VideoActionsMenu
+          open={videoMenuOpen}
+          onClose={() => setVideoMenuOpen(false)}
+          mine={false}
+          target={{
+            videoId: detail.videoId,
+            gridId: detail.representativeGridId,
+            thumbnailUrl: null,
+            durationSec: detail.durationSec,
+            createdAt: detail.createdAt,
+            gridLabel: detail.locationName,
+          }}
+          author={{
+            userId: detail.uploaderId,
+            nickname: detail.uploaderNickname,
+          }}
+          onBlocked={() => onBlocked(detail.uploaderId)}
+        />
+      )}
 
       <EventVideoPlayer
         uri={detail?.playbackUrl ?? null}

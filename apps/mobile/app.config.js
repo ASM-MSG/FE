@@ -90,7 +90,55 @@ export default (_ctx) => ({
     googleServicesFile: "./GoogleService-Info.plist",
     // 백그라운드 원격 알림 수신 모드 — messaging 플러그인은 엔타이틀먼트(aps-environment)만 주입하고
     // UIBackgroundModes는 넣지 않는다(prebuild 실측). 없으면 앱이 백그라운드일 때 data 메시지가 안 온다.
-    infoPlist: { UIBackgroundModes: ["remote-notification"] },
+    // MSG-606: 심사 대비 — 표준 암호화(HTTPS)만 써서 수출 규정 문답을 건너뛴다(L5), 빌드 번호 명시(L6).
+    buildNumber: "1",
+    infoPlist: {
+      UIBackgroundModes: ["remote-notification"],
+      ITSAppUsesNonExemptEncryption: false,
+    },
+    // MSG-606 M5: 앱 개인정보 매니페스트 — 실제 수집 항목(위치·이메일·사용자 콘텐츠·사용자 ID·푸시 토큰).
+    // App Store Connect "앱 개인정보" 라벨은 이 목록과 일치시켜 별도 작성한다. 추적(NSPrivacyTracking)은 없다.
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyCollectedDataTypes: [
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePreciseLocation",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeEmailAddress",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeUserID",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePhotosorVideos",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeOtherUserContent",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeDeviceID",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+      ],
+    },
   },
   android: {
     /**
@@ -137,7 +185,21 @@ export default (_ctx) => ({
         microphonePermission: "영상을 촬영하려면 마이크 접근 권한이 필요해요.",
       },
     ],
-    "expo-location",
+    // MSG-606 H1: 위치 권한 문구 — 플러그인 기본값("Allow $(PRODUCT_NAME) to access your location")은
+    // 목적이 없어 심사 반려 1순위. 앱은 포그라운드 위치만 쓴다(`shared/geolocation.ts`) — Always·모션 키는
+    // 넣지 않는다(쓰지 않는 권한 문구가 Info.plist에 있으면 그것도 지적 대상).
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "현재 위치 주변 격자를 지도에 보여 주고, 촬영한 영상의 위치를 기록하려면 위치 권한이 필요해요.",
+        locationAlwaysPermission: false,
+        locationAlwaysAndWhenInUsePermission: false,
+        motionUsagePermission: false,
+        isIosBackgroundLocationEnabled: false,
+        isAndroidBackgroundLocationEnabled: false,
+      },
+    ],
     // MSG-304: 블러 확인 화면 프리뷰 재생 (expo install 안내에 따른 플러그인 등록)
     "expo-video",
     // MSG-429: 블러 완료 푸시 수신 — 권한·FCM 기기 토큰·알림 탭 진입.
