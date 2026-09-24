@@ -717,3 +717,14 @@
 | 2026-09-24 | MSG-605 | codex 3R P2 반영: 행사방 딥링크 처리 시 `sheetRef.snapTo(1)`로 개요 시트를 명시적으로 펼친다 | 시트를 숨긴 채(4단계) 푸시를 탭하면 선택 상태만 바뀌고 시트는 숨은 채 남는다 — 기존 스냅 효과는 `event.sheetStage` 변화에만 반응해 이미 행사방이던 홈에서는 안 돈다 |
 | 2026-09-24 | MSG-605 | 푸시 탭 보류는 **최초 기동에만**, 세션이 한 번 열렸다 닫힌 뒤의 not-ready 탭은 폐기 | PR #161 리뷰·codex: 라우터가 앱 수명 동안 하나라 A 로그아웃 뒤 도착한 탭이 B 세션에서 열린다. `aiRouteStore.resetForSessionEnd`(MSG-556)와 같은 세션 경계 정리 |
 | 2026-09-24 | MSG-605 | 푸시 ready 조건에 동의 조회 종결(`useConsentGateState.resolved`) 추가 | codex: getMe 조회 중 `show=false`를 게이트 열림으로 보면 콜드 스타트 탭을 소비한 직후 동의 화면이 네비게이터를 내려 목적지를 잃는다 |
+| 2026-09-24 | MSG-606 | 약관 본문·카탈로그 정본을 `@fillmap/terms` 패키지로 승격, 웹 `/terms/:docKey`(+`/terms`·`/privacy`) 비로그인 공개 페이지 신설 | App Store Connect의 Privacy Policy URL 필수 항목. 앱 상수만으로는 공개 URL이 없었고, 앱·웹이 같은 문구를 읽어야 심사관이 본 처리방침과 앱 안 문서가 어긋나지 않는다 |
+| 2026-09-24 | MSG-606 | `terms/[docKey]`를 PUBLIC_ROUTES로, 로그인 화면 약관·처리방침을 탭 링크로 | 5.1.1·5.1.2 — 비로그인 상태에서 처리방침을 읽을 화면이 앱 안에 없었다. 공개 문서라 보호할 것이 없다 |
+| 2026-09-24 | MSG-606 | `expo-location` 문구를 한국어 목적 문구로, Always·Motion 키 제거, `ITSAppUsesNonExemptEncryption:false`, `buildNumber`, `privacyManifests` 6종 | 5.1.1(i) 최다 반려 유형. 앱은 포그라운드 위치만 쓰므로 쓰지 않는 권한 문구를 남기지 않는다. 매니페스트는 ASC 라벨과 일치시키는 재료 |
+| 2026-09-24 | MSG-606 | 가입 동의 CTA가 `PUT /me/consents`(5종) → `PUT /me/location-consent` 순차 | 처리방침의 "동의 이력 보관"이 사실이 되게. 서버 consents는 마케팅+시각만 기록하고 게이트 컬럼은 location-consent가 쥐어 두 요청이 필요하다. 앞이 실패하면 뒤를 보내지 않는다 |
+| 2026-09-24 | MSG-606 | mock 프로필 폴백 삭제 → `PENDING_PROFILE`(빈 값) + "프로필을 불러오는 중" | 2.1·2.3 — 네트워크 지연·실패 시 가짜 계정(필맵퍼)이 심사관에게 보였다 |
+| 2026-09-24 | MSG-606 | 미완성 `/grid/[cellId]` 라우트와 `features/grid-detail` 삭제 | UI 진입점 없이 딥링크로만 도달하는 스텁(공유·업로드 버튼 무동작, mock 데이터). 홈의 격자 상세 시트가 실제 기능이다 |
+| 2026-09-24 | MSG-606 | 행사 영상 시트 헤더 ⋯(타인 영상만) → `VideoActionsMenu` 재사용, 내 영상 판정은 **토큰 `sub`(사용자 id)** 와 `uploaderId` 비교 | Guideline 1.2 — 행사 영상에 신고 경로가 없었다. 처음엔 닉네임 일치로 갔으나 닉네임은 중복 허용이라(codex 리뷰) 동명이인 영상에서 신고가 사라진다. getMe에 userId가 없어 JWT `sub`를 읽는 `userIdFromAccessToken`을 뒀다(서명 미검증 — 판정 재료일 뿐). 댓글 신고 API는 없어 댓글은 차단만 |
+| 2026-09-24 | MSG-606 | Apple 로그인 버튼을 `expo-apple-authentication` 네이티브 버튼으로 | 4.8·HIG 지적 원천 차단. 시안(검정 pill·"Apple로 계속하기")과 동일 외형 |
+| 2026-09-24 | MSG-606 | 운영 주체·보호책임자·지원 메일 확정값은 사용자 몫으로 남김 | 사업자 정보를 하네스가 지어낼 수 없다. `terms-bodies.ts` 상수 3곳만 바꾸면 된다 |
+| 2026-09-24 | MSG-606 | codex P2 반영: 행사 영상 업로더 차단 성공 시 시트를 위치 목록으로 되돌린다 | 상세 캐시는 차단 후 일부러 재조회하지 않아(`invalidateAfterBlockChange`) 차단한 사람의 영상이 계속 재생됐다 |
+| 2026-09-24 | MSG-606 | 문의 이메일을 `contact@fillmap.kr`로 확정(사용자) — 약관 5종·운영자 콘솔 안내 문구 4곳 일괄 교체 | 종전 `support@fillmap.kr`는 자리표시였다(MSG-545가 "실주소 확인"으로 환류). 심사관이 처리방침의 연락처로 메일을 보낼 수 있어 실주소여야 한다 |

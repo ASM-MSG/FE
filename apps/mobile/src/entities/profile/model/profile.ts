@@ -29,3 +29,14 @@ export const toProfileIdentity = (
   profileImageUrl: dto.profileImageUrl,
   joinedAt: dto.createdAt,
 });
+
+/**
+ * 조회 전·실패 시의 빈 정체성 (MSG-606 M2) — 종전 mock("필맵퍼"·가짜 이메일) 폴백은 네트워크가
+ * 느리면 심사관에게 가짜 계정으로 보였다. 이름·이메일·가입일은 비우고 화면이 "불러오는 중"을 그린다.
+ */
+export const PENDING_PROFILE: ProfileIdentity = {
+  nickname: "",
+  email: null,
+  profileImageUrl: null,
+  joinedAt: "",
+};

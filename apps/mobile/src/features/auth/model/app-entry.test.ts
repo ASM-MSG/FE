@@ -99,8 +99,13 @@ describe("라우트 등재 드리프트 (L3)", () => {
     .map((file) => file.replace(/\.tsx$/, "").replace(/\/index$/, ""))
     .filter((route) => route !== "_layout");
 
-  it("공개 라우트는 정확히 index·login·dev/api-smoke 셋이다 (D1·D11)", () => {
-    expect([...PUBLIC_ROUTES]).toEqual(["index", "login", "dev/api-smoke"]);
+  it("공개 라우트는 정확히 index·login·dev/api-smoke·terms/[docKey] 넷이다 (D1·D11, MSG-606 H3)", () => {
+    expect([...PUBLIC_ROUTES]).toEqual([
+      "index",
+      "login",
+      "dev/api-smoke",
+      "terms/[docKey]",
+    ]);
   });
 
   it("src/app의 모든 라우트 파일이 공개 또는 보호 목록에 정확히 한 번 등재돼 있다 (D9)", () => {

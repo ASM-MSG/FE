@@ -102,7 +102,7 @@ describe("계정 설정 화면 렌더 (AC 1)", () => {
       "051-888-0000",
     );
     expect(
-      screen.getByText(/계정 관련 문의는 운영팀 support@fillmap.kr/),
+      screen.getByText(/계정 관련 문의는 운영팀 contact@fillmap.kr/),
     ).toBeDefined();
   });
 

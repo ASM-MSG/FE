@@ -1,3 +1,4 @@
+import { Redirect } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -158,5 +159,6 @@ const ApiSmokeScreen = () => {
 };
 
 export default function ApiSmoke() {
-  return __DEV__ ? <ApiSmokeScreen /> : null;
+  // 릴리스 빌드에서 딥링크로 열리면 빈 화면이 아니라 홈으로 (MSG-606 L2 — 심사관이 보면 미완성으로 보인다)
+  return __DEV__ ? <ApiSmokeScreen /> : <Redirect href="/home" />;
 }

@@ -13,7 +13,7 @@ import { resolveTermsDocument } from "../../../entities/terms/model/terms-docume
 import type { TermsDocKey } from "../../../entities/terms/model/terms-documents";
 import { TermsDocumentView } from "../../../entities/terms/ui/terms-document-view";
 import { useLogout } from "../api/use-logout";
-import { useUpdateLocationConsent } from "../api/use-update-location-consent";
+import { useSubmitSignupConsents } from "../api/use-submit-signup-consents";
 import {
   CONSENT_ITEMS,
   INITIAL_CONSENT_STATE,
@@ -33,10 +33,9 @@ import {
  * - 초기 5개 전부 미체크 + CTA 비활성 = Figma 미동의 프레임 (AC 9). 웹과 의도적으로 다르다
  * - CTA = `PUT location-consent {consented:true}` 1회 → getMe invalidate 경유로 게이트가
  *   스스로 풀린다 (AC 18). 별도 화면 이동 없음
- * - 만14세·이용약관·개인정보·마케팅 체크는 요청을 만들지 않는다 (AC 21).
- *   [MSG-448] 원문의 "저장할 서버 필드가 없다"는 더 이상 사실이 아니다 — MSG-451 SDK
- *   재생성으로 `submitConsents`·`updateMarketingConsent`가 생겼다. 배선은 MSG-448 범위
- *   밖(승인 Q7)이라 동작은 그대로 두고 사실만 정정한다
+ * - [MSG-606 M6] 만14세·이용약관·개인정보·마케팅 체크도 서버에 남는다 — CTA가
+ *   `PUT /api/users/me/consents`(5종 일괄) 뒤 위치 동의 PUT을 이어 보낸다(`useSubmitSignupConsents`).
+ *   종전(AC 21)의 "요청을 만들지 않는다"는 처리방침의 "동의 이력 보관"과 어긋나 정정했다
  * - 헤더 `‹`·하드웨어 뒤로가기 = 로그인 중단(로그아웃) — 1회 가드로 두 트리거가 요청을
  *   한 번만 만든다 (AC 22·23, 웹 logoutRequestedRef 선례)
  * - 하단 캡션("선택 항목 동의는 나중에 프로필 편집에서 바꿀 수 있어요.")은 렌더하지 않는다 —
@@ -54,7 +53,7 @@ export const SignupConsentScreen = () => {
     mutate: saveConsent,
     isPending: isSaving,
     isError: isSaveFailed,
-  } = useUpdateLocationConsent();
+  } = useSubmitSignupConsents();
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
   // 헤더 `‹`와 하드웨어 뒤로가기의 공용 1회 가드 (AC 23) — 어느 쪽이 먼저 시작하든
@@ -201,7 +200,7 @@ export const SignupConsentScreen = () => {
           shape="pill"
           className="w-full"
           disabled={!canSubmitConsent(consent) || isSaving || isLoggingOut}
-          onPress={() => saveConsent(true)}
+          onPress={() => saveConsent(consent)}
         />
       </View>
     </SafeAreaView>

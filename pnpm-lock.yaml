@@ -46,6 +46,9 @@ importers:
       '@fillmap/tailwind-preset':
         specifier: workspace:*
         version: link:../../packages/tailwind-preset
+      '@fillmap/terms':
+        specifier: workspace:*
+        version: link:../../packages/terms
       '@fillmap/ui-native':
         specifier: workspace:*
         version: link:../../packages/ui-native
@@ -188,6 +191,9 @@ importers:
       '@fillmap/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@fillmap/terms':
+        specifier: workspace:*
+        version: link:../../packages/terms
       '@fillmap/ui-web':
         specifier: workspace:*
         version: link:../../packages/ui-web
@@ -298,6 +304,12 @@ importers:
       tailwindcss:
         specifier: ^4.3.2
         version: 4.3.2
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/terms:
+    devDependencies:
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -11008,7 +11020,9 @@ snapshots:
       metro-runtime: 0.84.4
     transitivePeerDependencies:
       - '@babel/core'
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@react-native/normalize-colors@0.86.2': {}
 

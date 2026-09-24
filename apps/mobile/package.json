@@ -15,6 +15,7 @@
   "dependencies": {
     "@fillmap/design-tokens": "workspace:*",
     "@fillmap/tailwind-preset": "workspace:*",
+    "@fillmap/terms": "workspace:*",
     "@fillmap/ui-native": "workspace:*",
     "@mj-studio/react-native-naver-map": "^2.9.0",
     "@react-native-async-storage/async-storage": "2.2.0",

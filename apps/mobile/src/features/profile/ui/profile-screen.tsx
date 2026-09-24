@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { User } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader, Avatar, Button, ModalCard } from "@fillmap/ui-native";
-import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
+import { PENDING_PROFILE } from "../../../entities/profile/model/profile";
 import { goToLogin, goToTermsDocument } from "../../../shared/navigation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
@@ -71,8 +71,8 @@ export const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: profile } = useProfileQuery();
-  // 조회 전·실패 시 mock 폴백 — 게이트를 세우지 않는다 (결정 E2)
-  const identity = profile ?? MOCK_PROFILE;
+  // 조회 전·실패 시 빈 정체성 — 게이트를 세우지 않되 가짜 계정을 보이지도 않는다 (결정 E2 → MSG-606 M2)
+  const identity = profile ?? PENDING_PROFILE;
   const activity = useActivityQuery();
   const notifications = useNotificationToggle();
   const push = usePushRegistration();
@@ -105,7 +105,11 @@ export const ProfileScreen = () => {
   const joinedText = `가입일 ${formatJoinedDate(identity.joinedAt)}`;
   // 카카오 가입은 이메일을 수집하지 않아 null이 올 수 있다 — 그때는 가입일만 보인다
   const metaText =
-    identity.email === null ? joinedText : `${joinedText} · ${identity.email}`;
+    profile === undefined
+      ? "프로필을 불러오는 중"
+      : identity.email === null
+        ? joinedText
+        : `${joinedText} · ${identity.email}`;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>

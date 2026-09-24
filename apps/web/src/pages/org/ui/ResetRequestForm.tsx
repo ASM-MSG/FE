@@ -88,7 +88,7 @@ export const ResetRequestForm = ({
           title="이메일이 기억나지 않는다면"
           lines={[
             "계정은 기관 공식 이메일로만 발급됩니다. 주소가 확실하지 않으면",
-            "운영팀에 문의해 주세요.  support@fillmap.kr",
+            "운영팀에 문의해 주세요.  contact@fillmap.kr",
           ]}
         />
       </div>

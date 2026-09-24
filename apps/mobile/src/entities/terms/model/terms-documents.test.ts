@@ -41,7 +41,7 @@ describe("본문 (MSG-604 브랜치에서 채움 — 종전 기준 2 '문구 미
         doc.title.replace("마케팅 정보 수신", "마케팅 정보 수신 동의"),
       );
       expect(doc.body, doc.key).toMatch(/시행/);
-      expect(doc.body, doc.key).toContain("support@fillmap.kr");
+      expect(doc.body, doc.key).toContain("contact@fillmap.kr");
     }
   });
 
