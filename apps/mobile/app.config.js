@@ -166,6 +166,7 @@ export default (_ctx) => ({
     googleServicesFile: "./google-services.json",
   },
   plugins: [
+    "./plugins/with-pnpm-node-path.js",
     "expo-router",
     [
       "expo-splash-screen",
