@@ -43,6 +43,7 @@ import {
   deactivateEvent,
   eventSheetStage,
   getEventSelection,
+  openEventOverview,
   openEventRoom,
   selectEventLocation,
   selectEventVideo,
@@ -290,9 +291,10 @@ export const useEventHome = ({
         openEventRoom({ occurrenceId, title, status }),
       openRoom: (occurrenceId) => {
         // 칩 활성과 같은 전제(테마·선택 비우기)를 밟는다. 자리 표시 제목·상태는 overview 조립이
-        // `detail ?? selection` 폴백으로 덮는다 — 상세가 오기 전 한 프레임만 빈 제목이다
+        // `detail ?? selection` 폴백으로 덮는다 — 상세가 오기 전 한 프레임만 빈 제목이다.
+        // 같은 행사의 위치·영상 상세를 보던 중이어도 개요로 돌아간다 (openEventOverview, codex P2)
         latest.current.onActivate();
-        openEventRoom({ occurrenceId, title: "", status: "LIVE" });
+        openEventOverview({ occurrenceId, title: "", status: "LIVE" });
       },
       selectLocation: selectLocationById,
       tapCell: (cell) => {

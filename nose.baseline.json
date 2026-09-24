@@ -8194,9 +8194,19 @@
       ]
     },
     {
-      "id": "6149d3b51176aea5",
-      "note": "repeated across 5 directories — extract a shared abstraction — high-parameter (13 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "id": "5029a55fac18a847",
+      "note": "repeated across 5 directories — extract a shared abstraction — high-parameter (12 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
+        {
+          "id": "37e25987be5dce7a",
+          "source_digest": "fnv1a64:4c0b659b09569193",
+          "file": "apps/mobile/src/features/event/model/event-selection.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 437,
+          "kind": "Block",
+          "is_fragment": false
+        },
         {
           "id": "477399c802a7a84f",
           "source_digest": "fnv1a64:e3807e385ec03651",
@@ -8204,16 +8214,6 @@
           "lang": "typescript",
           "start_line": 1,
           "end_line": 425,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "29cc10ff9d976ab4",
-          "source_digest": "fnv1a64:8c52e553297e5ec0",
-          "file": "apps/mobile/src/features/event/model/event-selection.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 407,
           "kind": "Block",
           "is_fragment": false
         },
@@ -13732,16 +13732,16 @@
       ]
     },
     {
-      "id": "98e76b5bb4d1cd34",
+      "id": "4367545886b63c32",
       "note": "duplicated across 2 directories — extract a helper",
       "members": [
         {
-          "id": "90501d6a286a1f2c",
+          "id": "17d954fbe7f4ed6e",
           "source_digest": "fnv1a64:1c8b743ab12818b6",
           "file": "apps/mobile/src/features/event/model/event-selection.ts",
           "lang": "typescript",
-          "start_line": 125,
-          "end_line": 126,
+          "start_line": 142,
+          "end_line": 143,
           "kind": "Function",
           "name": "useEventSelection",
           "is_fragment": false
@@ -18851,7 +18851,7 @@
       ]
     },
     {
-      "id": "d9e1e596d48f86e3",
+      "id": "369ed995979b0511",
       "note": "duplicated across 2 directories — extract a helper",
       "members": [
         {
@@ -18866,12 +18866,12 @@
           "is_fragment": false
         },
         {
-          "id": "63f9790404baf177",
+          "id": "eeed73b40a9ffbe9",
           "source_digest": "fnv1a64:66b642de40c10827",
           "file": "apps/mobile/src/features/event/model/event-selection.ts",
           "lang": "typescript",
-          "start_line": 118,
-          "end_line": 123,
+          "start_line": 135,
+          "end_line": 140,
           "kind": "Function",
           "name": "subscribeEventSelection",
           "is_fragment": false

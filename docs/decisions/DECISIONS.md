@@ -713,3 +713,4 @@
 | 2026-09-24 | MSG-605 | hey-api가 `type:["string","null"]+enum`을 non-null 유니언으로 뽑아 `targetType`이 null을 잃는다 — 파서를 `unknown` 입력으로 두고 생성 타입을 믿지 않는다 | 서버는 null을 준다(대상 없음·V56 이전 알림). fixture는 단언으로 null 주입. 생성기 이슈 확인 후 복구가 후속 |
 | 2026-09-24 | MSG-605 | 알림함 행 탭은 대상 없으면 **이동 없음**, 푸시 탭은 대상 없으면 **홈** | PRD FR-6·FR-8. 알림함에 이미 와 있는 사용자를 홈으로 튕기지 않는다. `routeForTarget`는 null을 돌려주고 `pushRouteFor`만 홈으로 접는다 |
 | 2026-09-24 | MSG-605 | codex P2 2건 반영: (1) `homeFocusParams`가 `occurrenceId: ""`를 항상 싣는다 (2) 도감 뱃지 딥링크에 `ts` 요청 식별자 | (1) 검색 복귀가 행사방 키를 안 비우면 홈 params 병합으로 이전 행사방이 검색 목적지 대신 다시 열린다 — 홈 진입 params 키를 한 타입(`HomeParamsKey`)으로 모아 모든 경로가 전부 싣게 했다. (2) 도감이 떠 있는 채 같은 `tab=badges`가 오면 값이 안 바뀌어 effect가 안 돈다 — 홈 `ts` 규칙과 같게 요청마다 재적용 |
+| 2026-09-24 | MSG-605 | codex 2R P2 반영: 알림 딥링크의 행사방 열기는 `openEventOverview`(같은 행사여도 위치·영상 선택을 비움) | `openEventRoom`은 카드 재탭 무변화 계약(D16)이라 같은 행사의 위치·영상 상세를 보던 중이면 개요로 안 돌아간다. 알림이 가리키는 곳은 개요라 별도 전이를 뒀고 카드 재탭 계약은 그대로 |
