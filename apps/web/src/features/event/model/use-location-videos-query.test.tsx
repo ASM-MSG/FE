@@ -27,6 +27,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 
 const video = (videoId: number): EventLocationVideoResponseDto => ({
   videoId,
+  uploaderId: 7,
   thumbnailUrl: `https://cdn.example.com/thumb-${videoId}.jpg`,
   durationSec: 24,
   createdAt: "2026-08-31T10:00:00+09:00",

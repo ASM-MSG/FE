@@ -46,6 +46,24 @@ export const appendComment = (
   };
 };
 
+/**
+ * 댓글 작성자 차단 seed (MSG-570 기준 11) — 첫 페이지에서 그 `authorId`의 댓글을 뺀다.
+ * `commentCount`는 **그대로다** — 서버도 차단으로 카운트를 줄이지 않는다(MSG-569 확정).
+ * 이어받은 페이지는 호출부가 `reset()`으로 비운다. 상세 invalidate는 금지(조회수 부작용).
+ */
+export const removeCommentsByAuthor = (
+  detail: EventVideoDetailResponseDto,
+  authorId: number,
+): EventVideoDetailResponseDto => ({
+  ...detail,
+  comments: {
+    ...detail.comments,
+    comments: detail.comments.comments.filter(
+      (comment) => comment.authorId !== authorId,
+    ),
+  },
+});
+
 export interface EventVideoInteraction {
   helpfulDisabled: boolean;
   inputDisabled: boolean;

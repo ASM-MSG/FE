@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,7 +11,10 @@ import { useRouter } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader } from "@fillmap/ui-native";
+import type { VideoPlaybackResponseDto } from "../../../shared/api/sdk";
 import { formatDuration, formatViewCount } from "../../../shared/format";
+import { VideoActionsMenu } from "../../video-actions/ui/video-actions-menu";
+import { VideoMoreButton } from "../../video-actions/ui/video-more-button";
 import { useVideoPlaybackQuery } from "../api/use-video-playback-query";
 import {
   playbackAccessNotice,
@@ -40,6 +44,11 @@ interface VideoPlayerScreenProps {
  * 부르지 않는 이유는 `upload-video-preview.tsx` JSDoc에 실측으로 기록돼 있다 — `useVideoPlayer`가
  * 소스 변경 시 플레이어를 재생성하므로 교체를 더하면 같은 소스를 두 번 로드하며 경합한다.
  * 재생성 시 setup 콜백이 다시 돌아 자동 재생이 성립한다 (승인 추정 5).
+ *
+ * **[MSG-570 기준 9] 타인 영상(`mine=0`)에만 헤더 우측 ⋯** — 격자 상세와 같은 시트
+ * (신고하기·사용자 차단, `VideoActionsMenu`). 차단 성공 시 토스트 없이 이전 화면으로 pop한다
+ * (A3 — 화면이 사라지면 토스트 Modal도 함께 사라진다). 내 영상에는 ⋯가 없다 — 공개 범위·삭제는
+ * 목록 화면(도감·격자 상세)의 몫이고 재생 화면 `mine`은 표기용 신호일 뿐이다.
  */
 export const VideoPlayerScreen = ({
   videoId,
@@ -49,6 +58,8 @@ export const VideoPlayerScreen = ({
   const insets = useSafeAreaInsets();
   const { playback, isPending, isError, error, retry } =
     useVideoPlaybackQuery(videoId);
+  // 타인 영상 + 응답 도착 후에만 — 작성자 `userId`·`nickname`이 응답에서 온다
+  const actionsTarget = !mine && playback ? playback : null;
 
   const uri = playback?.playbackUrl ?? null;
   const player = useVideoPlayer(uri, (instance) => {
@@ -76,6 +87,15 @@ export const VideoPlayerScreen = ({
       <AppHeader
         title={playback ? playbackTitle(playback) : "영상"}
         onBack={() => router.back()}
+        right={
+          actionsTarget !== null ? (
+            <PlaybackActions
+              videoId={videoId}
+              playback={actionsTarget}
+              onBlocked={() => router.back()}
+            />
+          ) : undefined
+        }
       />
 
       <View className="aspect-video w-full bg-foreground">
@@ -141,5 +161,42 @@ export const VideoPlayerScreen = ({
         )}
       </View>
     </View>
+  );
+};
+
+/**
+ * 타인 영상 헤더 ⋯ + 액션 시트 (MSG-570 기준 9) — 격자 상세 행과 같은 메뉴.
+ * 시트·다이얼로그·토스트가 전부 Modal이라 헤더 `right` 슬롯 안에서 열어도 렌더 위치가 같다.
+ * 화면 컴포넌트에서 분리한 이유는 react-doctor 복잡도 상한(no-high-complexity-react-function).
+ */
+const PlaybackActions = ({
+  videoId,
+  playback,
+  onBlocked,
+}: {
+  videoId: number;
+  playback: VideoPlaybackResponseDto;
+  onBlocked: () => void;
+}) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <>
+      <VideoMoreButton onPress={() => setMenuOpen(true)} />
+      <VideoActionsMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        mine={false}
+        target={{
+          videoId,
+          gridId: playback.gridId,
+          thumbnailUrl: playback.thumbnailUrl,
+          durationSec: playback.durationSec,
+          createdAt: playback.recordedAt,
+          gridLabel: playbackTitle(playback),
+        }}
+        author={{ userId: playback.userId, nickname: playback.nickname }}
+        onBlocked={onBlocked}
+      />
+    </>
   );
 };

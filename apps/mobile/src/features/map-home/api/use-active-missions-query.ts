@@ -1,16 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Bounds } from "../../../entities/cell/model/grid";
 import { unwrapEnvelope } from "../../../shared/api/envelope";
-import { getActiveMissionsInViewportOptions } from "../../../shared/api/query-options";
 import type { MissionResponseDto } from "../../../shared/api/sdk";
 import { useAuth } from "../../auth/model/auth-session";
 import {
   gatedQueryStatus,
   type GatedQueryStatus,
 } from "../model/home-sheet-state";
-import { mapQueryPolicy } from "../model/map-query-policy";
 import type { MissionChip } from "../model/mission";
-import { activeMissionsQueryArgs } from "../model/mission-query-args";
+import { activeMissionsQueryOptions } from "./active-missions-query";
 
 /**
  * 활성 미션 조회 (MSG-427 D1) — `GET /api/missions/active`.
@@ -22,6 +20,7 @@ import { activeMissionsQueryArgs } from "../model/mission-query-args";
  * 없고(MSG-423이 뷰포트 단일 소유로 갔다), 재조회는 카메라 이동 종료(onCameraIdle)마다다.
  * 인증 게이트를 건다 — 익명 호출이 401로 실측됐고(웹 2026-08-15), 게이트가 없으면
  * 칩을 누를 때마다 401 + auth-pipeline 재발급이 돈다.
+ * 옵션(게이트·요청 인자·직전 데이터 유지 규칙)은 `active-missions-query.ts`(MSG-579).
  */
 export interface ActiveMissionsResult extends GatedQueryStatus {
   missions: MissionResponseDto[];
@@ -34,18 +33,13 @@ export const useActiveMissionsQuery = (
   bounds: Bounds | null,
 ): ActiveMissionsResult => {
   const { isAuthenticated, hydrated } = useAuth();
-  const { query, enabled } = activeMissionsQueryArgs(chip, bounds);
-  const active = enabled && isAuthenticated;
+  const options = activeMissionsQueryOptions(chip, bounds, isAuthenticated);
+  const active = options.enabled;
   // 게이트 판정이 확정됐는가 — 재수화 전이나 뷰포트 미확정에는 "조회 안 함"이 아니라
   // "아직 모름"이므로 접지 않는다 (MSG-423 관례, PR #72 리뷰)
   const settled = hydrated && (bounds !== null || chip === null);
 
-  const queryResult = useQuery({
-    ...getActiveMissionsInViewportOptions({ query }),
-    select: unwrapEnvelope,
-    enabled: active,
-    ...mapQueryPolicy,
-  });
+  const queryResult = useQuery({ ...options, select: unwrapEnvelope });
 
   return {
     missions: queryResult.data ?? EMPTY_MISSIONS,

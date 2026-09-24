@@ -53,8 +53,7 @@ const SIDO_SUFFIXES = ["특별자치시", "특별자치도", "광역시", "특�
  * 시도명 표기 축약 — 명세가 "클라이언트 몫"으로 넘긴 규칙.
  * 접미(광역시·특별시·특별자치시·특별자치도) 제거 + 도명은 관용 축약
  * (4자 "경상남도"→"경남", 3자 "경기도"→"경기").
- * MVP는 줌 하한(MAP_MIN_ZOOM)이 SIDO 구간 진입을 막아 실사용 경로가 없지만, 웹과의
- * 전건 동등성을 위해 남긴다(전국 확장 시 하한만 되돌리면 그대로 산다).
+ * MSG-574가 줌 하한을 16km 단(zoom 9)으로 내려 시 구간이 실사용 경로가 됐다.
  */
 const abbreviateSidoName = (name: string): string => {
   for (const suffix of SIDO_SUFFIXES) {

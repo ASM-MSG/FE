@@ -27,7 +27,7 @@ describe("kakao-adapter (기준 7·8)", () => {
     vi.resetModules();
     const { requestKakaoIdToken } = await import("./kakao-adapter");
     const { KAKAO_NOT_CONFIGURED } =
-      await import("../model/kakao-login-failure");
+      await import("../model/social-login-failure");
 
     // SDK 로드가 일어났다면 모듈 해석 실패라는 **다른** 에러가 났을 것이므로,
     // code가 정확히 일치하는 것 자체가 "로드하지 않았다"의 증거다

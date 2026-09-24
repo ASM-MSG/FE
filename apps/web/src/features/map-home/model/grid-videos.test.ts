@@ -18,6 +18,7 @@ import {
 
 const GLOBAL_DTO: GridGlobalVideoResponseDto = {
   videoId: 1042,
+  userId: 2042,
   thumbnailUrl: "https://cdn.example/thumb-1042.jpg",
   durationSec: 27,
   viewCount: 1400,

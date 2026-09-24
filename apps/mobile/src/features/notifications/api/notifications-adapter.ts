@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import type { NotificationResponse } from "expo-notifications";
 import { toPermissionState } from "../../../shared/permission-state";
 import type { PushPermissionStatus } from "../model/push-registration";
 
@@ -20,6 +21,13 @@ type NotificationsModule = typeof import("expo-notifications");
 let modulePromise: Promise<NotificationsModule> | null = null;
 const loadNotifications = (): Promise<NotificationsModule> =>
   (modulePromise ??= import("expo-notifications"));
+
+/** iOS 전용 — 같은 이유(네이티브 부재 빌드 내성)로 지연 로드하고 같은 방식으로 캐시한다 (MSG-604). */
+type MessagingModule = typeof import("@react-native-firebase/messaging");
+
+let messagingModulePromise: Promise<MessagingModule> | null = null;
+const loadMessaging = (): Promise<MessagingModule> =>
+  (messagingModulePromise ??= import("@react-native-firebase/messaging"));
 
 /**
  * 포그라운드에서도 알림 배너를 띄운다 — 앱을 보고 있을 때 알림을 놓치지 않게.
@@ -61,12 +69,90 @@ export const requestPermission = async (): Promise<PushPermissionStatus> => {
 };
 
 /**
- * FCM **기기 토큰** — Expo 푸시 토큰이 아니다. 서버(`POST /api/notifications/tokens`)가
+ * FCM **등록 토큰** — Expo 푸시 토큰이 아니다. 서버(`POST /api/notifications/tokens`)가
  * FCM 토큰을 직접 받는 계약이라 발송이 Expo 서비스를 거치지 않는다.
- * Play 서비스 부재·설정 누락 등으로 실패할 수 있어 호출부가 흡수한다.
+ *
+ * - Android: `expo-notifications`의 기기 토큰이 곧 FCM 토큰이다(종전 경로).
+ * - iOS(MSG-604): `expo-notifications`는 **APNs 원시 토큰**을 돌려줘 서버(FCM Admin)가 보낼 수
+ *   없다. Firebase Messaging이 APNs 토큰을 FCM에 등록해 만든 등록 토큰을 쓴다. 모듈은 같은
+ *   이유(네이티브 부재 빌드 내성)로 지연 로드한다.
+ * Play 서비스 부재·APNs 미등록·설정 누락 등으로 실패할 수 있어 호출부가 흡수한다.
  */
-export const readDevicePushToken = async (): Promise<string> =>
-  String((await (await loadNotifications()).getDevicePushTokenAsync()).data);
+export const readDevicePushToken = async (): Promise<string> => {
+  if (Platform.OS === "ios") {
+    const { getMessaging, getToken, setAPNSToken } = await loadMessaging();
+    try {
+      // APNs 등록은 expo-notifications의 AppDelegate 구독자가 받는다(검증된 경로). RNFirebase 자체
+      // 등록(`registerDeviceForRemoteMessages`)은 그 델리게이트 콜백을 못 받아 타임아웃됐다(실측).
+      // 그래서 expo가 받은 APNs 토큰을 Firebase에 건네 FCM 등록 토큰으로 바꾼다.
+      const apns = await (await loadNotifications()).getDevicePushTokenAsync();
+      const messaging = getMessaging();
+      await setAPNSToken(messaging, String(apns.data));
+      return await getToken(messaging);
+    } catch (error) {
+      // 호출부는 실패를 "failed"로만 접는다(설계) — 원인은 개발 빌드에서만 남긴다.
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        console.warn("[push] iOS FCM 토큰 취득 실패", error);
+      }
+      throw error;
+    }
+  }
+  return String(
+    (await (await loadNotifications()).getDevicePushTokenAsync()).data,
+  );
+};
+
+/** 푸시 탭 응답의 앱 몫 — 요청 id(중복 제거 키)와 FCM `data` (MSG-605) */
+export interface PushResponseEvent {
+  id: string;
+  data: Record<string, unknown> | null | undefined;
+}
+
+/**
+ * iOS 실측(2026-09-24): 원격 푸시의 `content.data`는 expo가 `userInfo["body"]`만 옮기므로(Expo 푸시
+ * 서비스 관례) FCM처럼 커스텀 키가 최상위에 오면 **null**이다. 그 원문은 push 트리거의 `payload`
+ * (= userInfo 전체)에 있다. Android는 FCM data가 그대로 `content.data`다. 둘을 합쳐 어느 플랫폼이든
+ * `targetType`·`targetId`가 잡히게 한다 — `aps` 같은 잉여 키는 파서가 무시한다.
+ */
+const toPushResponseEvent = (
+  response: NotificationResponse,
+): PushResponseEvent => {
+  const { identifier, content, trigger } = response.notification.request;
+  // 트리거 유니언에는 null·Date 같은 입력형도 섞여 있어 형태로만 좁힌다
+  const push = trigger as
+    | { type?: unknown; payload?: unknown }
+    | null
+    | undefined;
+  const pushPayload =
+    push?.type === "push" && typeof push.payload === "object"
+      ? (push.payload as Record<string, unknown> | null)
+      : null;
+  const data = content.data as Record<string, unknown> | null | undefined;
+  return { id: identifier, data: { ...pushPayload, ...data } };
+};
+
+/** 실행 중(포그라운드·백그라운드) 푸시 탭 구독 — 반환 함수로 해제 (MSG-605 FR-7) */
+export const addPushResponseListener = async (
+  listener: (event: PushResponseEvent) => void,
+): Promise<() => void> => {
+  const subscription = (
+    await loadNotifications()
+  ).addNotificationResponseReceivedListener((response) =>
+    listener(toPushResponseEvent(response)),
+  );
+  return () => subscription.remove();
+};
+
+/** 앱을 띄운 푸시 탭(콜드 스타트) — 없으면 null. 처리 후 `clearLastPushResponse`로 지운다 */
+export const readLastPushResponse =
+  async (): Promise<PushResponseEvent | null> => {
+    const response = (await loadNotifications()).getLastNotificationResponse();
+    return response ? toPushResponseEvent(response) : null;
+  };
+
+export const clearLastPushResponse = async (): Promise<void> => {
+  (await loadNotifications()).clearLastNotificationResponse();
+};
 
 /** 서버 계약의 platform 값 — iOS 확장 시 이 파생만 늘어난다 (스펙 추정 6) */
 export const devicePlatform = (): string =>

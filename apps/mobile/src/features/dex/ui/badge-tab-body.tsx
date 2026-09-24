@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Button } from "@fillmap/ui-native";
 import type { DexBadge } from "../../../entities/dex/model/dex";
-import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
+import { PENDING_PROFILE } from "../../../entities/profile/model/profile";
 import { useProfileQuery } from "../../profile/api/use-profile-query";
 import { useReplaceFeaturedBadges } from "../api/use-badge-mutations";
 import { BADGE_PREVIEW_LIMIT, orderBadges } from "../model/badge-showcase";
@@ -41,8 +41,8 @@ const BadgeCell = ({ children }: { children: ReactNode }) => (
 export const BadgeTabBody = () => {
   const badgesQuery = useBadgesQuery();
   const profile = useProfileQuery();
-  // 조회 전·실패 시 mock 폴백 — 미리보기 카드가 프로필 조회에 잠기지 않는다 (프로필 화면 선례)
-  const identity = profile.data ?? MOCK_PROFILE;
+  // 조회 전·실패 시 빈 정체성 — 미리보기 카드가 프로필 조회에 잠기지 않는다 (MSG-606 M2, 가짜 닉네임 금지)
+  const identity = profile.data ?? PENDING_PROFILE;
 
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);

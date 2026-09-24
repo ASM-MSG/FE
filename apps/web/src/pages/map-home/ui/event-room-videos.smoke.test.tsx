@@ -33,6 +33,7 @@ const video = (
   over: Partial<EventLocationVideoResponseDto> = {},
 ): EventLocationVideoResponseDto => ({
   videoId,
+  uploaderId: 7,
   thumbnailUrl: `https://cdn.example.com/thumb-${videoId}.jpg`,
   durationSec: 24,
   createdAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),

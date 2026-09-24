@@ -81,6 +81,64 @@ export default (_ctx) => ({
   ios: {
     icon: "./assets/expo.icon",
     bundleIdentifier: "kr.fillmap.app",
+    // MSG-601: Sign in with Apple 엔타이틀먼트(`com.apple.developer.applesignin`) 주입.
+    // 번들 ID가 곧 client_id라 환경변수가 없다. 유료 개발자 팀 서명이 있어야 빌드된다(스펙 R1).
+    usesAppleSignIn: true,
+    // MSG-604: Firebase iOS 앱 설정(fillmap-edd7d / kr.fillmap.app) — `@react-native-firebase/app`
+    // 플러그인이 Xcode 프로젝트에 복사하고 AppDelegate에 `FirebaseApp.configure()`를 주입한다.
+    // iOS 푸시는 APNs 원시 토큰이 아니라 FCM 등록 토큰이어야 서버(FCM Admin)가 보낼 수 있다.
+    googleServicesFile: "./GoogleService-Info.plist",
+    // 백그라운드 원격 알림 수신 모드 — messaging 플러그인은 엔타이틀먼트(aps-environment)만 주입하고
+    // UIBackgroundModes는 넣지 않는다(prebuild 실측). 없으면 앱이 백그라운드일 때 data 메시지가 안 온다.
+    // MSG-606: 심사 대비 — 표준 암호화(HTTPS)만 써서 수출 규정 문답을 건너뛴다(L5), 빌드 번호 명시(L6).
+    buildNumber: "1",
+    infoPlist: {
+      UIBackgroundModes: ["remote-notification"],
+      ITSAppUsesNonExemptEncryption: false,
+    },
+    // MSG-606 M5: 앱 개인정보 매니페스트 — 실제 수집 항목(위치·이메일·사용자 콘텐츠·사용자 ID·푸시 토큰).
+    // App Store Connect "앱 개인정보" 라벨은 이 목록과 일치시켜 별도 작성한다. 추적(NSPrivacyTracking)은 없다.
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyCollectedDataTypes: [
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePreciseLocation",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeEmailAddress",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeUserID",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePhotosorVideos",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeOtherUserContent",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeDeviceID",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+      ],
+    },
   },
   android: {
     /**
@@ -127,7 +185,21 @@ export default (_ctx) => ({
         microphonePermission: "영상을 촬영하려면 마이크 접근 권한이 필요해요.",
       },
     ],
-    "expo-location",
+    // MSG-606 H1: 위치 권한 문구 — 플러그인 기본값("Allow $(PRODUCT_NAME) to access your location")은
+    // 목적이 없어 심사 반려 1순위. 앱은 포그라운드 위치만 쓴다(`shared/geolocation.ts`) — Always·모션 키는
+    // 넣지 않는다(쓰지 않는 권한 문구가 Info.plist에 있으면 그것도 지적 대상).
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "현재 위치 주변 격자를 지도에 보여 주고, 촬영한 영상의 위치를 기록하려면 위치 권한이 필요해요.",
+        locationAlwaysPermission: false,
+        locationAlwaysAndWhenInUsePermission: false,
+        motionUsagePermission: false,
+        isIosBackgroundLocationEnabled: false,
+        isAndroidBackgroundLocationEnabled: false,
+      },
+    ],
     // MSG-304: 블러 확인 화면 프리뷰 재생 (expo install 안내에 따른 플러그인 등록)
     "expo-video",
     // MSG-429: 블러 완료 푸시 수신 — 권한·FCM 기기 토큰·알림 탭 진입.
@@ -142,9 +214,24 @@ export default (_ctx) => ({
     // MSG-444: 카카오 로그인 네이티브 설정 — AndroidManifest의 `kakao{앱키}` 스킴 인가
     // 핸들러와 iOS CFBundleURLTypes를 플러그인이 주입한다. 키가 없으면 등록하지 않는다(위 주석).
     ...kakaoPlugins,
+    // MSG-601: 애플 로그인 — iOS 전용 플러그인(엔타이틀먼트 주입)이라 Android prebuild 산출물은
+    // 무변화. 카카오와 달리 키가 없어 무조건 등록한다. `expo-crypto`(nonce)는 플러그인 없이 autolink
+    // 되지만 네이티브 모듈이라 Android도 `prebuild --clean` + 재빌드가 필요하다(스펙 R2).
+    "expo-apple-authentication",
+    // MSG-604: iOS FCM 등록 토큰 발급 — messaging 플러그인이 `aps-environment` 엔타이틀먼트와
+    // `remote-notification` 백그라운드 모드를 주입한다. Android는 expo-notifications 경로 그대로라
+    // Firebase 플러그인의 google-services gradle 적용만 겹치고 동작은 무변화(같은 google-services.json).
+    // `disableSPM`: RNFirebase 26은 기본으로 Firebase를 Swift Package(SPM)로 가져오는데, 이 경우
+    // 정적 링크(use_frameworks 없음·static 모두)를 pod install이 거부한다(실측 "SPM + static linkage
+    // is not supported"). 동적 프레임워크는 네이버 지도·카카오 pod와의 호환을 새로 검증해야 하므로
+    // SPM을 끄고 종전 CocoaPods 경로(+ 정적 프레임워크)를 쓴다.
+    ["@react-native-firebase/app", { ios: { disableSPM: true } }],
+    "@react-native-firebase/messaging",
     [
       "expo-build-properties",
       {
+        // MSG-604: Firebase iOS SDK(CocoaPods 경로)가 정적 프레임워크를 요구한다 — 위 disableSPM과 한 쌍.
+        ios: { useFrameworks: "static" },
         android: {
           extraMavenRepos: [
             // 네이버 지도 SDK 배포 저장소 (라이브러리 공식 Expo 설치 절차)

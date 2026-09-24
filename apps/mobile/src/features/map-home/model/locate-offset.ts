@@ -31,3 +31,24 @@ export const locateBottomOffset = (
   const sheetTop = positions[stage === 4 ? 3 : stage];
   return bottomOffset + (containerHeight - sheetTop) + LOCATE_GAP;
 };
+
+/**
+ * 지도 콘텐츠 하단 인셋(px) — `NaverMapView.mapPadding.bottom` (MSG-601 iOS 실기 환류).
+ * 지도가 화면 전체를 덮고 그 위에 바텀 내비와 시트가 얹히므로, 이 값을 넣어야 `panTo`·
+ * `fitBounds`의 "중앙"과 SDK 로고·축척이 **시트 위 보이는 영역** 기준이 된다(네이버 지도 앱
+ * 동작). 카메라 이벤트 region은 두 플랫폼 모두 `coveringBounds`(뷰 전체)라 격자·조회 bbox는
+ * 영향받지 않는다.
+ * - 1단계(전체 확장, 시트 90%)는 2단계(절반) 값으로 캡 — 콘텐츠 영역이 10%만 남으면 SDK 카메라가
+ *   불안정해지고, 그 단계에서는 지도가 사실상 안 보인다
+ * - 4단계·미측정은 내 위치 버튼과 같은 이유로 피크 기준값
+ */
+export const mapBottomInset = (
+  stage: SheetStage,
+  containerHeight: number,
+  bottomOffset: number,
+): number => {
+  if (containerHeight === 0) return bottomOffset + PEEK_HEIGHT;
+  const positions = sheetStagePositions(containerHeight);
+  const effective = stage === 4 ? 3 : stage === 1 ? 2 : stage;
+  return bottomOffset + (containerHeight - positions[effective]);
+};

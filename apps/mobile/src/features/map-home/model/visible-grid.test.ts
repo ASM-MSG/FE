@@ -5,7 +5,11 @@ import {
   cellIndexAt,
   type Bounds,
 } from "../../../entities/cell/model/grid";
-import { GRID_MIN_ZOOM, buildVisibleCells } from "./visible-grid";
+import {
+  GRID_MIN_ZOOM,
+  MAX_VISIBLE_CELLS,
+  buildVisibleCells,
+} from "./visible-grid";
 
 /**
  * AC 3: 뷰포트 Bounds → 보이는 격자 셀(경계 좌표) 목록.
@@ -105,5 +109,23 @@ describe("buildVisibleCells (AC 3)", () => {
       expect(bounds.sw.lng).toBeLessThan(southWest.ne.lng);
       expect(bounds.ne.lng).toBeGreaterThan(southWest.sw.lng);
     }
+  });
+});
+
+describe("buildVisibleCells 셀 수 상한 (MSG-601 iOS 환류)", () => {
+  /** 부산 전역급 뷰포트(위도 0.5° × 경도 0.5°) — 100m 셀로 약 25만 개 */
+  const wide: Bounds = {
+    sw: { lat: 35.0, lng: 128.8 },
+    ne: { lat: 35.5, lng: 129.3 },
+  };
+
+  it("줌 게이트가 열려 있어도(zoom ≥ 16) 셀 수가 상한을 넘는 광역 뷰포트는 빈 배열이다 — iOS zoom 누락 폴백 방어", () => {
+    expect(buildVisibleCells(wide, ZOOM)).toEqual([]);
+  });
+
+  it("정상 폰 뷰포트는 상한에 걸리지 않는다 — 상한이 실사용 경로를 건드리지 않음", () => {
+    const cells = buildVisibleCells(viewport, ZOOM);
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.length).toBeLessThan(MAX_VISIBLE_CELLS);
   });
 });

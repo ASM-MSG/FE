@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- FillMap 웹 (MSG-478) — 비로그인 공개 라우트만 등재한다(현재 홈 하나).
-     lastmod는 갱신 주체가 없어 넣지 않는다. 약관 등 공개 라우트가 생기면 그 티켓이 추가한다. -->
+<!-- FillMap 웹 (MSG-478) — 비로그인 공개 라우트만 등재한다. lastmod는 갱신 주체가 없어 넣지 않는다.
+     약관·개인정보 처리방침 5종은 MSG-606(앱스토어 심사용 공개 URL)에서 추가했다. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://fillmap.kr/</loc>
+  </url>
+  <url>
+    <loc>https://fillmap.kr/terms/service</loc>
+  </url>
+  <url>
+    <loc>https://fillmap.kr/terms/privacy-collection</loc>
+  </url>
+  <url>
+    <loc>https://fillmap.kr/terms/location</loc>
+  </url>
+  <url>
+    <loc>https://fillmap.kr/terms/marketing</loc>
+  </url>
+  <url>
+    <loc>https://fillmap.kr/terms/privacy-policy</loc>
   </url>
 </urlset>

@@ -1,7 +1,10 @@
 import type { ButtonHTMLAttributes } from "react";
-import { ChevronLeft, Locate } from "lucide-react";
+import { ChevronLeft, Locate, Minus, Plus } from "lucide-react";
 import { cva } from "class-variance-authority";
-import type { MapIconButtonBaseProps } from "@fillmap/design-tokens";
+import type {
+  MapIconButtonBaseProps,
+  MapIconButtonIcon,
+} from "@fillmap/design-tokens";
 import { cn } from "./lib/utils";
 
 /**
@@ -16,6 +19,12 @@ const mapIconButtonVariants = cva(
         back: "text-foreground active:bg-surface",
         locate:
           "bg-surface-elevated text-foreground shadow-raised active:brightness-[0.86]",
+        // zoom-in·zoom-out은 MSG-601(모바일)에서 토큰 union에 추가 — 웹 소비처는 아직 없고
+        // locate와 같은 흰 원형 규격을 공유한다(토큰 Record 완전성 유지)
+        "zoom-in":
+          "bg-surface-elevated text-foreground shadow-raised active:brightness-[0.86]",
+        "zoom-out":
+          "bg-surface-elevated text-foreground shadow-raised active:brightness-[0.86]",
       },
     },
     defaultVariants: { icon: "back" },
@@ -24,6 +33,13 @@ const mapIconButtonVariants = cva(
 
 interface MapIconButtonProps
   extends MapIconButtonBaseProps, ButtonHTMLAttributes<HTMLButtonElement> {}
+
+const ariaLabel: Record<MapIconButtonIcon, string> = {
+  back: "뒤로 가기",
+  locate: "내 위치",
+  "zoom-in": "지도 확대",
+  "zoom-out": "지도 축소",
+};
 
 /**
  * @example
@@ -37,12 +53,16 @@ export const MapIconButton = ({
 }: MapIconButtonProps) => (
   <button
     type={type}
-    aria-label={icon === "back" ? "뒤로 가기" : "내 위치"}
+    aria-label={ariaLabel[icon]}
     className={cn(mapIconButtonVariants({ icon }), className)}
     {...props}
   >
     {icon === "back" ? (
       <ChevronLeft className="size-5.5" />
+    ) : icon === "zoom-in" ? (
+      <Plus className="size-5" />
+    ) : icon === "zoom-out" ? (
+      <Minus className="size-5" />
     ) : (
       <Locate className="size-5" />
     )}

@@ -84,7 +84,7 @@ export const OrgSettingsPage = () => {
             onSaved={() => setNotice("담당자 정보를 저장했습니다")}
           />
           <p className="text-fm-caption text-foreground-muted">
-            계정 관련 문의는 운영팀 support@fillmap.kr 으로 보내주세요.
+            계정 관련 문의는 운영팀 contact@fillmap.kr 으로 보내주세요.
           </p>
         </>
       )}

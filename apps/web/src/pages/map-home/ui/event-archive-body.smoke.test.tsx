@@ -217,6 +217,7 @@ describe("종료 행사 아카이브 본문 (MSG-519)", () => {
  */
 const archiveVideo = (videoId: number): EventLocationVideoResponseDto => ({
   videoId,
+  uploaderId: 7,
   thumbnailUrl: `https://cdn.example.com/thumb-${videoId}.jpg`,
   durationSec: 24,
   createdAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),

@@ -33,3 +33,30 @@ export const courseRouteOf = (
         waypoints: buildRouteWaypoints(course.spots.map((s) => s.position)),
       }
     : undefined;
+
+/** 지도에 올릴 코스 하나 — 마커 key·상세 진입의 식별자로 `id`(missionId)를 함께 싣는다 */
+export interface CourseRoute {
+  id: string;
+  path: LatLng[];
+  waypoints: RouteWaypoint[];
+}
+
+/**
+ * 목록 전체 코스 → route 오버레이 배열 (MSG-580, 웹 `buildCourseRoutes` 대응).
+ * 경로추천 칩을 켠 목록 상태에서 **모든 코스**의 라인·번호 마커를 그린다 — 종전엔
+ * 선택 코스만(`courseRouteOf`) 파생해 목록 상태의 지도에 격자 셀만 남았다.
+ * 뷰포트 클리핑은 하지 않는다 — 목록이 이미 0.5° bbox로 제한된다.
+ * ponytail: 코스 수가 수십 개로 늘면 웹처럼 bbox 교차 필터를 앞에 붙인다.
+ */
+export const courseRoutesOf = (
+  courses: readonly {
+    missionId: number;
+    path: LatLng[];
+    spots: readonly { position: LatLng }[];
+  }[],
+): CourseRoute[] =>
+  courses.map((course) => ({
+    id: String(course.missionId),
+    path: course.path,
+    waypoints: buildRouteWaypoints(course.spots.map((s) => s.position)),
+  }));

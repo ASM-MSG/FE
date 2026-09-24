@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  Fragment,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -23,8 +24,14 @@ import {
 } from "../../../entities/cell/model/grid";
 import { cellIdFor } from "../../../entities/cell/model/cell-id";
 import { buildDashedRectOutline } from "../model/dashed-outline";
+import { MIN_ZOOM } from "../model/map-scale";
+import { steppedZoom } from "../model/zoom-step";
 import { buildHatchSegments } from "../model/hatch-pattern";
-import { buildVisibleCells, type VisibleCell } from "../model/visible-grid";
+import {
+  GRID_MIN_ZOOM,
+  buildVisibleCells,
+  type VisibleCell,
+} from "../model/visible-grid";
 import type { Viewport } from "../model/viewport";
 import type { RouteWaypoint } from "../model/route-overlay";
 import { drillInZoomForUnit } from "../model/aggregation-unit";
@@ -109,6 +116,21 @@ export interface GridMapRef {
   moveTo: (center: LatLng) => void;
   /** 줌은 그대로 두고 중심만 이동 — AI 추천 카드 탭 (MSG-556 D8, 웹 `moveTo` 대응) */
   panTo: (center: LatLng) => void;
+  /**
+   * 격자 검색 결과로 이동 (MSG-578 D3) — 현재 줌이 `GRID_MIN_ZOOM` 미만이면 그 단으로
+   * 올리고(강조 셀이 저줌 게이트에서 걷히므로), 이미 그 이상이면 줌을 유지한다.
+   * 판정은 이 컴포넌트가 이미 드는 `belowGridZoom`으로 한다 — 화면이 `viewport.zoom`을
+   * 읽으면 effect 의존성에 뷰포트가 들어가 idle마다 재발화한다.
+   */
+  focusTo: (center: LatLng) => void;
+  /** 구역 사각형이 화면에 들어오게 이동 (MSG-578 D4) — 웹 `MapCanvas.fitBounds` 대응, 패딩 없음 */
+  fitBounds: (bounds: Bounds) => void;
+  /**
+   * 중심을 유지한 채 줌을 한 단 올리거나 내린다 — 홈 +/- 버튼 (MSG-601 iOS 환류).
+   * SDK 내장 줌 컨트롤(`showZoomControls`) 대체: 내장 컨트롤은 시트를 몰라 iOS에서 세로 중앙에
+   * 떠 있고 시트가 절반이면 뒤로 숨는다. 클램프는 `steppedZoom`(minZoom~21).
+   */
+  zoomBy: (delta: 1 | -1) => void;
 }
 
 interface GridMapProps {
@@ -118,6 +140,18 @@ interface GridMapProps {
   showCellGrid?: boolean;
   /** SDK 기본 줌 컨트롤(+/−) 표시 여부 (기본 true — 홈 불변). 상세 지도는 Figma에 없어 숨긴다 (MSG-296 검증 재작업 2, 핀치 줌은 유지) */
   showZoomControls?: boolean;
+  /**
+   * 축척 바 표시 — 기본 true(명시. 래퍼 스펙 기본값도 true지만 Android 실기에서 `ScaleBarView`가
+   * GONE으로 남아 있어 prop을 항상 보낸다, MSG-601). 두 SDK 모두 콘텐츠 영역 **오른쪽 아래**에
+   * 그리므로 내장 줌 컨트롤(같은 모서리)을 켠 채 두는 화면은 겹침을 피해 끈다(PR #156 리뷰).
+   */
+  showScaleBar?: boolean;
+  /**
+   * 지도 콘텐츠 하단 인셋(px) → `mapPadding.bottom` — 바텀 내비·시트가 덮는 높이 (MSG-601 iOS 환류).
+   * `panTo`·`fitBounds`·`zoomBy`의 중심과 SDK 로고·축척이 보이는 영역 기준이 된다. 카메라 이벤트
+   * region은 `coveringBounds`(뷰 전체)라 격자·조회 bbox는 불변.
+   */
+  bottomInset?: number;
   /**
    * 카메라 줌 하한 (MSG-428 S6) — 핀치 아웃·SDK 줌 컨트롤 어느 쪽으로도 이보다 넓게
    * 나가지 못한다. **기본은 하한 없음**(SDK 기본): 하한은 집계 마커 사다리를 가진 지도
@@ -172,6 +206,16 @@ interface GridMapProps {
     waypoints: RouteWaypoint[];
     onWaypointTap?: (seq: number) => void;
   };
+  /**
+   * 코스 경로 여러 개 (MSG-580, 웹 `routes` 대응) — 경로추천 칩 목록 상태의 **모든 코스**,
+   * 상세를 열면 그 코스만. `route`(단일)와 함께 오면 둘 다 그린다. `id`는 마커 key.
+   */
+  routes?: {
+    id: string;
+    path: LatLng[];
+    waypoints: RouteWaypoint[];
+    onWaypointTap?: (seq: number) => void;
+  }[];
   /**
    * 선택된 미션의 이름표 마커 (MSG-427 승인 Q4) — **선택된 미션에만** 붙인다.
    * Figma 9개 프레임 어디에도 이름표가 없고 RN에는 hover가 없어(스펙 R4), 티켓
@@ -252,6 +296,8 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     initialZoom = DEFAULT_ZOOM,
     showCellGrid = true,
     showZoomControls = true,
+    showScaleBar = true,
+    bottomInset,
     minZoom,
     onCellTap,
     highlightCell,
@@ -262,6 +308,7 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
     accentCells,
     accentColor,
     route,
+    routes,
     missionLabel,
     onViewportChange,
     clusters,
@@ -290,6 +337,16 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
    * (드래그 중 매 프레임 발사 방지 — 요구 5).
    */
   const viewportSeededRef = useRef(false);
+  /** 마지막 카메라(중심·줌) — `zoomBy`가 중심을 유지하려고 읽는다. 첫 이벤트 전에는 초기값 */
+  const cameraRef = useRef<{ lat: number; lng: number; zoom: number } | null>(
+    null,
+  );
+
+  /** 단일 `route`(AI 추천)와 `routes`(홈 경로추천)를 한 목록으로 — 렌더 경로는 하나다 */
+  const routeList = [
+    ...(route ? [{ id: "route", ...route }] : []),
+    ...(routes ?? []),
+  ];
 
   const highlight = useMemo(() => {
     if (!highlightCell) return null;
@@ -365,6 +422,35 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         duration: 500,
       });
     },
+    focusTo: (center) => {
+      mapRef.current?.animateCameraTo({
+        latitude: center.lat,
+        longitude: center.lng,
+        zoom: belowGridZoom ? GRID_MIN_ZOOM : undefined,
+        duration: 500,
+      });
+    },
+    fitBounds: ({ sw, ne }) => {
+      mapRef.current?.animateCameraWithTwoCoords({
+        coord1: { latitude: sw.lat, longitude: sw.lng },
+        coord2: { latitude: ne.lat, longitude: ne.lng },
+        duration: 500,
+      });
+    },
+    zoomBy: (delta) => {
+      const camera = cameraRef.current ?? {
+        lat: initialCenter.lat,
+        lng: initialCenter.lng,
+        zoom: initialZoom,
+      };
+      mapRef.current?.animateCameraTo({
+        latitude: camera.lat,
+        longitude: camera.lng,
+        // minZoom 미지정 = "하한 없음(SDK 기본)" — 0이 아니라 축척 표 하한(SDK 유효 범위)으로 (PR #156 리뷰)
+        zoom: steppedZoom(camera.zoom, delta, minZoom ?? MIN_ZOOM),
+        duration: 300,
+      });
+    },
   }));
 
   return (
@@ -384,6 +470,10 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
       onLoaded={Platform.OS === "android" ? onReady : undefined}
       onInitialized={Platform.OS === "android" ? undefined : onReady}
       isShowZoomControls={showZoomControls}
+      isShowScaleBar={showScaleBar}
+      mapPadding={
+        bottomInset === undefined ? undefined : { bottom: bottomInset }
+      }
       minZoom={minZoom}
       locationOverlay={
         currentLocation === undefined
@@ -401,6 +491,11 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
         console.warn("[GridMap] custom style load failed:", message);
       }}
       onCameraChanged={(camera) => {
+        cameraRef.current = {
+          lat: camera.latitude,
+          lng: camera.longitude,
+          zoom: camera.zoom ?? initialZoom,
+        };
         setBelowGridZoom(isBelowGridZoom(camera.zoom ?? initialZoom));
         if (onGestureCameraChange && isGestureCameraChange(camera.reason)) {
           onGestureCameraChange();
@@ -488,56 +583,65 @@ export const GridMap = forwardRef<GridMapRef, GridMapProps>(function GridMap(
             width={HATCH_LINE_WIDTH}
           />
         ))}
-      {/* 추천 경로 폴리라인 + 번호 웨이포인트 마커 (AC 10 — 경로추천 선택 시에만 전달됨) */}
-      {themeColor && route && route.path.length >= 2 && (
-        <NaverMapPolylineOverlay
-          coords={route.path.map(({ lat, lng }) => ({
-            latitude: lat,
-            longitude: lng,
-          }))}
-          color={themeColor}
-          width={ROUTE_LINE_WIDTH}
-        />
-      )}
+      {/* 추천 경로 폴리라인 + 번호 웨이포인트 마커 — 목록 상태의 모든 코스 + 상세의 그 코스
+          (MSG-580, 웹 `routes` 대응). `route`(단일)는 AI 추천(MSG-556 D8)이 쓰는 기존 계약 */}
       {themeColor &&
-        route?.waypoints.map(({ seq, coord, active }) => (
-          <NaverMapMarkerOverlay
-            key={seq}
-            latitude={coord.lat}
-            longitude={coord.lng}
-            width={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
-            height={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
-            anchor={{ x: 0.5, y: 0.5 }}
-            onTap={route?.onWaypointTap && (() => route?.onWaypointTap?.(seq))}
-          >
-            {/* 커스텀 뷰 마커 — Figma 14094:5419: 테마 색 원 + 흰 테두리 2px + 흰 번호.
-                네이티브 마커 서브뷰라 nativewind 클래스 대신 토큰 값을 style로 직접 주입,
-                Android 서브뷰 평탄화 방지로 collapsable={false} (스펙 리스크 1 — 실패 시
-                caption 텍스트 폴백 예정) */}
-            <View
-              collapsable={false}
-              style={{
-                width: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
-                height: active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE,
-                borderRadius: ROUTE_MARKER_SIZE,
-                backgroundColor: themeColor,
-                borderWidth: active ? ROUTE_MARKER_ACTIVE_RING : 2,
-                borderColor: semantic.onPrimary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: semantic.onPrimary,
-                  fontSize: 14,
-                  fontWeight: "600",
-                }}
+        routeList.map((line) => (
+          <Fragment key={line.id}>
+            {line.path.length >= 2 && (
+              <NaverMapPolylineOverlay
+                coords={line.path.map(({ lat, lng }) => ({
+                  latitude: lat,
+                  longitude: lng,
+                }))}
+                color={themeColor}
+                width={ROUTE_LINE_WIDTH}
+              />
+            )}
+            {line.waypoints.map(({ seq, coord, active }) => (
+              <NaverMapMarkerOverlay
+                key={seq}
+                latitude={coord.lat}
+                longitude={coord.lng}
+                width={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
+                height={active ? ROUTE_MARKER_ACTIVE_SIZE : ROUTE_MARKER_SIZE}
+                anchor={{ x: 0.5, y: 0.5 }}
+                onTap={line.onWaypointTap && (() => line.onWaypointTap?.(seq))}
               >
-                {seq}
-              </Text>
-            </View>
-          </NaverMapMarkerOverlay>
+                {/* 커스텀 뷰 마커 — Figma 14094:5419: 테마 색 원 + 흰 테두리 2px + 흰 번호.
+                    네이티브 마커 서브뷰라 nativewind 클래스 대신 토큰 값을 style로 직접 주입,
+                    Android 서브뷰 평탄화 방지로 collapsable={false} (스펙 리스크 1 — 실패 시
+                    caption 텍스트 폴백 예정) */}
+                <View
+                  collapsable={false}
+                  style={{
+                    width: active
+                      ? ROUTE_MARKER_ACTIVE_SIZE
+                      : ROUTE_MARKER_SIZE,
+                    height: active
+                      ? ROUTE_MARKER_ACTIVE_SIZE
+                      : ROUTE_MARKER_SIZE,
+                    borderRadius: ROUTE_MARKER_SIZE,
+                    backgroundColor: themeColor,
+                    borderWidth: active ? ROUTE_MARKER_ACTIVE_RING : 2,
+                    borderColor: semantic.onPrimary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: semantic.onPrimary,
+                      fontSize: 14,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {seq}
+                  </Text>
+                </View>
+              </NaverMapMarkerOverlay>
+            ))}
+          </Fragment>
         ))}
       {/* 지역 집계 마커 (MSG-428 S2·S3·S4) — 저줌에서만 채워져 들어온다.
           key는 regionCode 기반 안정 키라 재조회에도 같은 지역이면 마커가 유지된다 */}

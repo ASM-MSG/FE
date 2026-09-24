@@ -21,7 +21,7 @@ import {
   missionCellsVisible,
 } from "../model/occupancy-visibility";
 import { toOccupiedCells } from "../model/occupied-grids";
-import { courseRouteOf, type RouteWaypoint } from "../model/route-overlay";
+import { courseRoutesOf, type CourseRoute } from "../model/route-overlay";
 import type { ThemeId } from "../model/themes";
 
 /**
@@ -54,8 +54,11 @@ export interface HomeOverlays {
   classification: CellClassification | null;
   /** 탭한 셀 → 서버 격자 id 역인덱스 (C3) */
   gridIdIndex: CellGridIdIndex;
-  /** 코스 경로선 + 번호 경유지 마커 (E14) */
-  route: { path: LatLng[]; waypoints: RouteWaypoint[] } | undefined;
+  /**
+   * 코스 경로선 + 번호 경유지 마커 (E14 → MSG-580) — 경로추천 목록 상태에선 **모든 코스**,
+   * 상세를 열면 그 코스만(웹 `routes` 미러). 경로추천 칩이 아니면 빈 배열
+   */
+  routes: CourseRoute[];
   /** 선택 미션 이름표 (승인 Q4) */
   missionLabel: { text: string; coord: LatLng } | undefined;
 }
@@ -145,8 +148,15 @@ export const useHomeOverlays = ({
     [occupiedGridIds, themeGridIds, courseSpotGridIds],
   );
 
-  // 라인이 없어도(빈 path) 스팟 번호 마커는 유지한다 (MSG-473 AC 9)
-  const route = useMemo(() => courseRouteOf(selectedCourse), [selectedCourse]);
+  // 라인이 없어도(빈 path) 스팟 번호 마커는 유지한다 (MSG-473 AC 9).
+  // 목록 상태는 모든 코스, 상세는 그 코스만 (MSG-580 — 웹 use-home-overlays `routes`)
+  const routes = useMemo(
+    () =>
+      missions.isRouteChip
+        ? courseRoutesOf(selectedCourse ? [selectedCourse] : courseViews)
+        : [],
+    [missions.isRouteChip, selectedCourse, courseViews],
+  );
 
   /** 이름표는 도형 bbox 중심에 하나만 — 지도가 글자로 덮이지 않게 (승인 Q4) */
   const missionLabel = useMemo(() => {
@@ -168,7 +178,7 @@ export const useHomeOverlays = ({
     themeGridIds,
     classification,
     gridIdIndex,
-    route,
+    routes,
     missionLabel,
   };
 };

@@ -4,6 +4,7 @@ import type { AreaRect } from "@/features/event-submission/model/submission-area
 import type { SubmissionType } from "@/features/event-submission/model/submission-form";
 import { useSubmissionWizardStore } from "@/features/event-submission/model/submission-wizard-store";
 import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
+import { freezeDate } from "@/test/freeze-date";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { stubFetch } from "@/test/stub-fetch";
 import { areaRect } from "@/test/submission-draft-fixture";
@@ -84,11 +85,14 @@ beforeEach(() => {
     useSubmissionWizardStore.getInitialState(),
     true,
   );
+  // 행사 기간 픽스처(2026-09-05~07)가 "endsOn < 오늘(KST)" 규칙에 걸려 09-08부터 실패하던 시한폭탄 (MSG-593)
+  freezeDate("2026-09-01T03:00:00Z");
 });
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("확인·제출 스텝 진입 렌더 (AC 1·2·3)", () => {

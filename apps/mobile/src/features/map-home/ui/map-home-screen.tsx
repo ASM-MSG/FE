@@ -13,6 +13,9 @@ import type { PermissionState } from "../../../shared/permission-state";
 import { splashGate } from "../../../shared/splash";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useEventHome } from "../../event/api/use-event-home";
+import { parsePositiveInt } from "../../notifications/model/notification-route";
+import { useUnreadCountQuery } from "../../notifications/api/use-unread-count-query";
+import { hasUnread } from "../../notifications/model/inbox";
 import { EventChip } from "../../event/ui/event-chip";
 import { EventSheetSwitch } from "../../event/ui/event-sheet-switch";
 import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
@@ -33,13 +36,15 @@ import {
   defaultSheetQueries,
   deriveSheetState,
 } from "../model/home-sheet-state";
-import { locateBottomOffset } from "../model/locate-offset";
+import { parseHomeFocus } from "../model/home-focus";
+import { locateBottomOffset, mapBottomInset } from "../model/locate-offset";
 import { nextTracking } from "../model/location-overlay";
 import {
   setSelectedMissionId,
   useSelectedMissionId,
 } from "../model/mission-selection";
 import { homePanelKind } from "../model/panel-branch";
+import { regionFocusTarget } from "../model/region-focus";
 import {
   clearSelectedRegion,
   closeRegionList,
@@ -98,16 +103,37 @@ const NAV_BAR_HEIGHT = 64;
 export const MapHomeScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // 홈 아바타 빨간 점 (MSG-602) — 화면·포그라운드 복귀 때 다시 센다
+  const unreadCount = useUnreadCountQuery();
   const mapRef = useRef<GridMapRef>(null);
   const sheetRef = useRef<HomeSheetRef>(null);
-  // 검색 복귀 params (MSG-297 AC 3·10·11) — 검색 화면이 navigate로 전달한 목적지 좌표
-  const { lat, lng, ts } = useLocalSearchParams<{
+  // 검색 복귀 params (MSG-297 AC 3·10·11, MSG-578 D1 확장) — 검색 화면이 navigate로
+  // 전달한 목적지: 장소 lat/lng · 격자 gridId · 구역 bounds. 파싱·가드는 home-focus
+  const {
+    lat,
+    lng,
+    gridId,
+    bounds: boundsParam,
+    ts,
+    occurrenceId,
+  } = useLocalSearchParams<{
     lat?: string;
     lng?: string;
+    gridId?: string;
+    bounds?: string;
     ts?: string;
+    /** 알림 딥링크 — 행사방 개요 시트 (MSG-605). 빈 문자열 = 부재 */
+    occurrenceId?: string;
   }>();
   /** 검색 목적지 이동이 발생하면 초기 현재 위치 이동을 건너뛴다 — 카메라 경합 방지 */
   const movedToSearchTargetRef = useRef(false);
+  /**
+   * 격자 검색 하이라이트 (MSG-578 D2) — 웹 `searchGridId` 페이지 로컬 상태 미러. 자동 해제
+   * 없음, 새 격자 선택 시 교체. 장소·구역 선택은 건드리지 않고 홈 이탈(언마운트) 시 소멸한다.
+   */
+  const [searchHighlight, setSearchHighlight] = useState<GridCellIndex | null>(
+    null,
+  );
 
   /**
    * 지도 타일 첫 표시 완료 (MSG-445) — 진입 스플래시 해제 조건의 한 축.
@@ -284,6 +310,42 @@ export const MapHomeScreen = () => {
     onUpload: () => router.push("/upload"),
   });
 
+  // 검색의 전체 지역 행 탭(MSG-578 D11)으로 지역이 골라지면 테마·상세·이벤트 선택을 비운다 —
+  // 시트 분기는 격자 > 상세 > 칩 목록 > 기본 순이라 다른 패널이 열려 있으면 고른 지역이
+  // 헤더에 닿지 못한다(codex 리뷰 P2). 홈 자체의 "전체 보기" 경로에서는 이미 기본 시트라 no-op
+  useEffect(() => {
+    if (selectedRegion === null) return;
+    event.handlers.close();
+    applySelection(
+      closeTheme({
+        activeTheme: null,
+        selectedMissionId: null,
+        selectedGridId: null,
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 지역이 바뀔 때만
+  }, [selectedRegion]);
+
+  // 지역이 골라지면(검색 전체 지역 탭·홈 "전체 보기") 그 지역의 첫 격자(최신순) 중심으로 이동한다 —
+  // 지역 API에는 좌표가 없어 시트용 격자 목록을 재사용한다(2026-09-07 사용자 결정, A1 번복).
+  // 이동이 onViewportChange → clearSelectedRegion을 부르므로 헤더는 새 중심의 라이브 행정동으로
+  // 이어진다(그 격자가 속한 지역 = 고른 지역). 격자 0개면 이동할 곳이 없어 헤더만 바뀐다
+  const movedToRegionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (selectedRegion === null) {
+      movedToRegionRef.current = null;
+      return;
+    }
+    const target = regionFocusTarget(
+      regionGrids.data,
+      selectedRegion.regionCode,
+      movedToRegionRef.current,
+    );
+    if (target === null) return;
+    movedToRegionRef.current = selectedRegion.regionCode;
+    mapRef.current?.moveTo(target);
+  }, [selectedRegion, regionGrids.data]);
+
   // Android 하드웨어 뒤로가기 (A5) — 헤더 `‹`와 같은 규칙을 타고, 최상위에서만 화면을 벗어난다
   useFocusEffect(
     useCallback(() => {
@@ -318,17 +380,30 @@ export const MapHomeScreen = () => {
     });
   };
 
-  // 검색 복귀 카메라 이동 (MSG-297 AC 3·10·11) — ts는 요청 식별자: 같은 구를
-  // 연속 선택해도 params가 달라져 재이동한다. 초기 현재 위치 이동보다 우선.
+  // 검색 복귀 카메라 이동 (MSG-297 AC 3·10·11, MSG-578 D1~D4) — ts는 요청 식별자: 같은
+  // 목적지를 연속 선택해도 params가 달라져 재이동한다. 초기 현재 위치 이동보다 우선.
+  // 장소 → moveTo(줌 16) / 격자 → focusTo(줌 보장) + 하이라이트 / 구역 → fitBounds
   useEffect(() => {
-    if (typeof lat !== "string" || typeof lng !== "string" || !ts) return;
-    const target = { lat: Number(lat), lng: Number(lng) };
-    // 딥링크로 훼손된 params가 올 수 있다 — NaN·좌표 범위 밖 값을 네이티브 지도에 넘기지 않는다
-    if (!Number.isFinite(target.lat) || Math.abs(target.lat) > 90) return;
-    if (!Number.isFinite(target.lng) || Math.abs(target.lng) > 180) return;
+    if (!ts) return;
+    // 행사방 딥링크 (MSG-605) — 카메라는 방의 위치 중심으로 use-event-home이 옮긴다 (D13)
+    const occurrence = parsePositiveInt(occurrenceId);
+    if (occurrence !== null) {
+      movedToSearchTargetRef.current = true;
+      event.handlers.openRoom(occurrence);
+      // 시트를 숨겨 둔 채(4단계) 탭한 푸시도 개요가 보여야 한다 — 기존 스냅 효과는 stage 값이 바뀔 때만
+      // 돌아서 이미 행사방(1단계)이던 홈에서는 안 돈다. 요청마다 명시적으로 펼친다 (codex 3R P2)
+      sheetRef.current?.snapTo(1);
+      return;
+    }
+    const focus = parseHomeFocus({ lat, lng, gridId, bounds: boundsParam });
+    if (focus === null) return;
     movedToSearchTargetRef.current = true;
-    mapRef.current?.moveTo(target);
-  }, [lat, lng, ts]);
+    if (focus.kind === "point") mapRef.current?.moveTo(focus.center);
+    else if (focus.kind === "grid") {
+      mapRef.current?.focusTo(focus.center);
+      setSearchHighlight(focus.cell);
+    } else mapRef.current?.fitBounds(focus.bounds);
+  }, [lat, lng, gridId, boundsParam, ts, occurrenceId, event.handlers]);
 
   useEffect(() => {
     // 초기 중심 결정: 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만
@@ -427,6 +502,7 @@ export const MapHomeScreen = () => {
             // 스플래시를 붙잡고 있다. 상한 타이머가 있어 이 신호가 안 와도 갇히지 않는다
             onReady={() => setMapReady(true)}
             onCellTap={handleCellTap}
+            highlightCell={searchHighlight ?? undefined}
             occupiedCells={overlays.occupiedCells}
             themeCells={
               event.overlayCells ?? overlays.classification?.themeOnly
@@ -435,7 +511,7 @@ export const MapHomeScreen = () => {
             hatchCells={overlays.classification?.both}
             accentCells={event.accentCells}
             accentColor={event.accentColor}
-            route={overlays.route}
+            routes={overlays.routes}
             missionLabel={event.mapLabel ?? overlays.missionLabel}
             clusters={aggregation.clusters}
             onViewportChange={(next) => {
@@ -445,6 +521,13 @@ export const MapHomeScreen = () => {
               clearSelectedRegion();
             }}
             currentLocation={location}
+            // SDK 내장 +/-는 끄고 아래 버튼 묶음으로 — 시트를 따라가게 (MSG-601 iOS 환류)
+            showZoomControls={false}
+            bottomInset={mapBottomInset(
+              sheetLayout.stage,
+              sheetLayout.containerHeight,
+              bottomOffset,
+            )}
             onGestureCameraChange={() =>
               setTracking((prev) =>
                 nextTracking(prev, { kind: "camera", reason: "Gesture" }),
@@ -459,17 +542,22 @@ export const MapHomeScreen = () => {
           onToggleTheme={handleToggleTheme}
           onOpenSearch={() => router.push("/search")}
           onOpenProfile={() => router.navigate("/profile")}
+          hasUnread={hasUnread(unreadCount.data)}
           chipsTrailing={eventChip}
         />
         {aggregation.isError && (
           <ClusterErrorNotice onRetry={aggregation.retry} />
         )}
 
-        {/* 내 위치 — 시트 단계에 따라 함께 올라가 가려지지 않는다.
+        {/* 지도 컨트롤 묶음(+ / − / 내 위치) — 시트 단계에 따라 함께 올라가 가려지지 않는다.
+            +/-는 SDK 내장 컨트롤 대신 우리 버튼(MSG-601 iOS 환류 — 내장은 시트를 모른다).
+            SDK 축척 바는 두 플랫폼 모두 콘텐츠 영역 **오른쪽** 아래에 그려 이 묶음과 겹치므로
+            축척 바 높이·SDK 하단 마진만큼(`pb-xxl` 48 — 실측 바 상단이 콘텐츠 바닥 위 약 50pt) 띄운다
+            (축척은 사용자 결정으로 유지. Android도 오른쪽 아래 — 뷰 계층 dump x 873~1048/1080).
             FAB(기록하기)는 바텀 내비 카메라와 기능 중복으로 제거 (MSG-317 AC 16) */}
         <View
           pointerEvents="box-none"
-          className="absolute inset-x-0 items-end px-md"
+          className="absolute inset-x-0 items-end gap-sm px-md pb-xxl"
           style={{
             bottom: locateBottomOffset(
               sheetLayout.stage,
@@ -478,6 +566,14 @@ export const MapHomeScreen = () => {
             ),
           }}
         >
+          <MapIconButton
+            icon="zoom-in"
+            onPress={() => mapRef.current?.zoomBy(1)}
+          />
+          <MapIconButton
+            icon="zoom-out"
+            onPress={() => mapRef.current?.zoomBy(-1)}
+          />
           <MapIconButton
             icon="locate"
             active={tracking}

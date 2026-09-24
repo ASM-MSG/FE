@@ -14,7 +14,7 @@ import { SubmissionStatusChip } from "@/features/org-submissions/ui/SubmissionSt
  * 반려 사유·이력은 상세 API에만 있어(실측) 대표가 REJECTED일 때만 병행 조회한다:
  * 로딩은 Skeleton, 실패는 사유 영역 한정 RetryNotice로 수렴하고 상태·행사명은 그대로 남는다.
  */
-const OPERATOR_CONTACT = "운영자 문의 support@fillmap.kr";
+const OPERATOR_CONTACT = "운영자 문의 contact@fillmap.kr";
 
 interface OrgSubmissionSummaryCardProps {
   /** 대표 신청 — 신청 0건이면 null(빈 변형) */

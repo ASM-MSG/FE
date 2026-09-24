@@ -17,6 +17,8 @@ interface HomeTopBarProps {
   onToggleTheme: (id: ThemeId) => void;
   onOpenSearch: () => void;
   onOpenProfile: () => void;
+  /** 안읽은 알림 존재 — 아바타 우상단 빨간 점 (MSG-602, PRD MSG-434: 개수 아닌 존재 여부) */
+  hasUnread?: boolean;
   /** 테마 칩 4종 뒤 슬롯 — 이벤트 칩 (MSG-557) */
   chipsTrailing?: ReactNode;
 }
@@ -27,6 +29,7 @@ export const HomeTopBar = ({
   onToggleTheme,
   onOpenSearch,
   onOpenProfile,
+  hasUnread = false,
   chipsTrailing,
 }: HomeTopBarProps) => (
   <View
@@ -50,11 +53,19 @@ export const HomeTopBar = ({
       {/* 프로필 진입 (MSG-317 AC 18) — 바텀 내비 프로필 탭과 같은 목적지 */}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="프로필 열기"
+        accessibilityLabel={
+          hasUnread ? "프로필 열기, 새 알림 있음" : "프로필 열기"
+        }
         onPress={onOpenProfile}
         className="active:opacity-80"
       >
         <Avatar size="md" fallback="나" />
+        {hasUnread && (
+          <View
+            pointerEvents="none"
+            className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-background bg-error"
+          />
+        )}
       </Pressable>
     </View>
     {/* 칩 행은 테마 선택과 무관하게 항상 보인다 (MSG-423 요구 4) */}

@@ -4,7 +4,7 @@
 
 > **왜 이 문서가 있나:** 하네스의 실동작 검증이 웹 dev 서버 기준으로만 규정돼 있어, 모바일 티켓(MSG-419~431)이 정적 게이트(vitest·typecheck·lint)만으로 통과해 왔다. 2026-08-20 실기 시도에서 함정 6가지에 순차로 걸렸고 전부 재발할 문제라 절차로 굳혔다. 검증 스킬에서의 진입점은 `.claude/skills/page-verification/SKILL.md` 절차 3-B.
 
-> **범위:** Android만 다룬다. iOS 실기는 현재 개발 환경에 Xcode 커맨드라인 도구가 없어 제외 — 필요해지면 별도 티켓.
+> **범위:** Android만 다룬다. iOS 실기 절차는 아직 없다 — 2026-09-23(MSG-601) 실측으로 이 Mac에 Xcode 26.6·iPhone 17 시뮬레이터·CocoaPods 1.17이 있으나 `ios/`는 미생성(gitignore)이고, `usesAppleSignIn` 엔타이틀먼트는 유료 개발자 팀 서명이 필요하다. best-effort 절차는 `docs/spec/MSG-601.md` "iOS 검증 절차" 참조, 정식 런북화는 별도 티켓.
 
 **Expo Go로는 이 앱이 뜨지 않는다.** 네이버 지도·expo-notifications 등 네이티브 모듈을 쓰므로 **dev client**(직접 빌드한 debug APK)가 필요하다. `expo start`를 플래그 없이 띄우면 Expo Go 경로로 안내되고 앱은 즉시 강제 종료된다 — 항상 `--dev-client`.
 
@@ -131,7 +131,7 @@ adb -s emulator-5556 shell input keyevent 82
 
 - 번들 주소 설정은 그 AVD의 앱 데이터에 남는다 — 다음 실기에서 8082 Metro가 없으면 앱이 못 붙으니, 이 AVD는 "8082 전용"으로 기억해 두거나 같은 메뉴에서 되돌린다.
 - 새 AVD는 로그인·로케일·geo fix가 비어 있다 — 로그인은 사용자가 직접(카카오 웹 로그인, 자격 증명 입력은 사용자 몫), 지도 티켓이면 ko-KR·서면역 fix를 다시 건다.
-- 내 번들이 서빙되는지 확증: 8082 Metro 로그에 연결이 찍히는지 보거나(`CI=1`로 띄우면 로그가 거의 없다), 번들을 직접 받아 변경 문자열을 grep한다: `curl -s 'http://localhost:8082/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&transform.routerRoot=src%2Fapp' | grep -c '<변경 문자열>'`
+- 내 번들이 서빙되는지 확증: 8082 Metro 로그에 연결이 찍히는지 보거나(**`CI=1`로 띄우지 마라** — 로그만 줄어드는 게 아니라 파일 감시가 꺼져 수정이 번들에 안 실린다. MSG-588 실측: 스테일 번들을 보고 코드 결함으로 오독할 뻔했다), 번들을 직접 받아 변경 문자열을 grep한다: `curl -s 'http://localhost:8082/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&transform.routerRoot=src%2Fapp' | grep -c '<변경 문자열>'`
 - 비로그인 대조(웹 격자 목록 등)는 브라우저보다 웹이 부르는 공개 API를 토큰 없이 `curl`하는 쪽이 빠르고 정확하다.
 - 끝나면 내 것만 정리한다: 8082 Metro pid kill + `adb -s emulator-5556 emu kill`. 5554·8081은 건드리지 않는다.
 
@@ -438,6 +438,14 @@ adb unroot; adb reverse tcp:8081 tcp:8081                             # root 토
 PID=$(lsof -ti tcp:8081 -sTCP:LISTEN); lsof -p $PID | grep cwd     # cwd가 지금 레포인가
 kill $PID && (cd apps/mobile && npx expo start --dev-client --port 8081)
 ```
+
+### 함정 12. 지도 조작 중 앱이 통째로 꺼진다 — 커스텀 뷰 마커 비트맵 recycle (라이브러리 버그)
+
+**증상** — 붉은 에러 화면 없이 앱이 그냥 사라진다. `adb logcat -d -b crash`에 `SIGABRT` + `Abort message: 'JNI DETECTED ERROR ... bitmap decoding: could not lock pixels'` + `from com.naver.maps.map.renderer.MapRenderer.nativeRender()`가 찍히고, 직전에 `W/Bitmap: Called getDensity() on a recycle()'d bitmap!`가 있다.
+
+**원인** — `@mj-studio/react-native-naver-map` 2.9.0 안드로이드의 `RNCNaverMapMarker.removeCustomView()`가 지도 아이콘이 아직 참조 중인 비트맵을 먼저 `recycle()`하고 아이콘을 교체한다. 커스텀 뷰 마커(경로 번호·클러스터·미션 이름표)가 언마운트되는 순간 GL 렌더 스레드가 그 비트맵을 잠그려다 네이티브 abort. 줌 변경으로 클러스터가 교체되거나 경로를 해제할 때 확률적으로 재현된다(2026-09-07 실측, 프로세스 uptime 182초). 에뮬레이터·Metro 문제가 아니다.
+
+**대응** — `patches/@mj-studio__react-native-naver-map@2.9.0.patch`에 recycle 제거가 들어 있다(GC에 맡김). Kotlin 변경이라 **dev client 재빌드**가 필요하다 — 옛 APK를 쓰면 패치 전 코드로 돌아간다. 같은 시그니처가 다시 보이면 APK가 패치 이후에 빌드된 것인지부터 확인한다.
 
 ### 에뮬레이터 재현 성공 경로 (막혔을 때 통째로 다시 밟을 순서)
 

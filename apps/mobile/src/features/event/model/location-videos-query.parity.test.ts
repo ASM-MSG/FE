@@ -41,6 +41,7 @@ const video = (videoId: number): EventLocationVideoResponseDto => ({
   createdAt: "2026-09-02T11:58:00+09:00",
   helpfulCount: 1,
   commentCount: 2,
+  uploaderId: 7,
 });
 
 const page = (

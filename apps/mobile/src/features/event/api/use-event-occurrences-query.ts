@@ -23,7 +23,10 @@ import {
 export const useEventOccurrencesQuery = (
   bounds: Bounds | null,
 ): { chips: EventOccurrenceChip[] } & GatedQueryStatus => {
-  const debounced = useDebouncedValue(bounds, EVENT_OCCURRENCES_DEBOUNCE_MS);
+  const { debounced } = useDebouncedValue(
+    bounds,
+    EVENT_OCCURRENCES_DEBOUNCE_MS,
+  );
   const { enabled, query: params } = eventOccurrencesQueryArgs(debounced);
 
   const query = useQuery({

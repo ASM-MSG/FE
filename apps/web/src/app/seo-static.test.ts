@@ -126,7 +126,7 @@ describe("public/robots.txt · sitemap.xml (B1·B2)", () => {
     expect(text).toMatch(/^Sitemap: https:\/\/fillmap\.kr\/sitemap\.xml$/m);
   });
 
-  it("sitemap.xml은 유효한 urlset이고 <loc>는 홈 하나뿐이며 lastmod가 없다 (B2)", () => {
+  it("sitemap.xml은 유효한 urlset이고 <loc>는 홈 + 공개 약관 5종이며 lastmod가 없다 (B2, MSG-606 H2)", () => {
     const xml = new DOMParser().parseFromString(
       read("../../public/sitemap.xml"),
       "application/xml",
@@ -139,7 +139,14 @@ describe("public/robots.txt · sitemap.xml (B1·B2)", () => {
     );
     expect(
       [...xml.querySelectorAll("url > loc")].map((loc) => loc.textContent),
-    ).toEqual(["https://fillmap.kr/"]);
+    ).toEqual([
+      "https://fillmap.kr/",
+      "https://fillmap.kr/terms/service",
+      "https://fillmap.kr/terms/privacy-collection",
+      "https://fillmap.kr/terms/location",
+      "https://fillmap.kr/terms/marketing",
+      "https://fillmap.kr/terms/privacy-policy",
+    ]);
     expect(xml.querySelector("lastmod")).toBeNull();
   });
 

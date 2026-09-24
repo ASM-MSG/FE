@@ -6,13 +6,15 @@ import { useRouter } from "expo-router";
 import { User } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader, Avatar, Button, ModalCard } from "@fillmap/ui-native";
-import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
+import { PENDING_PROFILE } from "../../../entities/profile/model/profile";
 import { goToLogin, goToTermsDocument } from "../../../shared/navigation";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useLogout } from "../../auth/api/use-logout";
 import { formatProgressRate } from "../../dex/model/region-label";
 import { PermissionSettingsNotice } from "../../permissions/ui/permission-settings-notice";
+import { useUnreadCountQuery } from "../../notifications/api/use-unread-count-query";
 import { usePushRegistration } from "../../notifications/api/use-push-registration";
+import { unreadHint } from "../../notifications/model/inbox";
 import { useActivityQuery } from "../api/use-activity-query";
 import { useNotificationToggle } from "../api/use-notification-toggle";
 import { useProfileQuery } from "../api/use-profile-query";
@@ -69,11 +71,12 @@ export const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: profile } = useProfileQuery();
-  // 조회 전·실패 시 mock 폴백 — 게이트를 세우지 않는다 (결정 E2)
-  const identity = profile ?? MOCK_PROFILE;
+  // 조회 전·실패 시 빈 정체성 — 게이트를 세우지 않되 가짜 계정을 보이지도 않는다 (결정 E2 → MSG-606 M2)
+  const identity = profile ?? PENDING_PROFILE;
   const activity = useActivityQuery();
   const notifications = useNotificationToggle();
   const push = usePushRegistration();
+  const unread = useUnreadCountQuery();
   const notificationNotice = resolveNotificationNotice({
     permission: push.permission,
     pushError: push.error,
@@ -102,7 +105,11 @@ export const ProfileScreen = () => {
   const joinedText = `가입일 ${formatJoinedDate(identity.joinedAt)}`;
   // 카카오 가입은 이메일을 수집하지 않아 null이 올 수 있다 — 그때는 가입일만 보인다
   const metaText =
-    identity.email === null ? joinedText : `${joinedText} · ${identity.email}`;
+    profile === undefined
+      ? "프로필을 불러오는 중"
+      : identity.email === null
+        ? joinedText
+        : `${joinedText} · ${identity.email}`;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -163,13 +170,19 @@ export const ProfileScreen = () => {
 
           {/* 설정 (기준 1~6) — [MSG-448] "준비 중" 2행이 실제 목적지로 배선됐다 */}
           <ProfileSection title="설정">
+            {/* 알림함 (MSG-602) — 안읽음이 있으면 "새 알림 N개" 캡션 (PRD MSG-434 FR-6) */}
+            <SettingRow
+              label="알림함"
+              hint={unreadHint(unread.data)}
+              onPress={() => router.navigate("/profile/notifications")}
+            />
             <SettingRow
               label="위치정보 동의 관리"
               onPress={() => router.navigate("/profile/consent")}
             />
             {/*
               MSG-429 기준 14·15 — 이 스위치 하나가 두 축을 움직인다: 서버 preferences
-              5종 일괄 저장(MSG-426)과 OS 알림 권한 + FCM 토큰 등록/해제(MSG-429).
+              전 종(8종, MSG-426→MSG-482) 일괄 저장과 OS 알림 권한 + FCM 토큰 등록/해제(MSG-429).
               **표시 정본은 푸시 축**이다(웹 MSG-408 미러) — 권한이 없거나 토큰이 등록되지
               않았으면 preferences가 켜져 있어도 OFF로 보인다. "켰는데 알림이 안 온다"를
               만들지 않기 위해서다. 권한 요청은 이 탭(사용자 제스처) 안에서만 일어난다.
@@ -203,6 +216,11 @@ export const ProfileScreen = () => {
             <SettingRow
               label="신고 관리"
               onPress={() => router.navigate("/profile/reports")}
+            />
+            {/* MSG-570 기준 12 — 차단한 사용자 목록·해제 */}
+            <SettingRow
+              label="차단한 사용자"
+              onPress={() => router.navigate("/profile/blocks")}
             />
           </ProfileSection>
 

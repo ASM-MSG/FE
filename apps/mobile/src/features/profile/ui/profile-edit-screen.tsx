@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import { User } from "lucide-react-native";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader, Avatar, Button, Input } from "@fillmap/ui-native";
-import { MOCK_PROFILE } from "../../../entities/profile/model/mock-profile";
+import { PENDING_PROFILE } from "../../../entities/profile/model/profile";
 import { PermissionNoticeModal } from "../../permissions/ui/permission-notice-modal";
 import { useProfileQuery } from "../api/use-profile-query";
 import { useUpdateNickname } from "../api/use-update-nickname";
@@ -44,8 +44,8 @@ export const ProfileEditScreen = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: profile } = useProfileQuery();
-  // 조회 전·실패 시 mock 폴백 — 편집 화면도 조회에 잠기지 않는다 (결정 E2)
-  const identity = profile ?? MOCK_PROFILE;
+  // 조회 전·실패 시 빈 정체성 — 편집 화면도 조회에 잠기지 않는다 (결정 E2 → MSG-606 M2, 가짜 닉네임 금지)
+  const identity = profile ?? PENDING_PROFILE;
 
   const [nickname, setNickname] = useState(identity.nickname);
   // 조회가 마운트 이후 도착하면 프리필을 서버값으로 다시 맞춘다 — 렌더 중 상태 조정

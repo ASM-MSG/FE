@@ -6,6 +6,7 @@ import {
 import {
   appendComment,
   eventVideoInteraction,
+  removeCommentsByAuthor,
   seedHelpful,
 } from "./event-video-cache";
 
@@ -45,6 +46,35 @@ describe("appendComment — 작성 응답 seed (AC 6)", () => {
 
     expect(seeded.comments.comments.map((c) => c.commentId)).toEqual([1, 2]);
     expect(seeded.commentCount).toBe(EVENT_VIDEO_DETAIL.commentCount);
+  });
+});
+
+describe("removeCommentsByAuthor — 댓글 작성자 차단 seed (MSG-570 기준 11)", () => {
+  it("그 authorId의 댓글만 첫 페이지에서 빠지고 commentCount는 그대로다 — 서버도 줄이지 않는다", () => {
+    const detail = {
+      ...EVENT_VIDEO_DETAIL,
+      commentCount: 3,
+      comments: {
+        ...EVENT_VIDEO_DETAIL.comments,
+        comments: [
+          eventComment(1, { authorId: 7 }),
+          eventComment(2, { authorId: 99 }),
+          eventComment(3, { authorId: 7 }),
+        ],
+      },
+    };
+
+    const seeded = removeCommentsByAuthor(detail, 7);
+
+    expect(seeded.comments.comments.map((c) => c.commentId)).toEqual([2]);
+    expect(seeded.commentCount).toBe(3);
+    expect(seeded.comments.hasNext).toBe(detail.comments.hasNext);
+  });
+
+  it("그 작성자의 댓글이 없으면 상세가 그대로다 (경계)", () => {
+    expect(removeCommentsByAuthor(EVENT_VIDEO_DETAIL, 99)).toEqual(
+      EVENT_VIDEO_DETAIL,
+    );
   });
 });
 

@@ -19,6 +19,7 @@ import { useSubmissionWizardStore } from "@/features/event-submission/model/subm
 import { getSubmissionQueryKey } from "@/shared/api/generated/@tanstack/react-query.gen";
 import type { EventSubmissionDetailResponseDto } from "@/shared/api/generated/types.gen";
 import { envelopeResponse, errorEnvelope } from "@/test/envelope-response";
+import { freezeDate } from "@/test/freeze-date";
 import {
   rejectedEditableDetail,
   submissionDetail,
@@ -161,6 +162,8 @@ const originalRevokeObjectURL = URL.revokeObjectURL;
 
 beforeEach(() => {
   detailVisits.length = 0;
+  // 행사 기간 픽스처(2026-09-05~07)가 "endsOn < 오늘(KST)" 규칙에 걸려 09-08부터 실패하던 시한폭탄 (MSG-593)
+  freezeDate("2026-09-01T03:00:00Z");
   useSubmissionWizardStore.setState(
     useSubmissionWizardStore.getInitialState(),
     true,
@@ -172,6 +175,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
   URL.createObjectURL = originalCreateObjectURL;
   URL.revokeObjectURL = originalRevokeObjectURL;
 });
@@ -315,7 +319,8 @@ describe("수정 진입 가드 (AC 8)", () => {
     fireEvent.click(screen.getByRole("link", { name: "다른 신청 수정으로" }));
 
     expect(await screen.findByText("신청 상세 화면")).toBeDefined();
-    expect(detailVisits).toEqual(["13"]);
+    // 방문 기록은 passive effect라 텍스트 출현보다 늦을 수 있다 — develop CI 4d0d698 플레이크
+    await waitFor(() => expect(detailVisits).toEqual(["13"]));
   });
 
   it("`/new`로 나갔다 같은 신청의 /edit로 돌아오면 가드가 다시 판정한다 (AC 8 — 허가는 방문 단위, codex P2)", async () => {
@@ -359,7 +364,7 @@ describe("수정 진입 가드 (AC 8)", () => {
     fireEvent.click(screen.getByRole("link", { name: "이 신청 수정으로" }));
 
     expect(await screen.findByText("신청 상세 화면")).toBeDefined();
-    expect(detailVisits).toEqual(["12"]);
+    await waitFor(() => expect(detailVisits).toEqual(["12"]));
   });
 
   it("비숫자 신청 번호는 요청을 발사하지 않고 오류를 안내한다 (AC 8 — 549 선례)", () => {

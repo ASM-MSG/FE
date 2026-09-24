@@ -104,6 +104,27 @@ export const toggleItem = (
 export const isAllAgreed = (state: ConsentState): boolean =>
   CONSENT_ITEMS.every((item) => state[item.id]);
 
+/**
+ * 서버 일괄 저장 body (MSG-606 M6) — `PUT /api/users/me/consents`. 필수 4종은 CTA 활성 조건상 항상
+ * true이고 마케팅만 사용자 선택값이다. 위치 동의는 게이트 판정 컬럼이 따로 있어(`updateLocationConsent`)
+ * 호출부가 이어서 저장한다.
+ */
+export const toConsentSubmitBody = (
+  state: ConsentState,
+): {
+  ageOver14: boolean;
+  serviceTerms: boolean;
+  privacyPolicy: boolean;
+  locationTerms: boolean;
+  marketing: boolean;
+} => ({
+  ageOver14: state.age14,
+  serviceTerms: state.termsOfService,
+  privacyPolicy: state.privacy,
+  locationTerms: state.location,
+  marketing: state.marketing,
+});
+
 /** CTA 활성 조건 — 필수 4개 AND. 마케팅(선택)은 무관하다 (AC 16·17) */
 export const canSubmitConsent = (state: ConsentState): boolean =>
   CONSENT_ITEMS.filter((item) => item.required).every((item) => state[item.id]);
