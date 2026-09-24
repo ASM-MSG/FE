@@ -6621,26 +6621,26 @@
       ]
     },
     {
-      "id": "4caa411ce1af54a2",
+      "id": "bda5f5f597d5b968",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
-          "id": "0ce605e71daf7195",
-          "source_digest": "fnv1a64:f10c39fdde500811",
+          "id": "8051cb625fa64aee",
+          "source_digest": "fnv1a64:a67c4222bfe34a1e",
           "file": "apps/mobile/src/features/auth/model/use-consent-gate.ts",
           "lang": "typescript",
-          "start_line": 20,
-          "end_line": 29,
+          "start_line": 32,
+          "end_line": 36,
           "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "33e5d6ddfde60432",
-          "source_digest": "fnv1a64:f10c39fdde500811",
+          "id": "62f49a34d62c80a1",
+          "source_digest": "fnv1a64:3d0c3b2a582e495e",
           "file": "apps/web/src/features/profile/model/use-location-consent-gate.ts",
           "lang": "typescript",
           "start_line": 16,
-          "end_line": 25,
+          "end_line": 20,
           "kind": "Block",
           "is_fragment": false
         }
