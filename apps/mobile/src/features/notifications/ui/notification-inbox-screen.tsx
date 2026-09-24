@@ -19,6 +19,10 @@ import { useInboxQuery } from "../api/use-inbox-query";
 import { useUnreadCountQuery } from "../api/use-unread-count-query";
 import type { InboxItem } from "../model/inbox";
 import {
+  parseNotificationTarget,
+  routeForTarget,
+} from "../model/notification-route";
+import {
   InboxEmptyState,
   InboxFooter,
   InboxSummaryRow,
@@ -30,7 +34,8 @@ const keyOf = (item: InboxItem) => String(item.notificationId);
 /**
  * 알림함 (MSG-602 — 시안 없음, 신고 관리·차단 목록과 같은 앱 관례). 프로필 설정에서 push.
  * 요약 행(안읽음 N·모두 읽음) + FlatList(커서 이어받기·당겨서 새로고침) + 4상태 스위치.
- * 행 탭은 안읽은 행만 읽음 처리한다 — 이미 읽은 행은 서버 왕복 없이 조용히 끝난다.
+ * 행 탭은 안읽은 행만 읽음 처리하고(이미 읽은 행은 서버 왕복 없음), 대상이 있으면 그 화면으로
+ * 이동한다(MSG-605 FR-8). 대상 없는 행은 읽음만 — 알림함에 이미 와 있어 홈으로 튕기지 않는다.
  * 머리·꼬리·빈 상태는 `notification-inbox-parts`가 그린다(PR #158 리뷰 — 복잡도 분리).
  * `DexErrorState`는 dex 밖 3번째 사용처 — ui-native 승격 후보(DECISIONS 2026-09-23).
  */
@@ -43,15 +48,19 @@ export const NotificationInboxScreen = () => {
   const markAllRead = useMarkAllRead();
   const state = infiniteListState(inbox);
   // 행 핸들러·renderItem은 목록 스코프에서 한 번만 만든다 (react-doctor rn-no-inline-flatlist-renderitem)
-  const handleRead = useCallback(
-    (notificationId: number) => markReadMutate({ notificationId }),
-    [markReadMutate],
+  const handlePress = useCallback(
+    (item: InboxItem) => {
+      if (!item.read) markReadMutate({ notificationId: item.notificationId });
+      const href = routeForTarget(parseNotificationTarget(item), Date.now());
+      if (href !== null) router.navigate(href);
+    },
+    [markReadMutate, router],
   );
   const renderItem = useCallback(
     ({ item }: { item: InboxItem }) => (
-      <NotificationRow item={item} onRead={handleRead} />
+      <NotificationRow item={item} onPress={handlePress} />
     ),
-    [handleRead],
+    [handlePress],
   );
   const refresh = () => {
     void inbox.refetch();

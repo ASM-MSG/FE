@@ -159,6 +159,7 @@
 - MSG-603: [모바일] **행사 알림 구독 토글** — `features/event`에 `model/event-subscription.ts`(노출·값 파생, 종료 회차 null)·`api/event-subscription-mutation.ts`(PUT `/api/event-occurrences/{id}/notification` 낙관+응답 enabled 기록+롤백)·`ui/event-notification-row.tsx`(🔔 행사 알림 + Switch + 인라인 오류). `EventOverview.notification` 재료 추가, 개요 시트 기간 행 아래 렌더(예정·진행 중만). 시안 없음 — FE 설계(docs/spec/MSG-603.md)
 - MSG-604: [모바일] **iOS 푸시 FCM 토큰** — `@react-native-firebase/app`·`messaging`(disableSPM + 정적 프레임워크), `GoogleService-Info.plist`(커밋), `ios.infoPlist.UIBackgroundModes`. `notifications-adapter.readDevicePushToken` iOS 분기: expo APNs 토큰 → `setAPNSToken` → `getToken`(FCM 등록 토큰). Android 경로 무변경. 서버 등록·재등록·포그라운드 배너 시뮬레이터 검증, FCM 경유 수신은 실기기 필요
 - MSG-604(부수): **약관 본문 5종** — `entities/terms/model/terms-bodies.ts`(서비스 이용약관·개인정보 수집 및 이용·위치기반서비스 이용약관·마케팅 정보 수신·개인정보 처리방침, 평문). MSG-448 자리표시(body null) 해소. 법률 검토 전 초안, 문의 `support@fillmap.kr`
+- MSG-605: [모바일] **알림 딥링크** — `features/notifications/model/notification-route.ts`(대상 파서 5종·대상→Href 표·`homeDeepLinkParams` 6키·`pushRouteFor`·`parsePositiveInt`) / api `push-response-routing`(중복 제거·ready 대기·홈 폴백)·`use-push-response`(콜드 스타트 last response 처리·clear)·어댑터 `addPushResponseListener`·`readLastPushResponse`·`clearLastPushResponse`(iOS는 `trigger.payload` 병합 — 원격 푸시 `content.data`가 null) / `_layout.tsx` 마운트(게이트+pathname ready). 알림함 행 탭 = 읽음 + 대상 있으면 이동. 홈 `occurrenceId`(→ `event.handlers.openRoom`)·도감 `tab` 파라미터 신설. SDK 스냅샷 항목 스키마 외과 패치 + 재생성(`targetType`·`targetId`)
 
 ## 티켓 이력 (2026-08-13 이후 — 티켓당 한 줄 append)
 
@@ -255,3 +256,4 @@
 - MSG-602: [모바일] 알림함 화면 + 미읽음 배지 — MSG-434 API 4종 소비. 시안이 없어(앱 ver 6에 알림함 프레임 없음) 사용자 결정으로 FE가 앱 관례로 설계(홈 아바타 빨간 점 → 프로필 행 → 알림함 목록·탭 읽음·모두 읽음). 딥링크는 MSG-432 이후. 하네스가 티켓 생성
 - MSG-603: [모바일] 행사 알림 구독 토글 — MSG-442 API 소비. 서버는 시작·일정 변경 알림을 구독자에게 보내는데 켜는 UI가 없어 수신자 0이던 공백. 시안 없이 개요 시트에 토글 행(예정·진행 중만). Android 실기 콜드 스타트 후 ON 유지 확인. 하네스가 티켓 생성
 - MSG-604: [모바일] iOS 푸시 — Firebase Messaging으로 FCM 등록 토큰 발급(A안). expo-notifications의 APNs 원시 토큰은 서버(FCM Admin)가 못 보내던 공백. 실측 결함 2건(SPM×정적 링크, RNFirebase 자체 APNs 등록 타임아웃) 우회. 하네스가 티켓 생성
+- MSG-605: [모바일] 알림 딥링크 — BE MSG-432 계약(`targetType`·`targetId`, FCM data + 알림함 응답) 소비. 푸시 탭(실행 중·종료)과 알림함 행 탭을 대상 종류로 화면에 잇는다. 대상→화면 표는 2026-09-24 성민 확정(FRIEND·REMIND 홈, MODERATION 영상, GRID 이동까지). iOS 시뮬레이터 `simctl push` + Android 딥링크로 실기. 하네스가 티켓 생성

@@ -13,6 +13,7 @@ import type { PermissionState } from "../../../shared/permission-state";
 import { splashGate } from "../../../shared/splash";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useEventHome } from "../../event/api/use-event-home";
+import { parsePositiveInt } from "../../notifications/model/notification-route";
 import { useUnreadCountQuery } from "../../notifications/api/use-unread-count-query";
 import { hasUnread } from "../../notifications/model/inbox";
 import { EventChip } from "../../event/ui/event-chip";
@@ -114,12 +115,15 @@ export const MapHomeScreen = () => {
     gridId,
     bounds: boundsParam,
     ts,
+    occurrenceId,
   } = useLocalSearchParams<{
     lat?: string;
     lng?: string;
     gridId?: string;
     bounds?: string;
     ts?: string;
+    /** 알림 딥링크 — 행사방 개요 시트 (MSG-605). 빈 문자열 = 부재 */
+    occurrenceId?: string;
   }>();
   /** 검색 목적지 이동이 발생하면 초기 현재 위치 이동을 건너뛴다 — 카메라 경합 방지 */
   const movedToSearchTargetRef = useRef(false);
@@ -381,6 +385,13 @@ export const MapHomeScreen = () => {
   // 장소 → moveTo(줌 16) / 격자 → focusTo(줌 보장) + 하이라이트 / 구역 → fitBounds
   useEffect(() => {
     if (!ts) return;
+    // 행사방 딥링크 (MSG-605) — 카메라는 방의 위치 중심으로 use-event-home이 옮긴다 (D13)
+    const occurrence = parsePositiveInt(occurrenceId);
+    if (occurrence !== null) {
+      movedToSearchTargetRef.current = true;
+      event.handlers.openRoom(occurrence);
+      return;
+    }
     const focus = parseHomeFocus({ lat, lng, gridId, bounds: boundsParam });
     if (focus === null) return;
     movedToSearchTargetRef.current = true;
@@ -389,7 +400,7 @@ export const MapHomeScreen = () => {
       mapRef.current?.focusTo(focus.center);
       setSearchHighlight(focus.cell);
     } else mapRef.current?.fitBounds(focus.bounds);
-  }, [lat, lng, gridId, boundsParam, ts]);
+  }, [lat, lng, gridId, boundsParam, ts, occurrenceId, event.handlers]);
 
   useEffect(() => {
     // 초기 중심 결정: 지도는 서면으로 먼저 뜨고, 권한 승인 + 조회 성공 시에만

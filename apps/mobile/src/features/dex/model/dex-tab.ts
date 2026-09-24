@@ -20,3 +20,10 @@ export const DEX_TAB_ITEMS: readonly { key: DexTab; label: string }[] = [
 
 /** 탭 선택 전이 — 선택한 탭이 곧 다음 상태 (활성 재탭 포함) [L10] */
 export const selectDexTab = (_current: DexTab, key: DexTab): DexTab => key;
+
+/**
+ * 라우트 파라미터 → 탭 (MSG-605) — 알림 딥링크가 `/dex?tab=badges`로 뱃지 탭을 연다. 형식 밖 값은
+ * null(기본 탭 유지). `DEX_TAB_ITEMS`가 정본이라 탭이 늘면 자동으로 따라간다.
+ */
+export const parseDexTab = (raw: string | undefined): DexTab | null =>
+  DEX_TAB_ITEMS.find((item) => item.key === raw)?.key ?? null;

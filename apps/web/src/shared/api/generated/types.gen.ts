@@ -2620,6 +2620,14 @@ export type NotificationItemResponseDto = {
      * 읽음 여부
      */
     read: boolean;
+    /**
+     * 딥링크 이동 대상 종류 — 없으면 null
+     */
+    targetType: 'VIDEO' | 'GRID' | 'BADGE' | 'EVENT_OCCURRENCE' | 'USER';
+    /**
+     * 딥링크 이동 대상 식별자(videoId·gridId·badgeId·occurrenceId·userId) — targetType 이 null 이면 null
+     */
+    targetId: string | null;
 };
 
 /**

@@ -8,12 +8,17 @@ import {
 } from "react";
 import { ActivityIndicator, BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { semantic } from "@fillmap/design-tokens";
 import { AppHeader } from "@fillmap/ui-native";
 import type { RecentRegion } from "../../../entities/dex/model/dex";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
-import { DEFAULT_DEX_TAB, selectDexTab, type DexTab } from "../model/dex-tab";
+import {
+  DEFAULT_DEX_TAB,
+  parseDexTab,
+  selectDexTab,
+  type DexTab,
+} from "../model/dex-tab";
 import {
   deriveRecentRegions,
   excludeRemovedRegions,
@@ -53,7 +58,15 @@ import { RegionGalleryView } from "./region-gallery-view";
  */
 export const DexScreen = () => {
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<DexTab>(DEFAULT_DEX_TAB);
+  // 알림 딥링크 `/dex?tab=badges` (MSG-605) — 첫 진입은 초기값으로, 이미 떠 있으면 파라미터 변화에 따라간다
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<DexTab>(
+    () => parseDexTab(tabParam) ?? DEFAULT_DEX_TAB,
+  );
+  useEffect(() => {
+    const next = parseDexTab(tabParam);
+    if (next !== null) setTab(next);
+  }, [tabParam]);
   const [selected, setSelected] = useState<RecentRegion | null>(null);
   const [removedRegionNames, setRemovedRegionNames] = useState<string[]>([]);
 
