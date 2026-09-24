@@ -71,7 +71,7 @@ const kakaoPlugins = kakaoNativeAppKey
  * @returns {import("expo/config").ExpoConfig}
  */
 export default (_ctx) => ({
-  name: "FillMap",
+  name: "필맵",
   slug: "fillmap",
   version: "1.0.0",
   orientation: "portrait",
