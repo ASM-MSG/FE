@@ -1,9 +1,12 @@
 import { Link, useParams } from "react-router-dom";
 import {
+  isTermsPlaceholder,
   resolveTermsDocument,
   TERMS_DOCUMENTS,
   TERMS_NOT_FOUND_DESCRIPTION,
   TERMS_NOT_FOUND_TITLE,
+  TERMS_PLACEHOLDER_DESCRIPTION,
+  TERMS_PLACEHOLDER_TITLE,
 } from "@fillmap/terms";
 import { formatDocumentTitle } from "@/shared/document-title";
 import { useDocumentTitle } from "@/shared/use-document-title";
@@ -47,12 +50,20 @@ export const TermsPage = () => {
           ))}
         </nav>
       </header>
-      {doc?.body ? (
+      {/* 모르는 키(문서 없음)와 문구 미확정(placeholder)은 다른 상태다 — 앱 뷰어(terms-document-view)와 같은 분기 */}
+      {doc === null ? (
+        <p className="text-foreground-muted">{TERMS_NOT_FOUND_DESCRIPTION}</p>
+      ) : isTermsPlaceholder(doc) ? (
+        <p className="text-foreground-muted">
+          <strong className="block text-foreground">
+            {TERMS_PLACEHOLDER_TITLE}
+          </strong>
+          {TERMS_PLACEHOLDER_DESCRIPTION}
+        </p>
+      ) : (
         <article className="whitespace-pre-wrap text-[15px] leading-7 text-foreground-body">
           {doc.body}
         </article>
-      ) : (
-        <p className="text-foreground-muted">{TERMS_NOT_FOUND_DESCRIPTION}</p>
       )}
     </main>
   );
