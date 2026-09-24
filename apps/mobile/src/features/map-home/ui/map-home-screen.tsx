@@ -390,6 +390,9 @@ export const MapHomeScreen = () => {
     if (occurrence !== null) {
       movedToSearchTargetRef.current = true;
       event.handlers.openRoom(occurrence);
+      // 시트를 숨겨 둔 채(4단계) 탭한 푸시도 개요가 보여야 한다 — 기존 스냅 효과는 stage 값이 바뀔 때만
+      // 돌아서 이미 행사방(1단계)이던 홈에서는 안 돈다. 요청마다 명시적으로 펼친다 (codex 3R P2)
+      sheetRef.current?.snapTo(1);
       return;
     }
     const focus = parseHomeFocus({ lat, lng, gridId, bounds: boundsParam });
