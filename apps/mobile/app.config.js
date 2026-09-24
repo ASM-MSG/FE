@@ -79,7 +79,6 @@ export default (_ctx) => ({
   scheme: "fillmap",
   userInterfaceStyle: "automatic",
   ios: {
-    icon: "./assets/expo.icon",
     bundleIdentifier: "kr.fillmap.app",
     // MSG-601: Sign in with Apple 엔타이틀먼트(`com.apple.developer.applesignin`) 주입.
     // 번들 ID가 곧 client_id라 환경변수가 없다. 유료 개발자 팀 서명이 있어야 빌드된다(스펙 R1).
@@ -91,7 +90,7 @@ export default (_ctx) => ({
     // 백그라운드 원격 알림 수신 모드 — messaging 플러그인은 엔타이틀먼트(aps-environment)만 주입하고
     // UIBackgroundModes는 넣지 않는다(prebuild 실측). 없으면 앱이 백그라운드일 때 data 메시지가 안 온다.
     // MSG-606: 심사 대비 — 표준 암호화(HTTPS)만 써서 수출 규정 문답을 건너뛴다(L5), 빌드 번호 명시(L6).
-    buildNumber: "2",
+    buildNumber: "3",
     infoPlist: {
       UIBackgroundModes: ["remote-notification"],
       ITSAppUsesNonExemptEncryption: false,
