@@ -712,7 +712,7 @@
 | 2026-09-24 | MSG-606 | 가입 동의 CTA가 `PUT /me/consents`(5종) → `PUT /me/location-consent` 순차 | 처리방침의 "동의 이력 보관"이 사실이 되게. 서버 consents는 마케팅+시각만 기록하고 게이트 컬럼은 location-consent가 쥐어 두 요청이 필요하다. 앞이 실패하면 뒤를 보내지 않는다 |
 | 2026-09-24 | MSG-606 | mock 프로필 폴백 삭제 → `PENDING_PROFILE`(빈 값) + "프로필을 불러오는 중" | 2.1·2.3 — 네트워크 지연·실패 시 가짜 계정(필맵퍼)이 심사관에게 보였다 |
 | 2026-09-24 | MSG-606 | 미완성 `/grid/[cellId]` 라우트와 `features/grid-detail` 삭제 | UI 진입점 없이 딥링크로만 도달하는 스텁(공유·업로드 버튼 무동작, mock 데이터). 홈의 격자 상세 시트가 실제 기능이다 |
-| 2026-09-24 | MSG-606 | 행사 영상 시트 헤더 ⋯(타인 영상만) → `VideoActionsMenu` 재사용, 내 영상 판정은 닉네임 일치 | Guideline 1.2 — 행사 영상에 신고 경로가 없었다. getMe에 userId가 없어 닉네임(서버 유일)으로 가른다. 댓글 신고 API는 없어 댓글은 차단만 |
+| 2026-09-24 | MSG-606 | 행사 영상 시트 헤더 ⋯(타인 영상만) → `VideoActionsMenu` 재사용, 내 영상 판정은 **토큰 `sub`(사용자 id)** 와 `uploaderId` 비교 | Guideline 1.2 — 행사 영상에 신고 경로가 없었다. 처음엔 닉네임 일치로 갔으나 닉네임은 중복 허용이라(codex 리뷰) 동명이인 영상에서 신고가 사라진다. getMe에 userId가 없어 JWT `sub`를 읽는 `userIdFromAccessToken`을 뒀다(서명 미검증 — 판정 재료일 뿐). 댓글 신고 API는 없어 댓글은 차단만 |
 | 2026-09-24 | MSG-606 | Apple 로그인 버튼을 `expo-apple-authentication` 네이티브 버튼으로 | 4.8·HIG 지적 원천 차단. 시안(검정 pill·"Apple로 계속하기")과 동일 외형 |
 | 2026-09-24 | MSG-606 | 운영 주체·보호책임자·지원 메일 확정값은 사용자 몫으로 남김 | 사업자 정보를 하네스가 지어낼 수 없다. `terms-bodies.ts` 상수 3곳만 바꾸면 된다 |
 | 2026-09-24 | MSG-606 | codex P2 반영: 행사 영상 업로더 차단 성공 시 시트를 위치 목록으로 되돌린다 | 상세 캐시는 차단 후 일부러 재조회하지 않아(`invalidateAfterBlockChange`) 차단한 사람의 영상이 계속 재생됐다 |

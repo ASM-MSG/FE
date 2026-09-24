@@ -12855,7 +12855,7 @@
       ]
     },
     {
-      "id": "bdec41ff6b872ffd",
+      "id": "54636f2cdb375b75",
       "note": "consolidate `view` — 3 copies",
       "members": [
         {
@@ -12881,12 +12881,12 @@
           "is_fragment": false
         },
         {
-          "id": "bf448248b0dea7ba",
+          "id": "9f3075222f0dffe2",
           "source_digest": "fnv1a64:ec90f08afbe36460",
           "file": "apps/mobile/src/features/event/ui/event-video-sheet-content.tsx",
           "lang": "typescript",
-          "start_line": 149,
-          "end_line": 153,
+          "start_line": 150,
+          "end_line": 154,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -24357,7 +24357,7 @@
       ]
     },
     {
-      "id": "0c865ac3c7a6cc56",
+      "id": "f1339bed08d0a6ba",
       "note": "consolidate `text` — 14 copies",
       "members": [
         {
@@ -24394,12 +24394,12 @@
           "is_fragment": false
         },
         {
-          "id": "9261f57b2b0f99d2",
+          "id": "8854c2466f3e453e",
           "source_digest": "fnv1a64:dfa578ff0cbd7a89",
           "file": "apps/mobile/src/features/event/ui/event-video-sheet-content.tsx",
           "lang": "typescript",
-          "start_line": 150,
-          "end_line": 152,
+          "start_line": 151,
+          "end_line": 153,
           "kind": "Block",
           "name": "text",
           "is_fragment": false
