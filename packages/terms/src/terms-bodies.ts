@@ -10,7 +10,7 @@
  */
 
 const EFFECTIVE_DATE = "2026년 9월 23일";
-const SUPPORT_EMAIL = "support@fillmap.kr";
+const SUPPORT_EMAIL = "contact@fillmap.kr";
 
 export const SERVICE_TERMS_BODY = `서비스 이용약관
 
