@@ -93,16 +93,28 @@ describe("createPushResponseRouter (L3)", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it("ready가 false로 내려가면 그 전에 보류된 탭은 버린다 — 다음 사용자 세션에서 열리지 않는다 (PR #161 리뷰)", () => {
+  it("세션이 끝난 뒤 도착한 탭은 다음 사용자 세션에서 열리지 않는다 — 실제 훅 순서 (PR #161 리뷰·codex)", () => {
     const navigate = vi.fn();
     const router = createPushResponseRouter({ navigate, now: () => 5 });
+    router.setReady(true); // A 로그인
+    router.setReady(false); // A 로그아웃 → 로그인 화면
 
-    router.handle(video("a")); // A 로그아웃 직후 도착
-    router.setReady(false); // 로그인 화면 등 세션 경계
+    router.handle(video("a")); // A 앞으로 온 알림을 로그인 화면에서 탭
     router.setReady(true); // B 로그인
 
     expect(navigate).not.toHaveBeenCalled();
-    router.handle(video("b"));
+    router.handle(video("b")); // B 세션의 새 탭은 정상
     expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it("최초 기동의 보류는 세션 경계 규칙에 걸리지 않는다 — 콜드 스타트 탭은 게이트가 열리면 이동한다", () => {
+    const navigate = vi.fn();
+    const router = createPushResponseRouter({ navigate, now: () => 5 });
+    router.setReady(false); // 마운트 시 게이트 닫힘
+
+    router.handle(video("cold"));
+    router.setReady(true);
+
+    expect(navigate).toHaveBeenCalledWith("/video/77");
   });
 });
