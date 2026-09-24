@@ -274,6 +274,26 @@ Metro는 스크립트가 **별도 프로세스로** 띄우고 포그라운드로
 
 ---
 
+## 7. iOS 앱스토어 아카이브 · 업로드 (2026-09-24 첫 제출 실측)
+
+Xcode GUI 없이 CLI로 끝난다. 서명은 자동(`-allowProvisioningUpdates`) — Xcode에 개발자 팀 계정이 로그인돼 있어야 하고, 배포 인증서는 첫 아카이브 때 Xcode가 만든다. `.p8` 등 키는 어디에도 두지 않는다.
+
+```bash
+cd apps/mobile
+git checkout develop && git pull
+npx expo prebuild -p ios --clean          # ios/는 gitignore·산출물. 표시 이름이 한글이라 프로젝트/스킴 이름은 `app`
+S=$TMPDIR/fillmap-release
+xcodebuild -workspace ios/app.xcworkspace -scheme app -configuration Release \
+  -destination "generic/platform=iOS" -archivePath "$S/app.xcarchive" archive \
+  -allowProvisioningUpdates DEVELOPMENT_TEAM=LWH7A7287A CODE_SIGN_STYLE=Automatic
+xcodebuild -exportArchive -archivePath "$S/app.xcarchive" -exportOptionsPlist ExportOptions.plist \
+  -exportPath "$S/export" -allowProvisioningUpdates   # ExportOptions: method app-store-connect · destination upload
+```
+
+- 확인: `ios/app/Info.plist`의 `CFBundleDisplayName`·`CFBundleShortVersionString`·`CFBundleVersion`·`ITSAppUsesNonExemptEncryption`(=false). 재제출은 `app.config.js` `ios.buildNumber`만 올린다.
+- `.env`의 `EXPO_PUBLIC_API_BASE_URL`이 운영(`https://api.fillmap.kr`)인지 본다 — 릴리스 번들에 그대로 박힌다.
+- 아카이브는 10분 안팎. 실패는 거의 "Bundle React Native code and images" 단계(JS 번들)다 → 함정 13.
+
 ## 함정 사전 (2026-08-20 · 08-21 실측)
 
 전부 실제로 걸렸던 것들이다. 증상으로 찾아 쓴다.
@@ -446,6 +466,14 @@ kill $PID && (cd apps/mobile && npx expo start --dev-client --port 8081)
 **원인** — `@mj-studio/react-native-naver-map` 2.9.0 안드로이드의 `RNCNaverMapMarker.removeCustomView()`가 지도 아이콘이 아직 참조 중인 비트맵을 먼저 `recycle()`하고 아이콘을 교체한다. 커스텀 뷰 마커(경로 번호·클러스터·미션 이름표)가 언마운트되는 순간 GL 렌더 스레드가 그 비트맵을 잠그려다 네이티브 abort. 줌 변경으로 클러스터가 교체되거나 경로를 해제할 때 확률적으로 재현된다(2026-09-07 실측, 프로세스 uptime 182초). 에뮬레이터·Metro 문제가 아니다.
 
 **대응** — `patches/@mj-studio__react-native-naver-map@2.9.0.patch`에 recycle 제거가 들어 있다(GC에 맡김). Kotlin 변경이라 **dev client 재빌드**가 필요하다 — 옛 APK를 쓰면 패치 전 코드로 돌아간다. 같은 시그니처가 다시 보이면 APK가 패치 이후에 빌드된 것인지부터 확인한다.
+
+### 함정 13. Release 아카이브가 JS 번들 단계에서 `Cannot find module 'babel-preset-expo'` / `'@babel/plugin-transform-react-jsx'`로 죽는다 — pnpm NODE_PATH
+
+**증상:** `expo start`·dev client는 멀쩡한데 `xcodebuild archive`만 "Bundle React Native code and images"에서 Babel 모듈을 못 찾는다. Xcode 밖에서 `./node_modules/.bin/expo export:embed --dev false`는 성공한다.
+
+**원인:** pnpm의 `.bin` shim은 `NODE_PATH`(…`/node_modules/.pnpm/node_modules` 호이스트 디렉터리)를 주입하고 실행하지만, Xcode 스크립트는 `.xcode.env`의 `NODE_BINARY`로 node를 **직접** 띄워 그 주입이 없다. 격리된 pnpm 레이아웃에서 Babel이 프리셋의 전이 의존성을 해석하지 못한다. 재현: `node <@expo/cli 경로>/build/bin/cli export:embed …`(shim 없이) — 같은 오류.
+
+**해법(굳힘):** `apps/mobile/plugins/with-pnpm-node-path.js`(config plugin)가 prebuild마다 `ios/.xcode.env`에 `export NODE_PATH=…/node_modules/.pnpm/node_modules`를 덧붙인다 + `babel-preset-expo`를 앱 devDependency로 명시(첫 오류). Android release(gradle)도 node를 직접 실행하므로 같은 증상이 나면 `android/gradle.properties`의 `nodeExecutableAndArgs` 대신 환경변수로 `NODE_PATH`를 주면 된다(미실측).
 
 ### 에뮬레이터 재현 성공 경로 (막혔을 때 통째로 다시 밟을 순서)
 
