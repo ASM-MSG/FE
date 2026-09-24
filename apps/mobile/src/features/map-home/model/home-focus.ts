@@ -73,11 +73,25 @@ export const parseHomeFocus = ({
   return null;
 };
 
-/** `router.navigate({ pathname: "/home", params })`용 — ts는 요청 식별자(같은 목적지 연속 선택도 재발화) */
+/** 홈 진입 params 키 전부 — 어느 진입 경로든 이 키를 전부 실어 이전 값이 남지 않게 한다 (MSG-605 codex P2) */
+export type HomeParamsKey =
+  | "lat"
+  | "lng"
+  | "gridId"
+  | "bounds"
+  | "ts"
+  | "occurrenceId";
+
+/**
+ * `router.navigate({ pathname: "/home", params })`용 — ts는 요청 식별자(같은 목적지 연속 선택도 재발화).
+ * `occurrenceId`(알림 딥링크의 행사방, MSG-605)도 빈 문자열로 함께 싣는다 — 검색 복귀가 이전 행사 id를
+ * 남기면 홈 effect가 검색 목적지 대신 행사방을 다시 연다.
+ */
 export const homeFocusParams = (
   target: HomeFocusTarget,
   ts: number,
-): Record<"lat" | "lng" | "gridId" | "bounds" | "ts", string> => ({
+): Record<HomeParamsKey, string> => ({
+  occurrenceId: "",
   lat: target.kind === "point" ? String(target.center.lat) : "",
   lng: target.kind === "point" ? String(target.center.lng) : "",
   gridId: target.kind === "grid" ? target.gridId : "",

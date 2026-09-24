@@ -98,12 +98,14 @@ describe("parseHomeFocus — 우선순위 gridId > bounds > point (L4)", () => {
 });
 
 describe("homeFocusParams — 검색 화면이 보내는 params 빌더 (L4, 리스크 'params 병합')", () => {
-  it("모든 키(lat·lng·gridId·bounds·ts)를 항상 실어 이전 복귀의 값이 잔존하지 않게 한다", () => {
+  it("모든 키(lat·lng·gridId·bounds·ts·occurrenceId)를 항상 실어 이전 복귀의 값이 잔존하지 않게 한다", () => {
     const params = homeFocusParams({ kind: "grid", gridId: GRID_ID }, 1);
 
+    // occurrenceId(MSG-605 행사방 딥링크)도 검색 복귀가 비운다 — 안 비우면 이전 행사방이 다시 열린다 (codex P2)
     expect(Object.keys(params).sort()).toEqual(
-      ["bounds", "gridId", "lat", "lng", "ts"].sort(),
+      ["bounds", "gridId", "lat", "lng", "ts", "occurrenceId"].sort(),
     );
+    expect(params.occurrenceId).toBe("");
     expect(params.gridId).toBe(GRID_ID);
     expect(params.lat).toBe("");
     expect(params.bounds).toBe("");

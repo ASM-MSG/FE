@@ -75,6 +75,19 @@ export const withEventRoom = (
     ? state
     : { active: true, room: selection, location: null, video: null };
 
+/**
+ * 알림 딥링크로 행사방 **개요**를 연다 (MSG-605) — 카드 재탭(`withEventRoom`)과 달리 같은 행사여도
+ * 위치·영상 선택을 비운다. 알림이 가리키는 곳은 개요지, 사용자가 보던 위치 상세가 아니다 (codex P2).
+ */
+export const withEventOverview = (
+  selection: EventRoomSelection,
+): EventSelectionState => ({
+  active: true,
+  room: selection,
+  location: null,
+  video: null,
+});
+
 let state: EventSelectionState = INACTIVE;
 const listeners = new Set<() => void>();
 
@@ -97,6 +110,10 @@ export const deactivateEvent = (): void => setState(INACTIVE);
 
 export const openEventRoom = (selection: EventRoomSelection): void =>
   setState(withEventRoom(state, selection));
+
+/** 알림 딥링크 — 같은 행사여도 개요로 되돌린다 (MSG-605) */
+export const openEventOverview = (selection: EventRoomSelection): void =>
+  setState(withEventOverview(selection));
 
 /** 위치 행 탭·지도 셀 탭 — 위치 상세 시트로. 영상 선택은 리셋 [MSG-560 D1·D2 · MSG-562 D1] */
 export const selectEventLocation = (location: EventLocationSelection): void =>

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_DEX_TAB,
   DEX_TAB_ITEMS,
+  parseDexTab,
   selectDexTab,
   type DexTab,
 } from "./dex-tab";
@@ -42,5 +43,17 @@ describe("L10 도감 탭 전환 모델 (dex-tab)", () => {
     expect(selectDexTab("map", "map")).toBe("map");
     expect(selectDexTab("badges", "badges")).toBe("badges");
     expect(selectDexTab("history", "history")).toBe("history");
+  });
+});
+
+/** MSG-605 L4 — 딥링크 `tab` 파라미터 파서 */
+describe("parseDexTab (MSG-605 L4)", () => {
+  it("3개 탭 키는 통과하고 그 밖은 null", () => {
+    expect(parseDexTab("map")).toBe("map");
+    expect(parseDexTab("badges")).toBe("badges");
+    expect(parseDexTab("history")).toBe("history");
+    expect(parseDexTab("badge")).toBeNull();
+    expect(parseDexTab("")).toBeNull();
+    expect(parseDexTab(undefined)).toBeNull();
   });
 });

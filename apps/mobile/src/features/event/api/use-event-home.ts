@@ -43,6 +43,7 @@ import {
   deactivateEvent,
   eventSheetStage,
   getEventSelection,
+  openEventOverview,
   openEventRoom,
   selectEventLocation,
   selectEventVideo,
@@ -149,6 +150,8 @@ export interface EventHome {
   handlers: {
     toggleChip: () => void;
     selectEvent: (selection: EventRoomSelection) => void;
+    /** 딥링크로 회차 id만 받아 개요 시트를 연다 (MSG-605) — 제목·상태는 상세 조회가 채운다 */
+    openRoom: (occurrenceId: number) => void;
     /** 개요의 위치 행 탭 — 위치 상세로 (MSG-560 D10) */
     selectLocation: (locationId: number) => void;
     /** 지도 셀 탭 — 소속 위치가 있으면 위치 상세로, 없으면 무동작 (MSG-560 D2) */
@@ -286,6 +289,13 @@ export const useEventHome = ({
       },
       selectEvent: ({ occurrenceId, title, status }) =>
         openEventRoom({ occurrenceId, title, status }),
+      openRoom: (occurrenceId) => {
+        // 칩 활성과 같은 전제(테마·선택 비우기)를 밟는다. 자리 표시 제목·상태는 overview 조립이
+        // `detail ?? selection` 폴백으로 덮는다 — 상세가 오기 전 한 프레임만 빈 제목이다.
+        // 같은 행사의 위치·영상 상세를 보던 중이어도 개요로 돌아간다 (openEventOverview, codex P2)
+        latest.current.onActivate();
+        openEventOverview({ occurrenceId, title: "", status: "LIVE" });
+      },
       selectLocation: selectLocationById,
       tapCell: (cell) => {
         const locationId = eventLocationIdAt(
