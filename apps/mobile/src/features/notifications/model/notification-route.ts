@@ -1,5 +1,8 @@
 import type { Href } from "expo-router";
-import { homeFocusParams } from "../../map-home/model/home-focus";
+import {
+  homeFocusParams,
+  type HomeParamsKey,
+} from "../../map-home/model/home-focus";
 
 /**
  * 알림 딥링크 라우팅 표 (MSG-605 ← BE MSG-432 계약). 서버는 화면을 모르고 **대상 종류 + 식별자**만
@@ -50,25 +53,19 @@ export const parseNotificationTarget = (raw: {
 };
 
 /**
- * 홈 딥링크 params — `homeFocusParams`의 5키에 `occurrenceId`를 더한 6키를 **항상 전부** 싣는다.
+ * 홈 딥링크 params — `homeFocusParams`가 싣는 키 전부(빈 문자열 = 부재)를 **항상** 싣는다.
  * expo-router가 같은 `/home` 인스턴스의 params를 병합해 이전 키가 남는 함정(home-focus 주석)이
- * 행사방 키에도 그대로 적용된다. 빈 문자열 = 부재.
+ * 행사방 키에도 적용되므로, 격자·행사방 어느 쪽이든 나머지 키를 비운다.
  */
 export const homeDeepLinkParams = (
   target: { kind: "grid"; gridId: string } | { kind: "occurrence"; id: string },
   ts: number,
-): Record<
-  "lat" | "lng" | "gridId" | "bounds" | "ts" | "occurrenceId",
-  string
-> =>
+): Record<HomeParamsKey, string> =>
   target.kind === "grid"
-    ? { ...homeFocusParams(target, ts), occurrenceId: "" }
+    ? homeFocusParams(target, ts)
     : {
-        lat: "",
-        lng: "",
+        ...homeFocusParams({ kind: "grid", gridId: "" }, ts),
         gridId: "",
-        bounds: "",
-        ts: String(ts),
         occurrenceId: target.id,
       };
 
@@ -90,7 +87,8 @@ export const routeForTarget = (
         params: homeDeepLinkParams({ kind: "grid", gridId: target.id }, ts),
       };
     case "BADGE":
-      return { pathname: "/dex", params: { tab: "badges" } };
+      // ts = 요청 식별자 — 도감이 떠 있는 채 같은 탭 딥링크가 다시 오면 tab 값만으로는 effect가 안 돈다 (codex P2)
+      return { pathname: "/dex", params: { tab: "badges", ts: String(ts) } };
     case "EVENT_OCCURRENCE":
       return {
         pathname: "/home",

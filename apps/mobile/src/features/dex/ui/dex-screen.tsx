@@ -58,15 +58,19 @@ import { RegionGalleryView } from "./region-gallery-view";
  */
 export const DexScreen = () => {
   const insets = useSafeAreaInsets();
-  // 알림 딥링크 `/dex?tab=badges` (MSG-605) — 첫 진입은 초기값으로, 이미 떠 있으면 파라미터 변화에 따라간다
-  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  // 알림 딥링크 `/dex?tab=badges&ts=…` (MSG-605) — 첫 진입은 초기값으로, 이미 떠 있으면 요청마다(ts) 다시 적용한다.
+  // tab 값만 보면 사용자가 다른 탭으로 옮긴 뒤 같은 뱃지 알림이 와도 effect가 안 돈다 (codex P2)
+  const { tab: tabParam, ts: tsParam } = useLocalSearchParams<{
+    tab?: string;
+    ts?: string;
+  }>();
   const [tab, setTab] = useState<DexTab>(
     () => parseDexTab(tabParam) ?? DEFAULT_DEX_TAB,
   );
   useEffect(() => {
     const next = parseDexTab(tabParam);
     if (next !== null) setTab(next);
-  }, [tabParam]);
+  }, [tabParam, tsParam]);
   const [selected, setSelected] = useState<RecentRegion | null>(null);
   const [removedRegionNames, setRemovedRegionNames] = useState<string[]>([]);
 

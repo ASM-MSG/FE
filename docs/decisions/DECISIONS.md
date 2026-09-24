@@ -712,3 +712,4 @@
 | 2026-09-24 | MSG-605 | OpenAPI 스냅샷은 `NotificationItemResponseDto` 스키마만 로컬 BE(develop 머지 커밋)에서 외과 치환 | 배포본 `/v3/api-docs`는 basic auth 뒤라 못 받고, 로컬 전체 스냅샷으로 바꾸면 배포본에만 있는 whoami·probe 3오퍼레이션이 사라져 무관 diff 130줄. 생성물은 결정적이라 CI 드리프트 검사 통과 |
 | 2026-09-24 | MSG-605 | hey-api가 `type:["string","null"]+enum`을 non-null 유니언으로 뽑아 `targetType`이 null을 잃는다 — 파서를 `unknown` 입력으로 두고 생성 타입을 믿지 않는다 | 서버는 null을 준다(대상 없음·V56 이전 알림). fixture는 단언으로 null 주입. 생성기 이슈 확인 후 복구가 후속 |
 | 2026-09-24 | MSG-605 | 알림함 행 탭은 대상 없으면 **이동 없음**, 푸시 탭은 대상 없으면 **홈** | PRD FR-6·FR-8. 알림함에 이미 와 있는 사용자를 홈으로 튕기지 않는다. `routeForTarget`는 null을 돌려주고 `pushRouteFor`만 홈으로 접는다 |
+| 2026-09-24 | MSG-605 | codex P2 2건 반영: (1) `homeFocusParams`가 `occurrenceId: ""`를 항상 싣는다 (2) 도감 뱃지 딥링크에 `ts` 요청 식별자 | (1) 검색 복귀가 행사방 키를 안 비우면 홈 params 병합으로 이전 행사방이 검색 목적지 대신 다시 열린다 — 홈 진입 params 키를 한 타입(`HomeParamsKey`)으로 모아 모든 경로가 전부 싣게 했다. (2) 도감이 떠 있는 채 같은 `tab=badges`가 오면 값이 안 바뀌어 effect가 안 돈다 — 홈 `ts` 규칙과 같게 요청마다 재적용 |

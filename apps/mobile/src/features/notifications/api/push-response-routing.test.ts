@@ -62,7 +62,7 @@ describe("createPushResponseRouter (L3)", () => {
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledWith({
       pathname: "/dex",
-      params: { tab: "badges" },
+      params: { tab: "badges", ts: "5" },
     });
   });
 

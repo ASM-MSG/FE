@@ -64,7 +64,7 @@ describe("routeForTarget (L2)", () => {
     );
     expect(routeForTarget({ type: "BADGE", id: "7" }, 1)).toEqual({
       pathname: "/dex",
-      params: { tab: "badges" },
+      params: { tab: "badges", ts: "1" },
     });
     expect(routeForTarget({ type: "USER", id: "3" }, 1)).toBe("/home");
   });
