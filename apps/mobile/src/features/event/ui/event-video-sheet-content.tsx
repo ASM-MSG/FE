@@ -119,7 +119,12 @@ export const EventVideoSheetContent = ({
             userId: detail.uploaderId,
             nickname: detail.uploaderNickname,
           }}
-          onBlocked={() => onBlocked(detail.uploaderId)}
+          // 업로더를 차단하면 그 영상도 더는 보면 안 된다 — 댓글 필터(onBlocked)에 더해 위치 목록으로 한 단계
+          // 나간다(상세 캐시는 invalidateAfterBlockChange가 일부러 재조회하지 않는다, codex P2)
+          onBlocked={() => {
+            onBlocked(detail.uploaderId);
+            back();
+          }}
         />
       )}
 
