@@ -1,6 +1,6 @@
 import "../global.css";
 import { View } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import {
   isRouteGuardOpen,
   PROTECTED_ROUTES,
@@ -10,10 +10,11 @@ import {
   bootstrapAuth,
   useAuth,
 } from "../features/auth/model/auth-session";
-import { useConsentGate } from "../features/auth/model/use-consent-gate";
+import { useConsentGateState } from "../features/auth/model/use-consent-gate";
 import { SignupConsentScreen } from "../features/auth/ui/signup-consent-screen";
 import { usePushForegroundHandler } from "../features/notifications/api/use-push-foreground-handler";
 import { usePushTokenSync } from "../features/notifications/api/use-push-registration";
+import { usePushResponseRouting } from "../features/notifications/api/use-push-response";
 import { configureReadyRefresh } from "../features/upload/api/start-ready-refresh";
 import { QueryProvider } from "../shared/api/query-provider";
 
@@ -39,17 +40,34 @@ if (process.env.EXPO_PUBLIC_STORYBOOK !== "1") {
  * QueryProvider 하위여야 게이트 훅이 useQuery를 쓸 수 있어 별도 컴포넌트로 뺐다.
  */
 const AppShell = () => {
-  const showConsentGate = useConsentGate();
+  const { show: showConsentGate, resolved: consentResolved } =
+    useConsentGateState();
   const { hydrated, isAuthenticated } = useAuth();
+  const pathname = usePathname();
 
   /**
    * 푸시 배선 (MSG-429 기준 14) — 게이트 **바깥**에 둔다. 배너 핸들러 등록과 토큰 자동
    * 동기화는 화면 상태와 무관한 상주 작업이다. 신규 등록 경로가 아니라 기존 등록자의
    * 재등록·로테이션뿐이라 권한 프롬프트는 뜨지 않는다. 알림 탭 라우팅은 MSG-567에서
-   * 삭제됐다(FCM 푸시에 `data` 없음) — 탭은 앱 열기로 끝난다.
+   * 삭제됐다가 MSG-605에서 서버 `data` 계약(MSG-432)과 함께 되살아났다 — 아래 훅.
    */
   usePushTokenSync(isAuthenticated);
   usePushForegroundHandler();
+  /**
+   * 푸시 탭 라우팅 (MSG-605, BE MSG-432 data 계약) — 게이트가 전부 열린 뒤에만 움직인다:
+   * 세션 재수화·로그인·약관 동의(조회가 **끝난 뒤**의 판정 — 조회 중 `show=false`를 열림으로 보면 곧 뜨는
+   * 동의 화면이 네비게이터를 내려 목적지를 잃는다, codex 리뷰), 그리고 index의 `/home` Redirect가 끝난 뒤
+   * (pathname이 `/`·`/login`을 벗어난 뒤). 먼저 push하면 Redirect가 덮어 로그인 사용자도 홈에 머문다.
+   * 그 전의 탭은 보류된다.
+   */
+  usePushResponseRouting(
+    hydrated &&
+      isAuthenticated &&
+      consentResolved &&
+      !showConsentGate &&
+      pathname !== "/" &&
+      pathname !== "/login",
+  );
 
   /**
    * 구 블러 통지 호스트(`ProcessingNoticeHost`)는 MSG-567에서 삭제됐고 대체 마운트는 없다 —

@@ -6588,26 +6588,26 @@
       ]
     },
     {
-      "id": "4caa411ce1af54a2",
+      "id": "bda5f5f597d5b968",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
-          "id": "0ce605e71daf7195",
-          "source_digest": "fnv1a64:f10c39fdde500811",
+          "id": "8051cb625fa64aee",
+          "source_digest": "fnv1a64:a67c4222bfe34a1e",
           "file": "apps/mobile/src/features/auth/model/use-consent-gate.ts",
           "lang": "typescript",
-          "start_line": 20,
-          "end_line": 29,
+          "start_line": 32,
+          "end_line": 36,
           "kind": "Block",
           "is_fragment": false
         },
         {
-          "id": "33e5d6ddfde60432",
-          "source_digest": "fnv1a64:f10c39fdde500811",
+          "id": "62f49a34d62c80a1",
+          "source_digest": "fnv1a64:3d0c3b2a582e495e",
           "file": "apps/web/src/features/profile/model/use-location-consent-gate.ts",
           "lang": "typescript",
           "start_line": 16,
-          "end_line": 25,
+          "end_line": 20,
           "kind": "Block",
           "is_fragment": false
         }
@@ -8161,9 +8161,19 @@
       ]
     },
     {
-      "id": "6149d3b51176aea5",
-      "note": "repeated across 5 directories — extract a shared abstraction — high-parameter (13 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "id": "5029a55fac18a847",
+      "note": "repeated across 5 directories — extract a shared abstraction — high-parameter (12 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
       "members": [
+        {
+          "id": "37e25987be5dce7a",
+          "source_digest": "fnv1a64:4c0b659b09569193",
+          "file": "apps/mobile/src/features/event/model/event-selection.test.ts",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 437,
+          "kind": "Block",
+          "is_fragment": false
+        },
         {
           "id": "477399c802a7a84f",
           "source_digest": "fnv1a64:e3807e385ec03651",
@@ -8171,16 +8181,6 @@
           "lang": "typescript",
           "start_line": 1,
           "end_line": 425,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "29cc10ff9d976ab4",
-          "source_digest": "fnv1a64:8c52e553297e5ec0",
-          "file": "apps/mobile/src/features/event/model/event-selection.test.ts",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 407,
           "kind": "Block",
           "is_fragment": false
         },
@@ -12541,20 +12541,9 @@
       ]
     },
     {
-      "id": "d35ecfacb1c48c03",
-      "note": "consolidate `pressable` — 4 copies",
+      "id": "90b924447afcd0df",
+      "note": "consolidate `pressable` — 3 copies",
       "members": [
-        {
-          "id": "d0aadbfdec01d921",
-          "source_digest": "fnv1a64:764a34a599387554",
-          "file": "apps/mobile/src/features/auth/ui/login-screen.tsx",
-          "lang": "typescript",
-          "start_line": 56,
-          "end_line": 63,
-          "kind": "Block",
-          "name": "pressable",
-          "is_fragment": false
-        },
         {
           "id": "efb9311245f2f6b4",
           "source_digest": "fnv1a64:7faf63256a983146",
@@ -13368,7 +13357,7 @@
       ]
     },
     {
-      "id": "8eb0ff0b85856fe2",
+      "id": "50debd5eeaed0fc6",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
@@ -13382,12 +13371,12 @@
           "is_fragment": false
         },
         {
-          "id": "8426b9adfa944146",
+          "id": "5332a2b49947aa1a",
           "source_digest": "fnv1a64:816227ff2e2ceb80",
           "file": "apps/mobile/src/features/dex/ui/dex-screen.tsx",
           "lang": "typescript",
-          "start_line": 125,
-          "end_line": 133,
+          "start_line": 127,
+          "end_line": 135,
           "kind": "Block",
           "is_fragment": false
         }
@@ -13684,16 +13673,16 @@
       ]
     },
     {
-      "id": "98e76b5bb4d1cd34",
+      "id": "4367545886b63c32",
       "note": "duplicated across 2 directories — extract a helper",
       "members": [
         {
-          "id": "90501d6a286a1f2c",
+          "id": "17d954fbe7f4ed6e",
           "source_digest": "fnv1a64:1c8b743ab12818b6",
           "file": "apps/mobile/src/features/event/model/event-selection.ts",
           "lang": "typescript",
-          "start_line": 125,
-          "end_line": 126,
+          "start_line": 142,
+          "end_line": 143,
           "kind": "Function",
           "name": "useEventSelection",
           "is_fragment": false
@@ -14026,28 +14015,28 @@
       ]
     },
     {
-      "id": "9dd4aae42916282d",
+      "id": "ea071448656a52c5",
       "note": "local duplication — extract a method from the repeated block",
       "members": [
         {
-          "id": "74f3c78d9a8836ff",
+          "id": "e8d7c57935979f7f",
           "source_digest": "fnv1a64:3c0ee3ee8bd4c109",
           "file": "apps/mobile/src/features/map-home/ui/map-home-screen.tsx",
           "lang": "typescript",
-          "start_line": 269,
-          "end_line": 269,
+          "start_line": 295,
+          "end_line": 295,
           "kind": "Block",
           "is_fragment": true,
           "fragment_kind": "expr-effect",
           "reason_code": "exact-expr-effect"
         },
         {
-          "id": "749aa91631a5d9a7",
+          "id": "396dcf6e3977ca1f",
           "source_digest": "fnv1a64:3c0ee3ee8bd4c109",
           "file": "apps/mobile/src/features/map-home/ui/map-home-screen.tsx",
           "lang": "typescript",
-          "start_line": 313,
-          "end_line": 313,
+          "start_line": 375,
+          "end_line": 375,
           "kind": "Block",
           "is_fragment": true,
           "fragment_kind": "expr-effect",
@@ -18803,7 +18792,7 @@
       ]
     },
     {
-      "id": "d9e1e596d48f86e3",
+      "id": "369ed995979b0511",
       "note": "duplicated across 2 directories — extract a helper",
       "members": [
         {
@@ -18818,12 +18807,12 @@
           "is_fragment": false
         },
         {
-          "id": "63f9790404baf177",
+          "id": "eeed73b40a9ffbe9",
           "source_digest": "fnv1a64:66b642de40c10827",
           "file": "apps/mobile/src/features/event/model/event-selection.ts",
           "lang": "typescript",
-          "start_line": 118,
-          "end_line": 123,
+          "start_line": 135,
+          "end_line": 140,
           "kind": "Function",
           "name": "subscribeEventSelection",
           "is_fragment": false
@@ -24102,38 +24091,38 @@
       ]
     },
     {
-      "id": "3e75b34b427c16d3",
+      "id": "98fbcc09e6c78573",
       "note": "repeated across 3 directories — consolidate one shared type/API contract",
       "members": [
         {
-          "id": "5931da22b39c4756",
+          "id": "6496ec977992f096",
           "source_digest": "fnv1a64:661a32d8928fde22",
           "file": "apps/web/src/shared/api/generated/types.gen.ts",
           "lang": "typescript",
-          "start_line": 2942,
-          "end_line": 2967,
+          "start_line": 2950,
+          "end_line": 2975,
           "kind": "Class",
           "name": "MissionRegionAggregateResponseDto",
           "is_fragment": false
         },
         {
-          "id": "ac2c3d637310d3bf",
+          "id": "c2db65e7c0c968bf",
           "source_digest": "fnv1a64:58eeaa2c0359e931",
           "file": "apps/web/src/shared/api/generated/types.gen.ts",
           "lang": "typescript",
-          "start_line": 3034,
-          "end_line": 3059,
+          "start_line": 3042,
+          "end_line": 3067,
           "kind": "Class",
           "name": "HotZoneRegionAggregateResponseDto",
           "is_fragment": false
         },
         {
-          "id": "e6ee972d0b8a6e90",
+          "id": "80cfacab37bcb400",
           "source_digest": "fnv1a64:38615688460d6acf",
           "file": "apps/web/src/shared/api/generated/types.gen.ts",
           "lang": "typescript",
-          "start_line": 3378,
-          "end_line": 3399,
+          "start_line": 3386,
+          "end_line": 3407,
           "kind": "Class",
           "name": "RegionAggregateResponseDto",
           "is_fragment": false
@@ -24633,16 +24622,16 @@
       ]
     },
     {
-      "id": "85211c5c173397bc",
+      "id": "8fb40e5d8716fc0c",
       "note": "duplicated across 2 directories — consolidate one shared type/API contract",
       "members": [
         {
-          "id": "47c240cbc533f614",
+          "id": "e8dab2b0d4a0e1c4",
           "source_digest": "fnv1a64:5ec8f7d1a6c032d6",
           "file": "apps/web/src/shared/api/generated/types.gen.ts",
           "lang": "typescript",
-          "start_line": 4020,
-          "end_line": 4053,
+          "start_line": 4028,
+          "end_line": 4061,
           "kind": "Class",
           "name": "RegionVideoResponseDto",
           "is_fragment": false

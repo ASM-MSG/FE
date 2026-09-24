@@ -15,16 +15,33 @@ import { shouldShowConsentGate } from "./consent-gate";
  * 캐시 키는 getMeQueryKey와 동일해, 동의 PUT 성공의 invalidate가 이 관찰자를 재조회시켜
  * 게이트가 스스로 해제된다 (AC 18).
  */
-export const useConsentGate = (): boolean => {
+export interface ConsentGateState {
+  /** 전면 동의 화면을 그릴지 */
+  show: boolean;
+  /**
+   * 동의 여부 조회가 끝났는지(성공·실패 모두) — 푸시 탭 라우팅(MSG-605)이 이 값을 기다린다.
+   * 조회 중에는 `show`가 false라 "게이트 열림"으로 오판하기 쉽다: 그때 이동해 버리면 곧 뜨는 동의 화면이
+   * 네비게이터를 통째로 내려 목적지를 잃는다(codex 리뷰). 실패는 게이트를 안 세우는 기존 정책 그대로라
+   * 종결로 본다. 비로그인은 조회가 없으니 종결이다.
+   */
+  resolved: boolean;
+}
+
+export const useConsentGateState = (): ConsentGateState => {
   const { isAuthenticated } = useAuth();
-  const { isSuccess, data } = useQuery({
+  const { isSuccess, isError, data } = useQuery({
     ...getMeOptions(),
     enabled: isAuthenticated,
     select: (envelope) => unwrapEnvelope(envelope).locationConsent,
   });
-  return shouldShowConsentGate({
-    isAuthenticated,
-    consentKnown: isSuccess,
-    locationConsent: data,
-  });
+  return {
+    show: shouldShowConsentGate({
+      isAuthenticated,
+      consentKnown: isSuccess,
+      locationConsent: data,
+    }),
+    resolved: !isAuthenticated || isSuccess || isError,
+  };
 };
+
+export const useConsentGate = (): boolean => useConsentGateState().show;

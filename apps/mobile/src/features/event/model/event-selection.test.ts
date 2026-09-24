@@ -11,6 +11,7 @@ import {
   selectEventVideo,
   stepBackEvent,
   subscribeEventSelection,
+  withEventOverview,
   withEventRoom,
   type EventRoomSelection,
 } from "./event-selection";
@@ -403,5 +404,34 @@ describe("영상 선택 모듈 상태 (AC 2·11·D1·D11)", () => {
     expect(stepBackEvent()).toBe(true);
     expect(getEventSelection().active).toBe(false);
     expect(stepBackEvent()).toBe(false);
+  });
+});
+
+/** MSG-605 — 알림 딥링크는 같은 행사여도 위치·영상 선택을 비우고 개요로 되돌린다 (codex P2) */
+describe("withEventOverview — 알림 딥링크의 개요 복귀", () => {
+  it("같은 행사의 위치·영상 상세를 보던 상태에서도 개요(위치·영상 null)로 돌아간다", () => {
+    const room = {
+      occurrenceId: 30,
+      title: "서울 라이브 페스타",
+      status: "LIVE" as const,
+    };
+    const nested = {
+      active: true,
+      room,
+      location: {
+        locationId: 111,
+        name: "잠실 주경기장",
+        gridIds: [],
+      } as never,
+      video: 7,
+    };
+
+    expect(withEventRoom(nested, { ...room })).toBe(nested); // 카드 재탭은 종전대로 무변화
+    expect(withEventOverview({ ...room, title: "" })).toEqual({
+      active: true,
+      room: { ...room, title: "" },
+      location: null,
+      video: null,
+    });
   });
 });

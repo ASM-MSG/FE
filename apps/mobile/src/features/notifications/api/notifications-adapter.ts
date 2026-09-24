@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import type { NotificationResponse } from "expo-notifications";
 import { toPermissionState } from "../../../shared/permission-state";
 import type { PushPermissionStatus } from "../model/push-registration";
 
@@ -99,6 +100,58 @@ export const readDevicePushToken = async (): Promise<string> => {
   return String(
     (await (await loadNotifications()).getDevicePushTokenAsync()).data,
   );
+};
+
+/** 푸시 탭 응답의 앱 몫 — 요청 id(중복 제거 키)와 FCM `data` (MSG-605) */
+export interface PushResponseEvent {
+  id: string;
+  data: Record<string, unknown> | null | undefined;
+}
+
+/**
+ * iOS 실측(2026-09-24): 원격 푸시의 `content.data`는 expo가 `userInfo["body"]`만 옮기므로(Expo 푸시
+ * 서비스 관례) FCM처럼 커스텀 키가 최상위에 오면 **null**이다. 그 원문은 push 트리거의 `payload`
+ * (= userInfo 전체)에 있다. Android는 FCM data가 그대로 `content.data`다. 둘을 합쳐 어느 플랫폼이든
+ * `targetType`·`targetId`가 잡히게 한다 — `aps` 같은 잉여 키는 파서가 무시한다.
+ */
+const toPushResponseEvent = (
+  response: NotificationResponse,
+): PushResponseEvent => {
+  const { identifier, content, trigger } = response.notification.request;
+  // 트리거 유니언에는 null·Date 같은 입력형도 섞여 있어 형태로만 좁힌다
+  const push = trigger as
+    | { type?: unknown; payload?: unknown }
+    | null
+    | undefined;
+  const pushPayload =
+    push?.type === "push" && typeof push.payload === "object"
+      ? (push.payload as Record<string, unknown> | null)
+      : null;
+  const data = content.data as Record<string, unknown> | null | undefined;
+  return { id: identifier, data: { ...pushPayload, ...data } };
+};
+
+/** 실행 중(포그라운드·백그라운드) 푸시 탭 구독 — 반환 함수로 해제 (MSG-605 FR-7) */
+export const addPushResponseListener = async (
+  listener: (event: PushResponseEvent) => void,
+): Promise<() => void> => {
+  const subscription = (
+    await loadNotifications()
+  ).addNotificationResponseReceivedListener((response) =>
+    listener(toPushResponseEvent(response)),
+  );
+  return () => subscription.remove();
+};
+
+/** 앱을 띄운 푸시 탭(콜드 스타트) — 없으면 null. 처리 후 `clearLastPushResponse`로 지운다 */
+export const readLastPushResponse =
+  async (): Promise<PushResponseEvent | null> => {
+    const response = (await loadNotifications()).getLastNotificationResponse();
+    return response ? toPushResponseEvent(response) : null;
+  };
+
+export const clearLastPushResponse = async (): Promise<void> => {
+  (await loadNotifications()).clearLastNotificationResponse();
 };
 
 /** 서버 계약의 platform 값 — iOS 확장 시 이 파생만 늘어난다 (스펙 추정 6) */

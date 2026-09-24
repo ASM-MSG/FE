@@ -13,7 +13,8 @@ import { semantic } from "@fillmap/design-tokens";
 import { AppHeader } from "@fillmap/ui-native";
 import type { RecentRegion } from "../../../entities/dex/model/dex";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
-import { DEFAULT_DEX_TAB, selectDexTab, type DexTab } from "../model/dex-tab";
+import { selectDexTab } from "../model/dex-tab";
+import { useDexTab } from "../model/use-dex-tab";
 import {
   deriveRecentRegions,
   excludeRemovedRegions,
@@ -53,7 +54,8 @@ import { RegionGalleryView } from "./region-gallery-view";
  */
 export const DexScreen = () => {
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<DexTab>(DEFAULT_DEX_TAB);
+  // 탭 상태 + 알림 딥링크 파라미터 (MSG-605) — `useDexTab`이 소유한다(react-doctor 복잡도 상한)
+  const [tab, setTab] = useDexTab();
   const [selected, setSelected] = useState<RecentRegion | null>(null);
   const [removedRegionNames, setRemovedRegionNames] = useState<string[]>([]);
 
