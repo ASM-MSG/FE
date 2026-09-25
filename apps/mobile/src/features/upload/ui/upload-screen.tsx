@@ -2,15 +2,15 @@ import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { MapPin } from "lucide-react-native";
+import { Camera, Images, Sparkles } from "lucide-react-native";
 import {
   launchCameraAsync,
   launchImageLibraryAsync,
   requestCameraPermissionsAsync,
   requestMediaLibraryPermissionsAsync,
 } from "expo-image-picker";
-import { palette } from "@fillmap/design-tokens";
-import { AppHeader, Button, Chip, Toast } from "@fillmap/ui-native";
+import { palette, semantic } from "@fillmap/design-tokens";
+import { AppHeader } from "@fillmap/ui-native";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useUploadLocation } from "../api/use-upload-location";
 import { eventUploadLabel } from "../model/event-upload-target";
@@ -19,6 +19,8 @@ import { resolveSelectionRejection } from "../model/select-validation";
 import { FILE_CONSTRAINT_TEXT } from "../model/upload-copy";
 import { useUploadFlowHydrated } from "../model/upload-flow-persistence";
 import { uploadFlowStore, useUploadFlow } from "../model/upload-flow-store";
+import { UploadHero } from "./upload-hero";
+import { UploadSourceTile } from "./upload-source-tile";
 
 /** 권한 거부 안내 문구 (MSG-302 AC 9) — 화면 내 인라인 텍스트 */
 const DENIED_NOTICE = {
@@ -29,7 +31,9 @@ const DENIED_NOTICE = {
 type PickSource = keyof typeof DENIED_NOTICE;
 
 /**
- * SOURCE: Figma "영상 업로드" (node 14094:4263) — 업로드 플로우 진입 화면 (MSG-302 → MSG-424).
+ * SOURCE: Figma "제안 — 영상 업로드 리디자인" A-2 (node 16175:358, 2026-09-25) — 업로드 플로우 진입 화면
+ * (MSG-302 → MSG-424 → MSG-606 리디자인). 구조(네이티브 카메라·갤러리 → 검증 → 분석)는 그대로이고 화면만
+ * 격자 히어로 + 위치 카드 + 확보 타일 2개 + AI 한 줄 안내로 바꿨다(사용자: "설명 대신 행동이 보이게").
  * 갤러리/카메라로 영상 확보 → 파일 사전 검증 → **분석 중 화면**(/upload/analyzing)으로
  * 전환한다(기준 1). `router.replace`로 가는 이유: 분석 중에는 뒤로 돌아올 수단이 없어야
  * 하고(기준 4), 실패 복귀는 분석 화면이 스스로 replace로 수행한다.
@@ -100,61 +104,61 @@ export const UploadScreen = () => {
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <AppHeader title="영상 업로드" />
       <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
-        <View className="px-5 pb-lg pt-md">
-          {/* 안내 문구 + 확보 버튼 2개 + 파일 제약 (AC 2) */}
-          <Text className="text-fm-body text-foreground-body">
-            지금 위치의 격자에 순간을 기록하세요
-          </Text>
-          <View className="mt-sm flex-row gap-xs">
-            <Button
-              text="갤러리에서 선택"
-              size="sm"
-              shape="pill"
-              onPress={pickFromGallery}
-            />
-            <Button
-              text="카메라로 촬영"
-              size="sm"
-              shape="pill"
+        <View className="px-5 pb-lg pt-sm">
+          {/* 격자 히어로 + 위치 카드 (AC 4) — 역지오코딩 실데이터 (기준 20) */}
+          <UploadHero
+            locationLabel={locationLabel}
+            pillLabel={eventTarget === null ? "지금 여기" : "행사 현장"}
+            sublabel={
+              eventTarget === null
+                ? "이 격자에 기록돼요"
+                : "행사 위치에 기록돼요"
+            }
+          />
+
+          {/* 확보 타일 2개 (AC 2) — 카메라(주)·갤러리(보조) */}
+          <View className="mt-md flex-row gap-sm">
+            <UploadSourceTile
+              title="카메라로 촬영"
+              subtitle="지금 이 순간을 바로"
+              tone="primary"
+              icon={<Camera size={26} color={palette.white} />}
               onPress={captureFromCamera}
+            />
+            <UploadSourceTile
+              title="갤러리에서 선택"
+              subtitle="찍어 둔 영상 고르기"
+              tone="soft"
+              icon={<Images size={26} color={semantic.primary} />}
+              onPress={pickFromGallery}
             />
           </View>
           {/* 권한 거부·파일 검증·분석 실패 사유 (AC 9, 기준 33) */}
           {failureMessage !== null && (
             <Text
               accessibilityLiveRegion="polite"
-              className="mt-sm text-fm-label text-error"
+              className="mt-sm text-center text-fm-label text-error"
             >
               {failureMessage}
             </Text>
           )}
-          <Text className="mt-sm text-fm-caption text-foreground-muted">
+          <Text className="mt-sm text-center text-fm-caption text-foreground-muted">
             {FILE_CONSTRAINT_TEXT}
           </Text>
 
-          {/* 위치 태그 (AC 4) — 역지오코딩 실데이터 (기준 20) */}
-          <View className="mt-lg flex-row items-center gap-sm">
-            <Text className="text-fm-body-strong text-foreground">
-              위치 태그
-            </Text>
-            <Chip
-              text={locationLabel}
-              className="bg-primary/10"
-              icon={<MapPin size={14} color={palette["red-500"]} />}
-            />
-          </View>
-
-          {/* AI 처리 안내 카드 (AC 5) — 실제 처리 구조에 맞춘 문구 */}
-          <View className="mt-lg gap-sm">
-            <Toast
-              variant="light"
-              title="AI 하이라이트 자동 추천"
-              description="영상을 올리면 AI가 최적 구간을 분석해 최대 3개 구간을 추천해요"
-            />
-            <Toast
-              title="업로드 전 최종 확인"
-              description="추천 구간을 고른 뒤 미리보기에서 확인하고 지도에 게시해요"
-            />
+          {/* AI 처리 안내 (AC 5) — 한 줄로 */}
+          <View className="mt-lg flex-row items-center gap-sm rounded-lg bg-surface px-md py-sm">
+            <View className="size-8 items-center justify-center rounded-full bg-white">
+              <Sparkles size={16} color={semantic.primary} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-fm-body-strong text-foreground">
+                올리면 AI가 하이라이트 3구간을 골라 드려요
+              </Text>
+              <Text className="text-fm-caption text-foreground-muted">
+                구간 확인 → 미리보기 → 지도에 게시
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
