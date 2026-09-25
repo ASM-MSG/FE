@@ -59,13 +59,7 @@ export const UploadHero = ({ locationLabel, sublabel }: UploadHeroProps) => (
       className="-mt-8 mx-4 flex-row items-center gap-sm rounded-lg bg-white/95 px-sm py-sm shadow-modal"
     >
       <View className="size-11 items-center justify-center rounded-full bg-primary/10">
-        <MapPin
-          size={20}
-          color={palette["red-500"]}
-          fill={palette["red-500"]}
-          strokeWidth={0}
-        />
-        <View className="absolute top-3 size-1.5 rounded-full bg-white" />
+        <MapPin size={22} color={palette["red-500"]} strokeWidth={2.2} />
       </View>
       <View className="flex-1 gap-0.5">
         <View className="flex-row">

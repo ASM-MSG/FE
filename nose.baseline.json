@@ -25240,7 +25240,7 @@
       ]
     },
     {
-      "id": "b20b8b1b3d8a3c4d",
+      "id": "a7435485cf614841",
       "note": "consolidate `view` — 21 copies",
       "members": [
         {
@@ -25409,12 +25409,12 @@
           "is_fragment": false
         },
         {
-          "id": "06585efe735a08c7",
+          "id": "433a9589a61a443b",
           "source_digest": "fnv1a64:c41cebc3dd513864",
           "file": "apps/mobile/src/features/upload/ui/upload-hero.tsx",
           "lang": "typescript",
-          "start_line": 72,
-          "end_line": 76,
+          "start_line": 66,
+          "end_line": 70,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
