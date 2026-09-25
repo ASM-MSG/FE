@@ -16,3 +16,18 @@ import { formatKstDate } from "../../../shared/format";
  * 가입자의 가입일이 하루 전으로 밀린다 — 구 모바일 구현이 이 결함을 갖고 있었다.
  */
 export const formatJoinedDate = (iso: string): string => formatKstDate(iso);
+
+/**
+ * 가입일 기준 "N일째 함께" — 가입 당일이 1일째다(KST 날짜 차 + 1). 미래·파싱 실패는 1로 접는다.
+ * 프로필 히어로 보조 문구(2026-09-25 리디자인).
+ */
+export const formatDaysTogether = (joinedIso: string, now: Date): string => {
+  const joined = new Date(
+    joinedIso.endsWith("Z") ? joinedIso : `${joinedIso}Z`,
+  );
+  const KST = 9 * 60 * 60 * 1000;
+  const toKstDay = (d: Date) => Math.floor((d.getTime() + KST) / 86_400_000);
+  const diff = toKstDay(now) - toKstDay(joined);
+  const days = Number.isFinite(diff) && diff >= 0 ? diff + 1 : 1;
+  return `${days}일째 함께`;
+};
