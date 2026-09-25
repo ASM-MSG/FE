@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatJoinedDate } from "./profile-format";
+import { formatJoinedDate, formatDaysTogether } from "./profile-format";
 
 /**
  * 템플릿 ① 순수 로직 — 가입일 표기 (기준 13의 표시 계약).
@@ -56,5 +56,49 @@ describe("formatJoinedDate — 가입일 YYYY.MM.DD 표기 (기준 13)", () => {
     for (const iso of samples) {
       expect(formatJoinedDate(iso)).toBe(web.formatJoinedDate(iso));
     }
+  });
+});
+
+describe("formatDaysTogether", () => {
+  it("가입 당일은 1일째, KST 날짜 차 + 1", () => {
+    expect(
+      formatDaysTogether(
+        "2026-09-25T01:00:00",
+        new Date("2026-09-25T03:00:00Z"),
+      ),
+    ).toBe("1일째 함께");
+    expect(
+      formatDaysTogether(
+        "2026-09-20T15:30:00",
+        new Date("2026-09-25T03:00:00Z"),
+      ),
+    ).toBe("5일째 함께");
+  });
+  it("UTC 저장값의 KST 자정 경계를 넘긴다 — UTC 15:30 = KST 다음날 00:30", () => {
+    expect(
+      formatDaysTogether(
+        "2026-09-24T15:30:00",
+        new Date("2026-09-25T03:00:00Z"),
+      ),
+    ).toBe("1일째 함께");
+  });
+  it("오프셋 마커가 붙은 값도 같은 KST 날짜로 판정한다", () => {
+    expect(
+      formatDaysTogether(
+        "2026-09-21T00:30:00+09:00",
+        new Date("2026-09-25T03:00:00Z"),
+      ),
+    ).toBe("5일째 함께");
+  });
+  it("미래·깨진 값은 1일째로 접는다", () => {
+    expect(
+      formatDaysTogether(
+        "2030-01-01T00:00:00",
+        new Date("2026-09-25T00:00:00Z"),
+      ),
+    ).toBe("1일째 함께");
+    expect(formatDaysTogether("nope", new Date("2026-09-25T00:00:00Z"))).toBe(
+      "1일째 함께",
+    );
   });
 });

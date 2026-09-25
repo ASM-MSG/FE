@@ -19,6 +19,8 @@ export interface ActivityResult {
   streakDays: number | null;
   /** 방문 행정동 합산 수집률(0~100) — 미도착·실패면 null */
   collectionRate: number | null;
+  /** 내가 올린 영상 수(활성) — 같은 summary 응답의 `totalVideoCount` (2026-09-25 리디자인 타일) */
+  videoCount: number | null;
 }
 
 /**
@@ -37,5 +39,6 @@ export const useActivityQuery = (): ActivityResult => {
     // 도착한 축만 값을 만든다 — 미도착·실패는 null이라 카드가 0%를 잠깐 보여주지 않는다
     streakDays: summary.data?.currentStreak ?? null,
     collectionRate: stats.data ? deriveCollectionRate(stats.data) : null,
+    videoCount: summary.data?.totalVideoCount ?? null,
   };
 };
