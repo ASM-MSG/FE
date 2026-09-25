@@ -108,6 +108,7 @@ export const UploadScreen = () => {
           {/* 격자 히어로 + 위치 카드 (AC 4) — 역지오코딩 실데이터 (기준 20) */}
           <UploadHero
             locationLabel={locationLabel}
+            pillLabel={eventTarget === null ? "지금 여기" : "행사 현장"}
             sublabel={
               eventTarget === null
                 ? "이 격자에 기록돼요"

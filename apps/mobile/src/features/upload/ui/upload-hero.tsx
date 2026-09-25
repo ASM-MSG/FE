@@ -31,9 +31,18 @@ interface UploadHeroProps {
   locationLabel: string;
   /** 위치 카드 보조 문구 — 일반: "이 격자에 기록돼요" / 행사: "행사 위치에 기록돼요" */
   sublabel: string;
+  /**
+   * 위치 카드 pill 문구 — 기본 "지금 여기". 행사 귀속 업로드는 라벨이 GPS가 아니라 행사 장소라
+   * (좌표 미전송, `eventUploadLabel`) "지금 여기"라고 단언할 수 없어 "행사 현장"으로 받는다 (#169 리뷰).
+   */
+  pillLabel?: string;
 }
 
-export const UploadHero = ({ locationLabel, sublabel }: UploadHeroProps) => (
+export const UploadHero = ({
+  locationLabel,
+  sublabel,
+  pillLabel = "지금 여기",
+}: UploadHeroProps) => (
   <View className="w-full overflow-hidden rounded-xl bg-primary/10 pb-lg pt-md">
     {/* 격자 6×4 — 셀 44 gap 6, 하단 위치 카드가 마지막 행을 살짝 덮는다 */}
     <View
@@ -55,7 +64,7 @@ export const UploadHero = ({ locationLabel, sublabel }: UploadHeroProps) => (
     {/* 위치 카드 — 흰 카드가 격자 위에 떠 있다 (Figma loc-card 318×76 r18) */}
     <View
       accessible
-      accessibilityLabel={`지금 여기 ${locationLabel}. ${sublabel}`}
+      accessibilityLabel={`${pillLabel} ${locationLabel}. ${sublabel}`}
       className="-mt-8 mx-4 flex-row items-center gap-sm rounded-lg bg-white/95 px-sm py-sm shadow-modal"
     >
       <View className="size-11 items-center justify-center rounded-full bg-primary/10">
@@ -65,7 +74,7 @@ export const UploadHero = ({ locationLabel, sublabel }: UploadHeroProps) => (
         <View className="flex-row">
           <View className="rounded-full bg-primary/10 px-2 py-0.5">
             <Text className="text-fm-label font-semibold text-primary">
-              지금 여기
+              {pillLabel}
             </Text>
           </View>
         </View>
