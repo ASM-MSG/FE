@@ -25214,7 +25214,33 @@
       ]
     },
     {
-      "id": "64c5877fc79b5c55",
+      "id": "a59eb42b00bc00cd",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (15 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "9d6d5dece0dc7d1e",
+          "source_digest": "fnv1a64:1582f4d533cfe21e",
+          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 286,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "0232362eb1ba57d4",
+          "source_digest": "fnv1a64:c907665889d10415",
+          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 169,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "bc8e459de1e20c11",
       "note": "consolidate `view` — 21 copies",
       "members": [
         {
@@ -25383,12 +25409,12 @@
           "is_fragment": false
         },
         {
-          "id": "44038f6c47ea9567",
+          "id": "582853bd4f51bd83",
           "source_digest": "fnv1a64:9741c28a841b85ef",
           "file": "apps/mobile/src/features/upload/ui/upload-hero.tsx",
           "lang": "typescript",
-          "start_line": 75,
-          "end_line": 79,
+          "start_line": 78,
+          "end_line": 82,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25446,32 +25472,6 @@
           "end_line": 41,
           "kind": "Block",
           "name": "view",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "a59eb42b00bc00cd",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (15 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "9d6d5dece0dc7d1e",
-          "source_digest": "fnv1a64:1582f4d533cfe21e",
-          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 286,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "0232362eb1ba57d4",
-          "source_digest": "fnv1a64:20995e5380119257",
-          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 169,
-          "kind": "Block",
           "is_fragment": false
         }
       ]

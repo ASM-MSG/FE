@@ -6,7 +6,8 @@ import { palette } from "@fillmap/design-tokens";
  * SOURCE: Figma "제안 — 영상 업로드 리디자인" A-2 hero (node 16175:358) — 2026-09-25.
  * 연파랑 스테이지 위 6×4 격자(채움·빈 칸) + 현재 격자를 뜻하는 primary 카메라 칸 + 하단에 떠 있는
  * 위치 카드. 로그인 히어로(`login-hero.tsx`)와 같은 도메인 장식 — 화면 로컬, 승격 대상 아님.
- * 격자는 그림이라 개별 낭독하지 않고 위치 카드만 접근성 트리에 남긴다.
+ * 격자는 그림이라 개별 낭독하지 않고 위치 카드만 접근성 트리에 남긴다 — Android(importantForAccessibility)와
+ * iOS(accessibilityElementsHidden) 양쪽 prop을 같이 건다(#169 리뷰).
  */
 
 type HeroCell = "fill" | "empty" | "camera";
@@ -22,8 +23,9 @@ const HERO_GRID: readonly (readonly HeroCell[])[] = [
 const CELL_CLASS: Record<HeroCell, string> = {
   fill: "size-11 rounded-md bg-primary/40",
   empty: "size-11 rounded-md border border-primary/15 bg-white/70",
+  // 카메라 칸은 52px로 이웃 위에 살짝 튀어나온다 — 음수 마진으로 행 높이(44)는 유지 (Figma cell-hi 52 r13)
   camera:
-    "size-11 items-center justify-center rounded-md bg-primary shadow-raised",
+    "z-10 -m-1 size-13 items-center justify-center rounded-md bg-primary shadow-fab",
 };
 
 interface UploadHeroProps {
@@ -47,6 +49,7 @@ export const UploadHero = ({
     {/* 격자 6×4 — 셀 44 gap 6, 하단 위치 카드가 마지막 행을 살짝 덮는다 */}
     <View
       importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
       className="items-center gap-1.5"
     >
       {HERO_GRID.map((row, y) => (
@@ -54,7 +57,7 @@ export const UploadHero = ({
           {row.map((cell, x) => (
             <View key={x} className={CELL_CLASS[cell]}>
               {cell === "camera" && (
-                <Camera size={20} color={palette.white} strokeWidth={2.2} />
+                <Camera size={22} color={palette.white} strokeWidth={2.2} />
               )}
             </View>
           ))}

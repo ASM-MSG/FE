@@ -9,7 +9,7 @@ import {
   requestCameraPermissionsAsync,
   requestMediaLibraryPermissionsAsync,
 } from "expo-image-picker";
-import { palette } from "@fillmap/design-tokens";
+import { palette, semantic } from "@fillmap/design-tokens";
 import { AppHeader } from "@fillmap/ui-native";
 import { AppBottomNav } from "../../../widgets/bottom-nav/app-bottom-nav";
 import { useUploadLocation } from "../api/use-upload-location";
@@ -129,7 +129,7 @@ export const UploadScreen = () => {
               title="갤러리에서 선택"
               subtitle="찍어 둔 영상 고르기"
               tone="soft"
-              icon={<Images size={26} color={palette["blue-500"]} />}
+              icon={<Images size={26} color={semantic.primary} />}
               onPress={pickFromGallery}
             />
           </View>
@@ -149,7 +149,7 @@ export const UploadScreen = () => {
           {/* AI 처리 안내 (AC 5) — 한 줄로 */}
           <View className="mt-lg flex-row items-center gap-sm rounded-lg bg-surface px-md py-sm">
             <View className="size-8 items-center justify-center rounded-full bg-white">
-              <Sparkles size={16} color={palette["blue-500"]} />
+              <Sparkles size={16} color={semantic.primary} />
             </View>
             <View className="flex-1">
               <Text className="text-fm-body-strong text-foreground">
