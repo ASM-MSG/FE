@@ -1,4 +1,4 @@
-import { formatKstDate } from "../../../shared/format";
+import { formatKstDate, normalizeUtcIso } from "../../../shared/format";
 
 /**
  * 프로필 표시 포맷 유틸 (MSG-306 → MSG-426 웹 KST 보정판 포팅) — parity 테스트가 고정한다.
@@ -22,9 +22,8 @@ export const formatJoinedDate = (iso: string): string => formatKstDate(iso);
  * 프로필 히어로 보조 문구(2026-09-25 리디자인).
  */
 export const formatDaysTogether = (joinedIso: string, now: Date): string => {
-  const joined = new Date(
-    joinedIso.endsWith("Z") ? joinedIso : `${joinedIso}Z`,
-  );
+  // 타임존 마커 보정은 shared/format 정본을 쓴다 — "Z"만 보는 자체 판정은 "+09:00" 입력을 깨뜨린다 (#170 리뷰)
+  const joined = new Date(normalizeUtcIso(joinedIso));
   const KST = 9 * 60 * 60 * 1000;
   const toKstDay = (d: Date) => Math.floor((d.getTime() + KST) / 86_400_000);
   const diff = toKstDay(now) - toKstDay(joined);

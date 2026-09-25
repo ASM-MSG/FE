@@ -43,8 +43,10 @@ const RowIcon = ({
 /** 카드 안 행 공통 클래스 — 높이 56, 좌우 12 */
 const ROW_CLASS = "flex-row items-center gap-sm px-sm py-2.5";
 
-/** 행 아래 구분선 — 아이콘 폭(36)+간격(12)+패딩(12)만큼 들여 긋는다 */
-const RowDivider = () => <View className="ml-15 h-px bg-surface" />;
+/** 행 아래 구분선 — 아이콘 행은 아이콘 폭(36)+간격(12)+패딩(12)만큼 들여 긋고, 아이콘 없는 행은 라벨 시작(x=0)에 맞춘다 (#170 리뷰) */
+const RowDivider = ({ indented }: { indented: boolean }) => (
+  <View className={cx("h-px bg-surface", indented && "ml-15")} />
+);
 
 /** Figma의 `›`는 아이콘 자리표시 → lucide ChevronRight (MSG-306 확정 승계) */
 const RowChevron = () => <ChevronRight size={16} color={semantic.muted} />;
@@ -114,7 +116,7 @@ export const SettingRow = ({
         )}
         {badgeCount !== undefined && badgeCount > 0 && (
           <View className="min-w-6 items-center rounded-full bg-error px-1.5 py-0.5">
-            <Text className="text-fm-caption font-semibold text-primary-foreground">
+            <Text className="text-fm-caption font-semibold text-foreground-inverse">
               {badgeCount > 99 ? "99+" : String(badgeCount)}
             </Text>
           </View>
@@ -122,7 +124,7 @@ export const SettingRow = ({
         <RowChevron />
       </View>
     </Pressable>
-    {divider && <RowDivider />}
+    {divider && <RowDivider indented={icon !== undefined} />}
   </View>
 );
 
@@ -151,7 +153,7 @@ export const SettingInfoRow = ({
       <RowSpacer />
       <Text className="text-fm-label text-foreground-body">{value}</Text>
     </View>
-    {divider && <RowDivider />}
+    {divider && <RowDivider indented={icon !== undefined} />}
   </View>
 );
 
@@ -207,6 +209,6 @@ export const SettingToggleRow = ({
         {errorText}
       </Text>
     )}
-    {divider && <RowDivider />}
+    {divider && <RowDivider indented={icon !== undefined} />}
   </View>
 );

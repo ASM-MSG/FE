@@ -82,6 +82,14 @@ describe("formatDaysTogether", () => {
       ),
     ).toBe("1일째 함께");
   });
+  it("오프셋 마커가 붙은 값도 같은 KST 날짜로 판정한다", () => {
+    expect(
+      formatDaysTogether(
+        "2026-09-21T00:30:00+09:00",
+        new Date("2026-09-25T03:00:00Z"),
+      ),
+    ).toBe("5일째 함께");
+  });
   it("미래·깨진 값은 1일째로 접는다", () => {
     expect(
       formatDaysTogether(
