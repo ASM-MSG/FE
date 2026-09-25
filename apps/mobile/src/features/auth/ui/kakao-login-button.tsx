@@ -31,6 +31,8 @@ interface KakaoLoginButtonProps {
  * 카카오 브랜드 규정색(컨테이너 kakao-yellow, 라벨·심벌 kakao-black) 고정이라 ui-native Button
  * variant로 승격하지 않는다(웹 MSG-46 확정 승계 — 아이콘 슬롯·62px 규격도 불일치).
  * 프레젠테이셔널 — 로그인 수행은 호출부(login-screen)가 훅으로 담당한다 (MSG-444).
+ * 라벨은 `text-fm-display`(20/600) — 아래 Apple 네이티브 버튼이 62px 높이에서 약 20pt 세미볼드로 그리므로
+ * 두 버튼의 글자 크기·굵기를 맞춘다(2026-09-25 사용자 지적: 16 bold와 시각적 불일치).
  * 진행 중에도 **라벨을 바꾸지 않는다** — 62px 고정 pill에서 문구가 길어지면 레이아웃이 흔들린다.
  * 접근성 이름은 accessibilityLabel로 고정하고 로고 심벌은 버튼 그룹핑 안 장식으로 남긴다
  * (a11y 트리 비노출).
@@ -50,8 +52,6 @@ export const KakaoLoginButton = ({
     <View className="h-4.5 w-4.5">
       <KakaoLogo />
     </View>
-    <Text className="text-fm-heading font-bold text-kakao-black">
-      카카오로 계속하기
-    </Text>
+    <Text className="text-fm-display text-kakao-black">카카오로 계속하기</Text>
   </Pressable>
 );
