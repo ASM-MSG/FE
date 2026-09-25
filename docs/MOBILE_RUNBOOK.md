@@ -293,6 +293,7 @@ xcodebuild -exportArchive -archivePath "$S/app.xcarchive" -exportOptionsPlist Ex
 - 확인: `ios/app/Info.plist`의 `CFBundleDisplayName`·`CFBundleShortVersionString`·`CFBundleVersion`·`ITSAppUsesNonExemptEncryption`(=false). 재제출은 `app.config.js` `ios.buildNumber`만 올린다.
 - `.env`의 `EXPO_PUBLIC_API_BASE_URL`이 운영(`https://api.fillmap.kr`)인지 본다 — 릴리스 번들에 그대로 박힌다.
 - 아카이브는 10분 안팎. 실패는 거의 "Bundle React Native code and images" 단계(JS 번들)다 → 함정 13.
+- 업로드 뒤 10~30분 안에 오는 "Action needed: … has one or more issues" 메일이 빌드 처리 반려다. 실측 1건: **ITMS-90683 `NSMotionUsageDescription` 누락** — `expo-location` 옵션 `motionUsagePermission:false`로 키를 빼면 앱이 모션을 안 써도 SDK가 CoreMotion API를 참조해 반려된다. 문구를 넣고(현재 "수집하지 않는다"는 정직한 문구) `buildNumber`를 올려 재업로드.
 
 ## 함정 사전 (2026-08-20 · 08-21 실측)
 

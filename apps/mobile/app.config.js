@@ -79,7 +79,6 @@ export default (_ctx) => ({
   scheme: "fillmap",
   userInterfaceStyle: "automatic",
   ios: {
-    icon: "./assets/expo.icon",
     bundleIdentifier: "kr.fillmap.app",
     // MSG-601: Sign in with Apple 엔타이틀먼트(`com.apple.developer.applesignin`) 주입.
     // 번들 ID가 곧 client_id라 환경변수가 없다. 유료 개발자 팀 서명이 있어야 빌드된다(스펙 R1).
@@ -91,7 +90,7 @@ export default (_ctx) => ({
     // 백그라운드 원격 알림 수신 모드 — messaging 플러그인은 엔타이틀먼트(aps-environment)만 주입하고
     // UIBackgroundModes는 넣지 않는다(prebuild 실측). 없으면 앱이 백그라운드일 때 data 메시지가 안 온다.
     // MSG-606: 심사 대비 — 표준 암호화(HTTPS)만 써서 수출 규정 문답을 건너뛴다(L5), 빌드 번호 명시(L6).
-    buildNumber: "1",
+    buildNumber: "3",
     infoPlist: {
       UIBackgroundModes: ["remote-notification"],
       ITSAppUsesNonExemptEncryption: false,
@@ -196,7 +195,8 @@ export default (_ctx) => ({
           "현재 위치 주변 격자를 지도에 보여 주고, 촬영한 영상의 위치를 기록하려면 위치 권한이 필요해요.",
         locationAlwaysPermission: false,
         locationAlwaysAndWhenInUsePermission: false,
-        motionUsagePermission: false,
+        motionUsagePermission:
+          "걸음·이동 감지에는 쓰지 않아요. 지도 라이브러리가 요구하는 항목으로, 필맵은 모션 데이터를 수집하지 않아요.",
         isIosBackgroundLocationEnabled: false,
         isAndroidBackgroundLocationEnabled: false,
       },
