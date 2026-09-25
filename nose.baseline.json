@@ -25032,33 +25032,7 @@
       ]
     },
     {
-      "id": "2627cfc4bb42d7fa",
-      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (15 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
-      "members": [
-        {
-          "id": "9d6d5dece0dc7d1e",
-          "source_digest": "fnv1a64:1582f4d533cfe21e",
-          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 286,
-          "kind": "Block",
-          "is_fragment": false
-        },
-        {
-          "id": "3371932ba353f5ef",
-          "source_digest": "fnv1a64:51f4dd08434e7497",
-          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
-          "lang": "typescript",
-          "start_line": 1,
-          "end_line": 168,
-          "kind": "Block",
-          "is_fragment": false
-        }
-      ]
-    },
-    {
-      "id": "4111dd7c278d1552",
+      "id": "56977778219b2fac",
       "note": "consolidate `view` — 16 copies",
       "members": [
         {
@@ -25161,12 +25135,12 @@
           "is_fragment": false
         },
         {
-          "id": "90bca182605c1130",
+          "id": "8bf13200362e28a2",
           "source_digest": "fnv1a64:3b715707ff345e02",
           "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
           "lang": "typescript",
-          "start_line": 153,
-          "end_line": 160,
+          "start_line": 154,
+          "end_line": 161,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25240,7 +25214,7 @@
       ]
     },
     {
-      "id": "a7435485cf614841",
+      "id": "64c5877fc79b5c55",
       "note": "consolidate `view` — 21 copies",
       "members": [
         {
@@ -25409,12 +25383,12 @@
           "is_fragment": false
         },
         {
-          "id": "433a9589a61a443b",
-          "source_digest": "fnv1a64:c41cebc3dd513864",
+          "id": "44038f6c47ea9567",
+          "source_digest": "fnv1a64:9741c28a841b85ef",
           "file": "apps/mobile/src/features/upload/ui/upload-hero.tsx",
           "lang": "typescript",
-          "start_line": 66,
-          "end_line": 70,
+          "start_line": 75,
+          "end_line": 79,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25472,6 +25446,32 @@
           "end_line": 41,
           "kind": "Block",
           "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "a59eb42b00bc00cd",
+      "note": "duplicated across 2 directories — extract a method from the repeated block — high-parameter (15 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "9d6d5dece0dc7d1e",
+          "source_digest": "fnv1a64:1582f4d533cfe21e",
+          "file": "apps/mobile/src/features/profile/ui/profile-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 286,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "0232362eb1ba57d4",
+          "source_digest": "fnv1a64:20995e5380119257",
+          "file": "apps/mobile/src/features/upload/ui/upload-screen.tsx",
+          "lang": "typescript",
+          "start_line": 1,
+          "end_line": 169,
+          "kind": "Block",
           "is_fragment": false
         }
       ]
