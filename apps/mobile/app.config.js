@@ -170,9 +170,11 @@ export default (_ctx) => ({
     [
       "expo-splash-screen",
       {
-        backgroundColor: "#0066CC",
-        image: "./assets/images/splash-icon.png",
-        imageWidth: 76,
+        // 흰 배경 + 앱 아이콘(격자 심볼). 종전 splash-icon.png는 Expo 템플릿 셰브런이었고
+        // iOS가 백그라운드에서 앱을 죽인 뒤 재시작할 때마다 노출됐다(2026-09-25 사용자 지적).
+        backgroundColor: "#FFFFFF",
+        image: "./assets/images/icon.png",
+        imageWidth: 160,
       },
     ],
     "expo-image",
