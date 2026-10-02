@@ -304,8 +304,9 @@ cd apps/mobile
 eas channel:create production                      # 최초 1회. eas.json build.production.channel·app.config updates.requestHeaders와 같은 이름
 
 # (바이너리 제출 — 7절 절차 그대로) 아카이브 뒤 런타임 버전을 적어 둔다
-/usr/libexec/PlistBuddy -c "Print :EXUpdatesRuntimeVersion" \
-  "$S/app.xcarchive/Products/Applications/app.app/Expo.plist"   # 40자 해시. prebuild 산출 Expo.plist의 `file:fingerprint`가 빌드 시점에 치환된 값
+cat "$S/app.xcarchive/Products/Applications/app.app/EXUpdates.bundle/fingerprint"; echo
+#   40자 해시. Expo.plist의 EXUpdatesRuntimeVersion은 `file:fingerprint` 센티널 그대로 남고(치환되지 않는다 — 1.0.1 실측),
+#   expo-updates 빌드 스크립트가 EXUpdates.bundle/fingerprint 파일에 해시를 쓴다. 네이티브는 그 파일을 읽는다
 
 # (JS 변경 머지 뒤) 같은 체크아웃에서 — ios/가 prebuild로 생성된 상태여야 해시가 같다
 npx expo prebuild -p ios                             # ios/ 없으면 먼저
@@ -315,6 +316,8 @@ eas update --channel production --platform ios --message "MSG-xxx: 한 줄"
 eas update:list --branch production                  # 게시 확인(runtimeVersion 열이 위 해시)
 ```
 
+- `-exportArchive`가 `Your session has expired. Please log in.`(resultCode 1100)을 찍어도 **업로드는 이미 끝났을 수 있다** — 1.0.1 실측: 오류 로그 뒤에도 ASC에 빌드 4가 "완료"로 올라와 있었고, 재로그인 후 export를 다시 돌리자 같은 아카이브가 빌드 5로 한 번 더 올라갔다. 오류가 나면 **먼저 ASC > TestFlight > 빌드 업로드 목록을 본다**. 다시 돌릴 때는 Xcode > Settings > Accounts에서 재로그인 후 export 단계만(아카이브 재생성 불필요).
+- Xcode는 export 시 "버전·빌드 번호 자동 관리"가 기본 켜져 있어 같은 번호가 ASC에 있으면 **조용히 +1 해서 올린다**(위 빌드 5가 그것). `ExportOptions.plist`에 `manageAppVersionAndBuildNumber=false`를 둬 app.config의 `buildNumber`와 ASC 번호가 어긋나지 않게 한다. 번호가 어긋났으면 다음 `buildNumber`는 ASC 최댓값+1.
 - `.env`의 `EXPO_PUBLIC_API_BASE_URL`이 운영인지 아카이브 때와 똑같이 본다 — `eas update`도 로컬에서 번들을 export해 올린다.
 - 적용 시점: 기본값(`checkAutomatically ON_LOAD`·`fallbackToCacheTimeout 0`) — 앱이 뜰 때 백그라운드로 받고 **다음 콜드 스타트**에 적용. 바로 확인하려면 앱을 완전히 종료하고 두 번 연다.
 - dev client(Debug)는 expo-updates가 꺼져 있어 시뮬레이터로는 OTA 동작을 볼 수 없다. 실제 수신 확인은 TestFlight 빌드로 한다.
