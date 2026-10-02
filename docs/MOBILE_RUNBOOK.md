@@ -295,6 +295,36 @@ xcodebuild -exportArchive -archivePath "$S/app.xcarchive" -exportOptionsPlist Ex
 - 아카이브는 10분 안팎. 실패는 거의 "Bundle React Native code and images" 단계(JS 번들)다 → 함정 13.
 - 업로드 뒤 10~30분 안에 오는 "Action needed: … has one or more issues" 메일이 빌드 처리 반려다. 실측 1건: **ITMS-90683 `NSMotionUsageDescription` 누락** — `expo-location` 옵션 `motionUsagePermission:false`로 키를 빼면 앱이 모션을 안 써도 SDK가 CoreMotion API를 참조해 반려된다. 문구를 넣고(현재 "수집하지 않는다"는 정직한 문구) `buildNumber`를 올려 재업로드.
 
+## 7-B. OTA(expo-updates) 배포 순서 (2026-10-02 도입 — 1.0.1/빌드 4부터)
+
+JS만 바뀐 변경은 스토어 재심사 없이 `eas update`로 내보낸다. 네이티브(의존성·plugins·app.config의 ios/android 블록)가 바뀌면 OTA 대상이 아니라 **스토어 재제출**이다 — 런타임 버전이 `fingerprint` 정책이라 이 구분은 도구가 해 준다(해시가 다르면 어떤 기기도 받지 않는다).
+
+```bash
+cd apps/mobile
+eas channel:create production                      # 최초 1회. eas.json build.production.channel·app.config updates.requestHeaders와 같은 이름
+
+# (바이너리 제출 — 7절 절차 그대로) 아카이브 뒤 런타임 버전을 적어 둔다
+cat "$S/app.xcarchive/Products/Applications/app.app/EXUpdates.bundle/fingerprint"; echo
+#   40자 해시. Expo.plist의 EXUpdatesRuntimeVersion은 `file:fingerprint` 센티널 그대로 남고(치환되지 않는다 — 1.0.1 실측),
+#   expo-updates 빌드 스크립트가 EXUpdates.bundle/fingerprint 파일에 해시를 쓴다. 네이티브는 그 파일을 읽는다
+
+# (JS 변경 머지 뒤) 같은 체크아웃에서 — ios/가 prebuild로 생성된 상태여야 해시가 같다
+npx expo prebuild -p ios                             # ios/ 없으면 먼저
+grep EXPO_PUBLIC_API_BASE_URL .env                     # 반드시 https://api.fillmap.kr — 아니면 전 사용자에게 잘못된 API 주소가 OTA로 나간다
+npx expo-updates fingerprint:generate --platform ios 2>/dev/null | tail -1 | python3 -c 'import sys,json;print(json.load(sys.stdin)["hash"])'
+#   ↑ 마지막 줄이 JSON 한 덩어리(실측 2026-10-02, expo-updates 57.0.24). 아카이브에 적힌 해시와 같아야 한다.
+#     다르면 네이티브가 바뀐 것 — OTA 대상이 아니라 빌드 번호 올려 재제출. `eas fingerprint:compare`는 EAS Build 전용이라 여기선 못 쓴다
+eas update --channel production --platform ios --message "MSG-xxx: 한 줄"
+eas update:list --branch production                  # 게시 확인(runtimeVersion 열이 위 해시)
+```
+
+- `-exportArchive`가 `Your session has expired. Please log in.`(resultCode 1100)을 찍어도 **업로드는 이미 끝났을 수 있다** — 1.0.1 실측: 오류 로그 뒤에도 ASC에 빌드 4가 "완료"로 올라와 있었고, 재로그인 후 export를 다시 돌리자 같은 아카이브가 빌드 5로 한 번 더 올라갔다. 오류가 나면 **먼저 ASC > TestFlight > 빌드 업로드 목록을 본다**. 다시 돌릴 때는 Xcode > Settings > Accounts에서 재로그인 후 export 단계만(아카이브 재생성 불필요).
+- Xcode는 export 시 "버전·빌드 번호 자동 관리"가 기본 켜져 있어 같은 번호가 ASC에 있으면 **조용히 +1 해서 올린다**(위 빌드 5가 그것). `ExportOptions.plist`에 `manageAppVersionAndBuildNumber=false`를 둬 app.config의 `buildNumber`와 ASC 번호가 어긋나지 않게 한다. 번호가 어긋났으면 다음 `buildNumber`는 ASC 최댓값+1.
+- `.env`의 `EXPO_PUBLIC_API_BASE_URL`이 운영인지 아카이브 때와 똑같이 본다 — `eas update`도 로컬에서 번들을 export해 올린다.
+- 적용 시점: 기본값(`checkAutomatically ON_LOAD`·`fallbackToCacheTimeout 0`) — 앱이 뜰 때 백그라운드로 받고 **다음 콜드 스타트**에 적용. 바로 확인하려면 앱을 완전히 종료하고 두 번 연다.
+- dev client(Debug)는 expo-updates가 꺼져 있어 시뮬레이터로는 OTA 동작을 볼 수 없다. 실제 수신 확인은 TestFlight 빌드로 한다.
+- 되돌리기: `eas update:republish --branch production --group <이전 그룹 id>` (이전 게시를 다시 최신으로).
+
 ## 함정 사전 (2026-08-20 · 08-21 실측)
 
 전부 실제로 걸렸던 것들이다. 증상으로 찾아 쓴다.

@@ -728,3 +728,4 @@
 | 2026-09-24 | MSG-606 | 운영 주체·보호책임자·지원 메일 확정값은 사용자 몫으로 남김 | 사업자 정보를 하네스가 지어낼 수 없다. `terms-bodies.ts` 상수 3곳만 바꾸면 된다 |
 | 2026-09-24 | MSG-606 | codex P2 반영: 행사 영상 업로더 차단 성공 시 시트를 위치 목록으로 되돌린다 | 상세 캐시는 차단 후 일부러 재조회하지 않아(`invalidateAfterBlockChange`) 차단한 사람의 영상이 계속 재생됐다 |
 | 2026-09-24 | MSG-606 | 문의 이메일을 `contact@fillmap.kr`로 확정(사용자) — 약관 5종·운영자 콘솔 안내 문구 4곳 일괄 교체 | 종전 `support@fillmap.kr`는 자리표시였다(MSG-545가 "실주소 확인"으로 환류). 심사관이 처리방침의 연락처로 메일을 보낼 수 있어 실주소여야 한다 |
+| 2026-10-02 | MSG-606 후속 1.0.1 | expo-updates runtimeVersion **fingerprint** 채택(appVersion 기각), 채널은 `updates.requestHeaders`로 수동 주입, Apple 네이티브 버튼은 같은 색 62px pill 안에 40px로 라벨 크기만 맞춤 | Xcode 수동 빌드라 네이티브 변경 시 version 올리기를 강제할 수단이 없어 해시가 판단해야 한다. EAS Build 미사용이라 채널 자동 주입이 없다. 커스텀 Apple 버튼은 심사 리스크로 지양 |

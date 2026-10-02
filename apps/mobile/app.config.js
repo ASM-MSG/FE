@@ -73,7 +73,32 @@ const kakaoPlugins = kakaoNativeAppKey
 export default (_ctx) => ({
   name: "필맵",
   slug: "fillmap",
-  version: "1.0.0",
+  // EAS 프로젝트 연결 (2026-10-02) — 조직 ssomaes-team / 프로젝트 Fillmap. expo-updates(OTA) 배포 대상 식별자.
+  // app.config.js가 동적 설정이라 `eas init`이 자동으로 못 써서 손으로 넣었다.
+  owner: "ssomaes-team",
+  extra: {
+    eas: { projectId: "698b3d82-4612-4adf-8f9c-d010706d55f6" },
+  },
+  // 1.0.1 (2026-10-02): 스토어 1.0.0=빌드 3. #169·#170(JS 변경) + expo-updates 도입(네이티브 변경)을 싣는 빌드.
+  version: "1.0.1",
+  /**
+   * expo-updates(OTA) — 2026-10-02 도입. `eas update`로 올린 JS 번들을 스토어 재심사 없이 배포한다.
+   * - runtimeVersion `fingerprint`: 네이티브 입력(의존성·plugins·ios/ 산출물)의 해시가 곧 런타임 버전이다.
+   *   `appVersion` 정책(=version 문자열)과 달리 **네이티브가 바뀌면 자동으로 갈라져** 옛 바이너리에
+   *   호환 안 되는 JS가 내려가는 사고를 막고, 반대로 version만 올리는 재제출은 같은 OTA 대상을 유지한다.
+   *   대가는 "빌드와 `eas update`를 **같은 소스 트리**에서 해야 한다"는 운영 규율(런북 7-B: `fingerprint:generate`
+   *   해시를 아카이브 `EXUpdates.bundle/fingerprint`와 대조. `eas fingerprint:compare`는 EAS Build 산출물 전용이라 못 쓴다).
+   * - 런타임 버전은 prebuild가 아니라 Xcode 빌드 시점에 expo-updates 빌드 스크립트가 계산해 Expo.plist에 쓴다.
+   * - 채널은 EAS Build가 아니라 Xcode 수동 아카이브라 자동 주입이 없다 → `requestHeaders`로 직접 박는다(Expo.plist
+   *   `EXUpdatesRequestHeaders`). 채널명은 eas.json `build.production.channel`과 같아야 한다.
+   * - `checkAutomatically`(ON_LOAD)·`fallbackToCacheTimeout`(0)은 기본값 유지: 실행 시 캐시 번들로 즉시 뜨고 새 번들은
+   *   백그라운드로 받아 **다음 실행**에 적용. 첫 OTA 도입에서 스플래시 대기(>0)로 체감을 바꾸지 않는 쪽을 택했다.
+   */
+  runtimeVersion: { policy: "fingerprint" },
+  updates: {
+    url: "https://u.expo.dev/698b3d82-4612-4adf-8f9c-d010706d55f6",
+    requestHeaders: { "expo-channel-name": "production" },
+  },
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: "fillmap",
@@ -90,7 +115,8 @@ export default (_ctx) => ({
     // 백그라운드 원격 알림 수신 모드 — messaging 플러그인은 엔타이틀먼트(aps-environment)만 주입하고
     // UIBackgroundModes는 넣지 않는다(prebuild 실측). 없으면 앱이 백그라운드일 때 data 메시지가 안 온다.
     // MSG-606: 심사 대비 — 표준 암호화(HTTPS)만 써서 수출 규정 문답을 건너뛴다(L5), 빌드 번호 명시(L6).
-    buildNumber: "3",
+    // 1.0.1 = 빌드 4 (2026-10-02).
+    buildNumber: "4",
     infoPlist: {
       UIBackgroundModes: ["remote-notification"],
       ITSAppUsesNonExemptEncryption: false,
