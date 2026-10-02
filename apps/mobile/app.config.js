@@ -86,7 +86,8 @@ export default (_ctx) => ({
    * - runtimeVersion `fingerprint`: 네이티브 입력(의존성·plugins·ios/ 산출물)의 해시가 곧 런타임 버전이다.
    *   `appVersion` 정책(=version 문자열)과 달리 **네이티브가 바뀌면 자동으로 갈라져** 옛 바이너리에
    *   호환 안 되는 JS가 내려가는 사고를 막고, 반대로 version만 올리는 재제출은 같은 OTA 대상을 유지한다.
-   *   대가는 "빌드와 `eas update`를 **같은 소스 트리**에서 해야 한다"는 운영 규율(`eas fingerprint:compare`로 확인).
+   *   대가는 "빌드와 `eas update`를 **같은 소스 트리**에서 해야 한다"는 운영 규율(런북 7-B: `fingerprint:generate`
+   *   해시를 아카이브 `EXUpdates.bundle/fingerprint`와 대조. `eas fingerprint:compare`는 EAS Build 산출물 전용이라 못 쓴다).
    * - 런타임 버전은 prebuild가 아니라 Xcode 빌드 시점에 expo-updates 빌드 스크립트가 계산해 Expo.plist에 쓴다.
    * - 채널은 EAS Build가 아니라 Xcode 수동 아카이브라 자동 주입이 없다 → `requestHeaders`로 직접 박는다(Expo.plist
    *   `EXUpdatesRequestHeaders`). 채널명은 eas.json `build.production.channel`과 같아야 한다.

@@ -310,8 +310,10 @@ cat "$S/app.xcarchive/Products/Applications/app.app/EXUpdates.bundle/fingerprint
 
 # (JS 변경 머지 뒤) 같은 체크아웃에서 — ios/가 prebuild로 생성된 상태여야 해시가 같다
 npx expo prebuild -p ios                             # ios/ 없으면 먼저
-npx expo-updates fingerprint:generate --platform ios | tail -1 | python3 -c 'import sys,json;print(json.load(sys.stdin)["hash"])'
-#   ↑ 아카이브에 적힌 해시와 같아야 한다. 다르면 네이티브가 바뀐 것 — OTA 대상이 아니라 빌드 번호 올려 재제출
+grep EXPO_PUBLIC_API_BASE_URL .env                     # 반드시 https://api.fillmap.kr — 아니면 전 사용자에게 잘못된 API 주소가 OTA로 나간다
+npx expo-updates fingerprint:generate --platform ios 2>/dev/null | tail -1 | python3 -c 'import sys,json;print(json.load(sys.stdin)["hash"])'
+#   ↑ 마지막 줄이 JSON 한 덩어리(실측 2026-10-02, expo-updates 57.0.24). 아카이브에 적힌 해시와 같아야 한다.
+#     다르면 네이티브가 바뀐 것 — OTA 대상이 아니라 빌드 번호 올려 재제출. `eas fingerprint:compare`는 EAS Build 전용이라 여기선 못 쓴다
 eas update --channel production --platform ios --message "MSG-xxx: 한 줄"
 eas update:list --branch production                  # 게시 확인(runtimeVersion 열이 위 해시)
 ```
