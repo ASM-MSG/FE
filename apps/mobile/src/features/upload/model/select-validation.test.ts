@@ -16,6 +16,7 @@ const video = (patch: Partial<UploadVideo> = {}): UploadVideo => ({
   fileName: "clip.mp4",
   fileSize: 12 * 1024 * 1024,
   mimeType: "video/mp4",
+  transcoded: false,
   ...patch,
 });
 

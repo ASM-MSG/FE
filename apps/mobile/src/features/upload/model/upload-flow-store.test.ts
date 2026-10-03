@@ -21,6 +21,7 @@ const video: UploadVideo = {
   fileName: "clip.mp4",
   fileSize: 12 * 1024 * 1024,
   mimeType: "video/mp4",
+  transcoded: false,
 };
 
 const analyzing = (): UploadFlowStore => {
@@ -554,5 +555,97 @@ describe("setVisibility — 공개 범위 (MSG-572)", () => {
     const restored = createUploadFlowStore();
     restored.hydrate(snapshot);
     expect(restored.getState().visibility).toBe("PRIVATE");
+  });
+});
+
+/**
+ * MSG-616 (D3·D5): 분석 화면이 presign 전에 영상을 720p로 변환하고 스토어 `video`를
+ * 변환본으로 **교체**한다. `startAnalysis`와 달리 오케스트레이션·추천·선택을 버리지 않는다 —
+ * 재개(선분석 PUT 완료 후 변환 성립) 경로에서 산출물을 지우면 presign·PUT이 다시 나간다.
+ */
+describe("replaceVideo — 변환본으로 video 교체 (MSG-616 AC 1·8)", () => {
+  const transcoded: UploadVideo = {
+    uri: "file:///cache/abc.mp4",
+    durationSec: 30,
+    fileName: "clip.mp4",
+    fileSize: 7 * 1024 * 1024,
+    mimeType: "video/mp4",
+    transcoded: true,
+  };
+
+  it("video만 변환본으로 바뀌고 스텝·오케스트레이션 상태는 그대로다 (AC 1)", () => {
+    const store = analyzing();
+
+    store.replaceVideo(transcoded);
+
+    expect(store.getState().video).toEqual(transcoded);
+    expect(store.getState().step).toBe("analyzing");
+    expect(store.getState().analysis).toEqual({
+      presign: null,
+      s3PutDone: false,
+    });
+  });
+
+  it("원본 PUT이 끝난 뒤(s3PutDone true)의 replace는 무시한다 — 올라간 바이트와 메타가 어긋나지 않게 (클로드 리뷰 #173)", () => {
+    const store = analyzing();
+    store.setAnalysisFlow({
+      presign: {
+        uploadUrl: "https://s3",
+        s3Key: "uploaded",
+        expiresInSec: 300,
+        issuedAtMs: 0,
+      },
+      s3PutDone: true,
+    });
+    const before = store.getState();
+
+    store.replaceVideo(transcoded);
+
+    expect(store.getState()).toBe(before);
+    expect(store.getState().video).toEqual(video);
+  });
+
+  it("PUT 전(s3PutDone false)의 선분석 presign은 지워 재발급되게 한다 — 옛 contentLength·contentType 서명으로 새 바이트를 올리면 S3 403 (codex 리뷰)", () => {
+    const store = analyzing();
+    store.setAnalysisFlow({
+      presign: {
+        uploadUrl: "https://s3",
+        s3Key: "stale",
+        expiresInSec: 300,
+        issuedAtMs: 0,
+      },
+      s3PutDone: false,
+    });
+
+    store.replaceVideo(transcoded);
+
+    expect(store.getState().analysis).toEqual({
+      presign: null,
+      s3PutDone: false,
+    });
+    expect(store.getState().video).toEqual(transcoded);
+  });
+
+  it("교체 후 completeAnalysis의 길이 기준은 변환본 durationSec이다 — 추천·슬라이더 범위 (AC 8)", () => {
+    const store = analyzing();
+    store.replaceVideo({ ...transcoded, durationSec: 20 });
+
+    store.completeAnalysis([[0, 50]]);
+
+    // 원본 42초가 아니라 변환본 20초로 잘린다
+    expect(selectSelectedSegment(store.getState())?.end).toBe(20);
+    expect(store.getState().selection?.manualSegment.end).toBeLessThanOrEqual(
+      20,
+    );
+  });
+
+  it("영속 스냅숏·재수화를 거쳐도 transcoded가 보존된다 (AC 7)", () => {
+    const store = analyzing();
+    store.replaceVideo(transcoded);
+
+    const restored = createUploadFlowStore();
+    restored.hydrate(store.toPersisted());
+
+    expect(restored.getState().video?.transcoded).toBe(true);
   });
 });

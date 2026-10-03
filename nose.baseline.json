@@ -13502,7 +13502,7 @@
       ]
     },
     {
-      "id": "98271bc94841a5c1",
+      "id": "2e8fd813d3b21881",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
@@ -13516,12 +13516,12 @@
           "is_fragment": false
         },
         {
-          "id": "b4dedb0a808a36a6",
+          "id": "f9fdedfb4e7d1166",
           "source_digest": "fnv1a64:7703a61b82108248",
           "file": "apps/mobile/src/features/upload/model/analysis-copy.ts",
           "lang": "typescript",
-          "start_line": 28,
-          "end_line": 43,
+          "start_line": 34,
+          "end_line": 49,
           "kind": "Block",
           "is_fragment": false
         }
@@ -25677,6 +25677,32 @@
           "end_line": 41,
           "kind": "Block",
           "name": "view",
+          "is_fragment": false
+        }
+      ]
+    },
+    {
+      "id": "7350d60f40d7bb9c",
+      "note": "local duplication — extract a method from the repeated block — test scaffolding: consolidate only a genuinely shared fixture/helper, not per-scenario setup",
+      "members": [
+        {
+          "id": "22da95f1b9ca2358",
+          "source_digest": "fnv1a64:81ca652088a12ab3",
+          "file": "apps/mobile/src/features/upload/model/upload-flow-storage.test.ts",
+          "lang": "typescript",
+          "start_line": 231,
+          "end_line": 240,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "ec72ec5d12c2ad39",
+          "source_digest": "fnv1a64:f3b1692f7408faac",
+          "file": "apps/mobile/src/features/upload/model/upload-flow-storage.test.ts",
+          "lang": "typescript",
+          "start_line": 43,
+          "end_line": 51,
+          "kind": "Block",
           "is_fragment": false
         }
       ]

@@ -46,6 +46,7 @@ const persistedSnapshot = () => {
     fileName: "clip.mp4",
     fileSize: 1024,
     mimeType: "video/mp4",
+    transcoded: false,
   });
   store.completeAnalysis([[3, 8]]);
   return store.toPersisted();
@@ -233,6 +234,7 @@ describe("upload-flow-storage — 행사 업로드 대상 영속 (AC 9·D11)", (
       fileName: "clip.mp4",
       fileSize: 1024,
       mimeType: "video/mp4",
+      transcoded: false,
     });
 
     await flowStorage.save(store.toPersisted());
@@ -302,5 +304,56 @@ describe("upload-flow-storage — 공개 범위 영속 (MSG-572 AC 5·6)", () =>
 
     expect(await friends.load()).toBeNull();
     expect(await numeric.load()).toBeNull();
+  });
+});
+
+/**
+ * MSG-616 (D5): `video.transcoded`가 저장소 왕복에서 보존되고, 필드가 **없는** 구버전 저장값은
+ * false로 정규화해 통과한다(`eventTarget`·`visibility` 패턴). 있는데 boolean이 아니면 거부.
+ */
+describe("upload-flow-storage — video.transcoded 하위호환 (MSG-616 AC 7)", () => {
+  it("transcoded:true가 저장·복원에서 보존된다 — 재개 시 재변환하지 않는다", async () => {
+    const store = createUploadFlowStore();
+    store.startAnalysis({
+      uri: "file:///cache/abc.mp4",
+      durationSec: 30,
+      fileName: "clip.mp4",
+      fileSize: 1024,
+      mimeType: "video/mp4",
+      transcoded: true,
+    });
+    const flowStorage = createUploadFlowStorage(memoryStorage().storage);
+
+    await flowStorage.save(store.toPersisted());
+
+    expect((await flowStorage.load())?.video?.transcoded).toBe(true);
+  });
+
+  it("transcoded 필드가 없는 구버전 저장값은 false로 정규화해 통과시킨다", async () => {
+    const snapshot = persistedSnapshot();
+    const { transcoded: _drop, ...legacyVideo } = snapshot.video!;
+    const { storage } = memoryStorage(
+      JSON.stringify({ ...snapshot, video: legacyVideo }),
+    );
+
+    const loaded = await createUploadFlowStorage(storage).load();
+
+    expect(loaded).not.toBeNull();
+    expect(loaded?.video?.transcoded).toBe(false);
+    expect(loaded?.video?.uri).toBe("file:///clip.mp4");
+  });
+
+  it("transcoded가 boolean이 아닌 저장값은 진행 없음으로 폴백한다", async () => {
+    const snapshot = persistedSnapshot();
+    const flowStorage = createUploadFlowStorage(
+      memoryStorage(
+        JSON.stringify({
+          ...snapshot,
+          video: { ...snapshot.video, transcoded: "yes" },
+        }),
+      ).storage,
+    );
+
+    expect(await flowStorage.load()).toBeNull();
   });
 });

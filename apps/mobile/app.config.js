@@ -80,7 +80,10 @@ export default (_ctx) => ({
     eas: { projectId: "698b3d82-4612-4adf-8f9c-d010706d55f6" },
   },
   // 1.0.1 (2026-10-02): 스토어 1.0.0=빌드 3. #169·#170(JS 변경) + expo-updates 도입(네이티브 변경)을 싣는 빌드.
-  version: "1.0.1",
+  // 1.0.2 (2026-10-03, MSG-616): 1.0.1 빌드 4·5가 ASC에 이미 올라가 있어 네이티브 변경(react-native-compressor·
+  // nitro)을 덧붙이지 않고 새 버전으로 분리한다(1.0.1 빌드 6안 폐기). "1.0.2 묶음 후보"가 더 쌓이면 한 번에 빌드.
+  // fingerprint 정책이라 네이티브가 바뀐 이 트리의 런타임 버전은 자동으로 갈려 1.0.1 사용자에게 OTA로 가지 않는다.
+  version: "1.0.2",
   /**
    * expo-updates(OTA) — 2026-10-02 도입. `eas update`로 올린 JS 번들을 스토어 재심사 없이 배포한다.
    * - runtimeVersion `fingerprint`: 네이티브 입력(의존성·plugins·ios/ 산출물)의 해시가 곧 런타임 버전이다.
@@ -115,8 +118,8 @@ export default (_ctx) => ({
     // 백그라운드 원격 알림 수신 모드 — messaging 플러그인은 엔타이틀먼트(aps-environment)만 주입하고
     // UIBackgroundModes는 넣지 않는다(prebuild 실측). 없으면 앱이 백그라운드일 때 data 메시지가 안 온다.
     // MSG-606: 심사 대비 — 표준 암호화(HTTPS)만 써서 수출 규정 문답을 건너뛴다(L5), 빌드 번호 명시(L6).
-    // 1.0.1 = 빌드 4 (2026-10-02).
-    buildNumber: "4",
+    // 1.0.1 = 빌드 4 (2026-10-02). 1.0.2 = 빌드 1부터 (2026-10-03, MSG-616 — 새 버전의 첫 빌드).
+    buildNumber: "1",
     infoPlist: {
       UIBackgroundModes: ["remote-notification"],
       ITSAppUsesNonExemptEncryption: false,
@@ -184,6 +187,8 @@ export default (_ctx) => ({
     },
     predictiveBackGestureEnabled: false,
     package: "kr.fillmap.app",
+    // MSG-616 D10: 1.0.2 첫 빌드. 종전 config에 값이 없어 Expo 기본 1로 나갔으므로 그 다음 값.
+    versionCode: 2,
     // FCM 프로젝트 설정(fillmap-edd7d) — 등록 패키지명이 android.package와 일치해야 한다.
     // prebuild가 android/app/으로 복사한다. 푸시 수신(expo-notifications 권한·기기 토큰
     // 등록·알림 탭 진입)은 **MSG-429**가 구현했다 — 종전 주석의 MSG-418 귀속은 오기였다.
@@ -254,6 +259,10 @@ export default (_ctx) => ({
     // SPM을 끄고 종전 CocoaPods 경로(+ 정적 프레임워크)를 쓴다.
     ["@react-native-firebase/app", { ios: { disableSPM: true } }],
     "@react-native-firebase/messaging",
+    // MSG-616: 업로드 전 720p H.264/AAC 변환 — nitro 모듈(New Arch 전용, 이 앱은 newArchEnabled).
+    // config plugin은 no-op에 가깝지만 등록이 공식 설치 절차다. 네이티브라 `expo prebuild` + dev client
+    // 재빌드가 필요하고, 구 dev client에서는 `video-transcoder.ts`의 동적 import가 실패해 원본으로 업로드된다.
+    "react-native-compressor",
     [
       "expo-build-properties",
       {

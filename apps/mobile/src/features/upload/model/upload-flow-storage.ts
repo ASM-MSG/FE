@@ -65,7 +65,10 @@ const isVideo = (value: unknown): boolean =>
   typeof value.fileName === "string" &&
   isNullOr(value.durationSec, (v) => typeof v === "number") &&
   isNullOr(value.fileSize, (v) => typeof v === "number") &&
-  isNullOr(value.mimeType, (v) => typeof v === "string");
+  isNullOr(value.mimeType, (v) => typeof v === "string") &&
+  // MSG-616 D5: 필드가 **없는** 구버전 저장값은 통과시켜 load에서 false로 정규화한다
+  // (eventTarget·visibility 패턴). 있는데 boolean이 아니면 거부.
+  (value.transcoded === undefined || typeof value.transcoded === "boolean");
 
 const isSelection = (value: unknown): boolean => {
   if (!isRecord(value)) return false;
@@ -118,6 +121,11 @@ export const createUploadFlowStorage = (
       // (MSG-560 D11 · MSG-572 D3)
       return {
         ...parsed,
+        // MSG-616 D5: 구버전 video는 변환 전으로 본다 — 재개 시 변환을 다시 시도한다(비용 작음)
+        video:
+          parsed.video === null
+            ? null
+            : { ...parsed.video, transcoded: parsed.video.transcoded ?? false },
         eventTarget: parsed.eventTarget ?? null,
         visibility: parsed.visibility ?? "PUBLIC",
       };

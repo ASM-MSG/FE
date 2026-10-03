@@ -45,6 +45,12 @@ export interface UploadVideo {
   fileSize: number | null;
   /** presign `contentType`·S3 PUT 헤더 — 없으면 video/mp4 폴백 */
   mimeType: string | null;
+  /**
+   * MSG-616 D5: 분석 화면의 720p 변환을 거친 변환본인가. picker 결과는 false, 변환 성공 시
+   * `replaceVideo`가 true로 교체한다. 재진입 시 `shouldTranscode`가 이 값으로 재변환을 막는다.
+   * **영속 대상이다** — 구버전 저장값(필드 없음)은 storage가 false로 정규화한다.
+   */
+  transcoded: boolean;
 }
 
 /** 화면에 표시하는 AI 추천 행의 상한 — 서버가 더 줘도 앞에서 자른다 (기준 8) */
@@ -129,6 +135,14 @@ export interface UploadFlowStore {
   subscribe: (listener: () => void) => () => void;
   /** 영상 확보 → 분석 스텝. 이전 흐름 산출물(추천·선택·presign·PUT)을 전부 버린다 (기준 1) */
   startAnalysis: (video: UploadVideo) => void;
+  /**
+   * 변환본으로 `video` 교체 (MSG-616 D5) — 스텝·추천·선택은 건드리지 않는다. 선분석 presign은
+   * **PUT 전(s3PutDone false)이면 지워 재발급**시킨다: 옛 contentLength·contentType으로 서명된 URL에
+   * 새 바이트를 올리면 S3가 403을 낸다(codex 리뷰). **원본 PUT이 끝났으면 호출을 무시**한다(상태 불변,
+   * 클로드 리뷰 #173) — 이미 올라간 바이트와 스토어 메타가 어긋나면 확정 업로드가 다른 파일 크기·
+   * 타입으로 나간다. 그 재개 경로는 원본으로 끝까지 간다(서버 인코딩 경로, 느릴 뿐 안전).
+   */
+  replaceVideo: (video: UploadVideo) => void;
   /** 분석 성공 — 추천 파생·초기 선택·다음 스텝 판정을 한 번에 (기준 6·8·9) */
   completeAnalysis: (highlights: number[][] | null | undefined) => void;
   /** 준비 단계 실패 — 분석 화면에 단계 표시, 스텝 유지 (기준 31) */
@@ -204,6 +218,17 @@ export const createUploadFlowStore = (): UploadFlowStore => {
         video,
         selectFailureMessage: null,
       }),
+
+    replaceVideo: (video) => {
+      if (state.analysis.s3PutDone) return;
+      setState({
+        video,
+        analysis:
+          state.analysis.presign !== null
+            ? createOrchestration()
+            : state.analysis,
+      });
+    },
 
     completeAnalysis: (highlights) => {
       const duration = durationOf(state);

@@ -39,6 +39,8 @@ describe("resolvePickOutcome (MSG-302 AC 8)", () => {
         fileName: "pick.mov",
         fileSize: 2048,
         mimeType: "video/quicktime",
+        // MSG-616 D5: picker 결과는 변환 전 — 분석 화면이 변환 후 true로 교체한다
+        transcoded: false,
       },
     });
   });
@@ -49,7 +51,7 @@ describe("resolvePickOutcome (MSG-302 AC 8)", () => {
       assets: [{ uri: "file:///pick.mp4", duration: null }],
     });
 
-    // 5필드 정확 형상으로 단정한다 — 부분 단정은 메타 누락을 놓친다(검증 지적 8)
+    // 6필드 정확 형상으로 단정한다 — 부분 단정은 메타 누락을 놓친다(검증 지적 8)
     expect(outcome).toEqual({
       kind: "picked",
       video: {
@@ -58,6 +60,7 @@ describe("resolvePickOutcome (MSG-302 AC 8)", () => {
         fileName: "pick.mp4",
         fileSize: null,
         mimeType: null,
+        transcoded: false,
       },
     });
   });

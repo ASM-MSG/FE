@@ -21,6 +21,7 @@ const video: UploadVideo = {
   fileName: "clip.mp4",
   fileSize: 664_290,
   mimeType: "video/mp4",
+  transcoded: false,
 };
 
 /** 확정 직전 상태 — presign·S3 PUT까지 끝나 finalize만 남은 진행 */

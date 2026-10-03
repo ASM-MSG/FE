@@ -18,6 +18,7 @@ const video: UploadVideo = {
   fileName: "clip.mp4",
   fileSize: 12 * 1024 * 1024,
   mimeType: "video/mp4",
+  transcoded: false,
 };
 const center = { lat: 35.1579, lng: 129.0594 };
 
@@ -221,5 +222,37 @@ describe("buildConfirmInput — 공개 범위 (MSG-572 AC 2·8)", () => {
     );
 
     expect(input.visibility).toBeUndefined();
+  });
+});
+
+/**
+ * MSG-616 AC 3 (D9): 스토어 `video`가 변환본으로 교체되면 확정 presign의 `contentLength`·
+ * `contentType`·파일명이 **변환본 기준**이 된다 — `buildConfirmInput`은 무수정이고 입력이 바뀐
+ * 것뿐이므로 보존 단정이다(RED 대상 아님).
+ */
+describe("buildConfirmInput — 변환본 video는 변환본 메타로 확정 입력을 만든다 (MSG-616 AC 3)", () => {
+  it("fileSize·contentType·fileName·uri가 변환본 값이고 원본 값은 남지 않는다", () => {
+    const input = buildConfirmInput(
+      {
+        uri: "file:///cache/abc.mp4",
+        durationSec: 30,
+        fileName: "clip.mp4",
+        fileSize: 7_340_032,
+        mimeType: "video/mp4",
+        transcoded: true,
+      },
+      { start: 3, end: 8 },
+      center,
+      null,
+      "PUBLIC",
+    );
+
+    expect(input).toMatchObject({
+      uri: "file:///cache/abc.mp4",
+      fileName: "clip.mp4",
+      fileSize: 7_340_032,
+      contentType: "video/mp4",
+      durationSec: 5,
+    });
   });
 });
