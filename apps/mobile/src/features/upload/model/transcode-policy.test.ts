@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   shouldTranscode,
   toTranscodedVideo,
-  transcodeMaxSize,
+  TRANSCODE_MAX_SIZE,
   TRANSCODE_TIMEOUT_MS,
 } from "./transcode-policy";
 import type { UploadVideo } from "./upload-flow-store";
@@ -31,17 +31,9 @@ describe("shouldTranscode — 재진입 시 변환 여부 판정 (AC 7, D5)", ()
   });
 });
 
-describe("transcodeMaxSize — 출력 height 720에 맞춘 긴 변 상한 (D2)", () => {
-  it("가로 영상(1920×1080)은 긴 변 1280 → 1280×720", () => {
-    expect(transcodeMaxSize(1920, 1080)).toBe(1280);
-  });
-
-  it("세로 영상(1080×1920, 회전 반영값)은 긴 변 720 → 406×720 — BE 게이트 height ≤720", () => {
-    expect(transcodeMaxSize(1080, 1920)).toBe(720);
-  });
-
-  it("정방형은 세로 취급 — height가 720을 넘지 않아야 한다", () => {
-    expect(transcodeMaxSize(1080, 1080)).toBe(720);
+describe("TRANSCODE_MAX_SIZE — 축·비율·회전 태그와 무관한 긴 변 상한 (D2 개정, codex 리뷰)", () => {
+  it("720 고정이다 — 회전 태그 세로(코딩 1920×1080+rotate 90)·4:3 가로·정방형 어느 경우에도 height가 720을 넘지 않는다", () => {
+    expect(TRANSCODE_MAX_SIZE).toBe(720);
   });
 });
 

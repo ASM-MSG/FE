@@ -34,14 +34,17 @@ export const shouldTranscode = (video: UploadVideo): boolean =>
   !video.transcoded;
 
 /**
- * 라이브러리 `maxSize`는 **긴 변** 상한이다. BE 현행 인코딩(`scale=-2:720`)·remux 게이트는
- * 모두 **코딩 height** 기준이라 세로 영상을 "진짜 720p"(720×1280)로 만들면 height 1280으로
- * 게이트에서 탈락해 서버가 다시 406×720으로 인코딩한다 — 티켓 목적이 무너진다.
- * 그래서 가로는 1280(→1280×720), 세로·정방형은 720(→406×720 = 지금 서버가 모든 세로 업로드에
- * 내보내는 것과 같은 결과물)으로 환산한다. 입력은 회전이 반영된 표시 폭·높이다.
+ * 라이브러리 `maxSize`는 **긴 변** 상한이다. BE remux 게이트는 **코딩 height ≤720**이라 긴 변을
+ * 720으로 고정하면 축·비율·회전 태그와 무관하게 항상 통과한다 — 세로 405×720(실측 404, 인코더 정렬),
+ * 가로 720×405.
+ *
+ * codex 리뷰로 D2(가로 1280 / 세로 720 분기)를 폐기했다: 분기 재료였던 `getVideoMetaData`의
+ * width/height는 iOS naturalSize·Android 원 메타라 **90° 회전 태그 영상(폰 촬영본 대부분)에서 축을
+ * 오판**해 1280을 고르고(→코딩 height 1280, 게이트 탈락), 4:3 가로는 긴 변 1280이 height 960이 된다.
+ * 둘 다 서버 재인코딩으로 떨어져 티켓 목적이 무너진다. 가로 1280×720을 포기하는 대가는 폰 세로 촬영
+ * 중심 서비스라 수용 — 가로가 중요해지면 BE 게이트를 `min(w,h) ≤720`으로 바꾸는 쪽이 맞다.
  */
-export const transcodeMaxSize = (width: number, height: number): number =>
-  width > height ? 1280 : 720;
+export const TRANSCODE_MAX_SIZE = 720;
 
 /** 원본 파일명의 확장자를 `.mp4`로 — presign `extension` 판정 재료라 컨테이너와 맞아야 한다 */
 const toMp4FileName = (fileName: string): string => {

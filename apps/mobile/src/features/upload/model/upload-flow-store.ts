@@ -136,8 +136,10 @@ export interface UploadFlowStore {
   /** 영상 확보 → 분석 스텝. 이전 흐름 산출물(추천·선택·presign·PUT)을 전부 버린다 (기준 1) */
   startAnalysis: (video: UploadVideo) => void;
   /**
-   * 변환본으로 `video`만 교체 (MSG-616 D5) — 스텝·오케스트레이션·추천·선택은 건드리지 않는다.
-   * 선분석 PUT이 끝난 뒤 재개돼 변환이 성립하는 경로에서 산출물을 지우면 presign·PUT이 다시 나간다.
+   * 변환본으로 `video` 교체 (MSG-616 D5) — 스텝·추천·선택은 건드리지 않는다. 선분석 presign은
+   * **PUT 전(s3PutDone false)이면 지워 재발급**시킨다: 옛 contentLength·contentType으로 서명된 URL에
+   * 새 바이트를 올리면 S3가 403을 낸다(codex 리뷰). PUT이 끝난 산출물은 보존 — 지우면 presign·PUT이
+   * 다시 나간다.
    */
   replaceVideo: (video: UploadVideo) => void;
   /** 분석 성공 — 추천 파생·초기 선택·다음 스텝 판정을 한 번에 (기준 6·8·9) */
@@ -216,7 +218,14 @@ export const createUploadFlowStore = (): UploadFlowStore => {
         selectFailureMessage: null,
       }),
 
-    replaceVideo: (video) => setState({ video }),
+    replaceVideo: (video) =>
+      setState({
+        video,
+        analysis:
+          state.analysis.presign !== null && !state.analysis.s3PutDone
+            ? createOrchestration()
+            : state.analysis,
+      }),
 
     completeAnalysis: (highlights) => {
       const duration = durationOf(state);

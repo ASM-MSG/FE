@@ -1,6 +1,6 @@
 import {
+  TRANSCODE_MAX_SIZE,
   TRANSCODE_TIMEOUT_MS,
-  transcodeMaxSize,
   type TranscodeOutcome,
 } from "../model/transcode-policy";
 import type { UploadVideo } from "../model/upload-flow-store";
@@ -26,7 +26,11 @@ const devWarn = (reason: string, detail?: unknown) => {
   }
 };
 
-/** 상한을 넘기면 네이티브 작업을 취소하고 reject — 뒤로가기 없는 화면에 갇히지 않게 (D4) */
+/**
+ * 상한을 넘기면 네이티브 작업을 취소하고 reject — 뒤로가기 없는 화면에 갇히지 않게 (D4).
+ * 압축만이 아니라 **출력 메타 조회까지 한 시퀀스**에 건다 — iOS 2.0.3 `getVideoMetaData`는 트랙
+ * 없는 파일에서 영원히 pending이다(codex 리뷰).
+ */
 const withTimeout = <T>(
   work: Promise<T>,
   ms: number,
@@ -70,24 +74,29 @@ export const transcodeVideo = async (
 
   const startedAt = Date.now();
   try {
-    // 축 판정 재료는 회전이 반영된 표시 폭·높이 — Android는 rotation 메타가 없으면 여기서 reject(R5)
-    const source = await compressor.getVideoMetaData(video.uri);
-    const maxSize = transcodeMaxSize(source.width, source.height);
-
+    // 원본 메타는 조회하지 않는다 — 긴 변 720 고정이라 축 판정이 필요 없고, 회전 태그 영상에서
+    // 오판하던 재료이기도 했다(transcode-policy TRANSCODE_MAX_SIZE 주석). Android rotation 메타
+    // 누락 파일은 compress 자체가 reject해 같은 fallback으로 떨어진다(R5).
     let cancellationId: string | null = null;
-    const outputUri = await withTimeout(
-      compressor.Video.compress(
-        video.uri,
-        {
-          compressionMethod: "manual",
-          maxSize,
-          progressDivider: 5,
-          getCancellationId: (id) => {
-            cancellationId = id;
+    const { outputUri, output } = await withTimeout(
+      (async () => {
+        const outputUri = await compressor.Video.compress(
+          video.uri,
+          {
+            compressionMethod: "manual",
+            maxSize: TRANSCODE_MAX_SIZE,
+            progressDivider: 5,
+            getCancellationId: (id) => {
+              cancellationId = id;
+            },
           },
-        },
-        onProgress,
-      ),
+          onProgress,
+        );
+        return {
+          outputUri,
+          output: await compressor.getVideoMetaData(outputUri),
+        };
+      })(),
       TRANSCODE_TIMEOUT_MS,
       () => {
         if (cancellationId !== null) {
@@ -96,7 +105,6 @@ export const transcodeVideo = async (
       },
     );
 
-    const output = await compressor.getVideoMetaData(outputUri);
     const size = Number(output.size);
     if (!Number.isFinite(size) || size <= 0) {
       devWarn("출력 크기 비정상", output.size);

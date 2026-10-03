@@ -593,6 +593,27 @@ describe("replaceVideo — 변환본으로 video 교체 (MSG-616 AC 1·8)", () =
     expect(store.getState().analysis.s3PutDone).toBe(true);
   });
 
+  it("PUT 전(s3PutDone false)의 선분석 presign은 지워 재발급되게 한다 — 옛 contentLength·contentType 서명으로 새 바이트를 올리면 S3 403 (codex 리뷰)", () => {
+    const store = analyzing();
+    store.setAnalysisFlow({
+      presign: {
+        uploadUrl: "https://s3",
+        s3Key: "stale",
+        expiresInSec: 300,
+        issuedAtMs: 0,
+      },
+      s3PutDone: false,
+    });
+
+    store.replaceVideo(transcoded);
+
+    expect(store.getState().analysis).toEqual({
+      presign: null,
+      s3PutDone: false,
+    });
+    expect(store.getState().video).toEqual(transcoded);
+  });
+
   it("교체 후 completeAnalysis의 길이 기준은 변환본 durationSec이다 — 추천·슬라이더 범위 (AC 8)", () => {
     const store = analyzing();
     store.replaceVideo({ ...transcoded, durationSec: 20 });
