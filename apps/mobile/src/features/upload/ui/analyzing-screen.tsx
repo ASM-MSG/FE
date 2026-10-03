@@ -122,8 +122,11 @@ export const AnalyzingScreen = () => {
   };
 
   // 재수화 완료 후 1회 발사 (기준 35·38) — 변환(필요 시) → 스토어 교체 → 선분석 (MSG-616 D3·D5).
-  // 실패·건너뜀은 원본 그대로. `cancelled`는 화면이 내려간 뒤의 setState·후속 흐름을 끊는다
-  // (react-doctor no-set-state-after-await-in-effect) — 재진입 시 새 effect가 처음부터 다시 돈다.
+  // 실패·건너뜀은 원본 그대로. 변환 중 effect가 정리되면(StrictMode 이중 실행·언마운트) `AbortController`로
+  // 네이티브 압축을 취소하고 후속 흐름(setState·replaceVideo·선분석)을 끊은 뒤 `started`를 되돌려 다음
+  // 실행이 처음부터 다시 돈다 — 가드만 남기면 두 번째 실행이 early return하고 첫 결과는 버려져 화면이
+  // 영구 정지한다(클로드 리뷰 #173). `cancelled` 지역 변수는 `signal.aborted`와 같은 값이지만 react-doctor
+  // no-set-state-after-await-in-effect가 인식하는 형태라 병행한다(signal만으로는 경고가 남았다, 실측).
   useEffect(() => {
     if (!hydrated || started.current) return;
     const current = uploadFlowStore.getState().video;
@@ -137,21 +140,29 @@ export const AnalyzingScreen = () => {
       runAnalysis(current);
       return;
     }
+    const controller = new AbortController();
     let cancelled = false;
     setTranscodeProgress(0);
     void (async () => {
-      const outcome = await transcodeVideo(current, (progress) => {
-        if (!cancelled) setTranscodeProgress(progress);
-      });
+      const outcome = await transcodeVideo(
+        current,
+        (progress) => {
+          if (!cancelled) setTranscodeProgress(progress);
+        },
+        controller.signal,
+      );
       if (cancelled) return;
-      const next =
-        outcome === null ? current : toTranscodedVideo(current, outcome);
-      if (outcome !== null) uploadFlowStore.replaceVideo(next);
+      if (outcome !== null) {
+        uploadFlowStore.replaceVideo(toTranscodedVideo(current, outcome));
+      }
       setTranscodeProgress(null);
-      runAnalysis(next);
+      // 스토어가 교체를 무시했을 수 있다(원본 PUT 완료 후 재개) — 선분석 입력은 항상 스토어 값
+      runAnalysis(uploadFlowStore.getState().video);
     })();
     return () => {
       cancelled = true;
+      controller.abort();
+      started.current = false;
     };
     // 최초 1회만 발사한다 — started 가드가 재실행을 막으므로 의존성은 hydrated뿐이다
     // oxlint-disable-next-line react/exhaustive-deps

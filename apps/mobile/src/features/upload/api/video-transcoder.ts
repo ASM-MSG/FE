@@ -55,6 +55,8 @@ const withTimeout = <T>(
 
 /**
  * 원본 → 720p H.264/AAC MP4. `onProgress`는 네이티브 실진행(0~1) — 분석 화면 진행 바가 그대로 쓴다.
+ * `signal`이 abort되면 진행 중 압축을 취소하고 **null**로 끝낸다(클로드 리뷰 #173) — 화면이 내려간 뒤
+ * 결과를 스토어에 쓰거나 선분석을 쏘지 않도록 호출부가 끊는 수단. 타임아웃과 같은 취소 경로를 쓴다.
  *
  * 오디오·비트레이트는 라이브러리 기본값(iOS AAC 128k 재인코딩 / Android 패스스루, bitrate 추정식)에
  * 맡기고 `compressionMethod: "manual"`로 maxSize만 지정한다 — `auto`는 크기 정책을 라이브러리가
@@ -63,6 +65,7 @@ const withTimeout = <T>(
 export const transcodeVideo = async (
   video: UploadVideo,
   onProgress: (progress: number) => void,
+  signal?: AbortSignal,
 ): Promise<TranscodeOutcome | null> => {
   let compressor: CompressorModule;
   try {
@@ -72,42 +75,58 @@ export const transcodeVideo = async (
     return null;
   }
 
+  if (signal?.aborted) return null;
   const startedAt = Date.now();
+  // 타임아웃·abort가 공유하는 취소 경로. id는 네이티브가 콜백으로 늦게 주므로, abort가 먼저 왔으면
+  // id 도착 시점에 취소한다.
+  let cancellationId: string | null = null;
+  const cancel = () => {
+    if (cancellationId !== null) {
+      compressor.Video.cancelCompression(cancellationId);
+    }
+  };
+  signal?.addEventListener("abort", cancel, { once: true });
   try {
     // 원본 메타는 조회하지 않는다 — 긴 변 720 고정이라 축 판정이 필요 없고, 회전 태그 영상에서
     // 오판하던 재료이기도 했다(transcode-policy TRANSCODE_MAX_SIZE 주석). Android rotation 메타
     // 누락 파일은 compress 자체가 reject해 같은 fallback으로 떨어진다(R5).
-    let cancellationId: string | null = null;
-    const { outputUri, output } = await withTimeout(
-      (async () => {
-        const outputUri = await compressor.Video.compress(
-          video.uri,
-          {
-            compressionMethod: "manual",
-            maxSize: TRANSCODE_MAX_SIZE,
-            progressDivider: 5,
-            getCancellationId: (id) => {
-              cancellationId = id;
-            },
+    const outputUri = await withTimeout(
+      compressor.Video.compress(
+        video.uri,
+        {
+          compressionMethod: "manual",
+          maxSize: TRANSCODE_MAX_SIZE,
+          progressDivider: 5,
+          getCancellationId: (id) => {
+            cancellationId = id;
+            if (signal?.aborted) cancel();
           },
-          onProgress,
-        );
-        return {
-          outputUri,
-          output: await compressor.getVideoMetaData(outputUri),
-        };
-      })(),
+        },
+        onProgress,
+      ),
       TRANSCODE_TIMEOUT_MS,
-      () => {
-        if (cancellationId !== null) {
-          compressor.Video.cancelCompression(cancellationId);
-        }
-      },
+      cancel,
     );
+    // 취소 뒤에도 네이티브가 settle될 수 있다 — 출력은 쓰지 않는다
+    if (signal?.aborted) return null;
+
+    const output = await withTimeout(
+      compressor.getVideoMetaData(outputUri),
+      // 압축에 쓴 시간을 뺀 나머지 — 두 단계 합이 120s 상한 (iOS: 트랙 없는 파일에서 영원히 pending)
+      Math.max(1, TRANSCODE_TIMEOUT_MS - (Date.now() - startedAt)),
+      () => {},
+    );
+    if (signal?.aborted) return null;
 
     const size = Number(output.size);
     if (!Number.isFinite(size) || size <= 0) {
       devWarn("출력 크기 비정상", output.size);
+      return null;
+    }
+    const duration = Number(output.duration);
+    if (!Number.isFinite(duration) || duration <= 0) {
+      // NaN이 `durationSec`으로 들어가면 추천·슬라이더 범위가 깨진다 (클로드 리뷰 #173)
+      devWarn("출력 길이 비정상", output.duration);
       return null;
     }
 
@@ -122,10 +141,13 @@ export const transcodeVideo = async (
       width: output.width,
       height: output.height,
       size,
-      duration: Number(output.duration),
+      duration,
     };
   } catch (error) {
+    if (signal?.aborted) return null;
     devWarn("변환 실패", error);
     return null;
+  } finally {
+    signal?.removeEventListener("abort", cancel);
   }
 };

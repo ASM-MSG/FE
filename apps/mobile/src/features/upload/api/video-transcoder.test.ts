@@ -43,3 +43,76 @@ describe("video-transcoder (AC 5, D6)", () => {
     expect(onProgress).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * 클로드 리뷰(PR #173) — 네이티브 경계의 **취소·검증 계약**. 실제 모듈은 vitest에서 파싱되지 않으므로
+ * `vi.doMock`으로 같은 이름의 가짜를 세운다(네이티브 경계는 네트워크처럼 "경계에서 한 번만 mock"의
+ * 대상이다 — 내부 헬퍼 감시가 아니라 라이브러리 API 호출 계약을 단정한다).
+ */
+const sampleVideo = {
+  uri: "file:///clip.mov",
+  durationSec: 30,
+  fileName: "clip.mov",
+  fileSize: 1024,
+  mimeType: "video/quicktime",
+  transcoded: false,
+};
+
+const mockCompressor = () => {
+  const compress = vi.fn();
+  const cancelCompression = vi.fn();
+  const getVideoMetaData = vi.fn();
+  vi.doMock("react-native-compressor", () => ({
+    Video: { compress, cancelCompression },
+    getVideoMetaData,
+  }));
+  return { compress, cancelCompression, getVideoMetaData };
+};
+
+describe("video-transcoder — 취소·출력 검증 (클로드 리뷰 #173)", () => {
+  afterEach(() => {
+    vi.doUnmock("react-native-compressor");
+  });
+
+  it("signal이 abort되면 진행 중 압축을 cancelCompression으로 취소하고 null을 돌려준다 — 출력 메타 조회·후속 흐름 없음", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { compress, cancelCompression, getVideoMetaData } = mockCompressor();
+    let release!: (uri: string) => void;
+    compress.mockImplementation(
+      (_uri: string, options: { getCancellationId: (id: string) => void }) => {
+        options.getCancellationId("cancel-1");
+        return new Promise<string>((resolve) => {
+          release = resolve;
+        });
+      },
+    );
+    const { transcodeVideo } = await import("./video-transcoder");
+    const controller = new AbortController();
+
+    const pending = transcodeVideo(sampleVideo, vi.fn(), controller.signal);
+    await vi.waitFor(() => expect(compress).toHaveBeenCalledTimes(1));
+    controller.abort();
+    // 네이티브가 취소 뒤 settle되는 경우를 흉내 — 그래도 결과는 null이어야 한다
+    release("file:///cache/out.mp4");
+
+    expect(cancelCompression).toHaveBeenCalledWith("cancel-1");
+    await expect(pending).resolves.toBeNull();
+    expect(getVideoMetaData).not.toHaveBeenCalled();
+  });
+
+  it("출력 메타의 duration이 유한한 양수가 아니면 null — 원본으로 fallback (durationSec NaN 차단)", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { compress, getVideoMetaData } = mockCompressor();
+    compress.mockResolvedValue("file:///cache/out.mp4");
+    getVideoMetaData.mockResolvedValue({
+      size: 4_563_142,
+      duration: Number.NaN,
+      width: 404,
+      height: 720,
+      extension: "mp4",
+    });
+    const { transcodeVideo } = await import("./video-transcoder");
+
+    await expect(transcodeVideo(sampleVideo, vi.fn())).resolves.toBeNull();
+  });
+});

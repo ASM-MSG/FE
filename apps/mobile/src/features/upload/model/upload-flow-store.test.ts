@@ -575,22 +575,34 @@ describe("replaceVideo — 변환본으로 video 교체 (MSG-616 AC 1·8)", () =
 
   it("video만 변환본으로 바뀌고 스텝·오케스트레이션 상태는 그대로다 (AC 1)", () => {
     const store = analyzing();
-    store.setAnalysisFlow({
-      presign: {
-        uploadUrl: "https://s3",
-        s3Key: "keep",
-        expiresInSec: 300,
-        issuedAtMs: 0,
-      },
-      s3PutDone: true,
-    });
 
     store.replaceVideo(transcoded);
 
     expect(store.getState().video).toEqual(transcoded);
     expect(store.getState().step).toBe("analyzing");
-    expect(store.getState().analysis.presign?.s3Key).toBe("keep");
-    expect(store.getState().analysis.s3PutDone).toBe(true);
+    expect(store.getState().analysis).toEqual({
+      presign: null,
+      s3PutDone: false,
+    });
+  });
+
+  it("원본 PUT이 끝난 뒤(s3PutDone true)의 replace는 무시한다 — 올라간 바이트와 메타가 어긋나지 않게 (클로드 리뷰 #173)", () => {
+    const store = analyzing();
+    store.setAnalysisFlow({
+      presign: {
+        uploadUrl: "https://s3",
+        s3Key: "uploaded",
+        expiresInSec: 300,
+        issuedAtMs: 0,
+      },
+      s3PutDone: true,
+    });
+    const before = store.getState();
+
+    store.replaceVideo(transcoded);
+
+    expect(store.getState()).toBe(before);
+    expect(store.getState().video).toEqual(video);
   });
 
   it("PUT 전(s3PutDone false)의 선분석 presign은 지워 재발급되게 한다 — 옛 contentLength·contentType 서명으로 새 바이트를 올리면 S3 403 (codex 리뷰)", () => {
