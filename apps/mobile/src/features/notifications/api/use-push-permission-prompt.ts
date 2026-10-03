@@ -29,10 +29,16 @@ export type PushPromptOutcome = "none" | "settings-needed";
  * `failed`(토큰 취득·서버 등록 실패)를 안내로 올리지 않는 이유: 권한 문제가 아니라 재시도로
  * 풀리는 축이고, 업로드를 막 끝낸 사용자를 설정 화면으로 보낼 이유가 없다. 프로필 토글이
  * 그 축의 복구 경로다.
+ *
+ * @param enabled false인 동안 판정을 **보류**하고, true가 되는 첫 시점에 1회만 실행한다
+ *   (MSG-617 D5 — 뱃지 획득 모달이 떠 있는 동안 OS 프롬프트·설정 안내가 겹치지 않게).
+ *   기본값 true라 인자 없는 호출은 종전처럼 마운트 즉시 1회다.
  */
-export const usePushPermissionPrompt = (): PushPromptOutcome => {
+export const usePushPermissionPrompt = (enabled = true): PushPromptOutcome => {
   const [outcome, setOutcome] = useState<PushPromptOutcome>("none");
   const aliveRef = useRef(true);
+  /** 판정을 이미 시작했는가 — enabled가 다시 바뀌어도 두 번 묻지 않는다 */
+  const startedRef = useRef(false);
   /**
    * 이 화면이 설정 안내를 띄운 적이 있는가 — 복귀 후 등록 여부의 조건이다(codex P1).
    * state가 아니라 ref인 이유: 포그라운드 콜백은 마운트 시점에 고정되므로 state를 읽으면
@@ -47,6 +53,12 @@ export const usePushPermissionPrompt = (): PushPromptOutcome => {
 
   useEffect(() => {
     aliveRef.current = true;
+    if (!enabled || startedRef.current) {
+      return () => {
+        aliveRef.current = false;
+      };
+    }
+    startedRef.current = true;
     void (async () => {
       try {
         const decision = decidePushPrompt(await readPermissionStatus());
@@ -64,7 +76,7 @@ export const usePushPermissionPrompt = (): PushPromptOutcome => {
     return () => {
       aliveRef.current = false;
     };
-  }, [showNotice]);
+  }, [enabled, showNotice]);
 
   /**
    * 설정 왕복 복귀 (codex P1) — 우리가 [설정 열기]로 내보낸 사용자가 권한을 켜고 돌아오면

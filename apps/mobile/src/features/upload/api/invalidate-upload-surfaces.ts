@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import {
+  findMyBadgesQueryKey,
   getPlaybackQueryKey,
   getRegionVideosQueryKey,
 } from "../../../shared/api/query-options";
@@ -47,4 +48,8 @@ export const invalidateUploadSurfaces = (
 
   // ④ 행사 귀속 확정에만 — 해당 위치 영상 목록(infinite)과 위치 목록(videoCount) 정확 키
   if (event !== null) invalidateEventSurfaces(queryClient, event);
+
+  // ⑤ 내 뱃지 목록 (MSG-617 AC 11) — 확정 응답 `newBadges`가 바꾼 도감 뱃지 탭. 기본 staleTime
+  // 30초 안에 탭을 열면 새 뱃지가 미획득으로 남던 공백. 선례 `use-badge-mutations.ts`와 같은 키
+  void queryClient.invalidateQueries({ queryKey: findMyBadgesQueryKey() });
 };

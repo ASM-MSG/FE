@@ -5493,7 +5493,7 @@
       ]
     },
     {
-      "id": "4202764abf20f408",
+      "id": "09a0208184ec351c",
       "note": "consolidate `pressable` — 2 copies",
       "members": [
         {
@@ -5508,12 +5508,12 @@
           "is_fragment": false
         },
         {
-          "id": "f758b7d13ceabc0b",
+          "id": "b140aadab7f51097",
           "source_digest": "fnv1a64:144c0fa48e2584b4",
           "file": "packages/ui-native/src/modal-card.tsx",
           "lang": "typescript",
-          "start_line": 97,
-          "end_line": 111,
+          "start_line": 102,
+          "end_line": 116,
           "kind": "Block",
           "name": "pressable",
           "is_fragment": false
@@ -7053,16 +7053,16 @@
       ]
     },
     {
-      "id": "5547880424c673f8",
+      "id": "8790ae38b6e2c518",
       "note": "consolidate `view` — 2 copies",
       "members": [
         {
-          "id": "8086fa7e8236511d",
+          "id": "d6d833a7a1e6e40d",
           "source_digest": "fnv1a64:385644269e074fde",
           "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
           "lang": "typescript",
-          "start_line": 169,
-          "end_line": 174,
+          "start_line": 177,
+          "end_line": 182,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -18842,7 +18842,7 @@
       ]
     },
     {
-      "id": "db3b3022f3092606",
+      "id": "c32cdaa38ea1dc26",
       "note": "consolidate `view` — 2 copies",
       "members": [
         {
@@ -18857,12 +18857,12 @@
           "is_fragment": false
         },
         {
-          "id": "f1b09568680003f6",
+          "id": "a50c9d5fb3fa9cb6",
           "source_digest": "fnv1a64:add5130b01985187",
           "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
           "lang": "typescript",
-          "start_line": 154,
-          "end_line": 164,
+          "start_line": 162,
+          "end_line": 172,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25072,7 +25072,7 @@
       ]
     },
     {
-      "id": "8055839ba84bc399",
+      "id": "057c51e71e89ff5d",
       "note": "consolidate `pressable` — 5 copies",
       "members": [
         {
@@ -25098,12 +25098,12 @@
           "is_fragment": false
         },
         {
-          "id": "0e9d74583278a3a5",
+          "id": "82f67e4529d423b9",
           "source_digest": "fnv1a64:63aef2d25bd339bb",
           "file": "packages/ui-native/src/modal-card.tsx",
           "lang": "typescript",
-          "start_line": 86,
-          "end_line": 94,
+          "start_line": 91,
+          "end_line": 99,
           "kind": "Block",
           "name": "pressable",
           "is_fragment": false
@@ -25412,8 +25412,8 @@
       ]
     },
     {
-      "id": "6a46ef5dba3103f3",
-      "note": "consolidate `view` — 23 copies",
+      "id": "23439d3eee8292ca",
+      "note": "consolidate `view` — 24 copies",
       "members": [
         {
           "id": "39ee78a845f37eed",
@@ -25526,12 +25526,12 @@
           "is_fragment": false
         },
         {
-          "id": "52e98f6af814a660",
+          "id": "424c003888131f04",
           "source_digest": "fnv1a64:996761f2f0910f07",
           "file": "apps/mobile/src/features/dex/ui/badge-medal.tsx",
           "lang": "typescript",
-          "start_line": 87,
-          "end_line": 91,
+          "start_line": 73,
+          "end_line": 77,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25598,6 +25598,17 @@
           "lang": "typescript",
           "start_line": 118,
           "end_line": 122,
+          "kind": "Block",
+          "name": "view",
+          "is_fragment": false
+        },
+        {
+          "id": "e2bd52a4ccd0107e",
+          "source_digest": "fnv1a64:39731355e1ab064e",
+          "file": "apps/mobile/src/features/upload/ui/badge-earned-modal.tsx",
+          "lang": "typescript",
+          "start_line": 53,
+          "end_line": 57,
           "kind": "Block",
           "name": "view",
           "is_fragment": false

@@ -20,6 +20,7 @@ import {
   useUploadFlow,
 } from "../model/upload-flow-store";
 import { UploadFlowError } from "../model/upload-orchestration";
+import type { EarnedBadgeResponseDto } from "../../../shared/api/sdk";
 import { useHardwareBack } from "./use-hardware-back";
 import { UploadCompleteView } from "./upload-complete-view";
 import { UploadVideoPreview } from "./upload-video-preview";
@@ -43,7 +44,14 @@ export const PreviewScreen = () => {
   const flow = useUploadFlow();
   const location = useUploadLocation();
   const confirm = useConfirmUpload();
-  const [completed, setCompleted] = useState(false);
+  /**
+   * 확정 성공 결과 — null이면 아직 미완료. 완료 오버레이 표시 여부이자 획득 뱃지(`newBadges`)의
+   * 보관처다(MSG-617 D3). 스토어·영속 필드가 아닌 화면 로컬인 이유: 성공 즉시
+   * `settleUploadSuccess`가 `reset()`하므로 콜드 스타트·이어가기가 이 화면에 다시 오지 않는다.
+   */
+  const [completion, setCompletion] = useState<{
+    newBadges: EarnedBadgeResponseDto[];
+  } | null>(null);
 
   const segment = selectSelectedSegment(flow);
   // 행사 귀속 업로드는 좌표를 보내지 않아 측위를 기다리지 않는다 (MSG-560 D12)
@@ -93,7 +101,7 @@ export const PreviewScreen = () => {
    * 완료 화면에서는 이미 정리가 끝났으므로(settleUploadSuccess) 홈으로 보낸다.
    */
   useHardwareBack(() => {
-    if (completed) {
+    if (completion !== null) {
       finish();
       return;
     }
@@ -120,7 +128,7 @@ export const PreviewScreen = () => {
         flow.visibility,
       ),
       {
-        onSuccess: () => setCompleted(true),
+        onSuccess: (result) => setCompletion({ newBadges: result.newBadges }),
         // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
       },
     );
@@ -266,7 +274,12 @@ export const PreviewScreen = () => {
       </ScrollView>
 
       {/* 완료 오버레이 (기준 27·29, D6) */}
-      {completed && <UploadCompleteView onConfirm={finish} />}
+      {completion !== null && (
+        <UploadCompleteView
+          newBadges={completion.newBadges}
+          onConfirm={finish}
+        />
+      )}
     </View>
   );
 };
