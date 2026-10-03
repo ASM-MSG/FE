@@ -396,7 +396,7 @@
       ]
     },
     {
-      "id": "05f242f1bcfcee1f",
+      "id": "8c94e167a09f1e3f",
       "note": "duplicated across 2 directories — extract a method from the repeated block",
       "members": [
         {
@@ -424,12 +424,12 @@
           "reason_code": "exact-expr-effect"
         },
         {
-          "id": "c2fedeea66e76aee",
+          "id": "a283849b0a1908ae",
           "source_digest": "fnv1a64:ac3feb23a60bb435",
           "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
           "lang": "typescript",
-          "start_line": 67,
-          "end_line": 67,
+          "start_line": 75,
+          "end_line": 75,
           "kind": "Block",
           "is_fragment": true,
           "fragment_kind": "expr-effect",
@@ -1696,16 +1696,16 @@
       ]
     },
     {
-      "id": "16a420941e4c2bd9",
+      "id": "a93f7c82dd7e2c06",
       "note": "consolidate `ModalCardProps` — 2 copies",
       "members": [
         {
-          "id": "847ed3540e942dba",
-          "source_digest": "fnv1a64:9a54dbb7b425f623",
+          "id": "e8a9fa92292acf33",
+          "source_digest": "fnv1a64:7306edded7f5aaa5",
           "file": "packages/ui-native/src/modal-card.tsx",
           "lang": "typescript",
           "start_line": 7,
-          "end_line": 27,
+          "end_line": 28,
           "kind": "Class",
           "name": "ModalCardProps",
           "is_fragment": false
@@ -5493,7 +5493,7 @@
       ]
     },
     {
-      "id": "09a0208184ec351c",
+      "id": "a212a632fdf3c358",
       "note": "consolidate `pressable` — 2 copies",
       "members": [
         {
@@ -5508,12 +5508,12 @@
           "is_fragment": false
         },
         {
-          "id": "b140aadab7f51097",
+          "id": "5bddf9309e004bdb",
           "source_digest": "fnv1a64:144c0fa48e2584b4",
           "file": "packages/ui-native/src/modal-card.tsx",
           "lang": "typescript",
-          "start_line": 102,
-          "end_line": 116,
+          "start_line": 107,
+          "end_line": 121,
           "kind": "Block",
           "name": "pressable",
           "is_fragment": false
@@ -7053,16 +7053,16 @@
       ]
     },
     {
-      "id": "8790ae38b6e2c518",
+      "id": "2014a87d19d80728",
       "note": "consolidate `view` — 2 copies",
       "members": [
         {
-          "id": "d6d833a7a1e6e40d",
+          "id": "b2cf82049cf3c2ad",
           "source_digest": "fnv1a64:385644269e074fde",
           "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
           "lang": "typescript",
-          "start_line": 177,
-          "end_line": 182,
+          "start_line": 181,
+          "end_line": 186,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -18842,7 +18842,7 @@
       ]
     },
     {
-      "id": "c32cdaa38ea1dc26",
+      "id": "d8ab54de96cd4dc6",
       "note": "consolidate `view` — 2 copies",
       "members": [
         {
@@ -18857,12 +18857,12 @@
           "is_fragment": false
         },
         {
-          "id": "a50c9d5fb3fa9cb6",
+          "id": "c2aa51e7236a9476",
           "source_digest": "fnv1a64:add5130b01985187",
           "file": "apps/mobile/src/features/upload/ui/preview-screen.tsx",
           "lang": "typescript",
-          "start_line": 162,
-          "end_line": 172,
+          "start_line": 166,
+          "end_line": 176,
           "kind": "Block",
           "name": "view",
           "is_fragment": false
@@ -25072,7 +25072,7 @@
       ]
     },
     {
-      "id": "057c51e71e89ff5d",
+      "id": "993f9f654b9f4915",
       "note": "consolidate `pressable` — 5 copies",
       "members": [
         {
@@ -25098,12 +25098,12 @@
           "is_fragment": false
         },
         {
-          "id": "82f67e4529d423b9",
+          "id": "9bef8a6b9051c021",
           "source_digest": "fnv1a64:63aef2d25bd339bb",
           "file": "packages/ui-native/src/modal-card.tsx",
           "lang": "typescript",
-          "start_line": 91,
-          "end_line": 99,
+          "start_line": 96,
+          "end_line": 104,
           "kind": "Block",
           "name": "pressable",
           "is_fragment": false

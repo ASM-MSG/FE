@@ -43,7 +43,7 @@ export const BadgeEarnedModal = ({
   return (
     <ModalCard
       confirmText={primaryLabel}
-      onConfirm={isLast ? onClose : () => setIndex(index + 1)}
+      onConfirm={isLast ? onClose : () => setIndex((i) => i + 1)}
       onCancel={onClose}
       onOverlayPress={onClose}
       className="px-6 pb-6"
@@ -77,7 +77,11 @@ export const BadgeEarnedModal = ({
           </Text>
         )}
         {total > 1 && (
-          <View accessible accessibilityLabel={dotsLabel(index, total)}>
+          <View
+            accessible
+            accessibilityLabel={dotsLabel(index, total)}
+            accessibilityLiveRegion="polite"
+          >
             <Dots count={total} activeIndex={index} activeShape="pill" />
           </View>
         )}

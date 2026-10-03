@@ -41,6 +41,7 @@ export const UploadCompleteView = ({
   onConfirm,
 }: UploadCompleteViewProps) => {
   const insets = useSafeAreaInsets();
+  // `completion`은 한 번 설정되면 바뀌지 않으므로(D3) 초기값만 읽는다 — prop이 뒤에 바뀌는 사용처가 생기면 effect로 동기화할 것
   const [badgeModalOpen, setBadgeModalOpen] = useState(newBadges.length > 0);
   const pushPrompt = usePushPermissionPrompt(!badgeModalOpen);
 

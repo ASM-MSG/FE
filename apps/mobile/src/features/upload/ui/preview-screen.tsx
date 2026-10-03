@@ -128,7 +128,11 @@ export const PreviewScreen = () => {
         flow.visibility,
       ),
       {
-        onSuccess: (result) => setCompletion({ newBadges: result.newBadges }),
+        // `newBadges`는 명세상 필수 배열이지만 서버 실채움이 미확인(Q1)이라 드리프트를 방어한다 (PR #172)
+        onSuccess: (result) =>
+          setCompletion({
+            newBadges: Array.isArray(result.newBadges) ? result.newBadges : [],
+          }),
         // 실패 표시는 confirm.error 파생 — 재탭이 성공 단계를 건너뛴다 (기준 34)
       },
     );

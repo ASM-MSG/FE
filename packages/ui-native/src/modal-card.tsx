@@ -66,9 +66,14 @@ export const ModalCard = ({
     >
       {(title !== undefined || onClose !== undefined) && (
         <View className="flex-row items-center">
-          <Text className="flex-1 text-fm-display text-foreground">
-            {title}
-          </Text>
+          {title !== undefined ? (
+            <Text className="flex-1 text-fm-display text-foreground">
+              {title}
+            </Text>
+          ) : (
+            // onClose만 있을 때 빈 Text 대신 spacer — 닫기 버튼 우측 정렬 유지 (PR #172)
+            <View className="flex-1" />
+          )}
           {onClose && (
             <Pressable
               accessibilityRole="button"
