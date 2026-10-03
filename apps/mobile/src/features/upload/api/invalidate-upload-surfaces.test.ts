@@ -52,6 +52,19 @@ describe("invalidateUploadSurfaces — 업로드가 바꾼 화면 집합 (AC 9)"
     expect(ids.filter((id) => id === "getUploadHistory")).toHaveLength(1);
   });
 
+  it("확정·READY 공용 집합이 내 뱃지 목록(findMyBadges)을 포함한다 — 획득 직후 도감 뱃지 탭이 30초 안에도 갱신된다 (MSG-617 AC 11)", () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+
+    invalidateUploadSurfaces(queryClient, {
+      videoId: 7,
+      gridId: "grid-9",
+      event: null,
+    });
+
+    expect(invalidatedIds(spy.mock.calls)).toContain("findMyBadges");
+  });
+
   it("행사 귀속 업로드: 위치 영상 목록·위치 목록을 **정확 키**로 추가 무효화한다", () => {
     const queryClient = new QueryClient();
     const spy = vi.spyOn(queryClient, "invalidateQueries");
