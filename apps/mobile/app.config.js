@@ -201,9 +201,13 @@ export default (_ctx) => ({
     [
       "expo-splash-screen",
       {
-        backgroundColor: "#0066CC",
-        image: "./assets/images/splash-icon.png",
-        imageWidth: 76,
+        // 흰 배경 + 앱 아이콘(격자 심볼). 종전 splash-icon.png는 Expo 템플릿 셰브런이었고
+        // iOS가 백그라운드에서 앱을 죽인 뒤 재시작할 때마다 노출됐다(2026-09-25 사용자 지적).
+        // PR #168(aee860b)의 스플래시 부분을 가져왔다. 같은 PR의 카카오 라벨 20/600은 #171이
+        // Apple 버튼을 40px로 줄여 해소했으므로 가져오지 않는다.
+        backgroundColor: "#FFFFFF",
+        image: "./assets/images/icon.png",
+        imageWidth: 160,
       },
     ],
     "expo-image",
@@ -267,7 +271,10 @@ export default (_ctx) => ({
       "expo-build-properties",
       {
         // MSG-604: Firebase iOS SDK(CocoaPods 경로)가 정적 프레임워크를 요구한다 — 위 disableSPM과 한 쌍.
-        ios: { useFrameworks: "static" },
+        // enableSceneSupport (2026-10-03): iOS 27 SDK(Xcode 27)부터 UIScene 생명주기 미채택 앱은 실행 직후
+        // UIKit이 트랩한다(UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption). Expo 57은 기본 off라
+        // 켠다. SDK 58은 기본 내장. 끄면 Xcode 27 빌드가 시뮬레이터·실기기 모두 즉시 종료된다.
+        ios: { useFrameworks: "static", enableSceneSupport: true },
         android: {
           extraMavenRepos: [
             // 네이버 지도 SDK 배포 저장소 (라이브러리 공식 Expo 설치 절차)
