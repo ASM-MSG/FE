@@ -1,6 +1,5 @@
-import { Image, Pressable, Text, View } from "react-native";
-import { SvgUri, SvgXml } from "react-native-svg";
-import { resolveBadgeArt } from "../../../entities/badge";
+import { Pressable, Text, View } from "react-native";
+import { BadgeArtView } from "../../../entities/badge/ui/badge-art-view";
 import type { DexBadge } from "../../../entities/dex/model/dex";
 
 /** 메달 지름 56px — 시안 메달 148px을 진열장 4열에 맞춰 축소한 값(웹 size-14 미러) */
@@ -33,32 +32,19 @@ interface BadgeMedalProps {
  *   없다(Android는 API 31+ RenderEffect 의존, 이 앱 minSdk는 24). 40% 투명 단독으로 눌러
  *   구분하고 라벨을 `text-foreground-muted`로 낮춘다.
  *
- * 아트 소스는 `resolveBadgeArt` — 서버 `iconUrl`(현재 S3 PNG) > 로컬 XML 카탈로그 > 민무늬 원.
- * 원격은 **형식별로 렌더러가 다르다**: `.svg`만 `SvgUri`, 나머지 래스터는 RN `Image`다
- * (MSG-430 F1 — PNG를 `SvgUri`에 넘기면 파싱 실패로 높이 0이 된다). 판별은 `isSvgUri`.
+ * 아트 소스·렌더 4분기(`SvgXml`/`SvgUri`/`Image`/민무늬 원)는 `entities/badge/ui/BadgeArtView`가
+ * 소유한다(MSG-617 D2) — 뱃지 획득 모달과 같은 아트·같은 폴백 규칙(MSG-430 F1 포함)을 한 곳에서
+ * 보장한다. 여기는 56px 치수·이름 캡션·미획득 투명·편집 선택 표시만 담당한다.
  */
 export const BadgeMedal = ({ badge, editing }: BadgeMedalProps) => {
-  const art = resolveBadgeArt(badge.code, badge.iconUrl);
-
-  const medal =
-    art === null ? (
-      <View
-        className={`size-14 rounded-full ${
-          badge.earned ? "bg-primary" : "border border-border bg-surface"
-        }`}
-      />
-    ) : art.kind === "xml" ? (
-      <SvgXml xml={art.xml} width={MEDAL_SIZE} height={MEDAL_SIZE} />
-    ) : art.kind === "svg-uri" ? (
-      <SvgUri uri={art.uri} width={MEDAL_SIZE} height={MEDAL_SIZE} />
-    ) : (
-      // 래스터 원격 아트 — 정사각 메달이라 contain으로 전체를 보인다(잘림 방지)
-      <Image
-        source={{ uri: art.uri }}
-        className="size-14"
-        resizeMode="contain"
-      />
-    );
+  const medal = (
+    <BadgeArtView
+      code={badge.code}
+      iconUrl={badge.iconUrl}
+      size={MEDAL_SIZE}
+      locked={!badge.earned}
+    />
+  );
 
   const label = (
     <Text

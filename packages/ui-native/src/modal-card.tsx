@@ -7,7 +7,8 @@ import { cx } from "./lib/cx";
 interface ModalCardProps {
   /** RN Modal 표시 여부 — 웹(마운트 제어)과 달리 RN은 Modal prop으로 제어한다 (기본 true) */
   visible?: boolean;
-  title: string;
+  /** 헤더 타이틀 — `onClose`와 함께 생략하면 헤더 행 자체를 렌더하지 않는다 (MSG-617, 콘텐츠가 상단 라벨을 직접 그릴 때) */
+  title?: string;
   description?: string;
   /** 콘텐츠 슬롯 */
   children?: ReactNode;
@@ -63,19 +64,28 @@ export const ModalCard = ({
         className,
       )}
     >
-      <View className="flex-row items-center">
-        <Text className="flex-1 text-fm-display text-foreground">{title}</Text>
-        {onClose && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="닫기"
-            onPress={onClose}
-            className="active:opacity-60"
-          >
-            <X size={16} color={semantic.muted} />
-          </Pressable>
-        )}
-      </View>
+      {(title !== undefined || onClose !== undefined) && (
+        <View className="flex-row items-center">
+          {title !== undefined ? (
+            <Text className="flex-1 text-fm-display text-foreground">
+              {title}
+            </Text>
+          ) : (
+            // onClose만 있을 때 빈 Text 대신 spacer — 닫기 버튼 우측 정렬 유지 (PR #172)
+            <View className="flex-1" />
+          )}
+          {onClose && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="닫기"
+              onPress={onClose}
+              className="active:opacity-60"
+            >
+              <X size={16} color={semantic.muted} />
+            </Pressable>
+          )}
+        </View>
+      )}
       {description && (
         <Text className="text-fm-body text-foreground-body">{description}</Text>
       )}
