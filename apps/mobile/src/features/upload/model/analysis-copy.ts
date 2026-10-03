@@ -14,6 +14,12 @@ export const ANALYZING_COPY = {
   /** 예상 소요 — 실제 진행률 정보가 없어 캡션으로만 안내한다 (D7) */
   estimate: "보통 10~20초 정도 걸려요",
   failureTitle: "분석을 시작하지 못했어요",
+  /**
+   * MSG-616 D8: 선분석 전 720p 변환 중 문구 — Figma 정본(14824:476)에 없는 상태를 티켓 요구
+   * ("진행 표시")로 추가했다. 진행 바는 네이티브 실진행이라 `estimate` 캡션은 이때 숨긴다.
+   */
+  transcodingTitle: "영상을 준비하고 있어요",
+  transcodingDescription: "업로드 용량을 줄이기 위해 영상을 최적화하고 있어요",
 } as const;
 
 /** 업로드 완료 화면 문구 (Figma 14824:486) */

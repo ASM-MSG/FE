@@ -45,6 +45,12 @@ export interface UploadVideo {
   fileSize: number | null;
   /** presign `contentType`·S3 PUT 헤더 — 없으면 video/mp4 폴백 */
   mimeType: string | null;
+  /**
+   * MSG-616 D5: 분석 화면의 720p 변환을 거친 변환본인가. picker 결과는 false, 변환 성공 시
+   * `replaceVideo`가 true로 교체한다. 재진입 시 `shouldTranscode`가 이 값으로 재변환을 막는다.
+   * **영속 대상이다** — 구버전 저장값(필드 없음)은 storage가 false로 정규화한다.
+   */
+  transcoded: boolean;
 }
 
 /** 화면에 표시하는 AI 추천 행의 상한 — 서버가 더 줘도 앞에서 자른다 (기준 8) */
@@ -129,6 +135,11 @@ export interface UploadFlowStore {
   subscribe: (listener: () => void) => () => void;
   /** 영상 확보 → 분석 스텝. 이전 흐름 산출물(추천·선택·presign·PUT)을 전부 버린다 (기준 1) */
   startAnalysis: (video: UploadVideo) => void;
+  /**
+   * 변환본으로 `video`만 교체 (MSG-616 D5) — 스텝·오케스트레이션·추천·선택은 건드리지 않는다.
+   * 선분석 PUT이 끝난 뒤 재개돼 변환이 성립하는 경로에서 산출물을 지우면 presign·PUT이 다시 나간다.
+   */
+  replaceVideo: (video: UploadVideo) => void;
   /** 분석 성공 — 추천 파생·초기 선택·다음 스텝 판정을 한 번에 (기준 6·8·9) */
   completeAnalysis: (highlights: number[][] | null | undefined) => void;
   /** 준비 단계 실패 — 분석 화면에 단계 표시, 스텝 유지 (기준 31) */
@@ -204,6 +215,8 @@ export const createUploadFlowStore = (): UploadFlowStore => {
         video,
         selectFailureMessage: null,
       }),
+
+    replaceVideo: (video) => setState({ video }),
 
     completeAnalysis: (highlights) => {
       const duration = durationOf(state);

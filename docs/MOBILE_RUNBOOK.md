@@ -144,7 +144,7 @@ adb -s emulator-5556 shell input keyevent 82
 | 조건 | 예시 |
 |---|---|
 | `apps/mobile/android/`가 없다 | 새 클론·새 워크트리 (android는 gitignore다) |
-| **새 네이티브 의존성 / Expo 플러그인**이 들어왔다 | MSG-429의 `expo-notifications` — 기존 `android/`로는 안 잡혀 빌드는 되는데 런타임에 모듈이 없다 |
+| **새 네이티브 의존성 / Expo 플러그인**이 들어왔다 | MSG-429의 `expo-notifications` — 기존 `android/`로는 안 잡혀 빌드는 되는데 런타임에 모듈이 없다 · MSG-616의 `react-native-compressor`(nitro) — 구 dev client에서는 `video-transcoder.ts`의 동적 import가 fallback으로 빠져 **원본 업로드가 조용히 성공**하므로 "구현 안 됨"이 아니라 "재빌드 안 됨"이다. Metro 로그 `[transcode] done in N ms`가 떠야 새 바이너리다(`fallback: 변환 실패`면 구 바이너리). Gradle에 `:react-native-compressor:buildCMakeDebug` 4 ABI가 붙어 첫 빌드 ~7분 |
 | `app.config.js`의 `plugins`·`android` 블록이 바뀌었다 | 패키지명, `googleServicesFile`, 스플래시 |
 | **네이티브로 주입되는 env 키**가 바뀌었다 | `EXPO_PUBLIC_NAVER_MAP_CLIENT_ID` (AndroidManifest의 `NCP_KEY_ID`로 굳어 들어간다) |
 

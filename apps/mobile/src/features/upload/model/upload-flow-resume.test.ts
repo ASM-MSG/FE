@@ -14,6 +14,7 @@ const video: UploadVideo = {
   fileName: "clip.mp4",
   fileSize: 664_290,
   mimeType: "video/mp4",
+  transcoded: false,
 };
 
 /** 지정 스텝까지 진행시킨 실제 스토어의 영속 스냅숏 */

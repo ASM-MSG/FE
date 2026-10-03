@@ -67,6 +67,8 @@ export const resolvePickOutcome = (
       fileName: resolveFileName(asset),
       fileSize: asset.fileSize ?? null,
       mimeType: asset.mimeType ?? null,
+      // MSG-616 D5: 변환 전 — 분석 화면이 720p 변환에 성공하면 true인 변환본으로 교체한다
+      transcoded: false,
     },
   };
 };
