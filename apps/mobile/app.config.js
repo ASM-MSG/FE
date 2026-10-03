@@ -267,7 +267,10 @@ export default (_ctx) => ({
       "expo-build-properties",
       {
         // MSG-604: Firebase iOS SDK(CocoaPods 경로)가 정적 프레임워크를 요구한다 — 위 disableSPM과 한 쌍.
-        ios: { useFrameworks: "static" },
+        // enableSceneSupport (2026-10-03): iOS 27 SDK(Xcode 27)부터 UIScene 생명주기 미채택 앱은 실행 직후
+        // UIKit이 트랩한다(UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption). Expo 57은 기본 off라
+        // 켠다. SDK 58은 기본 내장. 끄면 Xcode 27 빌드가 시뮬레이터·실기기 모두 즉시 종료된다.
+        ios: { useFrameworks: "static", enableSceneSupport: true },
         android: {
           extraMavenRepos: [
             // 네이버 지도 SDK 배포 저장소 (라이브러리 공식 Expo 설치 절차)
